@@ -2554,6 +2554,21 @@ of 6,215 eligible preparations. Final refinement time falls 14.00%, screening
 median ratio is only 1.00539; typical-case time remains almost unchanged. The
 option stays false by default and the holdout remains closed.
 
+An opt-in `short_phase_starts` experiment targets typical-case P1 work after
+matrix reuse showed no opportunity in 27/35 cases. It requires work-sliced phasing
+and allocates quarter work with a 32-cycle floor to the first half of starts,
+retaining full-length later starts, original wall/resource limits and every
+model-validation gate. Its equations are unchanged; selected maps can change.
+Independent integer references, exact phase-prefix checks, a set-aside FFT
+prototype and the complete development protocol are recorded in
+`docs/solution-short-phase-starts.md`. The paired development comparison retains
+the same 19 successful structures, 26 correct total counts, 19 correct element
+counts and 15 strict structures. Typical paired time falls 9.39%, summed wall
+time 64.248-to-58.278 seconds (9.29%), and P1 time 19.82%, with 32/35 cases faster.
+One failed case changes its incorrect C/N count assignment; no successful count
+or structure case is lost. The option remains false by default and the holdout
+remains closed.
+
 Public behavior is typed and documented. Invalid shapes, non-finite values,
 unsorted grids, non-positive widths, and fractions outside `[0, 1]` fail with a
 clear error. Tests are deterministic. Numerical tolerances are justified near

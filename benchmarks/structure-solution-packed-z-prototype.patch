@@ -1,0 +1,421 @@
+diff --git a/crates/phasesmith-py/src/solution_dual.rs b/crates/phasesmith-py/src/solution_dual.rs
+index 62c5eee..9d24a9a 100644
+--- a/crates/phasesmith-py/src/solution_dual.rs
++++ b/crates/phasesmith-py/src/solution_dual.rs
+@@ -63,6 +63,7 @@ fn run<'py>(
+                     batched_fft: false,
+                     real_fft: false,
+                     fused_phase_workspace: false,
++                    packed_z_fft: false,
+                 },
+             )
+         })
+diff --git a/crates/phasesmith-solution/benches/solution.rs b/crates/phasesmith-solution/benches/solution.rs
+index 9d156f5..41f9fbe 100644
+--- a/crates/phasesmith-solution/benches/solution.rs
++++ b/crates/phasesmith-solution/benches/solution.rs
+@@ -899,6 +899,7 @@ fn benchmark(c: &mut Criterion) {
+                     batched_fft: false,
+                     real_fft: false,
+                     fused_phase_workspace: false,
++                    packed_z_fft: false,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -961,6 +962,7 @@ fn benchmark(c: &mut Criterion) {
+                     batched_fft: false,
+                     real_fft: false,
+                     fused_phase_workspace: false,
++                    packed_z_fft: false,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -1023,6 +1025,7 @@ fn benchmark(c: &mut Criterion) {
+                     batched_fft: batched,
+                     real_fft: false,
+                     fused_phase_workspace: false,
++                    packed_z_fft: false,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -1085,6 +1088,7 @@ fn benchmark(c: &mut Criterion) {
+                     batched_fft: true,
+                     real_fft: real,
+                     fused_phase_workspace: false,
++                    packed_z_fft: false,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -1148,6 +1152,7 @@ fn benchmark(c: &mut Criterion) {
+                     batched_fft: true,
+                     real_fft: true,
+                     fused_phase_workspace: cached,
++                    packed_z_fft: false,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -1257,6 +1262,7 @@ fn benchmark(c: &mut Criterion) {
+                         batched_fft: true,
+                         real_fft: true,
+                         fused_phase_workspace: true,
++                        packed_z_fft: false,
+                         streamed_peak_search: streamed,
+                     };
+                     let options = DualSpaceOptions {
+@@ -1312,6 +1318,85 @@ fn benchmark(c: &mut Criterion) {
+             );
+         }
+     }
++    for shape in [shape, [64; 3]] {
++        let mut support = vec![0; shape.iter().product()];
++        support[0] = 1;
++        for h in &quality_data.hkl {
++            let v = std::array::from_fn::<_, 3, _>(|i| {
++                usize::try_from(h[i].rem_euclid(i32::try_from(shape[i]).unwrap())).unwrap()
++            });
++            support[(v[0] * shape[1] + v[1]) * shape[2] + v[2]] = 2;
++        }
++        for (label, streamed) in [("control", false), ("packed", true)] {
++            c.bench_function(
++                &format!(
++                    "packed_z_phase_{}cubed_8_atoms_2108_rows_64_cycle_cap_{label}",
++                    shape[0]
++                ),
++                |b| {
++                    let execution = phasesmith_solution::PhasingExecution {
++                        score_only_evaluation: true,
++                        reusable_fourier_workspaces: true,
++                        filtered_peak_search: true,
++                        batched_fft: true,
++                        real_fft: true,
++                        fused_phase_workspace: true,
++                        packed_z_fft: streamed,
++                        streamed_peak_search: true,
++                    };
++                    let options = DualSpaceOptions {
++                        cycles: 64,
++                        peak_selection: PeakSelection::Adaptive {
++                            sigma: 2.,
++                            cap: 128,
++                        },
++                        mask_sigma: 0.25,
++                        hybrid_m: 3.,
++                        omit_fraction: 0.1,
++                        seed: 1034,
++                        patterson_rank: Some(0),
++                        cancellation: None,
++                    };
++                    let sample = phasesmith_solution::dual_space_with_execution(
++                        shape,
++                        cell,
++                        &quality_data.hkl,
++                        &quality_data.amplitudes,
++                        &phases,
++                        &support,
++                        &options,
++                        None,
++                        Some(&quality_plan),
++                        execution,
++                    )
++                    .unwrap();
++                    eprintln!(
++                        "packed_z_sample {} {label} completed_cycles {} real_transforms {} rms_fallbacks {}",
++                        shape[0],
++                        sample.trial.history.len(),
++                        sample.real_phase_transforms,
++                        sample.peak_rms_fallbacks
++                    );
++                    drop(sample);
++                    b.iter(|| {
++                        phasesmith_solution::dual_space_with_execution(
++                            shape,
++                            cell,
++                            &quality_data.hkl,
++                            &quality_data.amplitudes,
++                            &phases,
++                            &support,
++                            &options,
++                            None,
++                            Some(&quality_plan),
++                            execution,
++                        )
++                        .unwrap()
++                    });
++                },
++            );
++        }
++    }
+     for work_sliced in [false, true] {
+         let options = SolveOptions {
+             phasing: PhasingMethod::DualSpace,
+diff --git a/crates/phasesmith-solution/src/dual_space.rs b/crates/phasesmith-solution/src/dual_space.rs
+index 57b5df4..ff3a696 100644
+--- a/crates/phasesmith-solution/src/dual_space.rs
++++ b/crates/phasesmith-solution/src/dual_space.rs
+@@ -106,6 +106,8 @@ pub struct DualSpaceResult {
+     pub batched_phase_transforms: usize,
+     /// Actual packed-real transforms in P1 cycles, excluding initialization.
+     pub real_phase_transforms: usize,
++    /// Actual last-axis FFT plan invocations in packed-real operations.
++    pub z_fft_calls: usize,
+     /// Actual cycles using exact cached Gaussian mask geometry.
+     pub cached_mask_cycles: usize,
+     /// Actual packed Fourier operations using direct density-array transfers.
+@@ -590,6 +592,8 @@ pub struct PhasingExecution {
+     pub real_fft: bool,
+     /// Cache exact Gaussian axis geometry inside reusable projection workspaces.
+     pub fused_phase_workspace: bool,
++    /// Batch independent last-axis packed-real FFT lines.
++    pub packed_z_fft: bool,
+ }
+
+ /// Diagnostic/benchmark entry point with explicit arithmetic-preserving execution.
+@@ -712,6 +716,7 @@ pub(crate) fn dual_space_guided_prediction(
+         batched_fft,
+         real_fft,
+         fused_phase_workspace,
++        packed_z_fft,
+     } = execution;
+     validate_options(options)?;
+     if (filtered_peak_search || batched_fft || fused_phase_workspace)
+@@ -748,7 +753,11 @@ pub(crate) fn dual_space_guided_prediction(
+         f[i] = Complex::from_polar(a, f[i].arg());
+     }
+     let mut fft = if real_fft {
+-        Transform::real(shape)
++        if packed_z_fft {
++            Transform::real_with_packed_z(shape, true)
++        } else {
++            Transform::real(shape)
++        }
+     } else if batched_fft {
+         Transform::batched(shape)
+     } else if reusable_fourier_workspaces {
+@@ -1152,6 +1161,7 @@ pub(crate) fn dual_space_guided_prediction(
+         fourier_workspace_cycles,
+         batched_phase_transforms: fft.batched_calls(),
+         real_phase_transforms: fft.real_calls(),
++        z_fft_calls: fft.z_fft_calls(),
+         cached_mask_cycles: workspace.as_ref().map_or(0, |w| w.cached_cycles),
+         fused_fourier_transforms,
+         streamed_peak_cycles: workspace
+@@ -1255,6 +1265,7 @@ mod tests {
+                         batched_fft: false,
+                         real_fft: false,
+                         fused_phase_workspace: false,
++                        packed_z_fft: false,
+                     },
+                     PhasingExecution {
+                         score_only_evaluation: false,
+@@ -1264,6 +1275,7 @@ mod tests {
+                         batched_fft: false,
+                         real_fft: false,
+                         fused_phase_workspace: false,
++                        packed_z_fft: false,
+                     },
+                     PhasingExecution {
+                         score_only_evaluation: true,
+@@ -1273,6 +1285,7 @@ mod tests {
+                         batched_fft: false,
+                         real_fft: false,
+                         fused_phase_workspace: false,
++                        packed_z_fft: false,
+                     },
+                     PhasingExecution {
+                         score_only_evaluation: true,
+@@ -1282,6 +1295,7 @@ mod tests {
+                         batched_fft: false,
+                         real_fft: false,
+                         fused_phase_workspace: false,
++                        packed_z_fft: false,
+                     },
+                     PhasingExecution {
+                         score_only_evaluation: true,
+@@ -1291,6 +1305,7 @@ mod tests {
+                         batched_fft: true,
+                         real_fft: false,
+                         fused_phase_workspace: false,
++                        packed_z_fft: false,
+                     },
+                 ] {
+                     let new = dual_space_with_execution(
+diff --git a/crates/phasesmith-solution/src/fourier.rs b/crates/phasesmith-solution/src/fourier.rs
+index 212a164..22dcb80 100644
+--- a/crates/phasesmith-solution/src/fourier.rs
++++ b/crates/phasesmith-solution/src/fourier.rs
+@@ -93,14 +93,23 @@ impl Transform {
+     }
+
+     pub(crate) fn real(shape: [usize; 3]) -> Self {
++        Self::real_with_packed_z(shape, false)
++    }
++    pub(crate) fn real_with_packed_z(shape: [usize; 3], packed_z: bool) -> Self {
+         let mut plan = Self::batched(shape);
+         plan.real = Some(real::RealTransform::new(
+             shape,
+             &plan.forward,
+             &plan.inverse,
++            packed_z,
+         ));
+         plan
+     }
++    pub(crate) fn z_fft_calls(&self) -> usize {
++        self.real
++            .as_ref()
++            .map_or(0, real::RealTransform::z_fft_calls)
++    }
+     pub(crate) fn real_calls(&self) -> usize {
+         self.real_calls
+     }
+diff --git a/crates/phasesmith-solution/src/real_fourier.rs b/crates/phasesmith-solution/src/real_fourier.rs
+index e0131ea..5f72986 100644
+--- a/crates/phasesmith-solution/src/real_fourier.rs
++++ b/crates/phasesmith-solution/src/real_fourier.rs
+@@ -5,6 +5,9 @@ use std::sync::Arc;
+
+ pub(super) struct RealTransform {
+     shape: [usize; 3],
++    packed_z: bool,
++    z_work: Vec<Complex<f64>>,
++    z_fft_calls: usize,
+     work: Vec<Complex<f64>>,
+     line: Vec<Complex<f64>>,
+     batch: Vec<Complex<f64>>,
+@@ -19,6 +22,7 @@ impl RealTransform {
+         shape: [usize; 3],
+         original_forward: &[Arc<dyn Fft<f64>>; 3],
+         original_inverse: &[Arc<dyn Fft<f64>>; 3],
++        packed_z: bool,
+     ) -> Self {
+         let [nx, ny, nz] = shape;
+         let half = nz / 2;
+@@ -45,6 +49,13 @@ impl RealTransform {
+             .collect();
+         Self {
+             shape,
++            packed_z,
++            z_work: if packed_z {
++                vec![Complex::default(); 8 * half]
++            } else {
++                Vec::new()
++            },
++            z_fft_calls: 0,
+             work: vec![Complex::default(); nx * ny * (half + 1)],
+             line: vec![Complex::default(); half],
+             batch: vec![Complex::default(); layout::BATCH_LINES * nx.max(ny)],
+@@ -57,6 +68,9 @@ impl RealTransform {
+                 .collect(),
+         }
+     }
++    pub(super) fn z_fft_calls(&self) -> usize {
++        self.z_fft_calls
++    }
+     fn xy(&mut self, inverse: bool) {
+         let [nx, ny, nz] = self.shape;
+         let reduced = [nx, ny, nz / 2 + 1];
+@@ -99,11 +113,39 @@ impl RealTransform {
+         let [nx, ny, nz] = self.shape;
+         let half = nz / 2;
+         let width = half + 1;
++        if self.packed_z {
++            for start in (0..nx * ny).step_by(8) {
++                let rows = 8.min(nx * ny - start);
++                let batch = &mut self.z_work[..rows * half];
++                for (lane, line) in batch.chunks_exact_mut(half).enumerate() {
++                    let row = start + lane;
++                    for (k, value) in line.iter_mut().enumerate() {
++                        *value = Complex::new(read(row * nz + 2 * k), read(row * nz + 2 * k + 1));
++                    }
++                }
++                self.inverse[2].process_with_scratch(batch, &mut self.scratch);
++                self.z_fft_calls += 1;
++                for (lane, line) in batch.chunks_exact(half).enumerate() {
++                    let row = start + lane;
++                    let target = &mut self.work[row * width..(row + 1) * width];
++                    target[0] = Complex::new(line[0].re + line[0].im, 0.);
++                    target[half] = Complex::new(line[0].re - line[0].im, 0.);
++                    for (k, out) in target.iter_mut().enumerate().take(half).skip(1) {
++                        let a = line[k];
++                        let b = line[half - k].conj();
++                        *out = (a + b) * 0.5 + Complex::new(0., -0.5) * self.twiddle[k] * (a - b);
++                    }
++                }
++            }
++            self.xy(true);
++            return;
++        }
+         for row in 0..nx * ny {
+             for (k, value) in self.line.iter_mut().enumerate() {
+                 *value = Complex::new(read(row * nz + 2 * k), read(row * nz + 2 * k + 1));
+             }
+             self.inverse[2].process_with_scratch(&mut self.line, &mut self.scratch);
++            self.z_fft_calls += 1;
+             let target = &mut self.work[row * width..(row + 1) * width];
+             target[0] = Complex::new(self.line[0].re + self.line[0].im, 0.);
+             target[half] = Complex::new(self.line[0].re - self.line[0].im, 0.);
+@@ -158,6 +200,36 @@ impl RealTransform {
+         let [nx, ny, nz] = self.shape;
+         let half = nz / 2;
+         let width = half + 1;
++        if self.packed_z {
++            for start in (0..nx * ny).step_by(8) {
++                let rows = 8.min(nx * ny - start);
++                let batch = &mut self.z_work[..rows * half];
++                for (lane, line) in batch.chunks_exact_mut(half).enumerate() {
++                    let row = start + lane;
++                    let source = &self.work[row * width..(row + 1) * width];
++                    line[0] = Complex::new(
++                        source[0].re.midpoint(source[half].re),
++                        source[0].re.midpoint(-source[half].re),
++                    );
++                    for (k, out) in line.iter_mut().enumerate().skip(1) {
++                        let a = source[k];
++                        let b = source[half - k].conj();
++                        *out = (a + b) * 0.5
++                            + Complex::new(0., 0.5) * self.twiddle[k].conj() * (a - b);
++                    }
++                }
++                self.forward[2].process_with_scratch(batch, &mut self.scratch);
++                self.z_fft_calls += 1;
++                for (lane, line) in batch.chunks_exact(half).enumerate() {
++                    let row = start + lane;
++                    for (k, value) in line.iter().enumerate() {
++                        write(row * nz + 2 * k, 2. * value.re);
++                        write(row * nz + 2 * k + 1, 2. * value.im);
++                    }
++                }
++            }
++            return;
++        }
+         for row in 0..nx * ny {
+             let source = &self.work[row * width..(row + 1) * width];
+             self.line[0] = Complex::new(
+@@ -170,6 +242,7 @@ impl RealTransform {
+                 *out = (a + b) * 0.5 + Complex::new(0., 0.5) * self.twiddle[k].conj() * (a - b);
+             }
+             self.forward[2].process_with_scratch(&mut self.line, &mut self.scratch);
++            self.z_fft_calls += 1;
+             for (k, value) in self.line.iter().enumerate() {
+                 write(row * nz + 2 * k, 2. * value.re);
+                 write(row * nz + 2 * k + 1, 2. * value.im);
+@@ -225,7 +298,7 @@ mod tests {
+         let mut planner = FftPlanner::new();
+         let forward = [128; 3].map(|n| planner.plan_fft_forward(n));
+         let inverse = [128; 3].map(|n| planner.plan_fft_inverse(n));
+-        let plan = RealTransform::new([128; 3], &forward, &inverse);
++        let plan = RealTransform::new([128; 3], &forward, &inverse, false);
+         assert_eq!(plan.work.len(), 128 * 128 * 65);
+         let bytes = (plan.work.len()
+             + plan.line.len()
+diff --git a/crates/phasesmith-solution/src/shared_search.rs b/crates/phasesmith-solution/src/shared_search.rs
+index b882fa5..f4448ff 100644
+--- a/crates/phasesmith-solution/src/shared_search.rs
++++ b/crates/phasesmith-solution/src/shared_search.rs
+@@ -2333,6 +2333,7 @@ pub fn solve_elements(
+                     batched_fft: search.batched_fft,
+                     real_fft: search.real_fft,
+                     fused_phase_workspace: search.fused_phase_workspace,
++                    packed_z_fft: false,
+                 },
+             )?;
+             audit.phase_slices.push(crate::PhaseSliceAudit {
