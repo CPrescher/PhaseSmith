@@ -1,0 +1,2878 @@
+diff --git a/PROJECT_BRIEF.md b/PROJECT_BRIEF.md
+index d1de56f..4d6aa79 100644
+--- a/PROJECT_BRIEF.md
++++ b/PROJECT_BRIEF.md
+@@ -2306,6 +2306,17 @@ and source/native hashes match across panels. The 65 holdout outcomes stay close
+
+ ## Quality bar
+
++An experimental `ambiguous_assignments` option adds displacement-compensated
++single/coupled near-element relabels, bounded count-diverse isotropic competition
++and retention of close requested-mode alternatives. It requires the existing
++isotropic assignment path and is false by default. It keeps original parents,
++observations, resource caps, scoring/correctness gates and final anisotropic
++refinement. The original fixed-U proposal path is the explicit control. A close
++final count competition can earn one corroborating start within the same budget.
++Independent NumPy enumeration and complete synthetic checks accompany the
++existing value/derivative equations. Equations and the 35-case comparison live in
++`docs/solution-ambiguous-assignments.md`; the 65 holdout outcomes remain closed.
++
+ An experimental `multiplicity_weighted_refinement` option evaluates final
+ constrained fits on one representative per supplied symmetry/Friedel family,
+ using actual row multiplicities to retain the expanded-data objective, scale,
+diff --git a/benchmarks/solution_assignment_interleaved.py b/benchmarks/solution_assignment_interleaved.py
+index 869fe2d..137c0e4 100644
+--- a/benchmarks/solution_assignment_interleaved.py
++++ b/benchmarks/solution_assignment_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=22)
++    parser.add_argument("--lock-revision", type=int, default=23)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -57,6 +57,7 @@ def main():
+             fused_phase_workspace=False,
+             cached_normal_refinement=False,
+             multiplicity_weighted_refinement=False,
++            ambiguous_assignments=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_corpus/run.py b/benchmarks/solution_corpus/run.py
+index d49ece0..d02833f 100644
+--- a/benchmarks/solution_corpus/run.py
++++ b/benchmarks/solution_corpus/run.py
+@@ -83,6 +83,7 @@ def worker(args):
+         fused_phase_workspace=args.fused_phase_workspace,
+         cached_normal_refinement=args.cached_normal_refinement,
+         multiplicity_weighted_refinement=args.multiplicity_weighted_refinement,
++        ambiguous_assignments=args.ambiguous_assignments,
+         reusable_fourier_workspaces=args.reusable_fourier_workspaces,
+         independent_origin_sampling=args.independent_origin_sampling,
+         resolution_extension=args.resolution_extension,
+@@ -277,6 +278,7 @@ def collect_jobs(args):
+             or previous.get("real_fft", False) != args.real_fft
+             or previous.get("fused_phase_workspace", False) != args.fused_phase_workspace
+             or previous.get("cached_normal_refinement", False) != args.cached_normal_refinement
++            or previous.get("ambiguous_assignments", False) != args.ambiguous_assignments
+             or previous.get("multiplicity_weighted_refinement", False)
+             != args.multiplicity_weighted_refinement
+             or previous.get("isotropic_assignment_refinement", False)
+@@ -346,6 +348,7 @@ def collect_jobs(args):
+         "fused_phase_workspace": args.fused_phase_workspace,
+         "cached_normal_refinement": args.cached_normal_refinement,
+         "multiplicity_weighted_refinement": args.multiplicity_weighted_refinement,
++        "ambiguous_assignments": args.ambiguous_assignments,
+         "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
+         "independent_origin_sampling": args.independent_origin_sampling,
+         "resolution_extension": args.resolution_extension,
+@@ -478,6 +481,7 @@ def collect_jobs(args):
+                     *(["--real-fft"] if args.real_fft else []),
+                     *(["--fused-phase-workspace"] if args.fused_phase_workspace else []),
+                     *(["--cached-normal-refinement"] if args.cached_normal_refinement else []),
++                    *(["--ambiguous-assignments"] if args.ambiguous_assignments else []),
+                     *(
+                         ["--multiplicity-weighted-refinement"]
+                         if args.multiplicity_weighted_refinement
+diff --git a/benchmarks/solution_corpus_benchmark.py b/benchmarks/solution_corpus_benchmark.py
+index c9103c7..c41102d 100644
+--- a/benchmarks/solution_corpus_benchmark.py
++++ b/benchmarks/solution_corpus_benchmark.py
+@@ -192,7 +192,7 @@ def main():
+         "--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json"
+     )
+     seal_parser.add_argument("--discovery", type=Path, required=True)
+-    seal_parser.add_argument("--lock-revision", type=int, default=22)
++    seal_parser.add_argument("--lock-revision", type=int, default=23)
+     adapters = commands.add_parser("seal-adapters")
+     adapters.add_argument("--manifest", type=Path, required=True)
+     adapters.add_argument("--parent-lock", type=Path, required=True)
+@@ -217,6 +217,7 @@ def main():
+     r.add_argument("--fused-phase-workspace", action="store_true")
+     r.add_argument("--cached-normal-refinement", action="store_true")
+     r.add_argument("--multiplicity-weighted-refinement", action="store_true")
++    r.add_argument("--ambiguous-assignments", action="store_true")
+     r.add_argument("--isotropic-assignment-refinement", action="store_true")
+     r.add_argument("--score-only-evaluation", action="store_true")
+     r.add_argument("--reusable-fourier-workspaces", action="store_true")
+@@ -228,7 +229,7 @@ def main():
+     r.add_argument("--phase-first-selection", action="store_true", default=True)
+     r.add_argument("--quality-checkpoints", dest="phase_first_selection", action="store_false")
+     r.add_argument("--legacy-quality-normalization", action="store_true")
+-    r.add_argument("--lock-revision", type=int, default=22)
++    r.add_argument("--lock-revision", type=int, default=23)
+     r.add_argument("--split", choices=["development", "holdout"], default="development")
+     r.add_argument("--open-holdout", action="store_true")
+     r.add_argument("--seconds", type=float, default=30)
+@@ -250,6 +251,7 @@ def main():
+     w.add_argument("--fused-phase-workspace", action="store_true")
+     w.add_argument("--cached-normal-refinement", action="store_true")
+     w.add_argument("--multiplicity-weighted-refinement", action="store_true")
++    w.add_argument("--ambiguous-assignments", action="store_true")
+     w.add_argument("--isotropic-assignment-refinement", action="store_true")
+     w.add_argument("--score-only-evaluation", action="store_true")
+     w.add_argument("--reusable-fourier-workspaces", action="store_true")
+diff --git a/benchmarks/solution_execution_interleaved.py b/benchmarks/solution_execution_interleaved.py
+index 15840e8..63eb862 100644
+--- a/benchmarks/solution_execution_interleaved.py
++++ b/benchmarks/solution_execution_interleaved.py
+@@ -49,7 +49,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=22)
++    parser.add_argument("--lock-revision", type=int, default=23)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -85,6 +85,7 @@ def main():
+             fused_phase_workspace=False,
+             cached_normal_refinement=False,
+             multiplicity_weighted_refinement=False,
++            ambiguous_assignments=False,
+             work_sliced_phasing=False,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_family_interleaved.py b/benchmarks/solution_family_interleaved.py
+index 8dc3658..3892c50 100644
+--- a/benchmarks/solution_family_interleaved.py
++++ b/benchmarks/solution_family_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=22)
++    parser.add_argument("--lock-revision", type=int, default=23)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -57,6 +57,7 @@ def main():
+             fused_phase_workspace=True,
+             cached_normal_refinement=True,
+             multiplicity_weighted_refinement=mode == "weighted",
++            ambiguous_assignments=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_fft_interleaved.py b/benchmarks/solution_fft_interleaved.py
+index 785930c..e577772 100644
+--- a/benchmarks/solution_fft_interleaved.py
++++ b/benchmarks/solution_fft_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=22)
++    parser.add_argument("--lock-revision", type=int, default=23)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -57,6 +57,7 @@ def main():
+             fused_phase_workspace=False,
+             cached_normal_refinement=False,
+             multiplicity_weighted_refinement=False,
++            ambiguous_assignments=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_normal_interleaved.py b/benchmarks/solution_normal_interleaved.py
+index 73181bb..fa01f4f 100644
+--- a/benchmarks/solution_normal_interleaved.py
++++ b/benchmarks/solution_normal_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=22)
++    parser.add_argument("--lock-revision", type=int, default=23)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -57,6 +57,7 @@ def main():
+             fused_phase_workspace=False,
+             cached_normal_refinement=mode == "cached",
+             multiplicity_weighted_refinement=False,
++            ambiguous_assignments=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_peak_interleaved.py b/benchmarks/solution_peak_interleaved.py
+index 4fec5ce..357e13a 100644
+--- a/benchmarks/solution_peak_interleaved.py
++++ b/benchmarks/solution_peak_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=22)
++    parser.add_argument("--lock-revision", type=int, default=23)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -57,6 +57,7 @@ def main():
+             fused_phase_workspace=False,
+             cached_normal_refinement=False,
+             multiplicity_weighted_refinement=False,
++            ambiguous_assignments=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_phase_ablation.py b/benchmarks/solution_phase_ablation.py
+index 6f20105..4a090e9 100644
+--- a/benchmarks/solution_phase_ablation.py
++++ b/benchmarks/solution_phase_ablation.py
+@@ -103,6 +103,7 @@ def compare(paths, manifest, pairs=()):
+                 "fused_phase_workspace",
+                 "cached_normal_refinement",
+                 "multiplicity_weighted_refinement",
++                "ambiguous_assignments",
+                 "reusable_fourier_workspaces",
+                 "independent_origin_sampling",
+                 "resolution_extension",
+@@ -185,6 +186,14 @@ def compare(paths, manifest, pairs=()):
+                     "assignment_parent_fits": sum(
+                         a.get("assignment_parent_fits", 0) for a in origins
+                     ),
++                    "ambiguity_continuations": r["effort"].get("ambiguity_continuations", 0),
++                    "ambiguity_scores": sum(t.get("ambiguity_scores", 0) for t in origins),
++                    "ambiguity_relaxations": sum(
++                        t.get("ambiguity_relaxations", 0) for t in origins
++                    ),
++                    "ambiguity_unresolved": sum(
++                        t.get("ambiguity_unresolved", False) for t in origins
++                    ),
+                     "assignment_neighbor_scores": sum(
+                         a.get("assignment_neighbor_scores", 0) for a in origins
+                     ),
+@@ -242,6 +251,7 @@ def compare(paths, manifest, pairs=()):
+             "multiplicity_weighted_refinement": report.get(
+                 "multiplicity_weighted_refinement", False
+             ),
++            "ambiguous_assignments": report.get("ambiguous_assignments", False),
+             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
+             "independent_origin_sampling": report.get("independent_origin_sampling", False),
+             "resolution_extension": report.get("resolution_extension", 1.0),
+@@ -277,6 +287,10 @@ def compare(paths, manifest, pairs=()):
+                     "final_refinements",
+                     "completion_evaluations",
+                     "assignment_parent_fits",
++                    "ambiguity_continuations",
++                    "ambiguity_scores",
++                    "ambiguity_relaxations",
++                    "ambiguity_unresolved",
+                     "assignment_neighbor_scores",
+                     "assignment_neighbor_fits",
+                     "assignment_retained",
+diff --git a/benchmarks/solution_phase_workspace_interleaved.py b/benchmarks/solution_phase_workspace_interleaved.py
+index cd0d0b3..8c5bf1c 100644
+--- a/benchmarks/solution_phase_workspace_interleaved.py
++++ b/benchmarks/solution_phase_workspace_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=22)
++    parser.add_argument("--lock-revision", type=int, default=23)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -57,6 +57,7 @@ def main():
+             fused_phase_workspace=mode == "fused",
+             cached_normal_refinement=True,
+             multiplicity_weighted_refinement=False,
++            ambiguous_assignments=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_real_fft_interleaved.py b/benchmarks/solution_real_fft_interleaved.py
+index 0f2aa51..2287f10 100644
+--- a/benchmarks/solution_real_fft_interleaved.py
++++ b/benchmarks/solution_real_fft_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=22)
++    parser.add_argument("--lock-revision", type=int, default=23)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -57,6 +57,7 @@ def main():
+             fused_phase_workspace=False,
+             cached_normal_refinement=True,
+             multiplicity_weighted_refinement=False,
++            ambiguous_assignments=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_timeslice_interleaved.py b/benchmarks/solution_timeslice_interleaved.py
+index 792df76..cf48fd8 100644
+--- a/benchmarks/solution_timeslice_interleaved.py
++++ b/benchmarks/solution_timeslice_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=22)
++    parser.add_argument("--lock-revision", type=int, default=23)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -57,6 +57,7 @@ def main():
+             fused_phase_workspace=False,
+             cached_normal_refinement=False,
+             multiplicity_weighted_refinement=False,
++            ambiguous_assignments=False,
+             work_sliced_phasing=mode == "work",
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/crates/phasesmith-py/src/solution.rs b/crates/phasesmith-py/src/solution.rs
+index 8291d53..a24b78f 100644
+--- a/crates/phasesmith-py/src/solution.rs
++++ b/crates/phasesmith-py/src/solution.rs
+@@ -65,7 +65,7 @@ type SharedSearchRequest = (
+             bool,
+             bool,
+             bool,
+-            (bool, bool, bool, bool, bool, bool),
++            (bool, bool, bool, bool, bool, bool, bool),
+         ),
+     ),
+ );
+@@ -212,6 +212,7 @@ fn solve_structure<'py>(
+                             real_fft,
+                             fused_phase_workspace,
+                             multiplicity_weighted_refinement,
++                            ambiguous_assignments,
+                         ),
+                     ),
+                 ),
+@@ -267,6 +268,7 @@ fn solve_structure<'py>(
+                         fused_phase_workspace,
+                         cached_normal_refinement,
+                         multiplicity_weighted_refinement,
++                        ambiguous_assignments,
+                     },
+                 )
+             } else {
+diff --git a/crates/phasesmith-py/src/solution_origin.rs b/crates/phasesmith-py/src/solution_origin.rs
+index 3a552d5..f6acfc8 100644
+--- a/crates/phasesmith-py/src/solution_origin.rs
++++ b/crates/phasesmith-py/src/solution_origin.rs
+@@ -38,6 +38,11 @@ pub(super) fn origin_records<'py>(
+         )?;
+         d.set_item("assignment_families", a.assignment_families)?;
+         d.set_item("assignment_scores", &a.assignment_scores)?;
++        d.set_item("ambiguity_scores", a.ambiguity_scores)?;
++        d.set_item("ambiguity_relaxations", a.ambiguity_relaxations)?;
++        d.set_item("ambiguity_rounds", a.ambiguity_rounds)?;
++        d.set_item("ambiguity_retained", a.ambiguity_retained)?;
++        d.set_item("ambiguity_unresolved", a.ambiguity_unresolved)?;
+
+         let settings = PyList::empty(py);
+         for s in &a.settings {
+@@ -157,6 +162,46 @@ impl NativeCompletion {
+             .map(|inner| Self { inner })
+             .map_err(invalid)
+     }
++    #[pyo3(signature=(labels,site_u,maximum=4))]
++    fn ambiguous<'py>(
++        &self,
++        py: Python<'py>,
++        labels: Vec<i32>,
++        site_u: Vec<f64>,
++        maximum: usize,
++    ) -> PyResult<Bound<'py, PyDict>> {
++        let labels = completion_labels(labels)?;
++        let result = py
++            .detach(|| {
++                self.inner.ambiguity_neighbors(
++                    &labels,
++                    &site_u,
++                    maximum,
++                    Some(Instant::now() + Duration::from_secs(10)),
++                    None,
++                )
++            })
++            .map_err(invalid)?;
++        let out = PyDict::new(py);
++        let candidates = PyList::empty(py);
++        for c in result.candidates {
++            let d = PyDict::new(py);
++            d.set_item(
++                "labels",
++                c.labels
++                    .iter()
++                    .map(|e| e.map_or(-1, |v| i32::try_from(v).expect("bounded labels")))
++                    .collect::<Vec<_>>(),
++            )?;
++            d.set_item("site_u", c.site_u)?;
++            d.set_item("objective", c.objective)?;
++            d.set_item("edits", c.edits)?;
++            candidates.append(d)?;
++        }
++        out.set_item("candidates", candidates)?;
++        out.set_item("evaluations", result.evaluations)?;
++        Ok(out)
++    }
+     fn reassign<'py>(&self, py: Python<'py>, labels: Vec<i32>) -> PyResult<Bound<'py, PyDict>> {
+         let labels = completion_labels(labels)?;
+         let result = py
+diff --git a/crates/phasesmith-py/src/solution_shared.rs b/crates/phasesmith-py/src/solution_shared.rs
+index 122ca7f..abb491a 100644
+--- a/crates/phasesmith-py/src/solution_shared.rs
++++ b/crates/phasesmith-py/src/solution_shared.rs
+@@ -102,6 +102,8 @@ pub(super) fn summary<'py>(
+         "multiplicity_weighted_refinement",
+         s.multiplicity_weighted_refinement,
+     )?;
++    d.set_item("ambiguous_assignments", s.ambiguous_assignments)?;
++    d.set_item("ambiguity_continuations", s.ambiguity_continuations)?;
+     d.set_item("weighted_refinement_fits", s.weighted_refinement_fits)?;
+     d.set_item(
+         "weighted_refinement_input_rows",
+diff --git a/crates/phasesmith-solution/benches/solution.rs b/crates/phasesmith-solution/benches/solution.rs
+index 54c7cb4..d964585 100644
+--- a/crates/phasesmith-solution/benches/solution.rs
++++ b/crates/phasesmith-solution/benches/solution.rs
+@@ -791,7 +791,8 @@ fn benchmark(c: &mut Criterion) {
+     )
+     .unwrap();
+     #[allow(clippy::cast_precision_loss)]
+-    let reference_norm = (hkl.len() as f64).sqrt();
++    let reference_norm =
++        f64::from(u32::try_from(hkl.len()).expect("bounded benchmark rows")).sqrt();
+     let count_observations: Vec<_> = hkl
+         .iter()
+         .zip(&calibration.residual)
+@@ -1587,6 +1588,157 @@ fn benchmark(c: &mut Criterion) {
+                 &quality_elements, &options, &search).unwrap());
+         });
+     }
++    let ambiguity_species = ["C", "C", "C", "N", "N", "O", "O", "C"].map(str::to_owned);
++    let unit = vec![1.; hkl.len()];
++    let truth =
++        phasesmith_solution::evaluate_model(cell, &hkl, &unit, &ambiguity_species, &points, 0.02)
++            .unwrap();
++    let ambiguity_observations: Vec<_> = hkl
++        .iter()
++        .zip(&truth.residual)
++        .map(|(&hkl, &r)| {
++            let a = (r * f64::from(u32::try_from(hkl.len()).expect("bounded benchmark rows"))
++                .sqrt()
++                + 1.)
++                / truth.amplitude_scale;
++            Observation {
++                hkl,
++                intensity: a * a,
++                sigma: 1.,
++            }
++        })
++        .collect();
++    let ambiguity_elements = ["C", "N", "O"].map(str::to_owned);
++    let selection: Vec<_> = (0..hkl.len())
++        .filter(|&i| hkl[i] > hkl[i].map(|v| -v))
++        .collect();
++    let selected_h: Vec<_> = selection.iter().map(|&i| hkl[i]).collect();
++    let selected_o: Vec<_> = selection
++        .iter()
++        .map(|&i| ambiguity_observations[i].intensity.sqrt())
++        .collect();
++    let plan = PreparedPeakCompletion::new(
++        cell,
++        &group,
++        &points,
++        &ambiguity_elements,
++        &selected_h,
++        &selected_o,
++        32,
++    )
++    .unwrap();
++    c.bench_function("ambiguity_proposals_8_orbits_1054_rows", |b| {
++        b.iter(|| {
++            plan.ambiguity_neighbors(
++                &[
++                    Some(0),
++                    Some(0),
++                    Some(0),
++                    Some(1),
++                    Some(1),
++                    Some(2),
++                    Some(0),
++                    Some(0),
++                ],
++                &[0.02; 8],
++                4,
++                None,
++                None,
++            )
++            .unwrap()
++        });
++    });
++    // Heavy anchors make this separate whole-search example reach assignment.
++    let search_species = ["Fe", "Fe", "C", "N", "N", "O", "O", "C"].map(str::to_owned);
++    let truth =
++        phasesmith_solution::evaluate_model(cell, &hkl, &unit, &search_species, &points, 0.02)
++            .unwrap();
++    let ambiguity_observations: Vec<_> = hkl
++        .iter()
++        .zip(&truth.residual)
++        .map(|(&hkl, &r)| {
++            let a = (r * f64::from(u32::try_from(hkl.len()).expect("bounded rows")).sqrt() + 1.)
++                / truth.amplitude_scale;
++            Observation {
++                hkl,
++                intensity: a * a,
++                sigma: 1.,
++            }
++        })
++        .collect();
++    let ambiguity_elements = ["Fe", "C", "N", "O"].map(str::to_owned);
++    for ambiguity in [false, true] {
++        let label = if ambiguity { "ambiguity" } else { "control" };
++        let options = SolveOptions {
++            phasing: PhasingMethod::DualSpace,
++            trials: 2,
++            cycles: 128,
++            max_seconds: 60.,
++            r1_target: 1e-6,
++            ..SolveOptions::default()
++        };
++        let search = SharedSearchOptions {
++            maximum_atoms: 32,
++            symmetry_recycling: true,
++            tangent_refinement: true,
++            wilson_normalization: true,
++            phase_quality_selection: true,
++            phase_origin_selection: true,
++            chemical_assignment: true,
++            iterative_refinement: true,
++            score_only_evaluation: true,
++            reusable_fourier_workspaces: true,
++            work_sliced_phasing: true,
++            isotropic_assignment_refinement: true,
++            filtered_peak_search: true,
++            batched_fft: true,
++            real_fft: true,
++            fused_phase_workspace: true,
++            cached_normal_refinement: true,
++            multiplicity_weighted_refinement: true,
++            ambiguous_assignments: ambiguity,
++            ..SharedSearchOptions::default()
++        };
++        c.bench_function(
++            &format!("ambiguity_search_32cubed_8_atoms_2108_rows_{label}"),
++            |b| {
++                let sample = phasesmith_solution::solve_elements(
++                    &ambiguity_observations,
++                    cell,
++                    &group,
++                    &ambiguity_elements,
++                    &options,
++                    &search,
++                )
++                .unwrap();
++                let a = sample.shared_search.unwrap();
++                eprintln!(
++                    "ambiguity_search_sample {label} starts {} cycles {} extra_fits {} scores {}",
++                    a.phasing_starts,
++                    a.fourier_workspace_cycles,
++                    a.phase_origins
++                        .iter()
++                        .map(|t| t.ambiguity_relaxations)
++                        .sum::<usize>(),
++                    a.phase_origins
++                        .iter()
++                        .map(|t| t.ambiguity_scores)
++                        .sum::<usize>()
++                );
++                b.iter(|| {
++                    phasesmith_solution::solve_elements(
++                        &ambiguity_observations,
++                        cell,
++                        &group,
++                        &ambiguity_elements,
++                        &options,
++                        &search,
++                    )
++                    .unwrap()
++                });
++            },
++        );
++    }
+     let mut count_benches = c.benchmark_group("count_selection_8_atoms_2108_reflections");
+     count_benches
+         .sample_size(10)
+diff --git a/crates/phasesmith-solution/src/chemical_labels.rs b/crates/phasesmith-solution/src/chemical_labels.rs
+index 9ed748e..4a8df62 100644
+--- a/crates/phasesmith-solution/src/chemical_labels.rs
++++ b/crates/phasesmith-solution/src/chemical_labels.rs
+@@ -144,6 +144,7 @@ impl PreparedPeakCompletion {
+         {
+             return Err(error("invalid fixed completion displacements"));
+         }
++        self.displacement_applied = true;
+         for (i, &u) in site_u.iter().enumerate() {
+             for (h, &s2) in self.s_squared.iter().enumerate() {
+                 let factor = (-8. * std::f64::consts::PI.powi(2) * u * s2).exp();
+@@ -155,7 +156,7 @@ impl PreparedPeakCompletion {
+         }
+         Ok(self)
+     }
+-    fn fixed_objective(&self, total: &[rustfft::num_complex::Complex<f64>]) -> f64 {
++    pub(super) fn fixed_objective(&self, total: &[rustfft::num_complex::Complex<f64>]) -> f64 {
+         let square: f64 = total
+             .iter()
+             .map(rustfft::num_complex::Complex::norm_sqr)
+diff --git a/crates/phasesmith-solution/src/isotropic_assignment.rs b/crates/phasesmith-solution/src/isotropic_assignment.rs
+index d03ac26..7cc15a3 100644
+--- a/crates/phasesmith-solution/src/isotropic_assignment.rs
++++ b/crates/phasesmith-solution/src/isotropic_assignment.rs
+@@ -142,8 +142,121 @@ pub(super) fn relax(
+     }
+     relaxed.extend(alternatives);
+     relaxed.sort_by(|a, b| a.0.score.total_cmp(&b.0.score));
++    if search.ambiguous_assignments {
++        explore(
++            context,
++            cell,
++            group,
++            options,
++            search,
++            elements,
++            data,
++            deadline,
++            &mut relaxed,
++            trace,
++            audit,
++        )?;
++    }
+     trace.assignment_families = data.family_count;
+     trace.assignment_retained = relaxed.len();
+     trace.assignment_scores = relaxed.iter().map(|(s, _)| s.score).collect();
+     Ok(relaxed)
+ }
++
++#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
++fn explore(
++    context: &PhaseSearchContext,
++    cell: UnitCell,
++    group: &SpaceGroup,
++    options: &SolveOptions,
++    search: &SharedSearchOptions,
++    elements: &[String],
++    data: &PreparedData,
++    deadline: Instant,
++    retained: &mut Vec<(State, usize)>,
++    trace: &mut PhaseOriginAudit,
++    audit: &mut SharedSearchSummary,
++) -> Result<(), SolutionError> {
++    for round in 0..2 {
++        if crate::stopped(Some(deadline), options.cancellation.as_ref()) || retained.is_empty() {
++            break;
++        }
++        let (parent, setting) = retained[0].clone();
++        let seed = parent.promotion.as_ref().expect("isotropic seed");
++        let points: Vec<_> = seed.model.sites.iter().map(|s| s.fractional_xyz).collect();
++        let labels: Vec<_> = seed
++            .model
++            .sites
++            .iter()
++            .map(|s| elements.iter().position(|e| *e == s.species))
++            .collect();
++        let cache = PreparedPeakCompletion::new(
++            cell,
++            group,
++            &points,
++            elements,
++            &context.data.hkl,
++            &context.data.amplitudes,
++            search.maximum_atoms,
++        )?;
++        let proposals = cache.ambiguity_neighbors(
++            &labels,
++            &seed.site_u,
++            if round == 0 { 4 } else { 2 },
++            Some(deadline),
++            options.cancellation.as_ref(),
++        )?;
++        trace.ambiguity_scores += proposals.evaluations;
++        trace.ambiguity_rounds += usize::from(proposals.evaluations > 0);
++        for proposal in proposals.candidates {
++            if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
++                break;
++            }
++            if retained.iter().any(|(s, _)| {
++                let other = s.promotion.as_ref().expect("isotropic seed");
++                other.model.sites.len() == points.len()
++                    && other
++                        .model
++                        .sites
++                        .iter()
++                        .zip(&points)
++                        .zip(&proposal.labels)
++                        .all(|((s, p), label)| {
++                            label.is_some_and(|e| s.species == elements[e])
++                                && distance2(&seed.model.geometry, s.fractional_xyz, *p)
++                                    .is_ok_and(|v| v < 1e-6)
++                        })
++            }) {
++                continue;
++            }
++            let mut model = seed.model.clone();
++            for (site, label) in model.sites.iter_mut().zip(&proposal.labels) {
++                site.species
++                    .clone_from(&elements[label.expect("complete assignment")]);
++            }
++            trace.ambiguity_relaxations += 1;
++            if let Ok(next) = refine(
++                model,
++                data,
++                options,
++                deadline,
++                (1, [0.; 3]),
++                parent.candidate.u_iso,
++                parent.lineage,
++                &parent.moves,
++                "ambiguous_assignment",
++                String::new(),
++                audit,
++                FitPass::ScreenSeed(&proposal.site_u, 8),
++            ) {
++                retained.push((next, setting));
++                trace.ambiguity_retained += 1;
++            }
++        }
++        retained.sort_by(|a, b| a.0.score.total_cmp(&b.0.score));
++        if retained[0].0.score >= parent.score - 1e-6 {
++            break;
++        }
++    }
++    Ok(())
++}
+diff --git a/crates/phasesmith-solution/src/lib.rs b/crates/phasesmith-solution/src/lib.rs
+index 9262c28..3b6ce1c 100644
+--- a/crates/phasesmith-solution/src/lib.rs
++++ b/crates/phasesmith-solution/src/lib.rs
+@@ -62,8 +62,8 @@ pub use fourier::{
+ pub use linear_step::{CachedNormalStep, cached_normal_step, iterative_normal_step};
+ pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
+ pub use peak_completion::{
+-    ChemicalScale, PeakCompletionCandidate, PeakCompletionResult, PreparedPeakCompletion,
+-    chemical_density_scales,
++    AssignmentAlternative, AssignmentAlternatives, ChemicalScale, PeakCompletionCandidate,
++    PeakCompletionResult, PreparedPeakCompletion, chemical_density_scales,
+ };
+ pub use peak_density::{IntegratedPeakDensity, PeakIntegral, ball_transform, density_label_mask};
+ pub use phase_origin::{
+diff --git a/crates/phasesmith-solution/src/peak_completion.rs b/crates/phasesmith-solution/src/peak_completion.rs
+index 8632b0a..0f58085 100644
+--- a/crates/phasesmith-solution/src/peak_completion.rs
++++ b/crates/phasesmith-solution/src/peak_completion.rs
+@@ -5,8 +5,11 @@ use phasesmith_crystallography::{PreparedXrayScattering, SpaceGroup, UnitCell};
+ use rustfft::num_complex::Complex;
+ use std::time::Instant;
+
++#[path = "assignment_ambiguity.rs"]
++mod ambiguity;
+ #[path = "chemical_labels.rs"]
+ mod chemical;
++pub use ambiguity::{AssignmentAlternative, AssignmentAlternatives};
+ pub use chemical::{ChemicalScale, chemical_density_scales};
+
+ /// Shared peak-orbit phases and jets, without assigned element quantities.
+@@ -25,6 +28,7 @@ pub struct PreparedPeakCompletion {
+     observed: Vec<f64>,
+     maximum_atoms: usize,
+     s_squared: Vec<f64>,
++    displacement_applied: bool,
+ }
+ /// Cheap complete-model proposal, with every required type represented.
+ #[derive(Clone, Debug)]
+@@ -204,6 +208,7 @@ impl PreparedPeakCompletion {
+             observed,
+             maximum_atoms,
+             s_squared: s2,
++            displacement_applied: false,
+         })
+     }
+     fn sum(&self, labels: &[Option<usize>]) -> Vec<Complex<f64>> {
+diff --git a/crates/phasesmith-solution/src/shared_phase_path.rs b/crates/phasesmith-solution/src/shared_phase_path.rs
+index 4ac746d..f3d5102 100644
+--- a/crates/phasesmith-solution/src/shared_phase_path.rs
++++ b/crates/phasesmith-solution/src/shared_phase_path.rs
+@@ -89,6 +89,16 @@ pub struct PhaseOriginAudit {
+     pub assignment_families: usize,
+     /// Comparable independent-family isotropic ranks, ordered best first.
+     pub assignment_scores: Vec<f64>,
++    /// Actual bounded assignment-ambiguity diagnostic.
++    pub ambiguity_scores: usize,
++    /// Actual bounded assignment-ambiguity diagnostic.
++    pub ambiguity_relaxations: usize,
++    /// Actual bounded assignment-ambiguity diagnostic.
++    pub ambiguity_rounds: usize,
++    /// Actual bounded assignment-ambiguity diagnostic.
++    pub ambiguity_retained: usize,
++    /// Actual bounded assignment-ambiguity diagnostic.
++    pub ambiguity_unresolved: bool,
+ }
+ pub(super) struct PhaseSearchContext {
+     plan: PreparedPhaseOrigin,
+@@ -597,7 +607,8 @@ pub(super) fn search(
+         if search.isotropic_assignment_refinement
+             && trace.assignment_families > 0
+             && index > 0
+-            && (primary_target || (primary_fit && state.score > best_isotropic + 6.))
++            && ((primary_target && !search.ambiguous_assignments)
++                || (primary_fit && state.score > best_isotropic + 6.))
+         {
+             trace.assignment_deferred_promotions += 1;
+             continue;
+@@ -635,6 +646,23 @@ pub(super) fn search(
+         }
+     }
+     trace.refinement_seconds = start.elapsed().as_secs_f64();
++    if search.ambiguous_assignments {
++        let current: Vec<_> = winners
++            .iter()
++            .filter(|s| s.candidate.trial == trial)
++            .take(2)
++            .collect();
++        if let [a, b] = current.as_slice() {
++            let counts = |s: &State| {
++                let mut c = std::collections::BTreeMap::new();
++                for e in &s.candidate.species {
++                    *c.entry(e.clone()).or_insert(0usize) += 1;
++                }
++                c
++            };
++            trace.ambiguity_unresolved = b.score - a.score <= 6. && counts(a) != counts(b);
++        }
++    }
+     if trace.settings.is_empty() {
+         trace.diagnostic = Some("no phase origin passed alpha <= 0.3".into());
+     }
+diff --git a/crates/phasesmith-solution/src/shared_search.rs b/crates/phasesmith-solution/src/shared_search.rs
+index d3d02d6..1435cb1 100644
+--- a/crates/phasesmith-solution/src/shared_search.rs
++++ b/crates/phasesmith-solution/src/shared_search.rs
+@@ -91,6 +91,8 @@ pub struct SharedSearchOptions {
+     pub cached_normal_refinement: bool,
+     /// Reduce final constrained fits to multiplicity-weighted measured families.
+     pub multiplicity_weighted_refinement: bool,
++    /// Relax coupled near-element assignments and retain close final alternatives.
++    pub ambiguous_assignments: bool,
+     /// Regularize allowed unmeasured coefficients using the observed Wilson envelope.
+     pub missing_reflections: bool,
+     /// Reciprocal-radius extension multiplier, in [1,1.5].
+@@ -135,6 +137,7 @@ impl Default for SharedSearchOptions {
+             iterative_refinement: false,
+             cached_normal_refinement: false,
+             multiplicity_weighted_refinement: false,
++            ambiguous_assignments: false,
+             missing_reflections: false,
+             resolution_extension: 1.,
+         }
+@@ -280,6 +283,8 @@ pub struct SharedSearchSummary {
+     pub cached_normal_refinement: bool,
+     /// Reduce final constrained fits to multiplicity-weighted measured families.
+     pub multiplicity_weighted_refinement: bool,
++    /// Relax coupled near-element assignments and retain close final alternatives.
++    pub ambiguous_assignments: bool,
+     /// Requested observed-envelope gap treatment.
+     pub missing_reflections: bool,
+     /// Requested reciprocal-radius extension.
+@@ -322,6 +327,8 @@ pub struct SharedSearchSummary {
+     pub phase_quality: Vec<crate::PhaseQualityTrace>,
+     /// Actual phase-start order sent to count refinement after CFOM ranking.
+     pub phase_model_trials: Vec<usize>,
++    /// One optional corroborating start after ambiguous first-map assignments.
++    pub ambiguity_continuations: usize,
+     /// Isotropic count prefixes actually screened.
+     pub count_prefix_screenings: usize,
+     /// Phase maps handed off under a local refinement budget.
+@@ -1818,6 +1825,7 @@ pub fn solve_elements(
+         || (search.fused_phase_workspace && !search.reusable_fourier_workspaces)
+         || (search.real_fft && !search.batched_fft)
+         || (search.cached_normal_refinement && !search.iterative_refinement)
++        || (search.ambiguous_assignments && !search.isotropic_assignment_refinement)
+         || (search.isotropic_assignment_refinement
+             && (!search.phase_origin_selection || !search.chemical_assignment))
+         || (search.work_sliced_phasing
+@@ -2067,6 +2075,7 @@ pub fn solve_elements(
+         iterative_refinement: search.iterative_refinement,
+         cached_normal_refinement: search.cached_normal_refinement,
+         multiplicity_weighted_refinement: search.multiplicity_weighted_refinement,
++        ambiguous_assignments: search.ambiguous_assignments,
+         missing_reflections: search.missing_reflections,
+         resolution_extension: search.resolution_extension,
+         prediction: prediction_f.as_ref().map(|p| p.audit.clone()),
+@@ -2423,11 +2432,22 @@ pub fn solve_elements(
+         {
+             break;
+         }
+-        if winners.first().is_some_and(|state| {
++        let ambiguous_first = search.ambiguous_assignments
++            && trial == 0
++            && options.trials > 1
++            && audit
++                .phase_origins
++                .last()
++                .is_some_and(|a| a.ambiguity_unresolved);
++        let target_ready = winners.first().is_some_and(|state| {
+             complete(state, &elements)
+                 && state.recycling_validated
+                 && state.candidate.r1 <= options.r1_target
+-        }) {
++        });
++        if target_ready && ambiguous_first {
++            audit.ambiguity_continuations += 1;
++        }
++        if target_ready && !ambiguous_first {
+             result.termination = "r1_target";
+             break;
+         }
+diff --git a/python/phasesmith/experimental/solution.py b/python/phasesmith/experimental/solution.py
+index 4e309da..55bdd34 100644
+--- a/python/phasesmith/experimental/solution.py
++++ b/python/phasesmith/experimental/solution.py
+@@ -448,6 +448,12 @@ class PhaseOriginAudit:
+     assignment_deferred_promotions: int = 0
+     assignment_families: int = 0
+     assignment_scores: tuple[float, ...] = ()
++    ambiguity_scores: int = 0
++    ambiguity_relaxations: int = 0
++    ambiguity_rounds: int = 0
++    ambiguity_retained: int = 0
++    ambiguity_unresolved: bool = False
++
+
+     def __post_init__(self):
+         object.__setattr__(self, "assignment_scores", tuple(self.assignment_scores))
+@@ -531,6 +537,8 @@ class SharedSearchAudit:
+     iterative_refinement: bool = False
+     cached_normal_refinement: bool = False
+     multiplicity_weighted_refinement: bool = False
++    ambiguous_assignments: bool = False
++    ambiguity_continuations: int = 0
+     weighted_refinement_fits: int = 0
+     weighted_refinement_input_rows: int = 0
+     weighted_refinement_family_rows: int = 0
+@@ -799,6 +807,7 @@ def solve_structure_elements(
+     iterative_refinement: bool = False,
+     cached_normal_refinement: bool = False,
+     multiplicity_weighted_refinement: bool = False,
++    ambiguous_assignments: bool = False,
+     missing_reflections: bool = False,
+     resolution_extension: float = 1.0,
+     score_only_evaluation: bool = False,
+@@ -830,6 +839,8 @@ def solve_structure_elements(
+     ``cached_normal_refinement=True`` caches preconditioned normal matrices in final
+     iterative fits, verifies steps against the original Jacobian and falls back
+     to the matrix-free solver if needed. It requires iterative refinement.
++    ``ambiguous_assignments=True`` retains coupled near-element relabels through
++    bounded isotropic competition and requires isotropic assignment refinement.
+     ``multiplicity_weighted_refinement=True`` evaluates final constrained fits on
+     measured symmetry/Friedel families with their original multiplicities.
+     ``fused_phase_workspace=True`` reuses exact Gaussian axis geometry and, with
+@@ -911,6 +922,7 @@ def solve_structure_elements(
+         ("iterative_refinement", iterative_refinement),
+         ("cached_normal_refinement", cached_normal_refinement),
+         ("multiplicity_weighted_refinement", multiplicity_weighted_refinement),
++        ("ambiguous_assignments", ambiguous_assignments),
+         ("missing_reflections", missing_reflections),
+         ("adaptive_checkpoints", adaptive_checkpoints),
+         ("score_only_evaluation", score_only_evaluation),
+@@ -935,6 +947,8 @@ def solve_structure_elements(
+         phase_origin_selection and wilson_normalization
+     ):
+         raise ValueError("prediction requires phase_origin_selection and wilson_normalization")
++    if ambiguous_assignments and not isotropic_assignment_refinement:
++        raise ValueError("ambiguous_assignments requires isotropic_assignment_refinement")
+     if cached_normal_refinement and not iterative_refinement:
+         raise ValueError("cached_normal_refinement requires iterative_refinement")
+     if fused_phase_workspace and not reusable_fourier_workspaces:
+@@ -1083,6 +1097,7 @@ def solve_structure_elements(
+                 (
+                     filtered_peak_search, batched_fft, cached_normal_refinement,
+                     real_fft, fused_phase_workspace, multiplicity_weighted_refinement,
++                    ambiguous_assignments,
+                 ),
+             ),
+         ),
+diff --git a/python/phasesmith/experimental/solution_assignment_reference.py b/python/phasesmith/experimental/solution_assignment_reference.py
+index 13b7188..937a6ea 100644
+--- a/python/phasesmith/experimental/solution_assignment_reference.py
++++ b/python/phasesmith/experimental/solution_assignment_reference.py
+@@ -55,3 +55,111 @@ def assignment_neighbors_reference(columns, factors, observed, labels, maximum=4
+         if score <= ceiling:
+             candidates[tuple(proposed)] = score
+     return sorted(candidates.items(), key=lambda p: (p[1], p[0]))[:maximum]
++
++
++def ambiguous_assignments_reference(
++    phases, factors, observed, labels, site_u, s_squared, atomic_numbers, multiplicities, maximum=4
++):
++    """Independent exhaustive bounded one/two-edit proposals with explicit attenuation.
++
++    No native evaluator or derivatives are used. Proposal bands and count-vector
++    diversity are deterministic heuristics, not model probabilities.
++    """
++    phases, factors = np.asarray(phases), np.asarray(factors)
++    observed = np.asarray(observed)
++    site_u, s_squared = np.asarray(site_u), np.asarray(s_squared)
++    labels = tuple(labels)
++    atomic_numbers = np.asarray(atomic_numbers)
++    multiplicities = np.asarray(multiplicities)
++    width = factors.shape[1]
++    if (
++        phases.shape != (len(observed), len(labels))
++        or factors.shape[0] != len(observed)
++        or site_u.shape != (len(labels),)
++        or s_squared.shape != observed.shape
++        or not np.all(np.isfinite(site_u))
++        or np.any(site_u < 1e-5)
++        or np.any(site_u > 0.2)
++        or not 1 <= maximum <= 8
++        or set(labels) != set(range(width))
++    ):
++        raise ValueError("complete bounded assignments required")
++    beta = 8 * np.pi**2
++
++    def objective(assignment, displacement):
++        columns = (
++            phases * factors[:, assignment] * np.exp(-beta * s_squared[:, None] * displacement)
++        )
++        amplitude = np.abs(columns.sum(axis=1))
++        denominator = amplitude @ amplitude
++        if denominator <= 1e-250:
++            return np.inf
++        scale = amplitude @ observed / denominator
++        return float(np.sum((scale * amplitude - observed) ** 2) / np.sum(observed**2))
++
++    ceiling = 1.25 * objective(labels, site_u) + 1e-4
++    s2 = np.sum(s_squared * observed**2) / np.sum(observed**2)
++    anchor = int(np.argmin(np.abs(s_squared - s2)))
++    singles = []
++    candidates = []
++
++    def retain(next_labels, displacement, value, edits):
++        if np.isfinite(value) and value <= ceiling and set(next_labels) == set(labels):
++            previous = next((p for p in candidates if p[0] == tuple(next_labels)), None)
++            if previous is not None:
++                if previous[2] <= value:
++                    return
++                candidates.remove(previous)
++            candidates.append((tuple(next_labels), tuple(displacement), value, edits))
++            candidates.sort(key=lambda p: (p[2], p[0]))
++            del candidates[32:]
++
++    for site, old in enumerate(labels):
++        for element in range(width):
++            if element == old or abs(int(atomic_numbers[element]) - int(atomic_numbers[old])) > 2:
++                continue
++            ratio = factors[anchor, element] / factors[anchor, old]
++            shifted = (
++                float(
++                    np.clip(
++                        site_u[site] + np.clip(np.log(ratio) / (beta * s2), -0.02, 0.02), 1e-5, 0.2
++                    )
++                )
++                if ratio > 0 and np.isfinite(ratio) and s2 > 0
++                else site_u[site]
++            )
++            new_labels = list(labels)
++            new_labels[site] = element
++            for u in dict.fromkeys((site_u[site], shifted)):
++                displacement = site_u.copy()
++                displacement[site] = u
++                value = objective(new_labels, displacement)
++                retain(new_labels, displacement, value, 1)
++                singles.append((value, site, element, u))
++                singles.sort()
++                del singles[12:]
++    for a, b in itertools.combinations(singles, 2):
++        if a[1] == b[1]:
++            continue
++        new_labels = list(labels)
++        new_labels[a[1]] = a[2]
++        new_labels[b[1]] = b[2]
++        displacement = site_u.copy()
++        displacement[a[1]] = a[3]
++        displacement[b[1]] = b[3]
++        retain(new_labels, displacement, objective(new_labels, displacement), 2)
++    selected, signatures = [], set()
++    for p in candidates:
++        signature = tuple(
++            sum(m for e, m in zip(p[0], multiplicities, strict=True) if e == i)
++            for i in range(width)
++        )
++        if signature not in signatures and len(selected) < maximum:
++            signatures.add(signature)
++            selected.append(p)
++    for p in candidates:
++        if len(selected) == maximum:
++            break
++        if not any(q[0] == p[0] for q in selected):
++            selected.append(p)
++    return sorted(selected, key=lambda p: (p[2], p[0]))
+diff --git a/python/phasesmith/scattering_reference.py b/python/phasesmith/scattering_reference.py
+index 470542a..74dca5e 100644
+--- a/python/phasesmith/scattering_reference.py
++++ b/python/phasesmith/scattering_reference.py
+@@ -18,6 +18,11 @@ XRAY_COEFFICIENTS = {
+         (14.780758, 0.776775, 42.086842, -0.000294, 0.239535),
+         4.297983,
+     ),
++    "N": (
++        (11.893780, 3.277479, 1.858092, 0.858927, 0.912985),
++        (0.000158, 10.232723, 30.344690, 0.656065, 0.217287),
++        -11.804902,
++    ),
+     "O": (
+         (2.960427, 2.508818, 0.637853, 0.722838, 1.142756),
+         (14.182259, 5.936858, 0.112726, 34.958481, 0.390240),
+diff --git a/tests/test_solution_phase_ablation_report.py b/tests/test_solution_phase_ablation_report.py
+index e5aa6ec..72e462f 100644
+--- a/tests/test_solution_phase_ablation_report.py
++++ b/tests/test_solution_phase_ablation_report.py
+@@ -51,6 +51,7 @@ def test_pair_labels_are_distinct_from_prediction_case_pairs():
+         "real_flag",
+         "mask_flag",
+         "family_flag",
++        "ambiguity_flag",
+     ],
+ )
+ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corruption):
+@@ -76,6 +77,7 @@ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corrup
+             "real_flag": "real_fft",
+             "mask_flag": "fused_phase_workspace",
+             "family_flag": "multiplicity_weighted_refinement",
++            "ambiguity_flag": "ambiguous_assignments",
+         }[corruption]
+         report[key] = 1.2 if corruption == "extension_flag" else True
+     else:
+diff --git a/crates/phasesmith-solution/src/assignment_ambiguity.rs b/crates/phasesmith-solution/src/assignment_ambiguity.rs
+new file mode 100644
+index 0000000..28befb7
+--- /dev/null
++++ b/crates/phasesmith-solution/src/assignment_ambiguity.rs
+@@ -0,0 +1,251 @@
++//! Bounded coupled relabels with displacement-compensated proposal seeds.
++use super::PreparedPeakCompletion;
++use crate::{Cancellation, SolutionError, error};
++use rustfft::num_complex::Complex;
++use std::time::Instant;
++
++/// A complete assignment hypothesis, not an accepted chemical identification.
++#[derive(Clone, Debug)]
++pub struct AssignmentAlternative {
++    /// Label per original orbit.
++    pub labels: Vec<Option<usize>>,
++    /// Independent isotropic displacement seeds in square angstrom.
++    pub site_u: Vec<f64>,
++    /// Profiled amplitude SSE at the proposed fixed geometry.
++    pub objective: f64,
++    /// Number of simultaneously changed orbit labels.
++    pub edits: usize,
++}
++/// Actual cheap scores and retained alternatives.
++#[derive(Clone, Debug, Default)]
++pub struct AssignmentAlternatives {
++    /// Deterministically selected proposals, with count-vector diversity.
++    pub candidates: Vec<AssignmentAlternative>,
++    /// Includes rejected fixed-geometry scores.
++    pub evaluations: usize,
++}
++struct Single {
++    site: usize,
++    label: usize,
++    u: f64,
++    objective: f64,
++    delta: Vec<Complex<f64>>,
++}
++fn ordering(a: &AssignmentAlternative, b: &AssignmentAlternative) -> std::cmp::Ordering {
++    a.objective
++        .total_cmp(&b.objective)
++        .then(a.labels.cmp(&b.labels))
++}
++impl PreparedPeakCompletion {
++    /// Propose one/two coordinated near-element relabels without fixing stoichiometry.
++    /// The plan must contain bare orbit phases; `site_u` supplies attenuation once.
++    /// # Errors
++    /// Rejects incomplete labels, invalid displacements or a maximum outside [1,8].
++    /// # Panics
++    /// Only if public plan metadata has been mutated inconsistently with its cached arrays.
++    #[allow(clippy::too_many_lines, clippy::cast_precision_loss)]
++    pub fn ambiguity_neighbors(
++        &self,
++        labels: &[Option<usize>],
++        site_u: &[f64],
++        maximum: usize,
++        deadline: Option<Instant>,
++        cancellation: Option<&Cancellation>,
++    ) -> Result<AssignmentAlternatives, SolutionError> {
++        self.evaluate(labels, 0)?;
++        if self.displacement_applied
++            || labels.iter().any(Option::is_none)
++            || !self.covered(labels)
++            || site_u.len() != self.points.len()
++            || site_u
++                .iter()
++                .any(|u| !u.is_finite() || !(1e-5..=0.2).contains(u))
++            || !(1..=8).contains(&maximum)
++        {
++            return Err(error(
++                "ambiguity search needs complete labels, bounded U and maximum in [1,8]",
++            ));
++        }
++        let beta = 8. * std::f64::consts::PI.powi(2);
++        let z: Vec<_> = self
++            .elements
++            .iter()
++            .map(|e| {
++                phasesmith_crystallography::xray_species_metadata(e)
++                    .expect("validated element")
++                    .atomic_number
++            })
++            .collect();
++        if !z
++            .iter()
++            .enumerate()
++            .any(|(i, a)| z[..i].iter().any(|b| a.abs_diff(*b) <= 2))
++        {
++            return Ok(AssignmentAlternatives::default());
++        }
++        let width = self.elements.len();
++        let column = |site: usize, label: usize, u: f64| -> Vec<_> {
++            self.s_squared
++                .iter()
++                .enumerate()
++                .map(|(h, &s2)| {
++                    self.phase[site][h] * self.factors[h * width + label] * (-beta * u * s2).exp()
++                })
++                .collect()
++        };
++        let columns: Vec<_> = labels
++            .iter()
++            .zip(site_u)
++            .enumerate()
++            .map(|(i, (&e, &u))| column(i, e.expect("complete labels"), u))
++            .collect();
++        let total: Vec<_> = (0..self.observed.len())
++            .map(|h| columns.iter().map(|p| p[h]).sum::<Complex<f64>>())
++            .collect();
++        let parent = self.fixed_objective(&total);
++        if !parent.is_finite() {
++            return Err(error("degenerate ambiguity parent"));
++        }
++        let ceiling = 1.25 * parent + 1e-4;
++        let norm: f64 = self.observed.iter().map(|v| v * v).sum();
++        let s2 = self
++            .s_squared
++            .iter()
++            .zip(&self.observed)
++            .map(|(&s, &o)| s * o * o)
++            .sum::<f64>()
++            / norm;
++        let anchor = self
++            .s_squared
++            .iter()
++            .enumerate()
++            .min_by(|(_, a), (_, b)| (*a - s2).abs().total_cmp(&(*b - s2).abs()))
++            .expect("nonempty observations")
++            .0;
++        let mut out = AssignmentAlternatives::default();
++        let mut singles = Vec::<Single>::new();
++        let mut retained = Vec::<AssignmentAlternative>::new();
++        let mut retain = |labels: Vec<Option<usize>>, site_u: Vec<f64>, objective: f64, edits| {
++            if objective.is_finite() && objective <= ceiling && self.covered(&labels) {
++                if let Some(index) = retained.iter().position(|p| p.labels == labels) {
++                    if retained[index].objective <= objective {
++                        return;
++                    }
++                    retained.remove(index);
++                }
++                retained.push(AssignmentAlternative {
++                    labels,
++                    site_u,
++                    objective,
++                    edits,
++                });
++                retained.sort_by(ordering);
++                retained.truncate(32);
++            }
++        };
++        for i in 0..labels.len() {
++            if crate::stopped(deadline, cancellation) {
++                break;
++            }
++            let old = labels[i].expect("complete labels");
++            for e in 0..width {
++                if e == old || z[e].abs_diff(z[old]) > 2 {
++                    continue;
++                }
++                let ratio = self.factors[anchor * width + e] / self.factors[anchor * width + old];
++                let shifted = if ratio.is_finite() && ratio > 0. && s2 > 0. {
++                    (site_u[i] + (ratio.ln() / (beta * s2)).clamp(-0.02, 0.02)).clamp(1e-5, 0.2)
++                } else {
++                    site_u[i]
++                };
++                for (variant, u) in [site_u[i], shifted].into_iter().enumerate() {
++                    if variant == 1 && u.to_bits() == site_u[i].to_bits() {
++                        continue;
++                    }
++                    let delta: Vec<_> = column(i, e, u)
++                        .iter()
++                        .zip(&columns[i])
++                        .map(|(a, b)| a - b)
++                        .collect();
++                    let next_total: Vec<_> = total.iter().zip(&delta).map(|(a, b)| a + b).collect();
++                    let objective = self.fixed_objective(&next_total);
++                    out.evaluations += 1;
++                    let mut next = labels.to_vec();
++                    next[i] = Some(e);
++                    let mut displacement = site_u.to_vec();
++                    displacement[i] = u;
++                    retain(next, displacement, objective, 1);
++                    singles.push(Single {
++                        site: i,
++                        label: e,
++                        u,
++                        objective,
++                        delta,
++                    });
++                    singles.sort_by(|a, b| {
++                        a.objective
++                            .total_cmp(&b.objective)
++                            .then(a.site.cmp(&b.site))
++                            .then(a.label.cmp(&b.label))
++                            .then(a.u.total_cmp(&b.u))
++                    });
++                    singles.truncate(12);
++                }
++            }
++        }
++        for (slot, a) in singles.iter().enumerate() {
++            if crate::stopped(deadline, cancellation) {
++                break;
++            }
++            for b in &singles[..slot] {
++                if a.site == b.site {
++                    continue;
++                }
++                let next_total: Vec<_> = total
++                    .iter()
++                    .zip(&a.delta)
++                    .zip(&b.delta)
++                    .map(|((v, x), y)| v + x + y)
++                    .collect();
++                let objective = self.fixed_objective(&next_total);
++                out.evaluations += 1;
++                let mut next = labels.to_vec();
++                next[a.site] = Some(a.label);
++                next[b.site] = Some(b.label);
++                let mut displacement = site_u.to_vec();
++                displacement[a.site] = a.u;
++                displacement[b.site] = b.u;
++                retain(next, displacement, objective, 2);
++            }
++        }
++        let counts = |p: &AssignmentAlternative| -> Vec<usize> {
++            (0..width)
++                .map(|e| {
++                    p.labels
++                        .iter()
++                        .zip(&self.multiplicities)
++                        .filter_map(|(&label, &m)| (label == Some(e)).then_some(m))
++                        .sum()
++                })
++                .collect()
++        };
++        let mut signatures = Vec::new();
++        for p in &retained {
++            let signature = counts(p);
++            if !signatures.contains(&signature) && out.candidates.len() < maximum {
++                signatures.push(signature);
++                out.candidates.push(p.clone());
++            }
++        }
++        for p in retained {
++            if out.candidates.len() == maximum {
++                break;
++            }
++            if !out.candidates.iter().any(|q| q.labels == p.labels) {
++                out.candidates.push(p);
++            }
++        }
++        out.candidates.sort_by(ordering);
++        Ok(out)
++    }
++}
+diff --git a/tests/test_solution_ambiguity.py b/tests/test_solution_ambiguity.py
+new file mode 100644
+index 0000000..b9fbce8
+--- /dev/null
++++ b/tests/test_solution_ambiguity.py
+@@ -0,0 +1,160 @@
++"""Coupled categorical proposals with independent displacement-aware equations."""
++
++import itertools
++
++import numpy as np
++import pytest
++from phasesmith import _core
++from phasesmith.crystallography import UnitCell
++from phasesmith.experimental.solution_assignment_reference import ambiguous_assignments_reference
++from phasesmith.io.space_groups import space_group_by_symbol
++from phasesmith.scattering_reference import xray_non_resonant
++
++pytestmark = pytest.mark.skipif(
++    not hasattr(getattr(_core, "_PeakCompletionPlan", object), "ambiguous"),
++    reason="experimental-solution",
++)
++
++
++def setup(seed=0, symbol="P1"):
++    from test_solution_shared_search import unique_operations
++
++    rng = np.random.default_rng(670 + seed)
++    cell = UnitCell(6, 7, 8, 90, 100, 90)
++    group = space_group_by_symbol(symbol).space_group
++    points = rng.uniform(0.1, 0.9, (6, 3))
++    if symbol == "Pm":
++        points[0, 1] = 0
++    hkl = np.array(
++        [h for h in itertools.product(range(-3, 4), repeat=3) if h != (0, 0, 0)], dtype=np.int64
++    )
++    s2 = np.sum((hkl @ np.linalg.inv(cell.geometry().direct_basis)) ** 2, axis=1) / 4
++    images = [unique_operations(group, p)[0] for p in points]
++    phase = np.column_stack([np.exp(2j * np.pi * (hkl @ x.T)).sum(axis=1) for x in images])
++    factors, _ = xray_non_resonant(["C", "N", "O"], np.sqrt(s2))
++    u = rng.uniform(0.005, 0.04, len(points))
++    observed = np.abs(
++        np.sum(
++            phase * factors[:, [0, 1, 1, 1, 0, 2]] * np.exp(-8 * np.pi**2 * s2[:, None] * u), axis=1
++        )
++    )
++    observed *= rng.uniform(0.95, 1.05, len(observed))
++    labels = [0, 0, 0, 1, 1, 2]
++    plan = _core._PeakCompletionPlan(
++        list(cell.as_tuple()),
++        group._native,
++        points.ravel(),
++        ["C", "N", "O"],
++        hkl.ravel(),
++        observed,
++        32,
++    )
++    return plan, phase, factors, observed, labels, u, s2, [len(x) for x in images]
++
++
++@pytest.mark.parametrize("seed", range(6))
++@pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
++def test_proposals_match_independent_enumeration_and_displaced_analytic_kernel(seed, symbol):
++    plan, phase, factors, observed, labels, u, s2, m = setup(seed, symbol)
++    expected = ambiguous_assignments_reference(
++        phase, factors, observed, labels, u, s2, [6, 7, 8], m, 4
++    )
++    actual = plan.ambiguous(labels, u, 4)
++    assert [tuple(c["labels"]) for c in actual["candidates"]] == [c[0] for c in expected]
++    for c, ref in zip(actual["candidates"], expected, strict=True):
++        np.testing.assert_allclose(c["site_u"], ref[1], rtol=2e-12, atol=2e-14)
++        assert c["objective"] == pytest.approx(ref[2], rel=3e-12, abs=3e-15)
++        value = plan.displaced(c["site_u"]).evaluate(c["labels"], 0)
++        assert c["objective"] == pytest.approx(value["objective"], rel=3e-12, abs=3e-15)
++        assert c["edits"] == sum(a != b for a, b in zip(labels, c["labels"], strict=True))
++    assert actual["evaluations"] > 0
++    assert len(actual["candidates"]) <= 4
++
++
++def test_coupled_relabels_can_change_element_counts_and_preserve_original_inputs():
++    plan, *_, labels, u, _s2, _m = setup()
++    before = u.copy()
++    result = plan.ambiguous(labels, u, 8)
++    assert any(
++        c["edits"] == 2 and sorted(c["labels"]) != sorted(labels) for c in result["candidates"]
++    )
++    np.testing.assert_array_equal(u, before)
++
++
++@pytest.mark.parametrize(
++    "invalid", ["short", "nan", "low", "high", "maximum", "coverage", "incomplete", "displaced"]
++)
++def test_invalid_or_double_applied_displacement_controls(invalid):
++    plan, *_, labels, u, _s2, _m = setup()
++    maximum = 4
++    if invalid == "short":
++        u = u[:-1]
++    elif invalid == "nan":
++        u[0] = np.nan
++    elif invalid == "low":
++        u[0] = 0
++    elif invalid == "high":
++        u[0] = 0.21
++    elif invalid == "maximum":
++        maximum = 9
++    elif invalid == "coverage":
++        labels = [0] * 6
++    elif invalid == "incomplete":
++        labels[0] = -1
++    else:
++        plan = plan.displaced(u)
++    with pytest.raises(ValueError):
++        plan.ambiguous(labels, u, maximum)
++
++
++@pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
++def test_complete_search_preserves_counts_and_final_anisotropic_mode(symbol):
++    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
++    from test_solution_shared_search import synthetic
++
++    cell, group, data, _xyz, species = synthetic(symbol)
++    args = dict(
++        cell=cell,
++        space_group=group,
++        elements=["Fe", "O"],
++        maximum_atoms=12,
++        symmetry_recycling=True,
++        tangent_refinement=True,
++        wilson_normalization=True,
++        phase_quality_selection=True,
++        phase_origin_selection=True,
++        chemical_assignment=True,
++        iterative_refinement=True,
++        score_only_evaluation=True,
++        reusable_fourier_workspaces=True,
++        work_sliced_phasing=True,
++        isotropic_assignment_refinement=True,
++        filtered_peak_search=True,
++        batched_fft=True,
++        real_fft=True,
++        fused_phase_workspace=True,
++        cached_normal_refinement=True,
++        multiplicity_weighted_refinement=True,
++        options=SolutionOptions(
++            phasing="dual_space",
++            trials=4,
++            cycles=800,
++            max_seconds=60,
++            r1_target=0.005,
++            completion=False,
++        ),
++    )
++    result = solve_structure_elements(data, **args, ambiguous_assignments=True)
++    assert result.target_met
++    assert dict(result.composition) == {
++        e: int(np.count_nonzero(species == e)) for e in set(species)
++    }
++    assert result.best.refinement.mode == "anisotropic"
++    assert result.shared_search.ambiguous_assignments
++    for a in result.shared_search.phase_origins:
++        assert a.ambiguity_rounds <= 2 and a.ambiguity_relaxations <= 6
++    with pytest.raises(TypeError, match="boolean"):
++        solve_structure_elements(data, **args, ambiguous_assignments=1)
++    args["isotropic_assignment_refinement"] = False
++    with pytest.raises(ValueError, match="requires"):
++        solve_structure_elements(data, **args, ambiguous_assignments=True)
+diff --git a/benchmarks/solution_ambiguity_interleaved.py b/benchmarks/solution_ambiguity_interleaved.py
+new file mode 100644
+index 0000000..4a11942
+--- /dev/null
++++ b/benchmarks/solution_ambiguity_interleaved.py
+@@ -0,0 +1,88 @@
++"""Balanced serial ambiguous element-assignment comparison; development only."""
++
++from __future__ import annotations
++
++import argparse
++import json
++from pathlib import Path
++from types import SimpleNamespace
++
++from solution_corpus.run import collect_jobs
++from solution_execution_interleaved import collect_balanced
++
++ROOT = Path(__file__).resolve().parents[1]
++MODES = ("control", "ambiguity")
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument(
++        "--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json"
++    )
++    parser.add_argument("--output", type=Path, required=True)
++    parser.add_argument("--seconds", type=float, default=15.0)
++    parser.add_argument("--lock-revision", type=int, default=23)
++    parser.add_argument(
++        "--shelxt",
++        type=Path,
++        default=Path("/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt"),
++    )
++    args = parser.parse_args()
++    if args.output.exists() or not 5 <= args.seconds <= 120:
++        parser.error("a new directory and seconds in [5,120] are required")
++    args.output.mkdir(parents=True)
++    streams = {}
++    for mode in MODES:
++        controls = SimpleNamespace(
++            manifest=args.manifest.resolve(),
++            output=(args.output / mode).resolve(),
++            seconds=args.seconds,
++            shelxt=args.shelxt.resolve(),
++            split="development",
++            resume=False,
++            lock_revision=args.lock_revision,
++            legacy_counts=False,
++            wilson_normalization=True,
++            phase_quality_selection=True,
++            phase_origin_selection=True,
++            chemical_assignment=True,
++            iterative_refinement=True,
++            missing_reflections=False,
++            resolution_extension=1.0,
++            adaptive_checkpoints=False,
++            isotropic_assignment_refinement=True,
++            filtered_peak_search=True,
++            batched_fft=True,
++            real_fft=True,
++            fused_phase_workspace=True,
++            cached_normal_refinement=True,
++            multiplicity_weighted_refinement=True,
++            ambiguous_assignments=mode == "ambiguity",
++            work_sliced_phasing=True,
++            independent_origin_sampling=False,
++            phase_first_selection=True,
++            legacy_quality_normalization=False,
++            score_only_evaluation=True,
++            reusable_fourier_workspaces=True,
++            collection_schedule="balanced serial case-interleaved assignment ambiguity comparison",
++            collection_scheduler_source="benchmarks/solution_ambiguity_interleaved.py",
++        )
++        streams[mode] = collect_jobs(controls)
++    events = []
++
++    def record(mode, event):
++        events.append({"mode": mode, **event})
++        (args.output / "schedule.json").write_text(json.dumps(events, indent=2) + "\n")
++        print(json.dumps({"mode": mode, **event}), flush=True)
++
++    count = collect_balanced(streams, record)
++    expected = 2 * sum(
++        c["split"] == "development" for c in json.loads(args.manifest.read_text())["cases"]
++    )
++    if count != expected:
++        raise ValueError("incomplete development collection")
++    print(json.dumps({"complete_rounds": count, "modes": MODES, "holdout_opened": False}))
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/docs/solution-ambiguous-assignments.md b/docs/solution-ambiguous-assignments.md
+new file mode 100644
+index 0000000..792e2aa
+--- /dev/null
++++ b/docs/solution-ambiguous-assignments.md
+@@ -0,0 +1,143 @@
++# Bounded ambiguity-aware element assignments
++
++This experiment starts from `412c050`, with multiplicity-weighted final fits and
++all earlier best execution controls enabled in both panels. The new experimental
++`ambiguous_assignments` option is false by default and requires
++`isotropic_assignment_refinement`. It adds bounded categorical exploration,
++retains close final competitors and can request one corroborating phase start.
++It does not supply a formula or enumerate all atom-count combinations.
++
++## Proposal equations and bounds
++
++For orbit i, element e and isotropic displacement u, reuse the prepared complex
++orbit column and neutral scattering factors:
++
++    C_ie(h,u) = P_i(h) f_e(s_h) exp[-8*pi^2*u*s_h^2]
++    F_h = sum_i C_i,label_i(h,u_i)
++    k = sum_h |F_h| Fo_h / sum_h |F_h|^2
++    J = sum_h (k|F_h|-Fo_h)^2 / sum_h Fo_h^2.
++
++Each complete parent has per-orbit isotropic displacements from its relaxed fit.
++For allowed element changes with |Z_new-Z_old| <=2, score both the original U
++and a displacement-compensated proposal. Let s_star^2 be the observed-amplitude-
++squared-weighted mean s_h^2; use the measured row closest to that value for the
++scattering ratio. The second seed is
++
++    delta_u = clip(log[f_new(s_anchor)/f_old(s_anchor)] /
++                   (8*pi^2*s_star^2), -0.02, 0.02)
++    u_new = clip(u_old + delta_u, 1e-5, 0.2).
++
++This matches scattering near one resolution as a proposal heuristic, not an
++optimized physical identification. Nonpositive/nonfinite ratios retain the
++original seed. Explicit interval boundaries and first-row tie ordering are
++deterministic. Both seeds remain available for coupled changes; discarding one
++before coupling could lose an alternative rescued only by a coordinated edit.
++
++Keep the twelve best single-edit columns, including their displacement variants,
++then evaluate pairs affecting different orbits. These include arbitrary two-label
++changes, not only swaps preserving element counts. Each candidate's full-cell
++counts follow from its original orbit multiplicities. Required elements remain
++represented; atom topology/count ceilings are unchanged. Up to 32 distinct label
++vectors inside J <=1.25*J_parent+1e-4 compete. Keep at most four proposals, preferring
++distinct inferred count vectors before filling remaining slots with positional
++label alternatives. All candidates are still ordered by their calculated J.
++This bounded diversity and proposal band are heuristics, not confidence regions.
++Cache storage keeps only twelve single-edit columns, with existing family/orbit
++limits retained. Cancellation/deadline checks bound enumeration.
++
++The plan must have bare orbit columns; passing already displaced columns is
++rejected to prevent double attenuation. Inputs are not modified. Empty/incomplete
++labels, invalid U and invalid proposal limits fail explicitly. Types separated
++by more than two atomic numbers do not trigger this extra near-element search;
++the original broader assignment path remains available.
++
++## Relaxation and final competition
++
++The original isotropic parents and neighbors remain in the retained pool. From
++its current best parent, the new path gives up to four proposals eight isotropic
++iterations each on the same bounded independent-family screening data. If a
++proposal improves the best comparable relaxed rank, a second round can fit two
++more proposals. Thus at most six extra isotropic fits occur per map. It does not
++restart from every possible stoichiometry. Identical retained assignments at
++near-identical coordinates are skipped.
++
++The best two eligible relaxed states remain the final-promotion ceiling. Unlike
++control, reaching the R1 target on the first full fit does not suppress a runner-up
++within six isotropic rank units. A larger-gap runner-up is still deferred after a
++successful primary fit. Final fits retain the original anisotropic mode, measured
++observations, multiplicity weighting, parameter penalties and winner ranking.
++No extra scoring term, valence rule, hidden hydrogen model or organic-only prior
++is introduced. Close assignments may remain unresolved by these observations.
++
++If two retained final states from the first start have different element-count
++vectors and a final rank gap <=6, permit one additional independent phase start
++before the usual R1 early stop. This does not change the meaning of `target_met`,
++which remains the existing fit target rather than a correctness certificate.
++All starts still share the original global trials/cycles/time caps. The six-unit
++gap is an empirical search-allocation rule, not calibrated model odds.
++
++Per-map audits record cheap scores, extra attempted/successful relaxation fits,
++rounds and unresolved count competition. The summary separately records actual
++corroborating-start requests that override an otherwise eligible R1 stop. Actual
++work includes unsuccessful proposals and fits.
++
++## Numerical validation and experiment protocol
++
++The independent NumPy reference directly enumerates columns, elemental factors,
++attenuation seeds, paired changes, objective values and count-vector diversity.
++Random deterministic P1/P-1/Pm cases include special sites and unequal U. Proposed
++objectives are also checked against the existing displaced amplitude/analytical-
++gradient evaluator. Invalid inputs and complete synthetic structure/count
++recovery are tested. A nitrogen row from the existing pinned scattering constants
++is transcribed into the independent compact Python table; production factors
++and tables are unchanged. Existing fused structure-factor values/derivatives,
++finite differences, finite support and integrated intensity tests remain
++applicable: this introduces no new differentiable physical term. Proposal clipping
++is categorical initialization and is not differentiated. The GSAS-II powder
++oracle does not cover this single-crystal search stage.
++
++The matched experiment uses all 35 development cases, seed zero, four starts,
++800 requested cycles, native 13-second/outer 15-second caps, original input-only
++admissibility bounds and final anisotropic fits. Both panels enable weighted
++refinement and all earlier best controls; only assignment ambiguity differs.
++Serial case-interleaved collection alternates the leading mode. All 140
++predictions precede both reference barriers. Seven above-cap references stay in
++every denominator. Adapter-only seal revision 23 retains the unchanged registry
++and 35/65 split. No task-owned builds, tests or microbenchmarks overlap collection.
++The 65 holdout outcomes remain unopened.
++
++```sh
++.venv/bin/python benchmarks/solution_ambiguity_interleaved.py --output runs/assignment-ambiguity-new --seconds 15
++```
++
++Normalize both completed panels with `benchmarks/solution_corpus_reaudit.py` and
++compare them using `benchmarks/solution_phase_ablation.py`. Criterion benchmarks
++selected by `ambiguity_` cover cached eight-orbit multi-reflection proposals and
++a complete count-free search with adjacent element types.
++
++## Validation and kernel measurements
++
++The feature-enabled full suite passes 2,199 Python tests (11 external-data skips,
++34 marker deselections) and 413 Rust tests (34 ignored), with strict workspace
++all-target/all-feature Clippy, formatting and changed-file Ruff. Thirty new
++focused tests compare direct independent enumeration, coupled count-changing
++proposals, invalid/double-applied U controls and complete synthetic searches.
++The feature-mismatch report guard covers the new flag. Existing local tolerances
++are unchanged.
++
++The eight-orbit C/N/O proposal benchmark on 1,054 measured rows takes a median
++0.631 ms. A separate eight-atom Fe/C/N/O complete 32-cubed search on 2,108 expanded
++rows takes 240.334 ms in control and 228.862 ms with ambiguity handling (4.8% less
++time on this example). Both execute two starts and 192 phase cycles; the new path
++records eight extra short fits and 172 cheap ambiguity scores across its two
++maps. Added search work can change which final fits are needed, so these timings
++do not isolate the cost of only adding fits or establish a corpus-wide gain.
++
++An earlier unanchored C/N/O whole-search benchmark never reached assignment;
++it was replaced by the heavy-anchor example before corpus collection. Its
++whole-search timing is not used for the paired feature comparison. Criterion's
++automatic previous-build change estimates refer to that changed example and
++must not be interpreted as the control/new effect. The direct proposal case
++remains unchanged. Raw current samples, source/executable hashes and actual
++work metadata are preserved in
++`benchmarks/structure-solution-assignment-ambiguity-kernels-macos.json`.
+diff --git a/validation/solution-corpus-v5.benchmark23.lock.json b/validation/solution-corpus-v5.benchmark23.lock.json
+new file mode 100644
+index 0000000..04c4127
+--- /dev/null
++++ b/validation/solution-corpus-v5.benchmark23.lock.json
+@@ -0,0 +1,1049 @@
++{
++  "schema": "phasesmith.solution-corpus-lock.v1",
++  "manifest_sha256": "f815629e42e608c784113ddd7400268f9e897b3db5b2af7d54224886af206f6c",
++  "cases": 100,
++  "families": 100,
++  "splits": {
++    "holdout": 65,
++    "development": 35
++  },
++  "crystal_systems": {
++    "triclinic": 18,
++    "monoclinic": 29,
++    "orthorhombic": 17,
++    "tetragonal": 16,
++    "trigonal": 8,
++    "hexagonal": 6,
++    "cubic": 6
++  },
++  "space_group_types": 27,
++  "chemistry": {
++    "light": 39,
++    "heavy": 61
++  },
++  "hydrogen_present": 66,
++  "observation_count_range": [
++    50,
++    7459
++  ],
++  "gemmi_version": "0.7.5",
++  "discovery_snapshot": "validation/data/solution-corpus-v1/discovery-v3",
++  "holdout_solver_outcomes_opened": false,
++  "verified_implementation_sha256": {
++    "benchmarks/solution_corpus/__init__.py": "2b8ea6877c5325bde0eb18eebea8099c15c3656cd618e11f124813a6376dce62",
++    "benchmarks/solution_corpus/audit.py": "d65dc309cea50780f937940c4ece3d880968c657b274c5efac6ab9ff522298c5",
++    "benchmarks/solution_corpus/data.py": "cddb7ad095f7add50f4dc5aa02b2a48e3109ab5adfd342145ad8b274158d8bd5",
++    "benchmarks/solution_corpus/run.py": "f7a30c4ec04f06e0815668705f5367539540517ca20c20383975bfb031a9d234",
++    "benchmarks/solution_corpus/seal.py": "939ba9e5a3710a4395e9ed789caa8a1aa06d222f4399a14968c170a27d9858ee",
++    "benchmarks/solution_corpus_benchmark.py": "5cdaf3e43e915e860a8eebe8c7faaa8f2c8daf272efb5c4c66d66d6052ea3fa6"
++  },
++  "quality_checks": [
++    {
++      "id": "cod-2011007",
++      "observations": 7459,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010901",
++      "observations": 3398,
++      "quantization": {
++        "intensity_maximum_relative_change": 1.924419946542937e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021292",
++      "observations": 2643,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011426",
++      "observations": 2002,
++      "quantization": {
++        "intensity_maximum_relative_change": 9.768926777655329e-08,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243196",
++      "observations": 3068,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021226",
++      "observations": 2353,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2102156",
++      "observations": 1862,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010532",
++      "observations": 2184,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011371",
++      "observations": 1133,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243197",
++      "observations": 1592,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242644",
++      "observations": 2159,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2241300",
++      "observations": 601,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2108342",
++      "observations": 553,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.9152068010420197e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2241159",
++      "observations": 1112,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.7674827155732656e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-4326074",
++      "observations": 176,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021310",
++      "observations": 2180,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2206101",
++      "observations": 554,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021185",
++      "observations": 737,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2215687",
++      "observations": 50,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010918",
++      "observations": 4817,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010825",
++      "observations": 2694,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021316",
++      "observations": 3712,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011512",
++      "observations": 994,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010934",
++      "observations": 2630,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011363",
++      "observations": 1938,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2006996",
++      "observations": 252,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011038",
++      "observations": 495,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.834764664286847e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010543",
++      "observations": 3004,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010993",
++      "observations": 2003,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242680",
++      "observations": 2079,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1548676",
++      "observations": 1334,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011638",
++      "observations": 721,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010647",
++      "observations": 4157,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2241796",
++      "observations": 167,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011590",
++      "observations": 903,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021199",
++      "observations": 3050,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011318",
++      "observations": 3442,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011236",
++      "observations": 1019,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011346",
++      "observations": 3039,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2101990",
++      "observations": 1615,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021040",
++      "observations": 1959,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2211527",
++      "observations": 102,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2207460",
++      "observations": 209,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2200818",
++      "observations": 89,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2023383",
++      "observations": 85,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242589",
++      "observations": 2483,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242657",
++      "observations": 2407,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1562003",
++      "observations": 1350,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242610",
++      "observations": 2642,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2022708",
++      "observations": 288,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2312802",
++      "observations": 500,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2020973",
++      "observations": 3233,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011355",
++      "observations": 2071,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1519649",
++      "observations": 2901,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2232654",
++      "observations": 113,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011750",
++      "observations": 1708,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.283405530382871e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011241",
++      "observations": 1795,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010705",
++      "observations": 1826,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010654",
++      "observations": 1507,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021374",
++      "observations": 1898,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2201295",
++      "observations": 1367,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2017324",
++      "observations": 189,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011344",
++      "observations": 3914,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011666",
++      "observations": 3097,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2207083",
++      "observations": 109,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2232444",
++      "observations": 419,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.54507647667112e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010746",
++      "observations": 116,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011393",
++      "observations": 2428,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011271",
++      "observations": 3119,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011181",
++      "observations": 1956,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2223219",
++      "observations": 181,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2014187",
++      "observations": 231,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.243834848063411e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2107296",
++      "observations": 115,
++      "quantization": {
++        "intensity_maximum_relative_change": 2.2474346094918188e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011089",
++      "observations": 3969,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2101973",
++      "observations": 1435,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1556408",
++      "observations": 322,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242352",
++      "observations": 848,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2203173",
++      "observations": 440,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243590",
++      "observations": 480,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.548561263173286e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2240852",
++      "observations": 1291,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2020988",
++      "observations": 4807,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011056",
++      "observations": 347,
++      "quantization": {
++        "intensity_maximum_relative_change": 2.671036481729895e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1550276",
++      "observations": 2892,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242615",
++      "observations": 2972,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011144",
++      "observations": 3777,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011501",
++      "observations": 5291,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1548678",
++      "observations": 3347,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011044",
++      "observations": 1469,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2233659",
++      "observations": 294,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2012343",
++      "observations": 450,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.2280133781411257e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243618",
++      "observations": 489,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.7444930203209104e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021003",
++      "observations": 1515,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1549038",
++      "observations": 2652,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011451",
++      "observations": 1758,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1550295",
++      "observations": 101,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2022343",
++      "observations": 91,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2200381",
++      "observations": 358,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.2139242618408827e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010875",
++      "observations": 2445,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1549173",
++      "observations": 1787,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2211965",
++      "observations": 89,
++      "quantization": {
++        "intensity_maximum_relative_change": 2.561961683714032e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    }
++  ],
++  "qualification": "Format, provenance and supported-model checks do not prove the published model is physically correct; no solver outcomes used in curation.",
++  "adapter_revision_parent": {
++    "path": "validation/solution-corpus-v5.benchmark22.lock.json",
++    "sha256": "9dcc00ef5a6fbd8b9c7b51098cfffbb63d55d3917324e5c61ade08ff985b0854"
++  },
++  "adapter_only_revision": true,
++  "adapter_revision_qualification": "Unchanged registry and inherited input/split/curation provenance; only adapter source hashes refreshed. No raw/reference data reopened."
++}

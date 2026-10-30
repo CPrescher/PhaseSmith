@@ -1,0 +1,472 @@
+{
+  "schema": "phasesmith.assignment-ambiguity-kernels.v1",
+  "recorded_utc": "2026-10-30T16:16:03.234999+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- 'ambiguity_' --sample-size 10 --warm-up-time 1 --measurement-time 2 --noplot",
+  "qualification": "Matched same-executable control/ambiguity. Cached C/N/O eight-orbit proposals on 1054 rows; complete eight-atom Fe/C/N/O 32-cubed count-free search on 2108 expanded rows, all previous fast controls enabled. One numerical thread, no task-owned heavy overlap. External host activity uncontrolled. Earlier unanchored C/N/O whole-search probe never reached assignment and is not used for the paired effect. Criterion change-versus-previous-build statistics are not the control/ambiguity comparison.",
+  "benchmark_source": "crates/phasesmith-solution/benches/solution.rs",
+  "benchmark_source_sha256": "9564230dbbaf336a02c951cc28e7ad5d137ad7dced3e2a906c811e6ed40fca4f",
+  "executable": "target/release/deps/solution-a51ba219c0abff5d",
+  "executable_sha256": "4cfc4f74637ed5e5da91d33de36d6fb46cc68add47cf8e4c96d79f1269be6a4e",
+  "numerical_source_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "8175d693361117d4f457fcecf9a1842ad6cd9765744142eb46f2ff5d5b17e176",
+    "crates/phasesmith-solution/src/assignment_ambiguity.rs": "5624c3cf61f9ec982e2e36eb4c7bcf2c43fa514908be9a996137839bd1298b5f",
+    "crates/phasesmith-solution/src/atomic_mask.rs": "9a376037f445c67e0de4bf855ceda2d7615b41b073a7ae4746fab5b0eeac84eb",
+    "crates/phasesmith-solution/src/chemical_labels.rs": "4a45daa0a0eb236d448578a5ba5b6d2726599e3161e8888c378e7c42e5c6c0d5",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "ba8dd45fac98e041811bc86190ec4a2496d097e591610cf7fb9c8c6a633b057d",
+    "crates/phasesmith-solution/src/fft_layout.rs": "b7222a0b26104f377447e1f69fa1697aced9b5e579b75526dd268e8abd285a36",
+    "crates/phasesmith-solution/src/fourier.rs": "80b353611b38b749ee0b3a30ddf4667c898b51a8eb473af241928b2177a3a14e",
+    "crates/phasesmith-solution/src/isotropic_assignment.rs": "831bbdbda3a4b35dbab9567f898263238f525360069bbccfcc08b8754c10b5e2",
+    "crates/phasesmith-solution/src/lib.rs": "8007593a7d3f4ef185b682a56689bd8aee6df106871dac63e5c2c044563d5479",
+    "crates/phasesmith-solution/src/linear_step.rs": "7d52c8d85a9c27f4c8284749804ff77b233379f665c34095d07f1e3492f7fd63",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_completion.rs": "6742cab53db4a4b5147865a168fd076b95606db57253b7dd281aa3b0d3048721",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/peak_scan.rs": "fd5af96e0c2c8b662dfddad732223fa8da4a5596a06880ee2e921b01c15a0a02",
+    "crates/phasesmith-solution/src/phase_checkpoint.rs": "1d227a8d3dff3c8a78bf44785e8d539e22fd5ec496abc765b7f0672ed66c9dec",
+    "crates/phasesmith-solution/src/phase_origin.rs": "99d6778b0eda65dd0c2fa559ed3c05171db7d9caab3e25ddf02dc8d24b29204e",
+    "crates/phasesmith-solution/src/phase_quality.rs": "848a42a21f5192c6f843f86161b355c9129e963cb806f62df186ce19eec56580",
+    "crates/phasesmith-solution/src/phase_schedule.rs": "b11fb2c8e54d6e51836f42396cbbbd1f3759d0c04b9b75120b14019ec438240e",
+    "crates/phasesmith-solution/src/phase_score.rs": "eb637d9c87787eb5eff9663aae9f6edbdc85b501170ad21d2624e115160699c6",
+    "crates/phasesmith-solution/src/real_fourier.rs": "3b9616133fec60090d339fcb6ba7aaaf721149a736b6429ab1a65f97a2daa113",
+    "crates/phasesmith-solution/src/refinement_families.rs": "70901272c21e54b67aaa7493678e83091e6f8661217115c4cf9769f36e9a2957",
+    "crates/phasesmith-solution/src/reflection_prediction.rs": "2dd0a2f8d1ccc5cccab9d1bafcb034bc52fd409d45284b026c6ad95f26ee07f9",
+    "crates/phasesmith-solution/src/shared_phase_path.rs": "a571c784f75b20254d732b2e3c9b383c93bf61c26d8b9c7561e4118d6e709ef4",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "9b36b3d11ec63ca379b2c9babfc96884f1919a8d3cad48fb6d74254cd164a751",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "aec3f512ca23f882476081e0708dbaaadf0ba6a8d88088e4d69fab602c207005",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "b47c3acab847ec5e6b334bf5994fb1c017279bf07541af162bda0991284de950",
+    "crates/phasesmith-solution/src/tangent.rs": "25fab86895c4401d46d722d04900fda1c912d4247f346f6ed7f0fd7c04393e79"
+  },
+  "search_samples": [
+    [
+      "control",
+      "2",
+      "192",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "2",
+      "192",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "2",
+      "192",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "2",
+      "192",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "2",
+      "192",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "2",
+      "192",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "2",
+      "192",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "2",
+      "192",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "2",
+      "192",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "2",
+      "192",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "2",
+      "192",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "2",
+      "192",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "2",
+      "192",
+      "0",
+      "0"
+    ],
+    [
+      "ambiguity",
+      "2",
+      "192",
+      "8",
+      "172"
+    ],
+    [
+      "ambiguity",
+      "2",
+      "192",
+      "8",
+      "172"
+    ],
+    [
+      "ambiguity",
+      "2",
+      "192",
+      "8",
+      "172"
+    ],
+    [
+      "ambiguity",
+      "2",
+      "192",
+      "8",
+      "172"
+    ],
+    [
+      "ambiguity",
+      "2",
+      "192",
+      "8",
+      "172"
+    ],
+    [
+      "ambiguity",
+      "2",
+      "192",
+      "8",
+      "172"
+    ],
+    [
+      "ambiguity",
+      "2",
+      "192",
+      "8",
+      "172"
+    ],
+    [
+      "ambiguity",
+      "2",
+      "192",
+      "8",
+      "172"
+    ],
+    [
+      "ambiguity",
+      "2",
+      "192",
+      "8",
+      "172"
+    ],
+    [
+      "ambiguity",
+      "2",
+      "192",
+      "8",
+      "172"
+    ],
+    [
+      "ambiguity",
+      "2",
+      "192",
+      "8",
+      "172"
+    ],
+    [
+      "ambiguity",
+      "2",
+      "192",
+      "8",
+      "172"
+    ],
+    [
+      "ambiguity",
+      "2",
+      "192",
+      "8",
+      "172"
+    ]
+  ],
+  "samples": {
+    "ambiguity_proposals_8_orbits_1054_rows": {
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          60.0,
+          120.0,
+          180.0,
+          240.0,
+          300.0,
+          360.0,
+          420.0,
+          480.0,
+          540.0,
+          600.0
+        ],
+        "times": [
+          37916583.0,
+          72225750.0,
+          109015000.0,
+          147940375.0,
+          182975583.0,
+          226608375.0,
+          317178500.0,
+          313067750.0,
+          343757500.0,
+          396922333.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 618321.8667777778,
+            "upper_bound": 669266.8846148147
+          },
+          "point_estimate": 640080.4304947089,
+          "standard_error": 13382.106055035292
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 609918.61,
+            "upper_bound": 652224.4791666666
+          },
+          "point_estimate": 630705.3791666667,
+          "standard_error": 10900.321399149296
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 5278.244663236896,
+            "upper_bound": 49025.64379703752
+          },
+          "point_estimate": 31361.340256474894,
+          "standard_error": 11286.898641552914
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 628859.705771725,
+            "upper_bound": 688862.6680866965
+          },
+          "point_estimate": 656430.08995671,
+          "standard_error": 15270.851926490936
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 13650.08648066093,
+            "upper_bound": 65787.45018327396
+          },
+          "point_estimate": 44923.9465369784,
+          "standard_error": 16172.224960513378
+        }
+      },
+      "benchmark": {
+        "group_id": "ambiguity_proposals_8_orbits_1054_rows",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "ambiguity_proposals_8_orbits_1054_rows",
+        "directory_name": "ambiguity_proposals_8_orbits_1054_rows",
+        "title": "ambiguity_proposals_8_orbits_1054_rows"
+      }
+    },
+    "ambiguity_search_32cubed_8_atoms_2108_rows_ambiguity": {
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          229199333.0,
+          232345250.0,
+          236770750.0,
+          228525666.0,
+          233704625.0,
+          217976250.0,
+          221615000.0,
+          223507583.0,
+          224533083.0,
+          237096708.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 224659791.25750002,
+            "upper_bound": 232320916.4
+          },
+          "point_estimate": 228527424.8,
+          "standard_error": 1959750.953815285
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 223074041.5,
+            "upper_bound": 234558000.0
+          },
+          "point_estimate": 228862499.5,
+          "standard_error": 3061836.310409899
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2015409.3392193317,
+            "upper_bound": 11234957.275539637
+          },
+          "point_estimate": 7559067.100399733,
+          "standard_error": 2301591.3888886897
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 4013261.605921505,
+            "upper_bound": 7954158.493208808
+          },
+          "point_estimate": 6527532.834881131,
+          "standard_error": 1016280.1050322079
+        }
+      },
+      "benchmark": {
+        "group_id": "ambiguity_search_32cubed_8_atoms_2108_rows_ambiguity",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "ambiguity_search_32cubed_8_atoms_2108_rows_ambiguity",
+        "directory_name": "ambiguity_search_32cubed_8_atoms_2108_rows_ambiguity",
+        "title": "ambiguity_search_32cubed_8_atoms_2108_rows_ambiguity"
+      }
+    },
+    "ambiguity_search_32cubed_8_atoms_2108_rows_control": {
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          232356458.0,
+          242290917.0,
+          236797167.0,
+          245710167.0,
+          238377458.0,
+          244340750.0,
+          248372541.0,
+          220881458.0,
+          243233209.0,
+          228168167.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 232654256.9025,
+            "upper_bound": 242806226.58249998
+          },
+          "point_estimate": 238052829.2,
+          "standard_error": 2609202.0191789353
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 232356458.0,
+            "upper_bound": 244471688.0
+          },
+          "point_estimate": 240334187.5,
+          "standard_error": 3495543.9351667417
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1642040.257447958,
+            "upper_bound": 13971621.108654141
+          },
+          "point_estimate": 6955278.261119127,
+          "standard_error": 3224727.5489527895
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 4124382.535428206,
+            "upper_bound": 11132598.017361201
+          },
+          "point_estimate": 8667693.508662457,
+          "standard_error": 1817189.2566530064
+        }
+      },
+      "benchmark": {
+        "group_id": "ambiguity_search_32cubed_8_atoms_2108_rows_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "ambiguity_search_32cubed_8_atoms_2108_rows_control",
+        "directory_name": "ambiguity_search_32cubed_8_atoms_2108_rows_control",
+        "title": "ambiguity_search_32cubed_8_atoms_2108_rows_control"
+      }
+    }
+  }
+}

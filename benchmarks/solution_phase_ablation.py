@@ -103,6 +103,7 @@ def compare(paths, manifest, pairs=()):
                 "fused_phase_workspace",
                 "cached_normal_refinement",
                 "multiplicity_weighted_refinement",
+                "ambiguous_assignments",
                 "reusable_fourier_workspaces",
                 "independent_origin_sampling",
                 "resolution_extension",
@@ -185,6 +186,17 @@ def compare(paths, manifest, pairs=()):
                     "assignment_parent_fits": sum(
                         a.get("assignment_parent_fits", 0) for a in origins
                     ),
+                    "ambiguity_continuations": r["effort"].get("ambiguity_continuations", 0),
+                    "ambiguity_metric_disagreements": sum(
+                        t.get("ambiguity_metric_disagreements", 0) for t in origins
+                    ),
+                    "ambiguity_scores": sum(t.get("ambiguity_scores", 0) for t in origins),
+                    "ambiguity_relaxations": sum(
+                        t.get("ambiguity_relaxations", 0) for t in origins
+                    ),
+                    "ambiguity_unresolved": sum(
+                        t.get("ambiguity_unresolved", False) for t in origins
+                    ),
                     "assignment_neighbor_scores": sum(
                         a.get("assignment_neighbor_scores", 0) for a in origins
                     ),
@@ -242,6 +254,7 @@ def compare(paths, manifest, pairs=()):
             "multiplicity_weighted_refinement": report.get(
                 "multiplicity_weighted_refinement", False
             ),
+            "ambiguous_assignments": report.get("ambiguous_assignments", False),
             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
             "independent_origin_sampling": report.get("independent_origin_sampling", False),
             "resolution_extension": report.get("resolution_extension", 1.0),
@@ -277,6 +290,11 @@ def compare(paths, manifest, pairs=()):
                     "final_refinements",
                     "completion_evaluations",
                     "assignment_parent_fits",
+                    "ambiguity_continuations",
+                    "ambiguity_metric_disagreements",
+                    "ambiguity_scores",
+                    "ambiguity_relaxations",
+                    "ambiguity_unresolved",
                     "assignment_neighbor_scores",
                     "assignment_neighbor_fits",
                     "assignment_retained",

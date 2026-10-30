@@ -791,7 +791,8 @@ fn benchmark(c: &mut Criterion) {
     )
     .unwrap();
     #[allow(clippy::cast_precision_loss)]
-    let reference_norm = (hkl.len() as f64).sqrt();
+    let reference_norm =
+        f64::from(u32::try_from(hkl.len()).expect("bounded benchmark rows")).sqrt();
     let count_observations: Vec<_> = hkl
         .iter()
         .zip(&calibration.residual)
@@ -1586,6 +1587,157 @@ fn benchmark(c: &mut Criterion) {
             b.iter(|| phasesmith_solution::solve_elements(&count_observations, cell, &group,
                 &quality_elements, &options, &search).unwrap());
         });
+    }
+    let ambiguity_species = ["C", "C", "C", "N", "N", "O", "O", "C"].map(str::to_owned);
+    let unit = vec![1.; hkl.len()];
+    let truth =
+        phasesmith_solution::evaluate_model(cell, &hkl, &unit, &ambiguity_species, &points, 0.02)
+            .unwrap();
+    let ambiguity_observations: Vec<_> = hkl
+        .iter()
+        .zip(&truth.residual)
+        .map(|(&hkl, &r)| {
+            let a = (r * f64::from(u32::try_from(hkl.len()).expect("bounded benchmark rows"))
+                .sqrt()
+                + 1.)
+                / truth.amplitude_scale;
+            Observation {
+                hkl,
+                intensity: a * a,
+                sigma: 1.,
+            }
+        })
+        .collect();
+    let ambiguity_elements = ["C", "N", "O"].map(str::to_owned);
+    let selection: Vec<_> = (0..hkl.len())
+        .filter(|&i| hkl[i] > hkl[i].map(|v| -v))
+        .collect();
+    let selected_h: Vec<_> = selection.iter().map(|&i| hkl[i]).collect();
+    let selected_o: Vec<_> = selection
+        .iter()
+        .map(|&i| ambiguity_observations[i].intensity.sqrt())
+        .collect();
+    let plan = PreparedPeakCompletion::new(
+        cell,
+        &group,
+        &points,
+        &ambiguity_elements,
+        &selected_h,
+        &selected_o,
+        32,
+    )
+    .unwrap();
+    c.bench_function("ambiguity_proposals_8_orbits_1054_rows", |b| {
+        b.iter(|| {
+            plan.ambiguity_neighbors(
+                &[
+                    Some(0),
+                    Some(0),
+                    Some(0),
+                    Some(1),
+                    Some(1),
+                    Some(2),
+                    Some(0),
+                    Some(0),
+                ],
+                &[0.02; 8],
+                4,
+                None,
+                None,
+            )
+            .unwrap()
+        });
+    });
+    // Heavy anchors make this separate whole-search example reach assignment.
+    let search_species = ["Fe", "Fe", "C", "N", "N", "O", "O", "C"].map(str::to_owned);
+    let truth =
+        phasesmith_solution::evaluate_model(cell, &hkl, &unit, &search_species, &points, 0.02)
+            .unwrap();
+    let ambiguity_observations: Vec<_> = hkl
+        .iter()
+        .zip(&truth.residual)
+        .map(|(&hkl, &r)| {
+            let a = (r * f64::from(u32::try_from(hkl.len()).expect("bounded rows")).sqrt() + 1.)
+                / truth.amplitude_scale;
+            Observation {
+                hkl,
+                intensity: a * a,
+                sigma: 1.,
+            }
+        })
+        .collect();
+    let ambiguity_elements = ["Fe", "C", "N", "O"].map(str::to_owned);
+    for ambiguity in [false, true] {
+        let label = if ambiguity { "ambiguity" } else { "control" };
+        let options = SolveOptions {
+            phasing: PhasingMethod::DualSpace,
+            trials: 2,
+            cycles: 128,
+            max_seconds: 60.,
+            r1_target: 1e-6,
+            ..SolveOptions::default()
+        };
+        let search = SharedSearchOptions {
+            maximum_atoms: 32,
+            symmetry_recycling: true,
+            tangent_refinement: true,
+            wilson_normalization: true,
+            phase_quality_selection: true,
+            phase_origin_selection: true,
+            chemical_assignment: true,
+            iterative_refinement: true,
+            score_only_evaluation: true,
+            reusable_fourier_workspaces: true,
+            work_sliced_phasing: true,
+            isotropic_assignment_refinement: true,
+            filtered_peak_search: true,
+            batched_fft: true,
+            real_fft: true,
+            fused_phase_workspace: true,
+            cached_normal_refinement: true,
+            multiplicity_weighted_refinement: true,
+            ambiguous_assignments: ambiguity,
+            ..SharedSearchOptions::default()
+        };
+        c.bench_function(
+            &format!("ambiguity_search_32cubed_8_atoms_2108_rows_{label}"),
+            |b| {
+                let sample = phasesmith_solution::solve_elements(
+                    &ambiguity_observations,
+                    cell,
+                    &group,
+                    &ambiguity_elements,
+                    &options,
+                    &search,
+                )
+                .unwrap();
+                let a = sample.shared_search.unwrap();
+                eprintln!(
+                    "ambiguity_search_sample {label} starts {} cycles {} extra_fits {} scores {}",
+                    a.phasing_starts,
+                    a.fourier_workspace_cycles,
+                    a.phase_origins
+                        .iter()
+                        .map(|t| t.ambiguity_relaxations)
+                        .sum::<usize>(),
+                    a.phase_origins
+                        .iter()
+                        .map(|t| t.ambiguity_scores)
+                        .sum::<usize>()
+                );
+                b.iter(|| {
+                    phasesmith_solution::solve_elements(
+                        &ambiguity_observations,
+                        cell,
+                        &group,
+                        &ambiguity_elements,
+                        &options,
+                        &search,
+                    )
+                    .unwrap()
+                });
+            },
+        );
     }
     let mut count_benches = c.benchmark_group("count_selection_8_atoms_2108_reflections");
     count_benches

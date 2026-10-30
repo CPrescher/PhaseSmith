@@ -2300,6 +2300,32 @@ and source/native hashes match across panels. The 65 holdout outcomes stay close
 
 ## Quality bar
 
+An experimental `ambiguous_assignments` option adds displacement-compensated
+single/coupled near-element relabels, bounded count-diverse isotropic competition
+and retention of close requested-mode alternatives. It requires the existing
+isotropic assignment path and is false by default. It keeps original parents,
+observations, resource caps, scoring/correctness gates and final anisotropic
+refinement. The original fixed-U proposal path is the explicit control. A close
+final count competition can earn one corroborating start within the same budget.
+The guarded follow-up fits the original assignment first, requiring agreement
+of final rank and R1 before a challenger displaces it; metric tradeoffs remain
+reported alternatives. Poor fits near the input-only atom cap defer extra label
+exploration. The initial 18-versus-16 experiment with one lost control success
+is preserved separately, rather than replaced by only the improved result.
+Independent NumPy enumeration and complete synthetic checks accompany the
+existing value/derivative equations. Equations and the 35-case comparison live in
+`docs/solution-ambiguous-assignments.md`; the 65 holdout outcomes remain closed.
+The fresh guarded 35-case comparison recovers 19 labelled structures versus 16,
+with three gains and no lost success. Correct per-element counts rise 16 to 19,
+total counts stay 26, and strict structures rise 13 to 15. The typical paired
+wall ratio is 0.97029x (3.06% more time); summed solve wall time rises from
+64.586 to 73.759 seconds. Raw wall medians are 1.349/1.854 seconds. Added bounded
+competition performs 249 extra short fits, with final fits rising 96 to 125.
+Fourteen metric disagreements are recorded; no corroborating starts are needed.
+Full validation passes 2,199 Python and 414 Rust tests. All 140 predictions precede
+two audit barriers with matching source/native hashes. This is single-seed
+development evidence; the flag stays opt-in and holdout outcomes remain closed.
+
 An experimental `multiplicity_weighted_refinement` option evaluates final
 constrained fits on one representative per supplied symmetry/Friedel family,
 using actual row multiplicities to retain the expanded-data objective, scale,

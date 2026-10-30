@@ -5,8 +5,11 @@ use phasesmith_crystallography::{PreparedXrayScattering, SpaceGroup, UnitCell};
 use rustfft::num_complex::Complex;
 use std::time::Instant;
 
+#[path = "assignment_ambiguity.rs"]
+pub(crate) mod ambiguity;
 #[path = "chemical_labels.rs"]
 mod chemical;
+pub use ambiguity::{AssignmentAlternative, AssignmentAlternatives};
 pub use chemical::{ChemicalScale, chemical_density_scales};
 
 /// Shared peak-orbit phases and jets, without assigned element quantities.
@@ -25,6 +28,7 @@ pub struct PreparedPeakCompletion {
     observed: Vec<f64>,
     maximum_atoms: usize,
     s_squared: Vec<f64>,
+    displacement_applied: bool,
 }
 /// Cheap complete-model proposal, with every required type represented.
 #[derive(Clone, Debug)]
@@ -204,6 +208,7 @@ impl PreparedPeakCompletion {
             observed,
             maximum_atoms,
             s_squared: s2,
+            displacement_applied: false,
         })
     }
     fn sum(&self, labels: &[Option<usize>]) -> Vec<Complex<f64>> {
