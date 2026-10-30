@@ -73,6 +73,8 @@ pub struct SharedSearchOptions {
     pub work_sliced_phasing: bool,
     /// Relax competing labels isotropically before selective requested-mode promotion.
     pub isotropic_assignment_refinement: bool,
+    /// Exact adaptive threshold filtering and cached periodic neighbor offsets.
+    pub filtered_peak_search: bool,
     /// Select origin FFT sampling from phase-equivalence frequencies.
     pub independent_origin_sampling: bool,
     /// Add motif density scales and post-screen coupled element assignments.
@@ -114,6 +116,7 @@ impl Default for SharedSearchOptions {
             reusable_fourier_workspaces: false,
             work_sliced_phasing: false,
             isotropic_assignment_refinement: false,
+            filtered_peak_search: false,
             independent_origin_sampling: false,
             chemical_assignment: false,
             iterative_refinement: false,
@@ -244,6 +247,8 @@ pub struct SharedSearchSummary {
     pub work_sliced_phasing: bool,
     /// Relax competing labels isotropically before selective requested-mode promotion.
     pub isotropic_assignment_refinement: bool,
+    /// Exact adaptive threshold filtering and cached periodic neighbor offsets.
+    pub filtered_peak_search: bool,
     /// Select origin FFT sampling from phase-equivalence frequencies.
     pub independent_origin_sampling: bool,
     /// Add motif density scales and post-screen coupled element assignments.
@@ -260,6 +265,8 @@ pub struct SharedSearchSummary {
     pub score_only_evaluations: usize,
     /// Actual P1 projections evaluated with reusable full-grid buffers.
     pub fourier_workspace_cycles: usize,
+    /// Actual threshold-filtered adaptive peak cycles.
+    pub filtered_peak_cycles: usize,
     /// Per-start phase checkpoint decisions (start index, decision).
     pub phase_checkpoints: Vec<(usize, crate::PhaseCheckpoint)>,
     /// Actual reciprocal support provenance, absent for the original path.
@@ -1752,6 +1759,7 @@ pub fn solve_elements(
         || (search.independent_origin_sampling && !search.phase_origin_selection)
         || (search.score_only_evaluation && !search.phase_quality_selection)
         || (search.reusable_fourier_workspaces && options.phasing != PhasingMethod::DualSpace)
+        || (search.filtered_peak_search && !search.reusable_fourier_workspaces)
         || (search.isotropic_assignment_refinement
             && (!search.phase_origin_selection || !search.chemical_assignment))
         || (search.work_sliced_phasing
@@ -1992,6 +2000,7 @@ pub fn solve_elements(
         reusable_fourier_workspaces: search.reusable_fourier_workspaces,
         work_sliced_phasing: search.work_sliced_phasing,
         isotropic_assignment_refinement: search.isotropic_assignment_refinement,
+        filtered_peak_search: search.filtered_peak_search,
         independent_origin_sampling: search.independent_origin_sampling,
         chemical_assignment: search.chemical_assignment,
         iterative_refinement: search.iterative_refinement,
@@ -2178,8 +2187,11 @@ pub fn solve_elements(
                 quality_plan.as_ref(),
                 prediction_g.as_ref(),
                 search.adaptive_checkpoints,
-                search.score_only_evaluation,
-                search.reusable_fourier_workspaces,
+                crate::PhasingExecution {
+                    score_only_evaluation: search.score_only_evaluation,
+                    reusable_fourier_workspaces: search.reusable_fourier_workspaces,
+                    filtered_peak_search: search.filtered_peak_search,
+                },
             )?;
             audit.phase_slices.push(crate::PhaseSliceAudit {
                 trial,
@@ -2205,6 +2217,7 @@ pub fn solve_elements(
             });
             audit.score_only_evaluations += state.score_only_evaluations;
             audit.fourier_workspace_cycles += state.fourier_workspace_cycles;
+            audit.filtered_peak_cycles += state.filtered_peak_cycles;
             audit
                 .phase_checkpoints
                 .extend(state.phase_checkpoints.drain(..).map(|c| (trial, c)));

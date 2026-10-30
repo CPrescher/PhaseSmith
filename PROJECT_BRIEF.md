@@ -2300,6 +2300,29 @@ and source/native hashes match across panels. The 65 holdout outcomes stay close
 
 ## Quality bar
 
+An experimental `filtered_peak_search` path targets the dominant remaining P1
+phase work. It computes the unchanged RMS threshold before local-maxima tests,
+skips voxels that cannot survive any raised threshold, and caches periodic axis
+offsets in O(sum(axis lengths)) memory. All 26 original neighbor values, index-
+stable plateau ties, threshold equality, sub-grid interpolation, Gaussian support
+and fixed-cycle trajectories are preserved. The original scan remains the
+execution control; both paths have independent NumPy and bitwise native checks.
+The flag requires reusable workspaces and defaults to false. A source-hashed
+profile, realistic scan/Fourier/full-search benchmarks and a complete paired
+35-case development comparison are documented in
+`docs/solution-filtered-peak-search.md`. The 65 holdout outcomes stay unopened.
+The completed same-build interleaved comparison preserves the same 16/35 correct
+structures, 26 correct total counts, 16 correct element-count sets and 13 strict
+recoveries. Typical paired wall time now improves 1.18703x (about 15.8% less
+elapsed time), with 34/35 cases faster and all 35 native solver times lower.
+Raw wall medians are 3.418/2.543 seconds; cumulative time falls 15.2% and phase
+time 23.7%, despite 17.4% more scored cycles. Short quota completions rise 26-to-43
+under unchanged limits. The scan is 6.76x faster and fixed 64-cycle phase time is
+41.0% lower in the realistic benchmark. All 38 source hashes/native builds match,
+and all 140 predictions precede reference auditing. Fixed-work trajectories are
+bitwise equal; additional deadline-limited cycles can change chosen maps. The
+flag remains opt-in and the 65 holdout outcomes remain unopened.
+
 An additional experimental `isotropic_assignment_refinement` path gives the best
 two complete label models longer isotropic relaxation on the existing bounded
 independent-family observations,
