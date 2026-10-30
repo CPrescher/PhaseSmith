@@ -706,6 +706,7 @@ name = "phasesmith-solution"
 version = "0.7.0"
 dependencies = [
  "criterion",
+ "ndarray",
  "phasesmith-crystallography",
  "rustfft",
 ]

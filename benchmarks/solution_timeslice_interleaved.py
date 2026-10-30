@@ -63,6 +63,7 @@ def main():
             streamed_peak_search=False,
             reuse_normal_matrices=False,
             short_phase_starts=False,
+            blocked_normal_matrices=False,
             work_sliced_phasing=mode == "work",
             independent_origin_sampling=False,
             phase_first_selection=True,

@@ -89,6 +89,7 @@ def worker(args):
         streamed_peak_search=args.streamed_peak_search,
         reuse_normal_matrices=args.reuse_normal_matrices,
         short_phase_starts=args.short_phase_starts,
+        blocked_normal_matrices=args.blocked_normal_matrices,
         reusable_fourier_workspaces=args.reusable_fourier_workspaces,
         independent_origin_sampling=args.independent_origin_sampling,
         resolution_extension=args.resolution_extension,
@@ -285,6 +286,7 @@ def collect_jobs(args):
             or previous.get("cached_normal_refinement", False) != args.cached_normal_refinement
             or previous.get("ambiguous_assignments", False) != args.ambiguous_assignments
             or previous.get("short_phase_starts", False) != args.short_phase_starts
+            or previous.get("blocked_normal_matrices", False) != args.blocked_normal_matrices
             or previous.get("reuse_normal_matrices", False) != args.reuse_normal_matrices
             or previous.get("streamed_peak_search", False) != args.streamed_peak_search
             or previous.get("specialized_isotropic_refinement", False)
@@ -326,7 +328,14 @@ def collect_jobs(args):
     sources = (
         sorted((ROOT / "crates/phasesmith-solution/src").glob("*.rs"))
         + sorted((ROOT / "benchmarks/solution_corpus").glob("*.py"))
-        + [SCRIPT, ROOT / "python/phasesmith/experimental/solution.py"]
+        + sorted((ROOT / "crates/phasesmith-py/src").glob("solution*.rs"))
+        + [
+            SCRIPT,
+            ROOT / "python/phasesmith/experimental/solution.py",
+            ROOT / "Cargo.toml",
+            ROOT / "Cargo.lock",
+            ROOT / "crates/phasesmith-solution/Cargo.toml",
+        ]
     )
     if getattr(args, "collection_schedule", "serial_panel") != "serial_panel":
         sources.append(ROOT / "benchmarks/solution_execution_interleaved.py")
@@ -366,6 +375,7 @@ def collect_jobs(args):
         "streamed_peak_search": args.streamed_peak_search,
         "reuse_normal_matrices": args.reuse_normal_matrices,
         "short_phase_starts": args.short_phase_starts,
+        "blocked_normal_matrices": args.blocked_normal_matrices,
         "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
         "independent_origin_sampling": args.independent_origin_sampling,
         "resolution_extension": args.resolution_extension,
@@ -502,6 +512,7 @@ def collect_jobs(args):
                     *(["--streamed-peak-search"] if args.streamed_peak_search else []),
                     *(["--reuse-normal-matrices"] if args.reuse_normal_matrices else []),
                     *(["--short-phase-starts"] if args.short_phase_starts else []),
+                    *(["--blocked-normal-matrices"] if args.blocked_normal_matrices else []),
                     *(
                         ["--specialized-isotropic-refinement"]
                         if args.specialized_isotropic_refinement

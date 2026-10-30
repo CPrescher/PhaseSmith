@@ -126,6 +126,8 @@ pub(super) fn result<'py>(
     out.set_item("normal_cache_fallbacks", state.normal_cache_fallbacks)?;
     out.set_item("normal_matrix_builds", state.normal_matrix_builds)?;
     out.set_item("normal_matrix_reuses", state.normal_matrix_reuses)?;
+    out.set_item("blocked_normal_builds", state.blocked_normal_builds)?;
+    out.set_item("blocked_normal_fallbacks", state.blocked_normal_fallbacks)?;
     out.set_item("termination", state.termination)?;
     Ok(out)
 }
@@ -231,8 +233,8 @@ impl NativeModel {
             .map_err(invalid)?;
         evaluation(py, &state)
     }
-    #[pyo3(signature=(parameters, iterations, max_seconds, cancellation, iterative=false, cached_normal=false, reuse_normal=false))]
-    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature=(parameters, iterations, max_seconds, cancellation, iterative=false, cached_normal=false, reuse_normal=false, blocked_normal=false))]
+    #[allow(clippy::too_many_arguments, clippy::fn_params_excessive_bools)]
     fn refine<'py>(
         &self,
         py: Python<'py>,
@@ -243,13 +245,17 @@ impl NativeModel {
         iterative: bool,
         cached_normal: bool,
         reuse_normal: bool,
+        blocked_normal: bool,
     ) -> PyResult<Bound<'py, PyDict>> {
         if !max_seconds.is_finite() || !(0.0..=3600.).contains(&max_seconds) || max_seconds == 0. {
             return Err(PyValueError::new_err("invalid refinement runtime"));
         }
         let parameters = parameters.as_slice()?.to_vec();
         let cancellation = cancellation.map(|c| c.inner.clone());
-        let model = self.inner.clone();
+        let model = self
+            .inner
+            .clone()
+            .with_blocked_normal_matrices(blocked_normal);
         let state = py
             .detach(move || {
                 model.refine_with_normal_reuse(

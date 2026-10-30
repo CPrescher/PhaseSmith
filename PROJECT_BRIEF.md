@@ -2569,6 +2569,21 @@ One failed case changes its incorrect C/N count assignment; no successful count
 or structure case is lost. The option remains false by default and the holdout
 remains closed.
 
+An opt-in `blocked_normal_matrices` experiment forms eligible reused normal
+matrices in 32-by-32 SIMD tiles through pinned, single-threaded ndarray. It keeps
+the original damped equations and original-Jacobian residual guard, retries
+legacy Gram formation on failure, and leaves the powder core unchanged. Safe
+borrowed views avoid a second full matrix; backend packing storage is explicit.
+Independent NumPy equations, partial-tile/guard tests, full physical fits and the
+balanced 35-development-case protocol are documented in
+`docs/solution-blocked-normal-matrices.md`. The complete paired comparison retains
+all 19 structures, every one of the 35 count vectors, 26 correct total counts,
+19 correct element counts and 15 strict structures. Summed wall time falls
+61.649-to-58.625 seconds (4.90% less), typical paired time 2.49%, final refinement
+20.77% and screening 6.43%. No blocked-system fallback is needed in completed
+fits; 29/35 cases are faster. The option remains false by default and the holdout
+remains closed.
+
 Public behavior is typed and documented. Invalid shapes, non-finite values,
 unsorted grids, non-positive widths, and fractions outside `[0, 1]` fail with a
 clear error. Tests are deterministic. Numerical tolerances are justified near

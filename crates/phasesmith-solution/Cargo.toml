@@ -10,6 +10,7 @@ publish = false
 [dependencies]
 phasesmith-crystallography = { version = "0.7.0", path = "../phasesmith-crystallography" }
 rustfft = "=6.4.1"
+ndarray = { version = "=0.17.2", default-features = false, features = ["std"] }
 
 [dev-dependencies]
 criterion = "0.7"

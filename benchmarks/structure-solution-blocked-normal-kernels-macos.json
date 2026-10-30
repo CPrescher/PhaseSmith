@@ -1,0 +1,444 @@
+{
+  "schema": "phasesmith.blocked-normal-kernels.v1",
+  "baseline": "1fe9889",
+  "created_utc": "2026-10-30T19:52:36.739392+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- blocked_normal_ --sample-size 20 --warm-up-time 1 --measurement-time 2",
+  "benchmark_source_sha256": "d4421bbacfc673383245c0b098563090514b07df7a113fdf30f9068ebdf301ab",
+  "executable": "target/release/deps/solution-606c1fd8312a0a21",
+  "executable_sha256": "7bcd9092755632c6361e6b24d0fcf49ce64403e05e236da23784895dc33e808d",
+  "source_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "332a3a934592c96f9421a8478f4559948812518fc5b66a592e5010c7f182a0b1",
+    "crates/phasesmith-solution/src/assignment_ambiguity.rs": "14d991c0fd8553f4a23818fde9ba24fb2975ea5bb520a531b9417b6049cadded",
+    "crates/phasesmith-solution/src/atomic_mask.rs": "9a376037f445c67e0de4bf855ceda2d7615b41b073a7ae4746fab5b0eeac84eb",
+    "crates/phasesmith-solution/src/chemical_labels.rs": "4a45daa0a0eb236d448578a5ba5b6d2726599e3161e8888c378e7c42e5c6c0d5",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "85184fc51c9bab0243f9c1010cb70b3147d765a610ab15c02883c6269d961004",
+    "crates/phasesmith-solution/src/fft_layout.rs": "b7222a0b26104f377447e1f69fa1697aced9b5e579b75526dd268e8abd285a36",
+    "crates/phasesmith-solution/src/fourier.rs": "80b353611b38b749ee0b3a30ddf4667c898b51a8eb473af241928b2177a3a14e",
+    "crates/phasesmith-solution/src/isotropic_assignment.rs": "af377a9977f443bf4562b24ee346098a4f9bf1e0c509c494ed4cd33990ba2dc2",
+    "crates/phasesmith-solution/src/isotropic_evaluation.rs": "004d05d17fd06d307cc65bf1734971f8dea67ac6b816d0a14b5a1bd32bda5bda",
+    "crates/phasesmith-solution/src/lib.rs": "c71f20418a12e213c4adac97003f690ffe4ab06b36a92a3ff52717b1d54f587b",
+    "crates/phasesmith-solution/src/linear_step.rs": "bc5d78f7fdcafb2a726e3880264bc7fab7fd56f01ce104d393ae69237248eade",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_completion.rs": "35ad4578efcdb407b78b8a513e24ca2bc6f0246ec4bf6c47f1890f297d71dfde",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/peak_scan.rs": "4f948de041ccfe83f985646f874b2303475fe26eb9dbc0d687e95bef365f3d2e",
+    "crates/phasesmith-solution/src/phase_checkpoint.rs": "1d227a8d3dff3c8a78bf44785e8d539e22fd5ec496abc765b7f0672ed66c9dec",
+    "crates/phasesmith-solution/src/phase_origin.rs": "99d6778b0eda65dd0c2fa559ed3c05171db7d9caab3e25ddf02dc8d24b29204e",
+    "crates/phasesmith-solution/src/phase_quality.rs": "848a42a21f5192c6f843f86161b355c9129e963cb806f62df186ce19eec56580",
+    "crates/phasesmith-solution/src/phase_schedule.rs": "a109ddf10393a4a3d63d615a5f6a52b461fdef41185cf7baee24df81c3513362",
+    "crates/phasesmith-solution/src/phase_score.rs": "eb637d9c87787eb5eff9663aae9f6edbdc85b501170ad21d2624e115160699c6",
+    "crates/phasesmith-solution/src/real_fourier.rs": "3b9616133fec60090d339fcb6ba7aaaf721149a736b6429ab1a65f97a2daa113",
+    "crates/phasesmith-solution/src/refinement_families.rs": "70901272c21e54b67aaa7493678e83091e6f8661217115c4cf9769f36e9a2957",
+    "crates/phasesmith-solution/src/reflection_prediction.rs": "2dd0a2f8d1ccc5cccab9d1bafcb034bc52fd409d45284b026c6ad95f26ee07f9",
+    "crates/phasesmith-solution/src/shared_phase_path.rs": "2e2336ab565005645d89aa24b2bbd157b7c3d069671b00befa8927dfbb29a98e",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "6e8c4651e55edc42bb9cfd65188c7aa4b24852b9229709972702f03a6735fa3e",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "aec3f512ca23f882476081e0708dbaaadf0ba6a8d88088e4d69fab602c207005",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "b47c3acab847ec5e6b334bf5994fb1c017279bf07541af162bda0991284de950",
+    "crates/phasesmith-solution/src/tangent.rs": "25fab86895c4401d46d722d04900fda1c912d4247f346f6ed7f0fd7c04393e79"
+  },
+  "sample_log_sha256": "bda0ee97dd94fe9740ab2ae4aae3b7dad32e644194d1843738240ed943179057",
+  "sample_log": "    Finished `bench` profile [optimized] target(s) in 0.06s\n     Running benches/solution.rs (target/release/deps/solution-606c1fd8312a0a21)\nBenchmarking blocked_normal_fit_8_atoms_2108_rows_40_steps_control\nBenchmarking blocked_normal_fit_8_atoms_2108_rows_40_steps_control: Warming up for 1.0000 s\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nBenchmarking blocked_normal_fit_8_atoms_2108_rows_40_steps_control: Collecting 20 samples in estimated 2.2611 s (40 iterations)\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample control accepted 28 solves 40 builds 28 reuses 12\nBenchmarking blocked_normal_fit_8_atoms_2108_rows_40_steps_control: Analyzing\nblocked_normal_fit_8_atoms_2108_rows_40_steps_control\n                        time:   [58.081 ms 59.610 ms 61.195 ms]\n                        change: [\u221232.091% \u221228.402% \u221224.746%] (p = 0.00 < 0.05)\n                        Performance has improved.\n\nBenchmarking blocked_normal_fit_8_atoms_2108_rows_40_steps_blocked\nBenchmarking blocked_normal_fit_8_atoms_2108_rows_40_steps_blocked: Warming up for 1.0000 s\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nBenchmarking blocked_normal_fit_8_atoms_2108_rows_40_steps_blocked: Collecting 20 samples in estimated 2.0758 s (40 iterations)\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nblocked_normal_fit_sample blocked accepted 28 solves 40 builds 28 reuses 12\nBenchmarking blocked_normal_fit_8_atoms_2108_rows_40_steps_blocked: Analyzing\nblocked_normal_fit_8_atoms_2108_rows_40_steps_blocked\n                        time:   [50.744 ms 51.135 ms 51.553 ms]\n                        change: [\u221244.700% \u221239.362% \u221233.948%] (p = 0.00 < 0.05)\n                        Performance has improved.\n\nBenchmarking blocked_normal_search_32cubed_8_atoms_2108_rows_control\nBenchmarking blocked_normal_search_32cubed_8_atoms_2108_rows_control: Warming up for 1.0000 s\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\n\nWarning: Unable to complete 20 samples in 2.0s. You may wish to increase target time to 4.2s, or reduce sample count to 10.\nBenchmarking blocked_normal_search_32cubed_8_atoms_2108_rows_control: Collecting 20 samples in estimated 4.1727 s (20 iterations)\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample control starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nBenchmarking blocked_normal_search_32cubed_8_atoms_2108_rows_control: Analyzing\nblocked_normal_search_32cubed_8_atoms_2108_rows_control\n                        time:   [197.38 ms 198.48 ms 199.73 ms]\n                        change: [\u221233.681% \u221229.810% \u221225.789%] (p = 0.00 < 0.05)\n                        Performance has improved.\nFound 1 outliers among 20 measurements (5.00%)\n  1 (5.00%) high mild\n\nBenchmarking blocked_normal_search_32cubed_8_atoms_2108_rows_cache\nBenchmarking blocked_normal_search_32cubed_8_atoms_2108_rows_cache: Warming up for 1.0000 s\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\n\nWarning: Unable to complete 20 samples in 2.0s. You may wish to increase target time to 4.0s, or reduce sample count to 10.\nBenchmarking blocked_normal_search_32cubed_8_atoms_2108_rows_cache: Collecting 20 samples in estimated 3.9722 s (20 iterations)\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nblocked_normal_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nBenchmarking blocked_normal_search_32cubed_8_atoms_2108_rows_cache: Analyzing\nblocked_normal_search_32cubed_8_atoms_2108_rows_cache\n                        time:   [198.27 ms 199.82 ms 201.52 ms]\n                        change: [\u221224.307% \u221220.418% \u221216.689%] (p = 0.00 < 0.05)\n                        Performance has improved.\n\n",
+  "results": [
+    {
+      "id": "blocked_normal_fit_8_atoms_2108_rows_40_steps_blocked",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          104437459.0,
+          99510250.0,
+          100594917.0,
+          102013459.0,
+          102147959.0,
+          100475250.0,
+          100708583.0,
+          101482208.0,
+          100799250.0,
+          100639542.0,
+          104003292.0,
+          105023667.0,
+          101624125.0,
+          104927958.0,
+          100563584.0,
+          101227209.0,
+          102315958.0,
+          102100375.0,
+          104885959.0,
+          105934083.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 50744447.646875,
+            "upper_bound": 51552961.991875
+          },
+          "point_estimate": 51135377.175,
+          "standard_error": 207225.02153763032
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 50376958.25,
+            "upper_bound": 51579812.5
+          },
+          "point_estimate": 50909396.0,
+          "standard_error": 286227.19373435463
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 278713.5984018445,
+            "upper_bound": 1425236.6239669858
+          },
+          "point_estimate": 890718.2654365897,
+          "standard_error": 312397.86228422925
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 671216.4900619122,
+            "upper_bound": 1113802.5356730225
+          },
+          "point_estimate": 950552.0606932954,
+          "standard_error": 112373.94608312778
+        }
+      },
+      "benchmark": {
+        "group_id": "blocked_normal_fit_8_atoms_2108_rows_40_steps_blocked",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "blocked_normal_fit_8_atoms_2108_rows_40_steps_blocked",
+        "directory_name": "blocked_normal_fit_8_atoms_2108_rows_40_steps_blocked",
+        "title": "blocked_normal_fit_8_atoms_2108_rows_40_steps_blocked"
+      }
+    },
+    {
+      "id": "blocked_normal_fit_8_atoms_2108_rows_40_steps_control",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          110283209.0,
+          113321750.0,
+          117332208.0,
+          116567500.0,
+          123382083.0,
+          120578167.0,
+          123581583.0,
+          118682875.0,
+          126309583.0,
+          119979250.0,
+          135558125.0,
+          127808250.0,
+          126856167.0,
+          123927167.0,
+          124551042.0,
+          113375167.0,
+          112720208.0,
+          110202917.0,
+          110046125.0,
+          109329625.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 58080702.78875,
+            "upper_bound": 61194653.125
+          },
+          "point_estimate": 59609825.025,
+          "standard_error": 796199.2957483252
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 56674229.25,
+            "upper_bound": 61877187.5
+          },
+          "point_estimate": 59665531.25,
+          "standard_error": 1364000.807630546
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2170697.787087412,
+            "upper_bound": 5673801.869469881
+          },
+          "point_estimate": 4434904.26646471,
+          "standard_error": 979534.7696882831
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2630305.441719907,
+            "upper_bound": 4459187.906442146
+          },
+          "point_estimate": 3634358.5302578085,
+          "standard_error": 478000.76579234086
+        }
+      },
+      "benchmark": {
+        "group_id": "blocked_normal_fit_8_atoms_2108_rows_40_steps_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "blocked_normal_fit_8_atoms_2108_rows_40_steps_control",
+        "directory_name": "blocked_normal_fit_8_atoms_2108_rows_40_steps_control",
+        "title": "blocked_normal_fit_8_atoms_2108_rows_40_steps_control"
+      }
+    },
+    {
+      "id": "blocked_normal_search_32cubed_8_atoms_2108_rows_cache",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          197390792.0,
+          199175750.0,
+          207814542.0,
+          200663250.0,
+          197899125.0,
+          203012166.0,
+          204865292.0,
+          202532750.0,
+          207667500.0,
+          203706125.0,
+          197752500.0,
+          196553083.0,
+          196370542.0,
+          196969000.0,
+          198925125.0,
+          196408750.0,
+          195525792.0,
+          199414334.0,
+          197494708.0,
+          196282000.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 198270340.20625,
+            "upper_bound": 201521281.4
+          },
+          "point_estimate": 199821156.3,
+          "standard_error": 831113.5191424683
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 197179896.0,
+            "upper_bound": 201598000.0
+          },
+          "point_estimate": 198412125.0,
+          "standard_error": 1112292.7376301233
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1199948.2190966606,
+            "upper_bound": 5535885.453208377
+          },
+          "point_estimate": 2998527.3121654987,
+          "standard_error": 1200115.1292250324
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2454762.098740589,
+            "upper_bound": 4654792.374037542
+          },
+          "point_estimate": 3826910.625700347,
+          "standard_error": 563081.9142205333
+        }
+      },
+      "benchmark": {
+        "group_id": "blocked_normal_search_32cubed_8_atoms_2108_rows_cache",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "blocked_normal_search_32cubed_8_atoms_2108_rows_cache",
+        "directory_name": "blocked_normal_search_32cubed_8_atoms_2108_rows_cache",
+        "title": "blocked_normal_search_32cubed_8_atoms_2108_rows_cache"
+      }
+    },
+    {
+      "id": "blocked_normal_search_32cubed_8_atoms_2108_rows_control",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          196275959.0,
+          197040666.0,
+          196732584.0,
+          195575084.0,
+          198125042.0,
+          197465834.0,
+          197092417.0,
+          196364292.0,
+          202850667.0,
+          201081541.0,
+          199039417.0,
+          196816750.0,
+          195009084.0,
+          199986250.0,
+          198429959.0,
+          201722625.0,
+          206266875.0,
+          197657750.0,
+          196593208.0,
+          199389792.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 197383531.70749998,
+            "upper_bound": 199733673.20375
+          },
+          "point_estimate": 198475789.8,
+          "standard_error": 604774.6791852147
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 196774667.0,
+            "upper_bound": 199214604.5
+          },
+          "point_estimate": 197561792.0,
+          "standard_error": 662627.5025716131
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 739384.4676733017,
+            "upper_bound": 3518069.205594254
+          },
+          "point_estimate": 1840894.7202175856,
+          "standard_error": 726740.2567147627
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1545225.826480825,
+            "upper_bound": 3689496.251620997
+          },
+          "point_estimate": 2766907.292501058,
+          "standard_error": 566397.942481634
+        }
+      },
+      "benchmark": {
+        "group_id": "blocked_normal_search_32cubed_8_atoms_2108_rows_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "blocked_normal_search_32cubed_8_atoms_2108_rows_control",
+        "directory_name": "blocked_normal_search_32cubed_8_atoms_2108_rows_control",
+        "title": "blocked_normal_search_32cubed_8_atoms_2108_rows_control"
+      }
+    }
+  ],
+  "qualification": "Control/treatment within the same executable; sequential pairs, not the Criterion comparison to prior builds. Full search work counters printed in sample log. No corpus runs overlapped."
+}
