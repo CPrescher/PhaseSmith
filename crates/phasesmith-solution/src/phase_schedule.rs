@@ -10,11 +10,26 @@ pub fn phase_cycle_quota(
     trials: usize,
     trial: usize,
 ) -> Result<usize, SolutionError> {
+    phase_cycle_quota_with_short_starts(cycles, trials, trial, false)
+}
+
+/// Quarter-work early starts with original full-work fallback starts.
+/// # Errors
+/// Rejects the same controls as `phase_cycle_quota`.
+pub fn phase_cycle_quota_with_short_starts(
+    cycles: usize,
+    trials: usize,
+    trial: usize,
+    short: bool,
+) -> Result<usize, SolutionError> {
     if !(1..=20_000).contains(&cycles) || !(1..=128).contains(&trials) || trial >= trials {
         return Err(error("invalid phase work-slice controls"));
     }
     Ok(if trial < trials / 2 {
-        cycles.div_ceil(2).max(32).min(cycles)
+        cycles
+            .div_ceil(if short { 4 } else { 2 })
+            .max(32)
+            .min(cycles)
     } else {
         cycles
     })
@@ -75,6 +90,37 @@ mod tests {
             (800, 4, 4),
         ] {
             assert!(phase_cycle_quota(cycles, trials, trial).is_err());
+        }
+    }
+    #[test]
+    fn short_early_work_retains_full_later_starts_and_original_bounds() {
+        assert_eq!(
+            (0..4)
+                .map(|i| phase_cycle_quota_with_short_starts(800, 4, i, true).unwrap())
+                .collect::<Vec<_>>(),
+            vec![200, 200, 800, 800]
+        );
+        for cycles in [1, 2, 31, 32, 33, 63, 64, 127, 128, 799, 800, 20_000] {
+            for trials in 1..=128 {
+                for trial in 0..trials {
+                    let q =
+                        phase_cycle_quota_with_short_starts(cycles, trials, trial, true).unwrap();
+                    assert!((1..=cycles).contains(&q));
+                    assert!(q <= phase_cycle_quota(cycles, trials, trial).unwrap());
+                    if trial >= trials / 2 {
+                        assert_eq!(q, cycles);
+                    }
+                }
+            }
+        }
+        for (c, t, j) in [
+            (0, 4, 0),
+            (20_001, 4, 0),
+            (800, 0, 0),
+            (800, 129, 0),
+            (800, 4, 4),
+        ] {
+            assert!(phase_cycle_quota_with_short_starts(c, t, j, true).is_err());
         }
     }
 }

@@ -101,6 +101,8 @@ pub struct SharedSearchOptions {
     pub streamed_peak_search: bool,
     /// Reuse checked normal matrices across rejected damping attempts.
     pub reuse_normal_matrices: bool,
+    /// Use quarter-work early phase starts before full-length fallback starts.
+    pub short_phase_starts: bool,
     /// Regularize allowed unmeasured coefficients using the observed Wilson envelope.
     pub missing_reflections: bool,
     /// Reciprocal-radius extension multiplier, in [1,1.5].
@@ -150,6 +152,7 @@ impl Default for SharedSearchOptions {
             specialized_isotropic_refinement: false,
             streamed_peak_search: false,
             reuse_normal_matrices: false,
+            short_phase_starts: false,
             missing_reflections: false,
             resolution_extension: 1.,
         }
@@ -305,6 +308,8 @@ pub struct SharedSearchSummary {
     pub streamed_peak_search: bool,
     /// Reuse checked normal matrices across rejected damping attempts.
     pub reuse_normal_matrices: bool,
+    /// Use quarter-work early phase starts before full-length fallback starts.
+    pub short_phase_starts: bool,
     /// Requested observed-envelope gap treatment.
     pub missing_reflections: bool,
     /// Requested reciprocal-radius extension.
@@ -1879,6 +1884,7 @@ pub fn solve_elements(
         || ((search.filtered_peak_search || search.batched_fft)
             && !search.reusable_fourier_workspaces)
         || (search.fused_phase_workspace && !search.reusable_fourier_workspaces)
+        || (search.short_phase_starts && !search.work_sliced_phasing)
         || (search.reuse_normal_matrices
             && (!search.iterative_refinement
                 || !(search.cached_normal_refinement || search.cached_assignment_refinement)))
@@ -2142,6 +2148,7 @@ pub fn solve_elements(
         specialized_isotropic_refinement: search.specialized_isotropic_refinement,
         streamed_peak_search: search.streamed_peak_search,
         reuse_normal_matrices: search.reuse_normal_matrices,
+        short_phase_starts: search.short_phase_starts,
         missing_reflections: search.missing_reflections,
         resolution_extension: search.resolution_extension,
         prediction: prediction_f.as_ref().map(|p| p.audit.clone()),
@@ -2286,7 +2293,12 @@ pub fn solve_elements(
                 deadline
             };
             let cycle_quota = if search.work_sliced_phasing && phase_first {
-                crate::phase_cycle_quota(options.cycles, options.trials, trial)?
+                crate::phase_cycle_quota_with_short_starts(
+                    options.cycles,
+                    options.trials,
+                    trial,
+                    search.short_phase_starts,
+                )?
             } else {
                 options.cycles
             };

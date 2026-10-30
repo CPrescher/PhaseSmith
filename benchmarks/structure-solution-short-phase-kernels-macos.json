@@ -1,0 +1,248 @@
+{
+  "schema": "phasesmith.short-phase-kernels.v1",
+  "baseline": "01b5a20",
+  "created_utc": "2026-10-30T19:22:13.255976+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- short_phase_ --sample-size 20 --warm-up-time 1 --measurement-time 2",
+  "benchmark_source_sha256": "ac96562e203a74543f43b1e2d2a54204b076e42bfb7146da4845bd223e472193",
+  "executable": "target/release/deps/solution-a51ba219c0abff5d",
+  "executable_sha256": "f4e0dd527c44264042d01a7a0893b4de47a24e05d5d0ebe3de6bb5e582f7667b",
+  "source_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "db71cc4a0136871b2d3e141e1c37e2d45956cf00314bc8b60b0bc3da0bc03f0e",
+    "crates/phasesmith-solution/src/assignment_ambiguity.rs": "14d991c0fd8553f4a23818fde9ba24fb2975ea5bb520a531b9417b6049cadded",
+    "crates/phasesmith-solution/src/atomic_mask.rs": "9a376037f445c67e0de4bf855ceda2d7615b41b073a7ae4746fab5b0eeac84eb",
+    "crates/phasesmith-solution/src/chemical_labels.rs": "4a45daa0a0eb236d448578a5ba5b6d2726599e3161e8888c378e7c42e5c6c0d5",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "85184fc51c9bab0243f9c1010cb70b3147d765a610ab15c02883c6269d961004",
+    "crates/phasesmith-solution/src/fft_layout.rs": "b7222a0b26104f377447e1f69fa1697aced9b5e579b75526dd268e8abd285a36",
+    "crates/phasesmith-solution/src/fourier.rs": "80b353611b38b749ee0b3a30ddf4667c898b51a8eb473af241928b2177a3a14e",
+    "crates/phasesmith-solution/src/isotropic_assignment.rs": "af377a9977f443bf4562b24ee346098a4f9bf1e0c509c494ed4cd33990ba2dc2",
+    "crates/phasesmith-solution/src/isotropic_evaluation.rs": "004d05d17fd06d307cc65bf1734971f8dea67ac6b816d0a14b5a1bd32bda5bda",
+    "crates/phasesmith-solution/src/lib.rs": "94a4271f0614d3444c7a640b4265dd0be61e33925d96a1291efaca7bf7510817",
+    "crates/phasesmith-solution/src/linear_step.rs": "b1697eb1a2c4c6dc3b2b9a9a83f6e58dd4b91e4f25923217ff83f3da3c15abea",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_completion.rs": "35ad4578efcdb407b78b8a513e24ca2bc6f0246ec4bf6c47f1890f297d71dfde",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/peak_scan.rs": "4f948de041ccfe83f985646f874b2303475fe26eb9dbc0d687e95bef365f3d2e",
+    "crates/phasesmith-solution/src/phase_checkpoint.rs": "1d227a8d3dff3c8a78bf44785e8d539e22fd5ec496abc765b7f0672ed66c9dec",
+    "crates/phasesmith-solution/src/phase_origin.rs": "99d6778b0eda65dd0c2fa559ed3c05171db7d9caab3e25ddf02dc8d24b29204e",
+    "crates/phasesmith-solution/src/phase_quality.rs": "848a42a21f5192c6f843f86161b355c9129e963cb806f62df186ce19eec56580",
+    "crates/phasesmith-solution/src/phase_schedule.rs": "a109ddf10393a4a3d63d615a5f6a52b461fdef41185cf7baee24df81c3513362",
+    "crates/phasesmith-solution/src/phase_score.rs": "eb637d9c87787eb5eff9663aae9f6edbdc85b501170ad21d2624e115160699c6",
+    "crates/phasesmith-solution/src/real_fourier.rs": "3b9616133fec60090d339fcb6ba7aaaf721149a736b6429ab1a65f97a2daa113",
+    "crates/phasesmith-solution/src/refinement_families.rs": "70901272c21e54b67aaa7493678e83091e6f8661217115c4cf9769f36e9a2957",
+    "crates/phasesmith-solution/src/reflection_prediction.rs": "2dd0a2f8d1ccc5cccab9d1bafcb034bc52fd409d45284b026c6ad95f26ee07f9",
+    "crates/phasesmith-solution/src/shared_phase_path.rs": "2e2336ab565005645d89aa24b2bbd157b7c3d069671b00befa8927dfbb29a98e",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "a601ffe4fb7d832db84dc2f052704ccab6ffc7a93e900b19a73639e13de8ea88",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "aec3f512ca23f882476081e0708dbaaadf0ba6a8d88088e4d69fab602c207005",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "b47c3acab847ec5e6b334bf5994fb1c017279bf07541af162bda0991284de950",
+    "crates/phasesmith-solution/src/tangent.rs": "25fab86895c4401d46d722d04900fda1c912d4247f346f6ed7f0fd7c04393e79"
+  },
+  "sample_log_sha256": "b6a8896747bf2b769b568042e4ec2355b87d56b870ddc44af120e1ef0194a09d",
+  "sample_log": "   Compiling phasesmith-solution v0.7.0 (/Users/clemens/Programming/PhaseSmith-hkl-solution/crates/phasesmith-solution)\n    Finished `bench` profile [optimized] target(s) in 7.62s\n     Running benches/solution.rs (target/release/deps/solution-a51ba219c0abff5d)\nBenchmarking short_phase_search_32cubed_8_atoms_2108_rows_control\nBenchmarking short_phase_search_32cubed_8_atoms_2108_rows_control: Warming up for 1.0000 s\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\n\nWarning: Unable to complete 20 samples in 2.0s. You may wish to increase target time to 4.0s, or reduce sample count to 10.\nBenchmarking short_phase_search_32cubed_8_atoms_2108_rows_control: Collecting 20 samples in estimated 4.0261 s (20 iterations)\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nBenchmarking short_phase_search_32cubed_8_atoms_2108_rows_control: Analyzing\nshort_phase_search_32cubed_8_atoms_2108_rows_control\n                        time:   [202.02 ms 203.07 ms 204.26 ms]\nFound 1 outliers among 20 measurements (5.00%)\n  1 (5.00%) high mild\n\nBenchmarking short_phase_search_32cubed_8_atoms_2108_rows_cache\nBenchmarking short_phase_search_32cubed_8_atoms_2108_rows_cache: Warming up for 1.0000 s\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\n\nWarning: Unable to complete 20 samples in 2.0s. You may wish to increase target time to 3.8s, or reduce sample count to 10.\nBenchmarking short_phase_search_32cubed_8_atoms_2108_rows_cache: Collecting 20 samples in estimated 3.7650 s (20 iterations)\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nshort_phase_search_sample cache starts 2 cycles 160 extra_fits 8 cached_steps 224 builds 4 reuses 52\nBenchmarking short_phase_search_32cubed_8_atoms_2108_rows_cache: Analyzing\nshort_phase_search_32cubed_8_atoms_2108_rows_cache\n                        time:   [188.39 ms 189.14 ms 190.00 ms]\nFound 4 outliers among 20 measurements (20.00%)\n  3 (15.00%) high mild\n  1 (5.00%) high severe\n\n",
+  "results": [
+    {
+      "id": "short_phase_search_32cubed_8_atoms_2108_rows_cache",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          189114417.0,
+          187910208.0,
+          188006791.0,
+          187030875.0,
+          186983958.0,
+          194630417.0,
+          188122167.0,
+          188424167.0,
+          192305875.0,
+          189197792.0,
+          189695500.0,
+          188176625.0,
+          188382500.0,
+          188291750.0,
+          188190667.0,
+          188184375.0,
+          189133167.0,
+          191266583.0,
+          191441750.0,
+          188239750.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 188390037.1225,
+            "upper_bound": 190001535.13625
+          },
+          "point_estimate": 189136466.7,
+          "standard_error": 412563.53558234253
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 188180500.0,
+            "upper_bound": 189165479.5
+          },
+          "point_estimate": 188337125.0,
+          "standard_error": 331593.7023164334
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 183502.88134217262,
+            "upper_bound": 2010066.048914194
+          },
+          "point_estimate": 892680.1158517599,
+          "standard_error": 528716.9692191225
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 944230.8955164962,
+            "upper_bound": 2552042.120724517
+          },
+          "point_estimate": 1899978.2360528877,
+          "standard_error": 422208.55387142784
+        }
+      },
+      "benchmark": {
+        "group_id": "short_phase_search_32cubed_8_atoms_2108_rows_cache",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "short_phase_search_32cubed_8_atoms_2108_rows_cache",
+        "directory_name": "short_phase_search_32cubed_8_atoms_2108_rows_cache",
+        "title": "short_phase_search_32cubed_8_atoms_2108_rows_cache"
+      }
+    },
+    {
+      "id": "short_phase_search_32cubed_8_atoms_2108_rows_control",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          207407458.0,
+          201031208.0,
+          202086208.0,
+          201801958.0,
+          201471167.0,
+          200422375.0,
+          210016083.0,
+          200956625.0,
+          203402625.0,
+          202498417.0,
+          199855958.0,
+          203528125.0,
+          200582292.0,
+          203215125.0,
+          204034292.0,
+          207656916.0,
+          203684667.0,
+          204047791.0,
+          202556333.0,
+          201072000.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 202021690.87875,
+            "upper_bound": 204264431.98749998
+          },
+          "point_estimate": 203066381.15,
+          "standard_error": 575012.9119782283
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 201271583.5,
+            "upper_bound": 203606396.0
+          },
+          "point_estimate": 202527375.0,
+          "standard_error": 644579.8874513115
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 956523.0946183205,
+            "upper_bound": 3607876.6426473856
+          },
+          "point_estimate": 2187978.045755625,
+          "standard_error": 640889.5525722118
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1369291.7007615657,
+            "upper_bound": 3441721.561248007
+          },
+          "point_estimate": 2641498.651754027,
+          "standard_error": 517464.7419118296
+        }
+      },
+      "benchmark": {
+        "group_id": "short_phase_search_32cubed_8_atoms_2108_rows_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "short_phase_search_32cubed_8_atoms_2108_rows_control",
+        "directory_name": "short_phase_search_32cubed_8_atoms_2108_rows_control",
+        "title": "short_phase_search_32cubed_8_atoms_2108_rows_control"
+      }
+    }
+  ],
+  "qualification": "Control/treatment within the same executable; sequential pairs, not the Criterion comparison to prior builds. Full search work counters printed in sample log. No corpus runs overlapped."
+}

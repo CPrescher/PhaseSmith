@@ -2147,6 +2147,82 @@ fn benchmark(c: &mut Criterion) {
             },
         );
     }
+    for cached in [false, true] {
+        let label = if cached { "cache" } else { "control" };
+        let options = SolveOptions {
+            phasing: PhasingMethod::DualSpace,
+            trials: 2,
+            cycles: 128,
+            max_seconds: 60.,
+            r1_target: 1e-6,
+            ..SolveOptions::default()
+        };
+        let search = SharedSearchOptions {
+            maximum_atoms: 32,
+            symmetry_recycling: true,
+            tangent_refinement: true,
+            wilson_normalization: true,
+            phase_quality_selection: true,
+            phase_origin_selection: true,
+            chemical_assignment: true,
+            iterative_refinement: true,
+            score_only_evaluation: true,
+            reusable_fourier_workspaces: true,
+            work_sliced_phasing: true,
+            isotropic_assignment_refinement: true,
+            filtered_peak_search: true,
+            batched_fft: true,
+            real_fft: true,
+            fused_phase_workspace: true,
+            cached_normal_refinement: true,
+            multiplicity_weighted_refinement: true,
+            ambiguous_assignments: true,
+            cached_assignment_refinement: true,
+            specialized_isotropic_refinement: true,
+            streamed_peak_search: true,
+            reuse_normal_matrices: true,
+            short_phase_starts: cached,
+            ..SharedSearchOptions::default()
+        };
+        c.bench_function(
+            &format!("short_phase_search_32cubed_8_atoms_2108_rows_{label}"),
+            |b| {
+                let sample = phasesmith_solution::solve_elements(
+                    &ambiguity_observations,
+                    cell,
+                    &group,
+                    &ambiguity_elements,
+                    &options,
+                    &search,
+                )
+                .unwrap();
+                let a = sample.shared_search.unwrap();
+                eprintln!(
+                    "short_phase_search_sample {label} starts {} cycles {} extra_fits {} cached_steps {} builds {} reuses {}",
+                    a.phasing_starts,
+                    a.fourier_workspace_cycles,
+                    a.phase_origins
+                        .iter()
+                        .map(|t| t.ambiguity_relaxations)
+                        .sum::<usize>(),
+                    a.assignment_cached_normal_solves,
+                    a.normal_matrix_builds,
+                    a.normal_matrix_reuses
+                );
+                b.iter(|| {
+                    phasesmith_solution::solve_elements(
+                        &ambiguity_observations,
+                        cell,
+                        &group,
+                        &ambiguity_elements,
+                        &options,
+                        &search,
+                    )
+                    .unwrap()
+                });
+            },
+        );
+    }
     for atom_count in [8, 12] {
         let mut fit_points = points.to_vec();
         if atom_count == 12 {

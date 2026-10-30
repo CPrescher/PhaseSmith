@@ -1,0 +1,540 @@
+{
+  "schema": "phasesmith.typical-solve-diagnosis.v1",
+  "baseline": "01b5a20",
+  "source_report": "benchmarks/structure-solution-normal-reuse-comparison-macos.json",
+  "source_report_sha256": "401c1c0addd28aceacb491910ddc98c06740f49662d512df5a12287088ad50e5",
+  "development_cases": 35,
+  "holdout_outcomes_opened": false,
+  "cases_without_matrix_reuse": 27,
+  "largest_saving_case": "cod-2242589",
+  "largest_saving_share": 0.7118426337744144,
+  "summed_phase_seconds": 30.341234535999998,
+  "cases": [
+    {
+      "id": "cod-1549173",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 2.7740673330263235,
+      "reuse_seconds": 2.748048209003173,
+      "saving_seconds": 0.026019124023150653,
+      "phase_seconds": 1.624651499,
+      "stage_seconds": {
+        "origin_seconds": 0.08653454099999999,
+        "recycling_seconds": 0.035712292,
+        "completion_seconds": 0.047837251000000004,
+        "screening_seconds": 0.45402549999999997,
+        "refinement_seconds": 0.243613125
+      }
+    },
+    {
+      "id": "cod-1550276",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 1.0398797920206562,
+      "reuse_seconds": 1.025510041974485,
+      "saving_seconds": 0.014369750046171248,
+      "phase_seconds": 0.308761125,
+      "stage_seconds": {
+        "origin_seconds": 0.021699125,
+        "recycling_seconds": 0.0081195,
+        "completion_seconds": 0.025035666,
+        "screening_seconds": 0.256139834,
+        "refinement_seconds": 0.153999125
+      }
+    },
+    {
+      "id": "cod-2010543",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 4.8355277919908985,
+      "reuse_seconds": 4.8549820829648525,
+      "saving_seconds": -0.019454290973953903,
+      "phase_seconds": 0.445974834,
+      "stage_seconds": {
+        "origin_seconds": 3.126e-06,
+        "recycling_seconds": 0.02023304,
+        "completion_seconds": 0.166901917,
+        "screening_seconds": 2.160995582,
+        "refinement_seconds": 1.763339874
+      }
+    },
+    {
+      "id": "cod-2010647",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 2.3298097499646246,
+      "reuse_seconds": 2.323165917012375,
+      "saving_seconds": 0.006643832952249795,
+      "phase_seconds": 1.808861916,
+      "stage_seconds": {
+        "origin_seconds": 0.096155707,
+        "recycling_seconds": 0.061990041999999995,
+        "completion_seconds": 0.037232958,
+        "screening_seconds": 3.208e-06,
+        "refinement_seconds": 1.623e-06
+      }
+    },
+    {
+      "id": "cod-2010705",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 1.7948846659855917,
+      "reuse_seconds": 1.831503958965186,
+      "saving_seconds": -0.03661929297959432,
+      "phase_seconds": 0.871075958,
+      "stage_seconds": {
+        "origin_seconds": 0.068530585,
+        "recycling_seconds": 0.027734208,
+        "completion_seconds": 0.07832325100000001,
+        "screening_seconds": 0.392013748,
+        "refinement_seconds": 0.118967958
+      }
+    },
+    {
+      "id": "cod-2010746",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 0.6188105829642154,
+      "reuse_seconds": 0.6171029580291361,
+      "saving_seconds": 0.001707624935079366,
+      "phase_seconds": 0.010668125,
+      "stage_seconds": {
+        "origin_seconds": 0.007813958,
+        "recycling_seconds": 0.01807525,
+        "completion_seconds": 0.006195125,
+        "screening_seconds": 0.0036044989999999997,
+        "refinement_seconds": 0.002533125
+      }
+    },
+    {
+      "id": "cod-2010825",
+      "normal_matrix_reuses": 45,
+      "control_seconds": 0.9947701249620877,
+      "reuse_seconds": 0.885072749981191,
+      "saving_seconds": 0.10969737498089671,
+      "phase_seconds": 0.13508275,
+      "stage_seconds": {
+        "origin_seconds": 0.009761875,
+        "recycling_seconds": 0.007373125,
+        "completion_seconds": 0.020275666,
+        "screening_seconds": 0.206126917,
+        "refinement_seconds": 0.24705625
+      }
+    },
+    {
+      "id": "cod-2010901",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 0.7289404580369592,
+      "reuse_seconds": 0.7213575409841724,
+      "saving_seconds": 0.007582917052786797,
+      "phase_seconds": 0.13758375,
+      "stage_seconds": {
+        "origin_seconds": 0.008053167,
+        "recycling_seconds": 0.007417292,
+        "completion_seconds": 0.017713042,
+        "screening_seconds": 0.21506912500000003,
+        "refinement_seconds": 0.099679292
+      }
+    },
+    {
+      "id": "cod-2011038",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 2.006809415994212,
+      "reuse_seconds": 2.0047431249986403,
+      "saving_seconds": 0.0020662909955717623,
+      "phase_seconds": 1.372857416,
+      "stage_seconds": {
+        "origin_seconds": 0.069932208,
+        "recycling_seconds": 0.051069416,
+        "completion_seconds": 0.018862791,
+        "screening_seconds": 0.01977846,
+        "refinement_seconds": 0.042973834
+      }
+    },
+    {
+      "id": "cod-2011181",
+      "normal_matrix_reuses": 83,
+      "control_seconds": 4.166506959008984,
+      "reuse_seconds": 4.1509695000131615,
+      "saving_seconds": 0.015537458995822817,
+      "phase_seconds": 3.038487418,
+      "stage_seconds": {
+        "origin_seconds": 0.194720417,
+        "recycling_seconds": 0.10540904200000001,
+        "completion_seconds": 0.061122917,
+        "screening_seconds": 0.20936829099999998,
+        "refinement_seconds": 0.21433154100000001
+      }
+    },
+    {
+      "id": "cod-2011236",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 1.3544593750266358,
+      "reuse_seconds": 1.378707249998115,
+      "saving_seconds": -0.024247874971479177,
+      "phase_seconds": 0.91741779,
+      "stage_seconds": {
+        "origin_seconds": 0.026643623999999998,
+        "recycling_seconds": 0.026455793,
+        "completion_seconds": 0.053524293,
+        "screening_seconds": 0.039184123999999994,
+        "refinement_seconds": 1.4708e-05
+      }
+    },
+    {
+      "id": "cod-2011241",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 1.8321236670017242,
+      "reuse_seconds": 1.8248479169560596,
+      "saving_seconds": 0.0072757500456646085,
+      "phase_seconds": 0.8104963749999999,
+      "stage_seconds": {
+        "origin_seconds": 0.027560875,
+        "recycling_seconds": 0.024822874,
+        "completion_seconds": 0.054219751,
+        "screening_seconds": 0.405615917,
+        "refinement_seconds": 0.231094542
+      }
+    },
+    {
+      "id": "cod-2011346",
+      "normal_matrix_reuses": 121,
+      "control_seconds": 4.071806291001849,
+      "reuse_seconds": 4.001280540949665,
+      "saving_seconds": 0.07052575005218387,
+      "phase_seconds": 2.973408373,
+      "stage_seconds": {
+        "origin_seconds": 0.117376041,
+        "recycling_seconds": 0.103934791,
+        "completion_seconds": 0.047543084,
+        "screening_seconds": 0.17352304200000002,
+        "refinement_seconds": 0.253786876
+      }
+    },
+    {
+      "id": "cod-2011393",
+      "normal_matrix_reuses": 2,
+      "control_seconds": 2.716703707992565,
+      "reuse_seconds": 2.749672500009183,
+      "saving_seconds": -0.032968792016617954,
+      "phase_seconds": 0.470824917,
+      "stage_seconds": {
+        "origin_seconds": 0.030852875000000002,
+        "recycling_seconds": 0.018635458,
+        "completion_seconds": 0.078634167,
+        "screening_seconds": 1.211865706,
+        "refinement_seconds": 0.645605709
+      }
+    },
+    {
+      "id": "cod-2011426",
+      "normal_matrix_reuses": 157,
+      "control_seconds": 1.7657731670187786,
+      "reuse_seconds": 1.5877642499981448,
+      "saving_seconds": 0.17800891702063382,
+      "phase_seconds": 0.35404295799999996,
+      "stage_seconds": {
+        "origin_seconds": 0.021173126,
+        "recycling_seconds": 0.020679083,
+        "completion_seconds": 0.073715792,
+        "screening_seconds": 0.388023581,
+        "refinement_seconds": 0.480694292
+      }
+    },
+    {
+      "id": "cod-2011451",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 0.9898418750381097,
+      "reuse_seconds": 0.9814606659929268,
+      "saving_seconds": 0.008381209045182914,
+      "phase_seconds": 0.5326915,
+      "stage_seconds": {
+        "origin_seconds": 0.020828458,
+        "recycling_seconds": 0.022427959,
+        "completion_seconds": 0.015389125,
+        "screening_seconds": 0.095038708,
+        "refinement_seconds": 0.02500325
+      }
+    },
+    {
+      "id": "cod-2011590",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 1.2325952500104904,
+      "reuse_seconds": 1.2259930420550518,
+      "saving_seconds": 0.006602207955438644,
+      "phase_seconds": 0.429051624,
+      "stage_seconds": {
+        "origin_seconds": 2.709e-06,
+        "recycling_seconds": 0.011628167,
+        "completion_seconds": 0.03486496,
+        "screening_seconds": 0.221522627,
+        "refinement_seconds": 0.271793
+      }
+    },
+    {
+      "id": "cod-2020988",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 4.371251332981046,
+      "reuse_seconds": 4.397198874969035,
+      "saving_seconds": -0.025947541987989098,
+      "phase_seconds": 1.6800882499999998,
+      "stage_seconds": {
+        "origin_seconds": 0.040439708,
+        "recycling_seconds": 0.057398126,
+        "completion_seconds": 0.126682375,
+        "screening_seconds": 0.751603873,
+        "refinement_seconds": 1.4657615
+      }
+    },
+    {
+      "id": "cod-2021199",
+      "normal_matrix_reuses": 8,
+      "control_seconds": 4.285074790997896,
+      "reuse_seconds": 4.2609027499565855,
+      "saving_seconds": 0.024172041041310877,
+      "phase_seconds": 1.5719153339999998,
+      "stage_seconds": {
+        "origin_seconds": 0.034486126,
+        "recycling_seconds": 0.049032583000000005,
+        "completion_seconds": 0.13503679200000002,
+        "screening_seconds": 1.403371378,
+        "refinement_seconds": 0.787746793
+      }
+    },
+    {
+      "id": "cod-2021292",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 3.990397292014677,
+      "reuse_seconds": 3.7835387499653734,
+      "saving_seconds": 0.20685854204930365,
+      "phase_seconds": 1.564753001,
+      "stage_seconds": {
+        "origin_seconds": 0.056459999999999996,
+        "recycling_seconds": 0.050606333,
+        "completion_seconds": 0.17233420900000002,
+        "screening_seconds": 0.9618825449999999,
+        "refinement_seconds": 0.7415838339999999
+      }
+    },
+    {
+      "id": "cod-2021310",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 0.6550182080245577,
+      "reuse_seconds": 0.6147082080133259,
+      "saving_seconds": 0.04031000001123175,
+      "phase_seconds": 0.146626041,
+      "stage_seconds": {
+        "origin_seconds": 0.016226667,
+        "recycling_seconds": 0.008181042,
+        "completion_seconds": 0.013637042,
+        "screening_seconds": 0.118120291,
+        "refinement_seconds": 0.071672458
+      }
+    },
+    {
+      "id": "cod-2021316",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 1.824245541007258,
+      "reuse_seconds": 1.7760025419993326,
+      "saving_seconds": 0.04824299900792539,
+      "phase_seconds": 0.272888958,
+      "stage_seconds": {
+        "origin_seconds": 0.009854125,
+        "recycling_seconds": 0.014771875,
+        "completion_seconds": 0.036845667,
+        "screening_seconds": 0.359108334,
+        "refinement_seconds": 0.846778167
+      }
+    },
+    {
+      "id": "cod-2102156",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 2.2728105419664644,
+      "reuse_seconds": 2.3396306660142727,
+      "saving_seconds": -0.06682012404780835,
+      "phase_seconds": 1.719723666,
+      "stage_seconds": {
+        "origin_seconds": 0.083608374,
+        "recycling_seconds": 0.075501376,
+        "completion_seconds": 0.080177834,
+        "screening_seconds": 0.106892667,
+        "refinement_seconds": 1.6833e-05
+      }
+    },
+    {
+      "id": "cod-2107296",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 0.6576444999664091,
+      "reuse_seconds": 0.6553049579961225,
+      "saving_seconds": 0.0023395419702865183,
+      "phase_seconds": 0.011745958,
+      "stage_seconds": {
+        "origin_seconds": 0.009751416,
+        "recycling_seconds": 0.018045959,
+        "completion_seconds": 0.00710175,
+        "screening_seconds": 0.013489833,
+        "refinement_seconds": 0.002218625
+      }
+    },
+    {
+      "id": "cod-2108342",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 0.6143766670138575,
+      "reuse_seconds": 0.5955424580024555,
+      "saving_seconds": 0.01883420901140198,
+      "phase_seconds": 0.247134833,
+      "stage_seconds": {
+        "origin_seconds": 0.010717,
+        "recycling_seconds": 0.011153875,
+        "completion_seconds": 0.004889959,
+        "screening_seconds": 0.017341709,
+        "refinement_seconds": 0.017291167
+      }
+    },
+    {
+      "id": "cod-2201295",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 1.1620540000149049,
+      "reuse_seconds": 1.1984722079942003,
+      "saving_seconds": -0.0364182079792954,
+      "phase_seconds": 0.622323249,
+      "stage_seconds": {
+        "origin_seconds": 0.129883333,
+        "recycling_seconds": 0.0424475,
+        "completion_seconds": 0.028113083,
+        "screening_seconds": 0.054021749,
+        "refinement_seconds": 2.1542e-05
+      }
+    },
+    {
+      "id": "cod-2203173",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 1.0920176659710705,
+      "reuse_seconds": 1.0387044579838403,
+      "saving_seconds": 0.05331320798723027,
+      "phase_seconds": 0.54849975,
+      "stage_seconds": {
+        "origin_seconds": 0.024080875,
+        "recycling_seconds": 0.045966125,
+        "completion_seconds": 0.021745374999999997,
+        "screening_seconds": 0.023369374999999998,
+        "refinement_seconds": 0.030183416
+      }
+    },
+    {
+      "id": "cod-2232654",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 0.22710262500913814,
+      "reuse_seconds": 0.23303262499393895,
+      "saving_seconds": -0.005929999984800816,
+      "phase_seconds": 0.00612975,
+      "stage_seconds": {
+        "origin_seconds": 0.002964834,
+        "recycling_seconds": 0.0027895,
+        "completion_seconds": 0.001092125,
+        "screening_seconds": 0.000713541,
+        "refinement_seconds": 0.000318875
+      }
+    },
+    {
+      "id": "cod-2241159",
+      "normal_matrix_reuses": 124,
+      "control_seconds": 4.083200332999695,
+      "reuse_seconds": 4.065951999975368,
+      "saving_seconds": 0.017248333024326712,
+      "phase_seconds": 3.030357209,
+      "stage_seconds": {
+        "origin_seconds": 0.118603583,
+        "recycling_seconds": 0.094600166,
+        "completion_seconds": 0.04505704,
+        "screening_seconds": 0.172394333,
+        "refinement_seconds": 0.24177870699999998
+      }
+    },
+    {
+      "id": "cod-2241796",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 0.5298005410004407,
+      "reuse_seconds": 0.5415293750120327,
+      "saving_seconds": -0.011728834011591971,
+      "phase_seconds": 0.227691208,
+      "stage_seconds": {
+        "origin_seconds": 0.00972225,
+        "recycling_seconds": 0.011377292,
+        "completion_seconds": 0.003886459,
+        "screening_seconds": 0.000384749,
+        "refinement_seconds": 0.000616042
+      }
+    },
+    {
+      "id": "cod-2242589",
+      "normal_matrix_reuses": 342,
+      "control_seconds": 5.123017874953803,
+      "reuse_seconds": 3.453260209003929,
+      "saving_seconds": 1.6697576659498736,
+      "phase_seconds": 0.848330585,
+      "stage_seconds": {
+        "origin_seconds": 8.33e-07,
+        "recycling_seconds": 0.028704208,
+        "completion_seconds": 0.215462666,
+        "screening_seconds": 0.861659584,
+        "refinement_seconds": 1.186232959
+      }
+    },
+    {
+      "id": "cod-2242657",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 0.668361707997974,
+      "reuse_seconds": 0.6479727500118315,
+      "saving_seconds": 0.020388957986142486,
+      "phase_seconds": 0.01215575,
+      "stage_seconds": {
+        "origin_seconds": 0.003118334,
+        "recycling_seconds": 0.016004084000000002,
+        "completion_seconds": 0.083332042,
+        "screening_seconds": 0.248659082,
+        "refinement_seconds": 0.050950709
+      }
+    },
+    {
+      "id": "cod-2243197",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 0.5607868329971097,
+      "reuse_seconds": 0.5599235410336405,
+      "saving_seconds": 0.0008632919634692371,
+      "phase_seconds": 0.145807458,
+      "stage_seconds": {
+        "origin_seconds": 0.01533775,
+        "recycling_seconds": 0.007586875,
+        "completion_seconds": 0.00997975,
+        "screening_seconds": 0.07522616600000001,
+        "refinement_seconds": 0.060961208
+      }
+    },
+    {
+      "id": "cod-2243618",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 2.120723582978826,
+      "reuse_seconds": 2.073402584006544,
+      "saving_seconds": 0.047320998972281814,
+      "phase_seconds": 1.408406833,
+      "stage_seconds": {
+        "origin_seconds": 0.11057449899999999,
+        "recycling_seconds": 0.098474668,
+        "completion_seconds": 0.055069335,
+        "screening_seconds": 0.056684748,
+        "refinement_seconds": 0.019345708
+      }
+    },
+    {
+      "id": "cod-4326074",
+      "normal_matrix_reuses": 0,
+      "control_seconds": 0.2915836659958586,
+      "reuse_seconds": 0.2898329999879934,
+      "saving_seconds": 0.0017506660078652203,
+      "phase_seconds": 0.034718375,
+      "stage_seconds": {
+        "origin_seconds": 0.005523375,
+        "recycling_seconds": 0.001868542,
+        "completion_seconds": 0.000744375,
+        "screening_seconds": 0.000882165,
+        "refinement_seconds": 0.000543084
+      }
+    }
+  ],
+  "qualification": "Diagnosis uses prior complete development outcomes and actual work counters. No holdout outcomes or per-case policy rules."
+}

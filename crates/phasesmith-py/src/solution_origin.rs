@@ -514,8 +514,10 @@ fn chemical_scales<'py>(
     Ok(out)
 }
 #[pyfunction(name = "_phase_cycle_quota")]
-fn phase_quota(cycles: usize, trials: usize, trial: usize) -> PyResult<usize> {
-    phasesmith_solution::phase_cycle_quota(cycles, trials, trial).map_err(invalid)
+#[pyo3(signature=(cycles,trials,trial,short=false))]
+fn phase_quota(cycles: usize, trials: usize, trial: usize, short: bool) -> PyResult<usize> {
+    phasesmith_solution::phase_cycle_quota_with_short_starts(cycles, trials, trial, short)
+        .map_err(invalid)
 }
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(phase_quota, module)?)?;
