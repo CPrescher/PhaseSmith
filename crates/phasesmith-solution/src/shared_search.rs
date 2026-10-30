@@ -75,6 +75,8 @@ pub struct SharedSearchOptions {
     pub isotropic_assignment_refinement: bool,
     /// Exact adaptive threshold filtering and cached periodic neighbor offsets.
     pub filtered_peak_search: bool,
+    /// Batch Fourier lines with blocked transposes, preserving axis order.
+    pub batched_fft: bool,
     /// Select origin FFT sampling from phase-equivalence frequencies.
     pub independent_origin_sampling: bool,
     /// Add motif density scales and post-screen coupled element assignments.
@@ -117,6 +119,7 @@ impl Default for SharedSearchOptions {
             work_sliced_phasing: false,
             isotropic_assignment_refinement: false,
             filtered_peak_search: false,
+            batched_fft: false,
             independent_origin_sampling: false,
             chemical_assignment: false,
             iterative_refinement: false,
@@ -249,6 +252,8 @@ pub struct SharedSearchSummary {
     pub isotropic_assignment_refinement: bool,
     /// Exact adaptive threshold filtering and cached periodic neighbor offsets.
     pub filtered_peak_search: bool,
+    /// Batch Fourier lines with blocked transposes, preserving axis order.
+    pub batched_fft: bool,
     /// Select origin FFT sampling from phase-equivalence frequencies.
     pub independent_origin_sampling: bool,
     /// Add motif density scales and post-screen coupled element assignments.
@@ -267,6 +272,8 @@ pub struct SharedSearchSummary {
     pub fourier_workspace_cycles: usize,
     /// Actual threshold-filtered adaptive peak cycles.
     pub filtered_peak_cycles: usize,
+    /// Actual batched 3D transforms inside P1 phase calls.
+    pub batched_phase_transforms: usize,
     /// Per-start phase checkpoint decisions (start index, decision).
     pub phase_checkpoints: Vec<(usize, crate::PhaseCheckpoint)>,
     /// Actual reciprocal support provenance, absent for the original path.
@@ -1759,7 +1766,8 @@ pub fn solve_elements(
         || (search.independent_origin_sampling && !search.phase_origin_selection)
         || (search.score_only_evaluation && !search.phase_quality_selection)
         || (search.reusable_fourier_workspaces && options.phasing != PhasingMethod::DualSpace)
-        || (search.filtered_peak_search && !search.reusable_fourier_workspaces)
+        || ((search.filtered_peak_search || search.batched_fft)
+            && !search.reusable_fourier_workspaces)
         || (search.isotropic_assignment_refinement
             && (!search.phase_origin_selection || !search.chemical_assignment))
         || (search.work_sliced_phasing
@@ -2001,6 +2009,7 @@ pub fn solve_elements(
         work_sliced_phasing: search.work_sliced_phasing,
         isotropic_assignment_refinement: search.isotropic_assignment_refinement,
         filtered_peak_search: search.filtered_peak_search,
+        batched_fft: search.batched_fft,
         independent_origin_sampling: search.independent_origin_sampling,
         chemical_assignment: search.chemical_assignment,
         iterative_refinement: search.iterative_refinement,
@@ -2191,6 +2200,7 @@ pub fn solve_elements(
                     score_only_evaluation: search.score_only_evaluation,
                     reusable_fourier_workspaces: search.reusable_fourier_workspaces,
                     filtered_peak_search: search.filtered_peak_search,
+                    batched_fft: search.batched_fft,
                 },
             )?;
             audit.phase_slices.push(crate::PhaseSliceAudit {
@@ -2218,6 +2228,7 @@ pub fn solve_elements(
             audit.score_only_evaluations += state.score_only_evaluations;
             audit.fourier_workspace_cycles += state.fourier_workspace_cycles;
             audit.filtered_peak_cycles += state.filtered_peak_cycles;
+            audit.batched_phase_transforms += state.batched_phase_transforms;
             audit
                 .phase_checkpoints
                 .extend(state.phase_checkpoints.drain(..).map(|c| (trial, c)));

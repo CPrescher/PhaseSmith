@@ -369,6 +369,7 @@ pub(super) fn search(
             options.seed.wrapping_add(trial as u64),
             context.prediction.as_ref(),
             search.reusable_fourier_workspaces,
+            search.batched_fft,
         );
         trace.recycling_seconds += start.elapsed().as_secs_f64();
         let recycled = match recycled {

@@ -98,6 +98,7 @@ def compare(paths, manifest, pairs=()):
                 "work_sliced_phasing",
                 "isotropic_assignment_refinement",
                 "filtered_peak_search",
+                "batched_fft",
                 "reusable_fourier_workspaces",
                 "independent_origin_sampling",
                 "resolution_extension",
@@ -151,6 +152,7 @@ def compare(paths, manifest, pairs=()):
                     "score_only_evaluations": r["effort"].get("score_only_evaluations", 0),
                     "fourier_workspace_cycles": r["effort"].get("fourier_workspace_cycles", 0),
                     "filtered_peak_cycles": r["effort"].get("filtered_peak_cycles", 0),
+                    "batched_phase_transforms": r["effort"].get("batched_phase_transforms", 0),
                     "adaptive_checkpoint_tests": len(r["effort"].get("phase_checkpoints", [])),
                     "stable_map_handoffs": sum(
                         c["reason"] == "stable_map"
@@ -217,6 +219,7 @@ def compare(paths, manifest, pairs=()):
             "work_sliced_phasing": report.get("work_sliced_phasing", False),
             "isotropic_assignment_refinement": report.get("isotropic_assignment_refinement", False),
             "filtered_peak_search": report.get("filtered_peak_search", False),
+            "batched_fft": report.get("batched_fft", False),
             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
             "independent_origin_sampling": report.get("independent_origin_sampling", False),
             "resolution_extension": report.get("resolution_extension", 1.0),
@@ -238,6 +241,7 @@ def compare(paths, manifest, pairs=()):
                     "short_quota_completions",
                     "fourier_workspace_cycles",
                     "filtered_peak_cycles",
+                    "batched_phase_transforms",
                     "stable_map_handoffs",
                     "screening_refinements",
                     "final_refinements",
