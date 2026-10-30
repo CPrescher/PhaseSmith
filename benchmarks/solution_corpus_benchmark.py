@@ -205,6 +205,8 @@ def main():
     r.add_argument("--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json")
     r.add_argument("--output", type=Path, required=True)
     r.add_argument("--resume", action="store_true")
+    r.add_argument("--workers", type=int, default=1)
+    r.add_argument("--shelxt-threads", type=int, default=1)
     r.add_argument("--legacy-counts", action="store_true")
     r.add_argument("--wilson-normalization", action="store_true")
     r.add_argument("--phase-origin-selection", action="store_true")
@@ -249,6 +251,7 @@ def main():
         default=Path("/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt"),
     )
     w = commands.add_parser("worker")
+    w.add_argument("--workers", type=int, default=1)
     w.add_argument("--legacy-counts", action="store_true")
     w.add_argument("--wilson-normalization", action="store_true")
     w.add_argument("--phase-origin-selection", action="store_true")

@@ -1,0 +1,50 @@
+{
+  "schema": "phasesmith.multicore-validation.v1",
+  "timestamp_utc": "2026-10-30T22:48:02.688870+00:00",
+  "holdout_opened": false,
+  "checks": [
+    {
+      "command": "cargo fmt --check",
+      "exit_code": 0
+    },
+    {
+      "command": "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+      "exit_code": 0,
+      "log_sha256": "f591e097f22f91dd5c31fbbf7e587d80c0a4e0ed594f9c9012a544f38c52d926"
+    },
+    {
+      "command": "cargo test --workspace --all-features",
+      "exit_code": 0,
+      "passed": 427,
+      "failed": 0,
+      "ignored": 34,
+      "log_sha256": "4aacc6ae5063146a22543987486651ad9dd814336d2d729ef1f9035ea5bc7b4c"
+    },
+    {
+      "command": ".venv/bin/pytest -q",
+      "exit_code": 0,
+      "passed": 2675,
+      "skipped": 11,
+      "deselected": 34,
+      "log_sha256": "65743db8621cb170e3376789fefd44fba9e16f366664a4d9c8077309a9fad0a4"
+    }
+  ],
+  "native_sha256": "162c713ed6a30285b4e249f529b9c4ca4b6846b00b976b891a0d50d7f1292ede",
+  "comparison_sha256": "654061ce12397ab665533c41ce2eead33120b1a026d49f68e58a4dbc69406684",
+  "kernel_report_sha256": "ddb4da0a9d82cb6b9f0bf4f7d7b6c9949792666dc08323370ee17255666c29ae",
+  "adapter_lock_sha256": "611745faded13813d6ad90066158ae4ba8703623af46adf02a8761556831ebb8",
+  "complete_predictions": 560,
+  "all19_retained": true,
+  "all35_count_vectors_unchanged": true,
+  "retained_correct_total_counts": 26,
+  "retained_correct_element_counts": 19,
+  "retained_strict_structures": 15,
+  "numerical_tests": [
+    "Independent Python structure-factor equations and centered derivatives for isotropic/anisotropic models",
+    "Bitwise fused values, Jacobians and short fits at 1/2/4/8 workers with supplied symmetry, cached/uncached geometry and multiplicity weighting",
+    "Synthetic full searches retain structures, counts and phase-history prefixes",
+    "Lazy pool construction, scope restoration, concurrent independent roots, nested budget guards and pool release",
+    "All 560 development predictions saved before grading; process interval and native worker bounds verified; all immutable inputs and source snapshots verified"
+  ],
+  "qualification": "Full workspace checks completed after timed kernels and corpus jobs ended. Independent physical equations unchanged; worker granularity and call-scoped execution change only scheduling. No global numerical state, tolerances or holdout policy changed."
+}

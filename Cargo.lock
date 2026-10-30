@@ -708,6 +708,7 @@ dependencies = [
  "criterion",
  "ndarray",
  "phasesmith-crystallography",
+ "phasesmith-execution",
  "rustfft",
 ]
 

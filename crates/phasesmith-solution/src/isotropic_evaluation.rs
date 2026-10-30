@@ -14,8 +14,10 @@ pub(super) fn eligible(model: &PreparedSymmetricModel, geometry: Option<&Geometr
 }
 
 // Values and all coordinate/log-U derivatives are accumulated in the same pass.
+#[allow(clippy::too_many_arguments)]
 pub(super) fn evaluate(
     model: &PreparedSymmetricModel,
+    start: usize,
     parameters: &[f64],
     tensors: &[Matrix3],
     tensor_derivatives: &[Vec<Matrix3>],
@@ -23,10 +25,12 @@ pub(super) fn evaluate(
     amplitudes: &mut [f64],
     jacobian: &mut [f64],
 ) {
-    let count = model.hkl.len();
+    let count = amplitudes.len();
     let mut dre = vec![0.; model.parameter_count];
     let mut dim = dre.clone();
-    for (reflection, &q) in model.reciprocal.iter().enumerate() {
+    for local in 0..count {
+        let reflection = start + local;
+        let q = model.reciprocal[reflection];
         dre.fill(0.);
         dim.fill(0.);
         let mut real = 0.;
@@ -64,10 +68,10 @@ pub(super) fn evaluate(
             .families
             .as_ref()
             .map_or(1., |p| p.square_roots[reflection]);
-        amplitudes[reflection] = raw * family_weight;
+        amplitudes[local] = raw * family_weight;
         if raw > 1e-14 {
             for parameter in 0..model.parameter_count {
-                jacobian[parameter * count + reflection] =
+                jacobian[parameter * count + local] =
                     ((real * dre[parameter] + imaginary * dim[parameter]) / raw) * family_weight;
             }
         }

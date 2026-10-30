@@ -64,6 +64,7 @@ def worker(args):
         space_group=group,
         options=options,
         maximum_atoms=maximum_atoms,
+        workers=getattr(args, "workers", 1),
         symmetry_recycling=True,
         tangent_refinement=True,
         adaptive_counts=not args.legacy_counts,
@@ -189,7 +190,7 @@ def instructions(packet):
     )
 
 
-def launch(command, directory, seconds):
+def launch(command, directory, seconds, threads=1):
     started = time.perf_counter()
     environment = {
         **os.environ,
@@ -204,6 +205,7 @@ def launch(command, directory, seconds):
             ]
         },
     }
+    environment["OMP_NUM_THREADS"] = str(threads)
     with (directory / "stdout.txt").open("wb") as output:
         process = subprocess.Popen(
             command,
@@ -264,7 +266,9 @@ def collect_jobs(args):
     if args.resume:
         previous = json.loads((args.output / "before-reference-audit.json").read_text())
         if (
-            previous["manifest_sha256"] != sha(args.manifest)
+            previous.get("workers", 1) != getattr(args, "workers", 1)
+            or previous.get("shelxt_threads", 1) != getattr(args, "shelxt_threads", 1)
+            or previous["manifest_sha256"] != sha(args.manifest)
             or previous["seconds_per_job"] != args.seconds
         ):
             raise ValueError("resume inputs/budget differ from collection")
@@ -343,6 +347,7 @@ def collect_jobs(args):
             ROOT / "Cargo.toml",
             ROOT / "Cargo.lock",
             ROOT / "crates/phasesmith-solution/Cargo.toml",
+            ROOT / "crates/phasesmith-execution/src/lib.rs",
         ]
     )
     if getattr(args, "collection_schedule", "serial_panel") != "serial_panel":
@@ -407,7 +412,10 @@ def collect_jobs(args):
             "same quantized measured HKLF4, element types, cell, wavelength "
             "and fixed reference-setting space group; no counts or coordinates"
         ),
-        "thread_policy": "serial jobs; all numerical thread environment limits=1; SHELXT -t1",
+        "workers": getattr(args, "workers", 1),
+        "shelxt_threads": getattr(args, "shelxt_threads", 1),
+        "thread_policy": (f"serial jobs; PhaseSmith call-owned pool <= {getattr(args, 'workers', 1)}; "
+                          f"other numerical libraries=1; SHELXT -t{getattr(args, 'shelxt_threads', 1)}"),
         "score_policy": {
             "counts": "exact non-H full cell",
             "maximum_error_angstrom": 0.05,
@@ -504,6 +512,8 @@ def collect_jobs(args):
                     str(work / "solution"),
                     "--seconds",
                     str(args.seconds),
+                    "--workers",
+                    str(getattr(args, "workers", 1)),
                     "--maximum-atoms",
                     str(atom_cap),
                     *(["--legacy-counts"] if args.legacy_counts else []),
@@ -578,7 +588,7 @@ def collect_jobs(args):
                 command = [
                     str(args.shelxt.resolve()),
                     "sample",
-                    "-t1",
+                    f"-t{getattr(args, 'shelxt_threads', 1)}",
                     "-s" + packet["shelxt_space_group"],
                 ]
             record = {
@@ -590,7 +600,7 @@ def collect_jobs(args):
                 "expanded_measured_rows_for_resource_cap": expanded_rows,
                 "adapter_preparation_seconds_outside_timing": prep_seconds,
                 "host_load_average_before_job": list(os.getloadavg()),
-                **launch(command, work, args.seconds),
+                **launch(command, work, args.seconds, getattr(args, "shelxt_threads", 1) if method == "shelxt" else 1),
             }
             try:
                 if method == "phasesmith":
@@ -600,8 +610,9 @@ def collect_jobs(args):
                     model_path = work / "sample_a.res"
                     record["model"] = shelxt_candidate(model_path)
                     log = (work / "stdout.txt").read_text(errors="replace")
-                    if "1 threads running in parallel" not in log:
-                        raise ValueError("one-thread execution not confirmed")
+                    threads = getattr(args, "shelxt_threads", 1)
+                    if f"{threads} threads running in parallel" not in log:
+                        raise ValueError("requested thread execution not confirmed")
                     record["outputs_sha256"] = {
                         p.name: sha(p) for p in work.iterdir() if p.is_file()
                     }

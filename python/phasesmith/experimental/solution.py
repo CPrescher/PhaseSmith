@@ -544,6 +544,11 @@ class SharedSearchAudit:
     assignment_convergence_stopping: bool = False
     late_phase_plateau_stopping: bool = False
     model_consensus_stopping: bool = False
+    requested_workers: int = 1
+    workers: int = 1
+    parallel_maps: int = 0
+    parallel_tasks: int = 0
+    max_active_workers: int = 1
     model_consensus_checks: int = 0
     model_consensus_stops: int = 0
     model_consensus_trials: tuple[int,int] | None = None
@@ -843,6 +848,7 @@ def solve_structure_elements(
     assignment_convergence_stopping: bool = False,
     late_phase_plateau_stopping: bool = False,
     model_consensus_stopping: bool = False,
+    workers: int = 1,
     missing_reflections: bool = False,
     resolution_extension: float = 1.0,
     score_only_evaluation: bool = False,
@@ -960,7 +966,14 @@ def solve_structure_elements(
     Recycling remains opt-in because easy cases
     can become slower. Counts returned in ``composition`` are inferred, never inputs. The default
     atom cap is ceil(cell volume/8 A³), at most 128; it is a search bound.
+    ``workers`` bounds one call-owned pool (1..64, capped to available CPUs).
+    Reflection values and derivatives run in parallel; reductions, phase starts,
+    candidate ordering and stopping stay ordered. Small evaluations stay serial.
+    Concurrent solves should share a total application budget; for N independent
+    solves, use N outer jobs and ``workers=1`` in each.
     """
+    if type(workers) is not int or not 1 <= workers <= 64:
+        raise ValueError("workers must be an integer in [1,64]")
     if not hasattr(_core, "_SharedOrbitPool"):
         raise ImportError("shared element search requires experimental-solution native feature")
     if not isinstance(observations, HklData) or not isinstance(cell, UnitCell):
@@ -1197,7 +1210,7 @@ def solve_structure_elements(
                     specialized_isotropic_refinement,
                     streamed_peak_search,
                     reuse_normal_matrices,
-                    (short_phase_starts, blocked_normal_matrices, phase_plateau_stopping, assignment_convergence_stopping, late_phase_plateau_stopping, model_consensus_stopping),
+                    (short_phase_starts, blocked_normal_matrices, phase_plateau_stopping, assignment_convergence_stopping, late_phase_plateau_stopping, model_consensus_stopping, workers),
                 ),
             ),
         ),
