@@ -52,6 +52,7 @@ def test_pair_labels_are_distinct_from_prediction_case_pairs():
         "mask_flag",
         "family_flag",
         "ambiguity_flag",
+        "assignment_cache_flag",
     ],
 )
 def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corruption):
@@ -78,6 +79,7 @@ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corrup
             "mask_flag": "fused_phase_workspace",
             "family_flag": "multiplicity_weighted_refinement",
             "ambiguity_flag": "ambiguous_assignments",
+            "assignment_cache_flag": "cached_assignment_refinement",
         }[corruption]
         report[key] = 1.2 if corruption == "extension_flag" else True
     else:

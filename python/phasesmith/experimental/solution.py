@@ -539,6 +539,10 @@ class SharedSearchAudit:
     cached_normal_refinement: bool = False
     multiplicity_weighted_refinement: bool = False
     ambiguous_assignments: bool = False
+    cached_assignment_refinement: bool = False
+    assignment_cached_refinements: int = 0
+    assignment_cached_normal_solves: int = 0
+    assignment_normal_cache_fallbacks: int = 0
     ambiguity_continuations: int = 0
     weighted_refinement_fits: int = 0
     weighted_refinement_input_rows: int = 0
@@ -809,6 +813,7 @@ def solve_structure_elements(
     cached_normal_refinement: bool = False,
     multiplicity_weighted_refinement: bool = False,
     ambiguous_assignments: bool = False,
+    cached_assignment_refinement: bool = False,
     missing_reflections: bool = False,
     resolution_extension: float = 1.0,
     score_only_evaluation: bool = False,
@@ -840,6 +845,8 @@ def solve_structure_elements(
     ``cached_normal_refinement=True`` caches preconditioned normal matrices in final
     iterative fits, verifies steps against the original Jacobian and falls back
     to the matrix-free solver if needed. It requires iterative refinement.
+    ``cached_assignment_refinement=True`` uses guarded normal caches in short
+    isotropic fits; it requires iterative and isotropic assignment refinement.
     ``ambiguous_assignments=True`` retains coupled near-element relabels through
     bounded isotropic competition and requires isotropic assignment refinement.
     ``multiplicity_weighted_refinement=True`` evaluates final constrained fits on
@@ -924,6 +931,7 @@ def solve_structure_elements(
         ("cached_normal_refinement", cached_normal_refinement),
         ("multiplicity_weighted_refinement", multiplicity_weighted_refinement),
         ("ambiguous_assignments", ambiguous_assignments),
+        ("cached_assignment_refinement", cached_assignment_refinement),
         ("missing_reflections", missing_reflections),
         ("adaptive_checkpoints", adaptive_checkpoints),
         ("score_only_evaluation", score_only_evaluation),
@@ -948,6 +956,12 @@ def solve_structure_elements(
         phase_origin_selection and wilson_normalization
     ):
         raise ValueError("prediction requires phase_origin_selection and wilson_normalization")
+    if cached_assignment_refinement and not (
+        iterative_refinement and isotropic_assignment_refinement
+    ):
+        raise ValueError(
+            "cached_assignment_refinement requires iterative and isotropic assignment refinement"
+        )
     if ambiguous_assignments and not isotropic_assignment_refinement:
         raise ValueError("ambiguous_assignments requires isotropic_assignment_refinement")
     if cached_normal_refinement and not iterative_refinement:
@@ -1098,7 +1112,7 @@ def solve_structure_elements(
                 (
                     filtered_peak_search, batched_fft, cached_normal_refinement,
                     real_fft, fused_phase_workspace, multiplicity_weighted_refinement,
-                    ambiguous_assignments,
+                    ambiguous_assignments, cached_assignment_refinement,
                 ),
             ),
         ),

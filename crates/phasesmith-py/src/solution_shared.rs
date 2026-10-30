@@ -103,6 +103,22 @@ pub(super) fn summary<'py>(
         s.multiplicity_weighted_refinement,
     )?;
     d.set_item("ambiguous_assignments", s.ambiguous_assignments)?;
+    d.set_item(
+        "cached_assignment_refinement",
+        s.cached_assignment_refinement,
+    )?;
+    d.set_item(
+        "assignment_cached_refinements",
+        s.assignment_cached_refinements,
+    )?;
+    d.set_item(
+        "assignment_cached_normal_solves",
+        s.assignment_cached_normal_solves,
+    )?;
+    d.set_item(
+        "assignment_normal_cache_fallbacks",
+        s.assignment_normal_cache_fallbacks,
+    )?;
     d.set_item("ambiguity_continuations", s.ambiguity_continuations)?;
     d.set_item("weighted_refinement_fits", s.weighted_refinement_fits)?;
     d.set_item(

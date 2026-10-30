@@ -93,6 +93,8 @@ pub struct SharedSearchOptions {
     pub multiplicity_weighted_refinement: bool,
     /// Relax coupled near-element assignments and retain close final alternatives.
     pub ambiguous_assignments: bool,
+    /// Use checked normal caches for short isotropic assignment fits.
+    pub cached_assignment_refinement: bool,
     /// Regularize allowed unmeasured coefficients using the observed Wilson envelope.
     pub missing_reflections: bool,
     /// Reciprocal-radius extension multiplier, in [1,1.5].
@@ -138,6 +140,7 @@ impl Default for SharedSearchOptions {
             cached_normal_refinement: false,
             multiplicity_weighted_refinement: false,
             ambiguous_assignments: false,
+            cached_assignment_refinement: false,
             missing_reflections: false,
             resolution_extension: 1.,
         }
@@ -285,6 +288,8 @@ pub struct SharedSearchSummary {
     pub multiplicity_weighted_refinement: bool,
     /// Relax coupled near-element assignments and retain close final alternatives.
     pub ambiguous_assignments: bool,
+    /// Use checked normal caches for short isotropic assignment fits.
+    pub cached_assignment_refinement: bool,
     /// Requested observed-envelope gap treatment.
     pub missing_reflections: bool,
     /// Requested reciprocal-radius extension.
@@ -329,6 +334,12 @@ pub struct SharedSearchSummary {
     pub phase_model_trials: Vec<usize>,
     /// One optional corroborating start after ambiguous first-map assignments.
     pub ambiguity_continuations: usize,
+    /// Isotropic fits that actually used a checked cached step.
+    pub assignment_cached_refinements: usize,
+    /// Actual accepted cached linear steps in isotropic fits.
+    pub assignment_cached_normal_solves: usize,
+    /// Actual fallbacks to the original isotropic linear operator.
+    pub assignment_normal_cache_fallbacks: usize,
     /// Isotropic count prefixes actually screened.
     pub count_prefix_screenings: usize,
     /// Phase maps handed off under a local refinement budget.
@@ -614,11 +625,20 @@ fn refine(
         Some(deadline),
         options.cancellation.as_ref(),
         audit.iterative_refinement,
-        audit.cached_normal_refinement
-            && !matches!(pass, FitPass::Screen(_) | FitPass::ScreenSeed(_, _)),
+        if matches!(pass, FitPass::Screen(_) | FitPass::ScreenSeed(_, _)) {
+            audit.cached_assignment_refinement
+        } else {
+            audit.cached_normal_refinement
+        },
     )?;
-    audit.cached_normal_solves += fit.cached_normal_solves;
-    audit.normal_cache_fallbacks += fit.normal_cache_fallbacks;
+    if matches!(pass, FitPass::Screen(_) | FitPass::ScreenSeed(_, _)) {
+        audit.assignment_cached_refinements += usize::from(fit.cached_normal_solves > 0);
+        audit.assignment_cached_normal_solves += fit.cached_normal_solves;
+        audit.assignment_normal_cache_fallbacks += fit.normal_cache_fallbacks;
+    } else {
+        audit.cached_normal_solves += fit.cached_normal_solves;
+        audit.normal_cache_fallbacks += fit.normal_cache_fallbacks;
+    }
     let (mut summary, mut full) = fit.summarize(mode, baseline.r1, baseline.objective);
     let aligned: Vec<_> = full
         .iter()
@@ -1830,6 +1850,8 @@ pub fn solve_elements(
         || (search.fused_phase_workspace && !search.reusable_fourier_workspaces)
         || (search.real_fft && !search.batched_fft)
         || (search.cached_normal_refinement && !search.iterative_refinement)
+        || (search.cached_assignment_refinement
+            && (!search.iterative_refinement || !search.isotropic_assignment_refinement))
         || (search.ambiguous_assignments && !search.isotropic_assignment_refinement)
         || (search.isotropic_assignment_refinement
             && (!search.phase_origin_selection || !search.chemical_assignment))
@@ -2081,6 +2103,7 @@ pub fn solve_elements(
         cached_normal_refinement: search.cached_normal_refinement,
         multiplicity_weighted_refinement: search.multiplicity_weighted_refinement,
         ambiguous_assignments: search.ambiguous_assignments,
+        cached_assignment_refinement: search.cached_assignment_refinement,
         missing_reflections: search.missing_reflections,
         resolution_extension: search.resolution_extension,
         prediction: prediction_f.as_ref().map(|p| p.audit.clone()),
