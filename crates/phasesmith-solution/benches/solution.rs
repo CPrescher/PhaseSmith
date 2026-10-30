@@ -834,6 +834,7 @@ fn benchmark(c: &mut Criterion) {
                     reusable_fourier_workspaces: reuse,
                     filtered_peak_search: false,
                     batched_fft: false,
+                    real_fft: false,
                 };
                 let options = DualSpaceOptions {
                     cycles: 64,
@@ -893,6 +894,7 @@ fn benchmark(c: &mut Criterion) {
                     reusable_fourier_workspaces: true,
                     filtered_peak_search: filtered,
                     batched_fft: false,
+                    real_fft: false,
                 };
                 let options = DualSpaceOptions {
                     cycles: 64,
@@ -952,6 +954,7 @@ fn benchmark(c: &mut Criterion) {
                     reusable_fourier_workspaces: true,
                     filtered_peak_search: true,
                     batched_fft: batched,
+                    real_fft: false,
                 };
                 let options = DualSpaceOptions {
                     cycles: 64,
@@ -982,6 +985,67 @@ fn benchmark(c: &mut Criterion) {
                 eprintln!(
                     "execution_sample {label} completed_cycles {}",
                     sample.trial.history.len()
+                );
+                drop(sample);
+                b.iter(|| {
+                    phasesmith_solution::dual_space_with_execution(
+                        shape,
+                        cell,
+                        &quality_data.hkl,
+                        &quality_data.amplitudes,
+                        &phases,
+                        &support,
+                        &options,
+                        None,
+                        Some(&quality_plan),
+                        execution,
+                    )
+                    .unwrap()
+                });
+            },
+        );
+    }
+    for (label, real) in [("control", false), ("real", true)] {
+        c.bench_function(
+            &format!("real_fft_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_{label}"),
+            |b| {
+                let execution = phasesmith_solution::PhasingExecution {
+                    score_only_evaluation: true,
+                    reusable_fourier_workspaces: true,
+                    filtered_peak_search: true,
+                    batched_fft: true,
+                    real_fft: real,
+                };
+                let options = DualSpaceOptions {
+                    cycles: 64,
+                    peak_selection: PeakSelection::Adaptive {
+                        sigma: 2.,
+                        cap: 128,
+                    },
+                    mask_sigma: 0.25,
+                    hybrid_m: 3.,
+                    omit_fraction: 0.1,
+                    seed: 1034,
+                    patterson_rank: Some(0),
+                    cancellation: None,
+                };
+                let sample = phasesmith_solution::dual_space_with_execution(
+                    shape,
+                    cell,
+                    &quality_data.hkl,
+                    &quality_data.amplitudes,
+                    &phases,
+                    &support,
+                    &options,
+                    None,
+                    Some(&quality_plan),
+                    execution,
+                )
+                .unwrap();
+                eprintln!(
+                    "real_fft_sample {label} completed_cycles {} real_transforms {}",
+                    sample.trial.history.len(),
+                    sample.real_phase_transforms
                 );
                 drop(sample);
                 b.iter(|| {
@@ -1240,6 +1304,68 @@ fn benchmark(c: &mut Criterion) {
                     audit.final_refinements,
                     audit.cached_normal_solves,
                     audit.normal_cache_fallbacks
+                );
+                b.iter(|| {
+                    phasesmith_solution::solve_elements(
+                        &count_observations,
+                        cell,
+                        &group,
+                        &quality_elements,
+                        &options,
+                        &search,
+                    )
+                    .unwrap()
+                });
+            },
+        );
+    }
+    for real in [false, true] {
+        let options = SolveOptions {
+            phasing: PhasingMethod::DualSpace,
+            trials: 2,
+            cycles: 128,
+            max_seconds: 60.,
+            r1_target: 1e-6,
+            ..SolveOptions::default()
+        };
+        let search = SharedSearchOptions {
+            maximum_atoms: 32,
+            symmetry_recycling: true,
+            tangent_refinement: true,
+            wilson_normalization: true,
+            phase_quality_selection: true,
+            phase_origin_selection: true,
+            chemical_assignment: true,
+            iterative_refinement: true,
+            score_only_evaluation: true,
+            reusable_fourier_workspaces: true,
+            work_sliced_phasing: true,
+            isotropic_assignment_refinement: true,
+            filtered_peak_search: true,
+            batched_fft: true,
+            cached_normal_refinement: true,
+            real_fft: real,
+            ..SharedSearchOptions::default()
+        };
+        let label = if real { "real" } else { "control" };
+        c.bench_function(
+            &format!("real_fft_search_32cubed_8_atoms_2108_rows_{label}"),
+            |b| {
+                let sample = phasesmith_solution::solve_elements(
+                    &count_observations,
+                    cell,
+                    &group,
+                    &quality_elements,
+                    &options,
+                    &search,
+                )
+                .unwrap();
+                let audit = sample.shared_search.unwrap();
+                eprintln!(
+                    "real_search_sample {label} starts {} real_transforms {} cycles {}",
+                    audit.phasing_starts,
+                    audit.real_phase_transforms,
+                    audit.fourier_workspace_cycles
                 );
                 b.iter(|| {
                     phasesmith_solution::solve_elements(

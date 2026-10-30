@@ -60,6 +60,7 @@ fn run<'py>(
                     reusable_fourier_workspaces: reusable_workspaces,
                     filtered_peak_search: false,
                     batched_fft: false,
+                    real_fft: false,
                 },
             )
         })
@@ -119,8 +120,8 @@ pub(super) fn adaptive_record<'py>(
     Ok(d)
 }
 #[pyfunction(name = "_solution_count_free_dual_space")]
-#[allow(clippy::too_many_arguments)]
-#[pyo3(signature = (shape, cell_parameters, hkl, amplitudes, phases, support, cycles, peak_sigma, peak_cap, mask_sigma, hybrid_m, omit_fraction, seed, patterson_rank, checkpoint_accept_cycle=None, reusable_workspaces=false, filtered_peak_search=false,batched_fft=false))]
+#[allow(clippy::too_many_arguments, clippy::fn_params_excessive_bools)] // Independent diagnostic controls.
+#[pyo3(signature = (shape, cell_parameters, hkl, amplitudes, phases, support, cycles, peak_sigma, peak_cap, mask_sigma, hybrid_m, omit_fraction, seed, patterson_rank, checkpoint_accept_cycle=None, reusable_workspaces=false, filtered_peak_search=false,batched_fft=false, real_fft=false))]
 fn count_free<'py>(
     py: Python<'py>,
     shape: [usize; 3],
@@ -141,6 +142,7 @@ fn count_free<'py>(
     reusable_workspaces: bool,
     filtered_peak_search: bool,
     batched_fft: bool,
+    real_fft: bool,
 ) -> PyResult<Bound<'py, PyDict>> {
     let cell = cell(&cell_parameters)?;
     let hkl = hkl_rows(&hkl)?;
@@ -178,10 +180,11 @@ fn count_free<'py>(
                         reusable_fourier_workspaces: reusable_workspaces,
                         filtered_peak_search,
                         batched_fft,
+                        real_fft,
                     },
                 );
             }
-            if filtered_peak_search || reusable_workspaces || batched_fft {
+            if filtered_peak_search || reusable_workspaces || batched_fft || real_fft {
                 return Err(phasesmith_solution::SolutionError(
                     "diagnostic checkpoint and execution modes must be tested separately".into(),
                 ));
@@ -332,6 +335,7 @@ pub(super) fn trial_records(
 
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(fft_transform, module)?)?;
+    module.add_function(wrap_pyfunction!(real_fft_transform, module)?)?;
     module.add_function(wrap_pyfunction!(filtered_peaks, module)?)?;
     module.add_function(wrap_pyfunction!(run, module)?)?;
     module.add_function(wrap_pyfunction!(count_free, module)?)?;
@@ -382,4 +386,43 @@ fn fft_transform<'py>(
             .into_pyarray(py),
     )?;
     Ok(out)
+}
+
+#[pyfunction(name = "_solution_real_fft_transform")]
+fn real_fft_transform<'py>(
+    py: Python<'py>,
+    real: PyReadonlyArray1<'_, f64>,
+    imaginary: PyReadonlyArray1<'_, f64>,
+    shape: [usize; 3],
+    to_density: bool,
+) -> PyResult<Bound<'py, PyDict>> {
+    let a = real.as_slice()?;
+    let b = imaginary.as_slice()?;
+    if a.len() != b.len() {
+        return Err(invalid("FFT real/imaginary lengths differ"));
+    }
+    let input: Vec<_> = a
+        .iter()
+        .zip(b)
+        .map(|(&r, &i)| phasesmith_solution::FourierComplex::new(r, i))
+        .collect();
+    let out = py
+        .detach(|| phasesmith_solution::real_density_transform(shape, &input, to_density))
+        .map_err(invalid)?;
+    let result = PyDict::new(py);
+    result.set_item(
+        "real",
+        out.iter()
+            .map(|v| v.re)
+            .collect::<Vec<_>>()
+            .into_pyarray(py),
+    )?;
+    result.set_item(
+        "imaginary",
+        out.iter()
+            .map(|v| v.im)
+            .collect::<Vec<_>>()
+            .into_pyarray(py),
+    )?;
+    Ok(result)
 }

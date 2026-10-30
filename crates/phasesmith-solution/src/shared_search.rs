@@ -77,6 +77,8 @@ pub struct SharedSearchOptions {
     pub filtered_peak_search: bool,
     /// Batch Fourier lines with blocked transposes, preserving axis order.
     pub batched_fft: bool,
+    /// Use packed real P1 Fourier cycles; requires batched FFTs.
+    pub real_fft: bool,
     /// Select origin FFT sampling from phase-equivalence frequencies.
     pub independent_origin_sampling: bool,
     /// Add motif density scales and post-screen coupled element assignments.
@@ -122,6 +124,7 @@ impl Default for SharedSearchOptions {
             isotropic_assignment_refinement: false,
             filtered_peak_search: false,
             batched_fft: false,
+            real_fft: false,
             independent_origin_sampling: false,
             chemical_assignment: false,
             iterative_refinement: false,
@@ -257,6 +260,8 @@ pub struct SharedSearchSummary {
     pub filtered_peak_search: bool,
     /// Batch Fourier lines with blocked transposes, preserving axis order.
     pub batched_fft: bool,
+    /// Use packed real P1 Fourier cycles; requires batched FFTs.
+    pub real_fft: bool,
     /// Select origin FFT sampling from phase-equivalence frequencies.
     pub independent_origin_sampling: bool,
     /// Add motif density scales and post-screen coupled element assignments.
@@ -279,6 +284,8 @@ pub struct SharedSearchSummary {
     pub filtered_peak_cycles: usize,
     /// Actual batched 3D transforms inside P1 phase calls.
     pub batched_phase_transforms: usize,
+    /// Actual packed-real P1 transforms (forward plus backward).
+    pub real_phase_transforms: usize,
     /// Per-start phase checkpoint decisions (start index, decision).
     pub phase_checkpoints: Vec<(usize, crate::PhaseCheckpoint)>,
     /// Actual reciprocal support provenance, absent for the original path.
@@ -1781,6 +1788,7 @@ pub fn solve_elements(
         || (search.reusable_fourier_workspaces && options.phasing != PhasingMethod::DualSpace)
         || ((search.filtered_peak_search || search.batched_fft)
             && !search.reusable_fourier_workspaces)
+        || (search.real_fft && !search.batched_fft)
         || (search.cached_normal_refinement && !search.iterative_refinement)
         || (search.isotropic_assignment_refinement
             && (!search.phase_origin_selection || !search.chemical_assignment))
@@ -2024,6 +2032,7 @@ pub fn solve_elements(
         isotropic_assignment_refinement: search.isotropic_assignment_refinement,
         filtered_peak_search: search.filtered_peak_search,
         batched_fft: search.batched_fft,
+        real_fft: search.real_fft,
         independent_origin_sampling: search.independent_origin_sampling,
         chemical_assignment: search.chemical_assignment,
         iterative_refinement: search.iterative_refinement,
@@ -2216,6 +2225,7 @@ pub fn solve_elements(
                     reusable_fourier_workspaces: search.reusable_fourier_workspaces,
                     filtered_peak_search: search.filtered_peak_search,
                     batched_fft: search.batched_fft,
+                    real_fft: search.real_fft,
                 },
             )?;
             audit.phase_slices.push(crate::PhaseSliceAudit {
@@ -2244,6 +2254,7 @@ pub fn solve_elements(
             audit.fourier_workspace_cycles += state.fourier_workspace_cycles;
             audit.filtered_peak_cycles += state.filtered_peak_cycles;
             audit.batched_phase_transforms += state.batched_phase_transforms;
+            audit.real_phase_transforms += state.real_phase_transforms;
             audit
                 .phase_checkpoints
                 .extend(state.phase_checkpoints.drain(..).map(|c| (trial, c)));
