@@ -400,6 +400,20 @@ class PhaseSettingAudit:
 
 
 @dataclass(frozen=True, slots=True)
+class PhaseCheckpointAudit:
+    """A phase-map selection decision; selected does not certify a structure."""
+
+    trial: int
+    cycles: int
+    cfom: float
+    score: float
+    map_cosine: float | None
+    selected: bool
+    reason: str
+    best_cfom: float | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class PhaseOriginAudit:
     """Phase-only origin search and measured downstream work for one P1 map."""
 
@@ -414,8 +428,12 @@ class PhaseOriginAudit:
     screening_seconds: float
     refinement_seconds: float
     diagnostic: str | None
+    origin_sampling_shape: tuple[int, int, int] = (0, 0, 0)
+    origin_harmonic_extent: tuple[int, int, int] = (0, 0, 0)
 
     def __post_init__(self):
+        object.__setattr__(self, "origin_sampling_shape", tuple(self.origin_sampling_shape))
+        object.__setattr__(self, "origin_harmonic_extent", tuple(self.origin_harmonic_extent))
         object.__setattr__(
             self,
             "settings",
@@ -493,6 +511,8 @@ class SharedSearchAudit:
     chemical_assignment: bool = False
     iterative_refinement: bool = False
     missing_reflections: bool = False
+    adaptive_checkpoints: bool = False
+    independent_origin_sampling: bool = False
     resolution_extension: float = 1.0
     prediction: ReflectionPredictionAudit | None = None
     prediction_steps: int = 0
@@ -500,12 +520,21 @@ class SharedSearchAudit:
     prediction_clipped: int = 0
     prediction_seconds: float = 0.0
     phase_origins: tuple[PhaseOriginAudit, ...] = ()
+    phase_checkpoints: tuple[PhaseCheckpointAudit, ...] = ()
     normalization: WilsonNormalizationAudit | None = None
     normalization_diagnostic: str | None = None
     phase_quality: tuple[PhaseQualityAudit, ...] = ()
     phase_model_trials: tuple[int, ...] = ()
 
     def __post_init__(self):
+        object.__setattr__(
+            self,
+            "phase_checkpoints",
+            tuple(
+                PhaseCheckpointAudit(**c) if isinstance(c, dict) else c
+                for c in self.phase_checkpoints
+            ),
+        )
         if isinstance(self.prediction, dict):
             object.__setattr__(self, "prediction", ReflectionPredictionAudit(**self.prediction))
         object.__setattr__(
@@ -723,6 +752,8 @@ def solve_structure_elements(
     iterative_refinement: bool = False,
     missing_reflections: bool = False,
     resolution_extension: float = 1.0,
+    adaptive_checkpoints: bool = False,
+    independent_origin_sampling: bool = False,
     cancellation: SolutionCancellation | None = None,
 ) -> SolutionResult:
     """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
@@ -739,6 +770,11 @@ def solve_structure_elements(
     ``phase_first_selection=False`` tests a checkpoint portfolio instead; this
     control is ignored when quality selection is off.
     ``calculated_shell_normalization=False`` retains the earlier statistic.
+    ``adaptive_checkpoints=True`` selects stable quality-ready maps at geometric
+    phase checkpoints before the cycle ceiling; full structure validation still
+    follows. It requires phase-origin, phase-quality and phase-first selection.
+    ``independent_origin_sampling=True`` derives origin FFT seed spacing from
+    measured phase-equivalence frequencies instead of the density grid size.
     ``phase_origin_selection=True`` aligns P1 phases to the supplied symmetry
     before assigning peaks. Cached whole-orbit count/label proposals and short
     isotropic screens then precede full refinement. This replaces the earlier
@@ -790,6 +826,8 @@ def solve_structure_elements(
         ("chemical_assignment", chemical_assignment),
         ("iterative_refinement", iterative_refinement),
         ("missing_reflections", missing_reflections),
+        ("adaptive_checkpoints", adaptive_checkpoints),
+        ("independent_origin_sampling", independent_origin_sampling),
     ):
         if not isinstance(value, bool):
             raise TypeError(f"{name} must be boolean")
@@ -803,6 +841,17 @@ def solve_structure_elements(
         phase_origin_selection and wilson_normalization
     ):
         raise ValueError("prediction requires phase_origin_selection and wilson_normalization")
+    if independent_origin_sampling and not phase_origin_selection:
+        raise ValueError("independent_origin_sampling requires phase_origin_selection")
+    if adaptive_checkpoints and not (
+        phase_origin_selection
+        and phase_quality_selection
+        and dual_checkpoints
+        and phase_first_selection
+    ):
+        raise ValueError(
+            "adaptive_checkpoints requires phase-origin, quality and phase-first checkpoints"
+        )
     if chemical_assignment and not phase_origin_selection:
         raise ValueError("chemical_assignment requires phase_origin_selection")
     if not isinstance(phase_origin_selection, bool):
@@ -902,6 +951,8 @@ def solve_structure_elements(
                 iterative_refinement,
                 missing_reflections,
                 resolution_extension,
+                adaptive_checkpoints,
+                independent_origin_sampling,
             ),
         ),
     )

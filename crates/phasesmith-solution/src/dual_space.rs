@@ -90,6 +90,8 @@ pub struct DualSpaceResult {
     pub prediction: Vec<crate::PredictionStep>,
     /// Time in prediction updates.
     pub prediction_seconds: f64,
+    /// Actual optional phase checkpoint decisions.
+    pub phase_checkpoints: Vec<crate::PhaseCheckpoint>,
 }
 
 pub(crate) fn hash64(mut value: u64) -> u64 {
@@ -407,6 +409,7 @@ pub fn dual_space_with_prediction(
         None,
         None,
         Some(prediction),
+        false,
     )
 }
 
@@ -460,7 +463,7 @@ pub(crate) fn dual_space_guided(
 ) -> Result<DualSpaceResult, SolutionError> {
     dual_space_guided_prediction(
         shape, cell, hkl, amplitudes, phases, support, options, deadline, checkpoint, tangent,
-        quality, None,
+        quality, None, false,
     )
 }
 
@@ -482,6 +485,7 @@ pub(crate) fn dual_space_guided_prediction(
     tangent: Option<&crate::PreparedTangent>,
     quality: Option<&crate::PreparedPhaseQuality>,
     prediction: Option<&crate::PreparedReflectionPrediction>,
+    adaptive_checkpoints: bool,
 ) -> Result<DualSpaceResult, SolutionError> {
     validate_options(options)?;
     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
@@ -549,6 +553,9 @@ pub(crate) fn dual_space_guided_prediction(
     let mut amplitude_best = Vec::new();
     let mut amplitude_score = f64::INFINITY;
     let mut amplitude_cycle = 0;
+    let mut phase_selector = crate::PhaseCheckpointSelector::default();
+    let mut phase_checkpoints = Vec::new();
+    let mut next_phase_checkpoint = 16;
     let mut next_checkpoint = 4;
     let mut checkpoints = Vec::new();
     let mut best = density.clone();
@@ -618,6 +625,16 @@ pub(crate) fn dual_space_guided_prediction(
             window_best.clone_from(&projected);
             window_cycle = cycle;
         }
+        let phase_sample = if adaptive_checkpoints
+            && (cycle + 1 == next_phase_checkpoint
+                || cycle + 1 == options.cycles
+                || (cycle + 1 >= 32
+                    && best_rank.min(if eligible { ranking } else { f64::INFINITY }) <= -0.9))
+        {
+            Some(projected.clone())
+        } else {
+            None
+        };
         if eligible
             && (cycle >= 50 || options.cycles <= 50 || quality.is_some())
             && ranking < best_rank
@@ -627,7 +644,30 @@ pub(crate) fn dual_space_guided_prediction(
             best = projected;
             best_cycle = cycle;
         }
-        if quality.is_some() && checkpoint.is_none() && cycle + 1 >= 32 && best_rank <= -0.9 {
+        if let Some(sample) = phase_sample
+            && best_score.is_finite()
+        {
+            let decision = phase_selector.consider(
+                &sample,
+                cycle + 1,
+                -ranking,
+                score,
+                -best_rank,
+                cycle + 1 == options.cycles,
+            )?;
+            let selected = decision.selected;
+            phase_checkpoints.push(decision);
+            next_phase_checkpoint *= 4;
+            if selected {
+                break;
+            }
+        }
+        if !adaptive_checkpoints
+            && quality.is_some()
+            && checkpoint.is_none()
+            && cycle + 1 >= 32
+            && best_rank <= -0.9
+        {
             break;
         }
         if let Some(accept) = &mut checkpoint {
@@ -755,6 +795,7 @@ pub(crate) fn dual_space_guided_prediction(
         quality: quality_trace,
         prediction: prediction_trace,
         prediction_seconds,
+        phase_checkpoints,
     })
 }
 

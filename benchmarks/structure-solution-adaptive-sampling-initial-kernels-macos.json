@@ -1,0 +1,295 @@
+{
+  "schema": "phasesmith.adaptive-sampling-kernels.v1",
+  "recorded_utc": "2026-10-30T05:06:25.298975+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- 'phase_(origin_search|origin_independent|checkpoint)' --sample-size 10 --warm-up-time 1 --measurement-time 2 --noplot",
+  "qualification": "Multi-peak 32-cubed maps, 2108 measured rows. Criterion estimates/intervals in nanoseconds. Isolated from corpus collection and tests. These are kernel costs, not whole-search speed estimates.",
+  "benchmark_source": "crates/phasesmith-solution/benches/solution.rs",
+  "benchmark_source_sha256": "afd05c8a2d987fb3d58e8587473b3a21429535a80bf3dbf051bb8230de33aeda",
+  "executable": "target/release/deps/solution-a51ba219c0abff5d",
+  "executable_sha256": "110d7e82d1359c3251683ff557db83d573d1e4a56a4863813216329d315086f8",
+  "numerical_source_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "a95be6a17099f74e8880df9f7e9da648c59b0da1eae6d196c869c3b518c9381e",
+    "crates/phasesmith-solution/src/chemical_labels.rs": "ed35d2221ae708f5b0febde579971ca364da2129977427e7c1a8b08897466062",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "054576e88beeb95ae9cee2959c89515378223fee4ed7f298ca4728177dcb4626",
+    "crates/phasesmith-solution/src/fourier.rs": "6785270fd617e7f0a15b60079cba12eda94c1c1d7432ce0aec1ea507a820a861",
+    "crates/phasesmith-solution/src/lib.rs": "c5916307d6e8280668e1fc20b1cf20a2a009fd9cf0e9148943a7e72b3b9bc88c",
+    "crates/phasesmith-solution/src/linear_step.rs": "e5e899d91cbba62ca3d83059982785705d4bd2a195eb8f34d7a1d59355e0d4ea",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_completion.rs": "4bf240d56f4aac6cfda5cad4d0ba35c159b8bd9db297a2163890bc4601c77550",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/phase_checkpoint.rs": "00b44367f252158f11b275fcad3b3dc678511c4a1f5332fc11d6d7ced070fde1",
+    "crates/phasesmith-solution/src/phase_origin.rs": "99d6778b0eda65dd0c2fa559ed3c05171db7d9caab3e25ddf02dc8d24b29204e",
+    "crates/phasesmith-solution/src/phase_quality.rs": "848a42a21f5192c6f843f86161b355c9129e963cb806f62df186ce19eec56580",
+    "crates/phasesmith-solution/src/reflection_prediction.rs": "2dd0a2f8d1ccc5cccab9d1bafcb034bc52fd409d45284b026c6ad95f26ee07f9",
+    "crates/phasesmith-solution/src/shared_phase_path.rs": "7a318bf6505e2ab960429377624e8a643d105b4c30793d61f8c105b6cc63a639",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "20629a4ab3e11b25a9e81019e6e3e3eb6d3ec8a31a35a2a5fbb9337df3afd07d",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "aec3f512ca23f882476081e0708dbaaadf0ba6a8d88088e4d69fab602c207005",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "40331677028e57cc51a5d874d2dfff103d199a52ad8abdcd67f17804769c51bd",
+    "crates/phasesmith-solution/src/tangent.rs": "25fab86895c4401d46d722d04900fda1c912d4247f346f6ed7f0fd7c04393e79"
+  },
+  "samples": {
+    "phase_origin_search_32cubed_8_peaks_2108_rows": {
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 4166198.143887125,
+            "upper_bound": 4202212.227253087
+          },
+          "point_estimate": 4184257.2785229282,
+          "standard_error": 9227.319028730903
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 4159255.249559083,
+            "upper_bound": 4212090.277777778
+          },
+          "point_estimate": 4184580.561111111,
+          "standard_error": 13686.152715369046
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 8865.159868167642,
+            "upper_bound": 51866.57370177698
+          },
+          "point_estimate": 34404.66587808402,
+          "standard_error": 11114.938885745603
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 4166981.918353576,
+            "upper_bound": 4206849.362699978
+          },
+          "point_estimate": 4183155.4196248194,
+          "standard_error": 10368.615664151677
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 18316.063239629173,
+            "upper_bound": 38405.10653281499
+          },
+          "point_estimate": 30773.105507752483,
+          "standard_error": 5163.971397709608
+        }
+      },
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          9.0,
+          18.0,
+          27.0,
+          36.0,
+          45.0,
+          54.0,
+          63.0,
+          72.0,
+          81.0,
+          90.0
+        ],
+        "times": [
+          37202625.0,
+          75447417.0,
+          113897167.0,
+          151635250.0,
+          188760708.0,
+          224946667.0,
+          261617333.0,
+          304589583.0,
+          337434208.0,
+          375987416.0
+        ]
+      },
+      "benchmark": {
+        "group_id": "phase_origin_search_32cubed_8_peaks_2108_rows",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "phase_origin_search_32cubed_8_peaks_2108_rows",
+        "directory_name": "phase_origin_search_32cubed_8_peaks_2108_rows",
+        "title": "phase_origin_search_32cubed_8_peaks_2108_rows"
+      }
+    },
+    "phase_origin_independent_32cubed_8_peaks_2108_rows": {
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2606321.376428571,
+            "upper_bound": 2650535.3499064627
+          },
+          "point_estimate": 2627998.4766128114,
+          "standard_error": 11264.181918856933
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2609590.4714285713,
+            "upper_bound": 2651341.707270408
+          },
+          "point_estimate": 2619940.3948412696,
+          "standard_error": 10754.64549707284
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3998.5522727613093,
+            "upper_bound": 64314.643910568084
+          },
+          "point_estimate": 23574.047787727235,
+          "standard_error": 15064.340465813622
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2616366.9739896245,
+            "upper_bound": 2659068.963064713
+          },
+          "point_estimate": 2633322.9209647495,
+          "standard_error": 10869.256990421407
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 15191.167152689943,
+            "upper_bound": 51502.3935645101
+          },
+          "point_estimate": 37606.00075153896,
+          "standard_error": 9205.33335477272
+        }
+      },
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          14.0,
+          28.0,
+          42.0,
+          56.0,
+          70.0,
+          84.0,
+          98.0,
+          112.0,
+          126.0,
+          140.0
+        ],
+        "times": [
+          35838792.0,
+          73336875.0,
+          111047625.0,
+          145980584.0,
+          183115708.0,
+          226900000.0,
+          261080459.0,
+          295522875.0,
+          330209042.0,
+          365342666.0
+        ]
+      },
+      "benchmark": {
+        "group_id": "phase_origin_independent_32cubed_8_peaks_2108_rows",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "phase_origin_independent_32cubed_8_peaks_2108_rows",
+        "directory_name": "phase_origin_independent_32cubed_8_peaks_2108_rows",
+        "title": "phase_origin_independent_32cubed_8_peaks_2108_rows"
+      }
+    },
+    "phase_checkpoint_32cubed_8_peaks": {
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 50785.24758572425,
+            "upper_bound": 51827.15064311173
+          },
+          "point_estimate": 51255.84274313165,
+          "standard_error": 269.16951851888086
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 50577.105648535566,
+            "upper_bound": 51841.906455469216
+          },
+          "point_estimate": 50871.99560669456,
+          "standard_error": 330.5911471815907
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 89.15192080217612,
+            "upper_bound": 1333.2540951584647
+          },
+          "point_estimate": 596.6554035913465,
+          "standard_error": 341.53167917134533
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 51020.65917614758,
+            "upper_bound": 52104.442969165015
+          },
+          "point_estimate": 51520.832686699636,
+          "standard_error": 276.27727789886836
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 341.21651332545275,
+            "upper_bound": 1211.0481216979954
+          },
+          "point_estimate": 897.4339197406919,
+          "standard_error": 235.89645917261026
+        }
+      },
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          717.0,
+          1434.0,
+          2151.0,
+          2868.0,
+          3585.0,
+          4302.0,
+          5019.0,
+          5736.0,
+          6453.0,
+          7170.0
+        ],
+        "times": [
+          36335583.0,
+          72678333.0,
+          108565209.0,
+          145687250.0,
+          180924709.0,
+          229083459.0,
+          258347375.0,
+          299476208.0,
+          332855875.0,
+          365286292.0
+        ]
+      },
+      "benchmark": {
+        "group_id": "phase_checkpoint_32cubed_8_peaks",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "phase_checkpoint_32cubed_8_peaks",
+        "directory_name": "phase_checkpoint_32cubed_8_peaks",
+        "title": "phase_checkpoint_32cubed_8_peaks"
+      }
+    }
+  }
+}

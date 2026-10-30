@@ -213,6 +213,39 @@ impl PreparedPhaseOrigin {
             weight,
         })
     }
+    /// Nonzero-weight phase-equivalence frequency extent on each axis.
+    #[must_use]
+    pub fn sampling_extent(&self) -> [usize; 3] {
+        std::array::from_fn(|a| {
+            self.pairs
+                .iter()
+                .filter(|p| p.weight > 0.)
+                .map(|p| p.q[a].unsigned_abs() as usize)
+                .max()
+                .unwrap_or(0)
+        })
+    }
+    /// Frequency-derived origin sampling, independent of the density grid.
+    /// At least 16 samples per axis; powers of two through 128. Larger frequencies
+    /// are explicitly bounded (seed aliasing is possible), while polishing remains exact.
+    #[must_use]
+    pub fn sampling_shape(&self) -> [usize; 3] {
+        self.sampling_extent()
+            .map(|q| (2 * q + 1).next_power_of_two().clamp(16, 128))
+    }
+    /// Legacy density-grid-dependent origin search.
+    /// # Errors
+    /// Propagates phase extraction and invalid budget errors.
+    pub fn search(
+        &self,
+        density: &[f64],
+        shape: [usize; 3],
+        maximum: usize,
+        deadline: Option<Instant>,
+        cancellation: Option<&Cancellation>,
+    ) -> Result<Vec<PhaseOriginCandidate>, SolutionError> {
+        self.search_sampled(density, shape, maximum, deadline, cancellation, false)
+    }
     /// FFT-seeded smooth-origin search, retaining non-equivalent low-alpha settings.
     /// # Errors
     /// Propagates phase extraction errors; malformed budgets fail explicitly.
@@ -221,13 +254,14 @@ impl PreparedPhaseOrigin {
         clippy::too_many_lines,
         clippy::cast_precision_loss
     )]
-    pub fn search(
+    pub fn search_sampled(
         &self,
         density: &[f64],
         shape: [usize; 3],
         maximum: usize,
         deadline: Option<Instant>,
         cancellation: Option<&Cancellation>,
+        independent: bool,
     ) -> Result<Vec<PhaseOriginCandidate>, SolutionError> {
         if !(1..=8).contains(&maximum) {
             return Err(error("phase-origin hypothesis bound must be 1..8"));
@@ -246,7 +280,11 @@ impl PreparedPhaseOrigin {
             .iter()
             .any(|op| op.rotation() == [[-1, 0, 0], [0, -1, 0], [0, 0, -1]]);
         let mut candidates: Vec<PhaseOriginCandidate> = Vec::new();
-        let coarse = shape.map(|n| n.clamp(16, 64));
+        let coarse = if independent {
+            self.sampling_shape()
+        } else {
+            shape.map(|n| n.clamp(16, 64))
+        };
         for hand in [1, -1] {
             if hand == -1 && centric {
                 break;

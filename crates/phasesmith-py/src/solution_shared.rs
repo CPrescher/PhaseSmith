@@ -50,6 +50,22 @@ pub(super) fn summary<'py>(
     d.set_item("wilson_normalization", s.wilson_normalization)?;
     d.set_item("phase_quality_selection", s.phase_quality_selection)?;
     d.set_item("phase_origin_selection", s.phase_origin_selection)?;
+    d.set_item("adaptive_checkpoints", s.adaptive_checkpoints)?;
+    d.set_item("independent_origin_sampling", s.independent_origin_sampling)?;
+    let decisions = PyList::empty(py);
+    for (trial, c) in &s.phase_checkpoints {
+        let row = PyDict::new(py);
+        row.set_item("trial", trial)?;
+        row.set_item("cycles", c.cycles)?;
+        row.set_item("cfom", c.cfom)?;
+        row.set_item("best_cfom", c.best_cfom)?;
+        row.set_item("score", c.score)?;
+        row.set_item("map_cosine", c.map_cosine)?;
+        row.set_item("selected", c.selected)?;
+        row.set_item("reason", c.reason)?;
+        decisions.append(row)?;
+    }
+    d.set_item("phase_checkpoints", decisions)?;
     d.set_item("chemical_assignment", s.chemical_assignment)?;
     d.set_item("iterative_refinement", s.iterative_refinement)?;
     d.set_item("missing_reflections", s.missing_reflections)?;

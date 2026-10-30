@@ -53,7 +53,7 @@ type SharedSearchRequest = (
         bool,
         bool,
         bool,
-        (bool, bool, bool, bool, f64),
+        (bool, bool, bool, bool, f64, bool, bool),
     ),
 );
 
@@ -186,6 +186,8 @@ fn solve_structure<'py>(
                         iterative_refinement,
                         missing_reflections,
                         resolution_extension,
+                        adaptive_checkpoints,
+                        independent_origin_sampling,
                     ),
                 ),
             )) = shared_search
@@ -228,6 +230,8 @@ fn solve_structure<'py>(
                         iterative_refinement,
                         missing_reflections,
                         resolution_extension,
+                        adaptive_checkpoints,
+                        independent_origin_sampling,
                     },
                 )
             } else {

@@ -63,6 +63,10 @@ pub struct SharedSearchOptions {
     pub calculated_shell_normalization: bool,
     /// Align origins from measured phases and screen complete peak-orbit models first.
     pub phase_origin_selection: bool,
+    /// Hand off stable quality-ready maps before the phase cycle ceiling.
+    pub adaptive_checkpoints: bool,
+    /// Select origin FFT sampling from phase-equivalence frequencies.
+    pub independent_origin_sampling: bool,
     /// Add motif density scales and post-screen coupled element assignments.
     pub chemical_assignment: bool,
     /// Solve large damped refinement systems with an iterative normal operator.
@@ -97,6 +101,8 @@ impl Default for SharedSearchOptions {
             phase_first_selection: true,
             calculated_shell_normalization: true,
             phase_origin_selection: false,
+            adaptive_checkpoints: false,
+            independent_origin_sampling: false,
             chemical_assignment: false,
             iterative_refinement: false,
             missing_reflections: false,
@@ -216,6 +222,10 @@ pub struct SharedSearchSummary {
     pub calculated_shell_normalization: bool,
     /// Requested phase-origin/cheap-completion path.
     pub phase_origin_selection: bool,
+    /// Hand off stable quality-ready maps before the phase cycle ceiling.
+    pub adaptive_checkpoints: bool,
+    /// Select origin FFT sampling from phase-equivalence frequencies.
+    pub independent_origin_sampling: bool,
     /// Add motif density scales and post-screen coupled element assignments.
     pub chemical_assignment: bool,
     /// Solve large damped refinement systems with an iterative normal operator.
@@ -224,6 +234,8 @@ pub struct SharedSearchSummary {
     pub missing_reflections: bool,
     /// Requested reciprocal-radius extension.
     pub resolution_extension: f64,
+    /// Per-start phase checkpoint decisions (start index, decision).
+    pub phase_checkpoints: Vec<(usize, crate::PhaseCheckpoint)>,
     /// Actual reciprocal support provenance, absent for the original path.
     pub prediction: Option<crate::PredictionAudit>,
     /// Actual prediction calls in phasing and supplied-symmetry recycling.
@@ -1711,6 +1723,12 @@ pub fn solve_elements(
         || (search.tangent_refinement && options.phasing != PhasingMethod::DualSpace)
         || (search.phase_quality_selection && options.phasing != PhasingMethod::DualSpace)
         || (search.chemical_assignment && !search.phase_origin_selection)
+        || (search.independent_origin_sampling && !search.phase_origin_selection)
+        || (search.adaptive_checkpoints
+            && (!search.phase_origin_selection
+                || !search.phase_quality_selection
+                || !search.dual_checkpoints
+                || !search.phase_first_selection))
         || !search.resolution_extension.is_finite()
         || !(1. ..=1.5).contains(&search.resolution_extension)
         || ((search.missing_reflections || search.resolution_extension > 1.)
@@ -1934,6 +1952,8 @@ pub fn solve_elements(
         phase_first_selection: search.phase_first_selection,
         calculated_shell_normalization: search.calculated_shell_normalization,
         phase_origin_selection: search.phase_origin_selection,
+        adaptive_checkpoints: search.adaptive_checkpoints,
+        independent_origin_sampling: search.independent_origin_sampling,
         chemical_assignment: search.chemical_assignment,
         iterative_refinement: search.iterative_refinement,
         missing_reflections: search.missing_reflections,
@@ -2112,7 +2132,11 @@ pub fn solve_elements(
                 dual_tangent,
                 quality_plan.as_ref(),
                 prediction_g.as_ref(),
+                search.adaptive_checkpoints,
             )?;
+            audit
+                .phase_checkpoints
+                .extend(state.phase_checkpoints.drain(..).map(|c| (trial, c)));
             audit.prediction_steps += state.prediction.len();
             audit.prediction_updates += state.prediction.iter().map(|s| s.updated).sum::<usize>();
             audit.prediction_clipped += state.prediction.iter().map(|s| s.clipped).sum::<usize>();

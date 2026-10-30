@@ -2230,6 +2230,28 @@ The combined path gains that structure but loses another coordinate recovery.
 Both controls therefore remain off, with all outcomes retained and no change to
 correctness gates or input-derived caps. The 65 holdout outcomes remain unopened.
 
+A further opt-in experiment adds adaptive phase-first handoff checkpoints
+(`adaptive_checkpoints`) and measured-harmonic origin FFT seed sampling
+(`independent_origin_sampling`). Stable-map decisions use only P1 phase quality,
+amplitude fit and density agreement; downstream complete-model validation remains
+mandatory. Origin sampling is independent of the density grid, bounded to 128
+per axis, with exact measured-phase loss/derivatives retained for polishing.
+Neither control changes measured constraints, refinement kernels or atom caps.
+Independent NumPy references and synthetic full-model checks accompany the
+separate four-way 35-case development comparison. Equations, scheduling limits
+and results are in `docs/solution-adaptive-sampling.md`. Both controls remain
+experimental and false by default; the 65 holdout outcomes stay closed.
+The initial apparent speed gain used a flawed comparison of stored champion maps
+and traded one recovered structure for another. The corrected policy checks live
+maps and has no stable-map early stops on the 35 development cases. Its fresh
+four-way control/adaptive/sampling/combined comparison recovers 14/14/14/13
+structures, with 26 total counts and 15 element-count sets in every mode. Wall
+medians are 3.393/3.819/3.973/4.558 seconds, but substantial host contention also
+slows unchanged SHELXT and changes the cycles completed before deadlines, so
+these are not isolated algorithmic slowdown estimates. A selected fixed-400-cycle
+probe recovers the lost structure in all four modes, supporting a deadline-sensitive
+failure. No useful end-to-end improvement is established; both controls stay off.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,
