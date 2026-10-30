@@ -116,6 +116,42 @@ fn benchmark(c: &mut Criterion) {
     let prepared =
         PreparedSymmetricModel::new(symmetric, &hkl, &amplitudes, AdpMode::Anisotropic).unwrap();
     let parameters = prepared.initial_parameters(0.015).unwrap();
+    let family_observations: Vec<_> = hkl
+        .iter()
+        .zip(&amplitudes)
+        .map(|(&hkl, &a)| Observation {
+            hkl,
+            intensity: a * a,
+            sigma: 1.,
+        })
+        .collect();
+    let family_data =
+        phasesmith_solution::prepare_data(&family_observations, cell, &group).unwrap();
+    for weighted in [false, true] {
+        let label = if weighted { "weighted" } else { "control" };
+        c.bench_function(
+            &format!("family_refine_prepare_fit3_8_atoms_2108_rows_{label}"),
+            |b| {
+                b.iter(|| {
+                    let model =
+                        recover_symmetry(cell, &group, &elements, &points, 0.01, None, None)
+                            .unwrap();
+                    let p = PreparedSymmetricModel::new_with_family_weighting(
+                        model,
+                        &family_data.hkl,
+                        &family_data.amplitudes,
+                        AdpMode::Anisotropic,
+                        true,
+                        weighted,
+                    )
+                    .unwrap();
+                    let initial = p.initial_parameters(0.015).unwrap();
+                    p.refine_with_normal_cache(&initial, 3, None, None, true, true)
+                        .unwrap()
+                });
+            },
+        );
+    }
     c.bench_function(
         "symmetric_adp_evaluate_8_atoms_2108_reflections_69_parameters",
         |b| {
@@ -1508,6 +1544,48 @@ fn benchmark(c: &mut Criterion) {
                 });
             },
         );
+    }
+    for weighted in [false, true] {
+        let label = if weighted { "weighted" } else { "control" };
+        let options = SolveOptions {
+            phasing: PhasingMethod::DualSpace,
+            trials: 2,
+            cycles: 128,
+            max_seconds: 60.,
+            r1_target: 1e-6,
+            ..SolveOptions::default()
+        };
+        let search = SharedSearchOptions {
+            maximum_atoms: 32,
+            symmetry_recycling: true,
+            tangent_refinement: true,
+            wilson_normalization: true,
+            phase_quality_selection: true,
+            phase_origin_selection: true,
+            chemical_assignment: true,
+            iterative_refinement: true,
+            score_only_evaluation: true,
+            reusable_fourier_workspaces: true,
+            work_sliced_phasing: true,
+            isotropic_assignment_refinement: true,
+            filtered_peak_search: true,
+            batched_fft: true,
+            cached_normal_refinement: true,
+            real_fft: true,
+            fused_phase_workspace: true,
+            multiplicity_weighted_refinement: weighted,
+            ..SharedSearchOptions::default()
+        };
+        c.bench_function(&format!("family_refine_search_32cubed_8_atoms_2108_rows_{label}"), |b| {
+            let sample = phasesmith_solution::solve_elements(&count_observations, cell, &group,
+                &quality_elements, &options, &search).unwrap();
+            let audit = sample.shared_search.unwrap();
+            eprintln!("family_search_sample {label} starts {} cycles {} weighted_fits {} input_rows {} family_rows {}",
+                audit.phasing_starts, audit.fourier_workspace_cycles, audit.weighted_refinement_fits,
+                audit.weighted_refinement_input_rows, audit.weighted_refinement_family_rows);
+            b.iter(|| phasesmith_solution::solve_elements(&count_observations, cell, &group,
+                &quality_elements, &options, &search).unwrap());
+        });
     }
     let mut count_benches = c.benchmark_group("count_selection_8_atoms_2108_reflections");
     count_benches

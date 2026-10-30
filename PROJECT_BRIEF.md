@@ -2306,6 +2306,28 @@ and source/native hashes match across panels. The 65 holdout outcomes stay close
 
 ## Quality bar
 
+An experimental `multiplicity_weighted_refinement` option evaluates final
+constrained fits on one representative per supplied symmetry/Friedel family,
+using actual row multiplicities to retain the expanded-data objective, scale,
+R1 and profiled derivatives. The original row/Jacobian/atom admissibility limits
+apply before reduction; unequal amplitudes within a family are rejected. P1
+phasing, independent-family isotropic screens and final ADP mode are unchanged.
+The option is false by default and changes floating-point reduction order.
+Independent weighted NumPy values, finite differences, gradient/normal comparisons
+and complete synthetic model/count checks accompany the implementation. Equations,
+benchmarks and the matched 35-case comparison are documented in
+`docs/solution-multiplicity-refinement.md`; the 65 holdout outcomes remain closed.
+The completed matched 35-case experiment retains the same 16 correct labelled
+structures, 26 total counts, 16 per-element counts and 13 strict structures;
+all inferred count vectors are unchanged. The median paired wall ratio is
+1.15807x (13.65% less time; 30 faster cases), with summed solve wall time
+81.998/63.808 seconds and final-refinement time 26.386/8.333 seconds. Both modes
+perform 96 final fits, with treatment row counts reduced from 627,106 supplied
+rows to 182,331 evaluated family rows. Numerical models differ in round-off.
+Full validation passes 2,168 Python and 413 Rust tests. All 140 predictions precede
+two audit barriers, with matching native/source hashes. This is single-seed
+development evidence; the option remains opt-in and holdout outcomes stay closed.
+
 An experimental `fused_phase_workspace` option caches exact Gaussian axis
 geometry and fuses real-density transfers at packed-Fourier boundaries. It
 requires reusable workspaces; packed real FFTs enable the transfer part. The

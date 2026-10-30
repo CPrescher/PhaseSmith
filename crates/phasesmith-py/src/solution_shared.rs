@@ -98,6 +98,19 @@ pub(super) fn summary<'py>(
     d.set_item("chemical_assignment", s.chemical_assignment)?;
     d.set_item("iterative_refinement", s.iterative_refinement)?;
     d.set_item("cached_normal_refinement", s.cached_normal_refinement)?;
+    d.set_item(
+        "multiplicity_weighted_refinement",
+        s.multiplicity_weighted_refinement,
+    )?;
+    d.set_item("weighted_refinement_fits", s.weighted_refinement_fits)?;
+    d.set_item(
+        "weighted_refinement_input_rows",
+        s.weighted_refinement_input_rows,
+    )?;
+    d.set_item(
+        "weighted_refinement_family_rows",
+        s.weighted_refinement_family_rows,
+    )?;
     d.set_item("cached_normal_solves", s.cached_normal_solves)?;
     d.set_item("normal_cache_fallbacks", s.normal_cache_fallbacks)?;
     d.set_item("missing_reflections", s.missing_reflections)?;

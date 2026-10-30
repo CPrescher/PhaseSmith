@@ -89,6 +89,8 @@ pub struct SharedSearchOptions {
     pub iterative_refinement: bool,
     /// Cache checked preconditioned normal matrices in final iterative fits only.
     pub cached_normal_refinement: bool,
+    /// Reduce final constrained fits to multiplicity-weighted measured families.
+    pub multiplicity_weighted_refinement: bool,
     /// Regularize allowed unmeasured coefficients using the observed Wilson envelope.
     pub missing_reflections: bool,
     /// Reciprocal-radius extension multiplier, in [1,1.5].
@@ -132,6 +134,7 @@ impl Default for SharedSearchOptions {
             chemical_assignment: false,
             iterative_refinement: false,
             cached_normal_refinement: false,
+            multiplicity_weighted_refinement: false,
             missing_reflections: false,
             resolution_extension: 1.,
         }
@@ -275,6 +278,8 @@ pub struct SharedSearchSummary {
     pub iterative_refinement: bool,
     /// Cache checked preconditioned normal matrices in final iterative fits only.
     pub cached_normal_refinement: bool,
+    /// Reduce final constrained fits to multiplicity-weighted measured families.
+    pub multiplicity_weighted_refinement: bool,
     /// Requested observed-envelope gap treatment.
     pub missing_reflections: bool,
     /// Requested reciprocal-radius extension.
@@ -339,6 +344,12 @@ pub struct SharedSearchSummary {
     pub screening_refinements: usize,
     /// Requested final-mode fits, including initial frameworks and promotions.
     pub final_refinements: usize,
+    /// Final fits actually prepared with multiplicity weighting.
+    pub weighted_refinement_fits: usize,
+    /// Sum of supplied rows across weighted fits, not per-iteration work.
+    pub weighted_refinement_input_rows: usize,
+    /// Sum of evaluated family rows across weighted fits, not per-iteration work.
+    pub weighted_refinement_family_rows: usize,
     /// Final linear steps accepted from the guarded normal cache.
     pub cached_normal_solves: usize,
     /// Normal-cache attempts falling back to the original solver.
@@ -558,12 +569,14 @@ fn refine(
             species[image.source_index].clone_from(&site.species);
         }
     }
-    let prepared = PreparedSymmetricModel::new_with_geometry_cache(
+    let prepared = PreparedSymmetricModel::new_with_family_weighting(
         model,
         &data.hkl,
         &data.amplitudes,
         mode,
         audit.cached_refinement,
+        audit.multiplicity_weighted_refinement
+            && !matches!(pass, FitPass::Screen(_) | FitPass::ScreenSeed(_, _)),
     )?;
     if data.family_count <= prepared.parameter_count + 1 {
         return Err(error("shared model is underdetermined"));
@@ -576,6 +589,11 @@ fn refine(
     };
     let baseline = prepared.evaluate(&initial)?;
     audit.refinements += 1;
+    if prepared.reflection_multiplicities().is_some() {
+        audit.weighted_refinement_fits += 1;
+        audit.weighted_refinement_input_rows += prepared.input_reflection_count();
+        audit.weighted_refinement_family_rows += prepared.evaluated_reflection_count();
+    }
     if matches!(pass, FitPass::Screen(_) | FitPass::ScreenSeed(_, _)) {
         audit.screening_refinements += 1;
     } else {
@@ -2048,6 +2066,7 @@ pub fn solve_elements(
         chemical_assignment: search.chemical_assignment,
         iterative_refinement: search.iterative_refinement,
         cached_normal_refinement: search.cached_normal_refinement,
+        multiplicity_weighted_refinement: search.multiplicity_weighted_refinement,
         missing_reflections: search.missing_reflections,
         resolution_extension: search.resolution_extension,
         prediction: prediction_f.as_ref().map(|p| p.audit.clone()),

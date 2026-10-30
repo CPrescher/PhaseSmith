@@ -34,6 +34,7 @@ pub struct PreparedSymmetricModel {
     reciprocal: Vec<[f64; 3]>,
     geometry: Option<GeometryCache>,
     mode: AdpMode,
+    families: Option<crate::refinement_families::ReflectionFamilies>,
 }
 
 // Cached reciprocal/image geometry, in reflection/site/image order.
@@ -389,6 +390,22 @@ impl PreparedSymmetricModel {
         mode: AdpMode,
         cache_geometry: bool,
     ) -> Result<Self, SolutionError> {
+        Self::new_with_family_weighting(symmetry, hkl, observed, mode, cache_geometry, false)
+    }
+
+    /// Evaluate equivalent supplied rows once with multiplicity weights when requested.
+    /// Original input/Jacobian admissibility limits apply before reduction.
+    /// # Errors
+    /// Also rejects nonidentical amplitudes within a reduced symmetry/Friedel family.
+    #[allow(clippy::cast_precision_loss, clippy::too_many_lines)]
+    pub fn new_with_family_weighting(
+        symmetry: SymmetryModel,
+        hkl: &[[i32; 3]],
+        observed: &[f64],
+        mode: AdpMode,
+        cache_geometry: bool,
+        weight_families: bool,
+    ) -> Result<Self, SolutionError> {
         if hkl.is_empty()
             || hkl.len() != observed.len()
             || hkl.len() > 100_000
@@ -423,6 +440,29 @@ impl PreparedSymmetricModel {
                 "symmetric refinement exceeds the dense Jacobian memory budget",
             ));
         }
+        let families = weight_families
+            .then(|| {
+                crate::refinement_families::ReflectionFamilies::new(&symmetry.group, hkl, observed)
+            })
+            .transpose()?;
+        let reduced_hkl;
+        let reduced_observed;
+        let (hkl, observed) = if let Some(plan) = &families {
+            reduced_hkl = plan
+                .representatives
+                .iter()
+                .map(|&i| hkl[i])
+                .collect::<Vec<_>>();
+            reduced_observed = plan
+                .representatives
+                .iter()
+                .zip(&plan.square_roots)
+                .map(|(&i, &w)| observed[i] * w)
+                .collect::<Vec<_>>();
+            (reduced_hkl.as_slice(), reduced_observed.as_slice())
+        } else {
+            (hkl, observed)
+        };
         let reciprocal: Vec<_> = hkl
             .iter()
             .map(|h| mv(symmetry.geometry.reciprocal_basis, h.map(f64::from)))
@@ -436,6 +476,7 @@ impl PreparedSymmetricModel {
             .then(|| prepare_geometry(&symmetry, hkl, &reciprocal, GEOMETRY_CACHE_BYTES))
             .flatten();
         Ok(Self {
+            families,
             mode,
             geometry,
             symmetry,
@@ -447,6 +488,29 @@ impl PreparedSymmetricModel {
             factors,
             reciprocal,
         })
+    }
+
+    /// Number of supplied rows before optional family reduction.
+    #[must_use]
+    pub fn input_reflection_count(&self) -> usize {
+        self.families
+            .as_ref()
+            .map_or(self.hkl.len(), |p| p.input_rows)
+    }
+    /// Number of reflection rows evaluated per value/derivative pass.
+    #[must_use]
+    pub fn evaluated_reflection_count(&self) -> usize {
+        self.hkl.len()
+    }
+    /// Supplied-row representative indices when reduction is enabled.
+    #[must_use]
+    pub fn reflection_representatives(&self) -> Option<&[usize]> {
+        self.families.as_ref().map(|p| p.representatives.as_slice())
+    }
+    /// Actual supplied multiplicities in representative order.
+    #[must_use]
+    pub fn reflection_multiplicities(&self) -> Option<&[usize]> {
+        self.families.as_ref().map(|p| p.multiplicities.as_slice())
     }
 
     /// Allocated reciprocal/image geometry bytes, zero for direct fallback.
@@ -505,6 +569,13 @@ impl PreparedSymmetricModel {
     /// bounds, a changed special-position topology, or a zero calculated norm.
     #[allow(clippy::too_many_lines)]
     pub fn evaluate(&self, parameters: &[f64]) -> Result<SymmetricEvaluation, SolutionError> {
+        if self
+            .families
+            .as_ref()
+            .is_some_and(|p| p.group.operations() != self.symmetry.group.operations())
+        {
+            return Err(error("multiplicity plan does not match the model symmetry"));
+        }
         if parameters.len() != self.parameter_count || parameters.iter().any(|v| !v.is_finite()) {
             return Err(error("invalid symmetric parameter vector"));
         }
@@ -643,11 +714,15 @@ impl PreparedSymmetricModel {
                 }
             }
             let amplitude = real.hypot(imaginary);
-            amplitudes[reflection] = amplitude;
+            let weight = self
+                .families
+                .as_ref()
+                .map_or(1., |p| p.square_roots[reflection]);
+            amplitudes[reflection] = amplitude * weight;
             if amplitude > 1e-14 {
                 for i in 0..self.parameter_count {
                     jacobian[i * reflection_count + reflection] =
-                        (real * dre[i] + imaginary * dim[i]) / amplitude;
+                        ((real * dre[i] + imaginary * dim[i]) / amplitude) * weight;
                 }
             }
         }
@@ -679,12 +754,27 @@ impl PreparedSymmetricModel {
                 *d = (scale * *d + a * dk) / norm;
             }
         }
-        let r1 = amplitudes
-            .iter()
-            .zip(&self.observed)
-            .map(|(a, o)| (scale * a - o).abs())
-            .sum::<f64>()
-            / self.observed.iter().sum::<f64>();
+        let r1 = if let Some(plan) = &self.families {
+            amplitudes
+                .iter()
+                .zip(&self.observed)
+                .zip(&plan.square_roots)
+                .map(|((&a, &o), &w)| w * (scale * a - o).abs())
+                .sum::<f64>()
+                / self
+                    .observed
+                    .iter()
+                    .zip(&plan.square_roots)
+                    .map(|(&o, &w)| o * w)
+                    .sum::<f64>()
+        } else {
+            amplitudes
+                .iter()
+                .zip(&self.observed)
+                .map(|(a, o)| (scale * a - o).abs())
+                .sum::<f64>()
+                / self.observed.iter().sum::<f64>()
+        };
         if !r1.is_finite() || !jacobian.iter().all(|v| v.is_finite()) {
             return Err(error("nonfinite symmetric objective"));
         }
