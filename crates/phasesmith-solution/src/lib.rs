@@ -24,6 +24,7 @@ mod phase_origin;
 pub use phase_checkpoint::{PhaseCheckpoint, PhaseCheckpointSelector, checkpoint_map_cosine};
 mod phase_quality;
 mod phase_schedule;
+pub use phase_schedule::phase_plateau_ready;
 mod phase_score;
 pub use dual_space::{PhasingExecution, dual_space_with_execution};
 pub use phase_schedule::{PhaseSliceAudit, phase_cycle_quota, phase_cycle_quota_with_short_starts};

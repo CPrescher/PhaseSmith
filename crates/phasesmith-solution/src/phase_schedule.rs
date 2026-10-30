@@ -46,13 +46,50 @@ pub struct PhaseSliceAudit {
     pub completed_cycles: usize,
     /// Time inside the P1 solver, including preparation.
     pub seconds: f64,
-    /// `cycle_limit`, `phase_time_limit`, `quality_target`, `cancelled`, or `degenerate`.
+    /// `cycle_limit`, `phase_time_limit`, `quality_target`, `phase_plateau`, `cancelled`, or `degenerate`.
     pub stop_reason: &'static str,
+}
+
+/// A high-quality early start has made no material progress for 32 cycles.
+/// Evaluate at multiples of 32 after 128 cycles. Omit cycles do not set maxima.
+/// Nonfinite scores fail closed; a plateau is a handoff heuristic, not correctness.
+#[must_use]
+pub fn phase_plateau_ready(scores: &[f64], omit_every_third: bool) -> bool {
+    let n = scores.len();
+    if n < 128 || n % 32 != 0 || scores.iter().any(|x| !x.is_finite()) {
+        return false;
+    }
+    let best = |end| {
+        scores[..end]
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| !omit_every_third || i % 3 != 2)
+            .map(|(_, &x)| x)
+            .fold(f64::NEG_INFINITY, f64::max)
+    };
+    let current = best(n);
+    let previous = best(n - 32);
+    current >= 0.8 && current - previous <= 0.002
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn plateau_requires_quality_stability_and_warmup() {
+        assert!(!phase_plateau_ready(&[0.81; 96], true));
+        assert!(phase_plateau_ready(&[0.81; 128], true));
+        assert!(!phase_plateau_ready(&[0.79; 128], true));
+        let mut q = vec![0.81; 128];
+        q[127] = 0.82;
+        assert!(!phase_plateau_ready(&q, true));
+        q[127] = 0.81;
+        q[125] = 0.95; // omitted third cycle: cannot set the best map
+        assert!(phase_plateau_ready(&q, true));
+        assert!(!phase_plateau_ready(&q, false));
+        q[0] = f64::NAN;
+        assert!(!phase_plateau_ready(&q, true));
+    }
     #[test]
     fn early_work_is_bounded_and_full_fallback_is_retained() {
         assert_eq!(

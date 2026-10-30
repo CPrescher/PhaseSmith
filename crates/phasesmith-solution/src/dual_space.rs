@@ -72,6 +72,8 @@ pub struct DualSpaceCheckpoint {
 /// Fourier trial and actual initialization (fallbacks are never hidden).
 #[derive(Clone, Debug)]
 pub struct DualSpaceResult {
+    /// Early high-quality plateau handoff; later full-length starts remain available.
+    pub plateau_stopped: bool,
     /// Atomic map, score history and stop flags.
     pub trial: FlipResult,
     /// `patterson`, `random`, or `random_no_patterson_vector`.
@@ -572,7 +574,7 @@ pub fn dual_space_with_prediction(
     )
 }
 
-/// Execution-only optimizations, independent of the numerical phasing options.
+/// Independent phasing execution and work-allocation controls.
 #[derive(Clone, Copy, Debug, Default)]
 #[allow(clippy::struct_excessive_bools)] // Independent execution ablation controls.
 pub struct PhasingExecution {
@@ -590,6 +592,8 @@ pub struct PhasingExecution {
     pub real_fft: bool,
     /// Cache exact Gaussian axis geometry inside reusable projection workspaces.
     pub fused_phase_workspace: bool,
+    /// Stop eligible early starts on a material phase-quality plateau.
+    pub phase_plateau_stopping: bool,
 }
 
 /// Diagnostic/benchmark entry point with explicit arithmetic-preserving execution.
@@ -712,6 +716,7 @@ pub(crate) fn dual_space_guided_prediction(
         batched_fft,
         real_fft,
         fused_phase_workspace,
+        ..
     } = execution;
     validate_options(options)?;
     if (filtered_peak_search || batched_fft || fused_phase_workspace)
@@ -817,6 +822,7 @@ pub(crate) fn dual_space_guided_prediction(
     let mut best_score = f64::INFINITY;
     let mut best_rank = f64::INFINITY;
     let mut best_cycle = 0;
+    let mut plateau_stopped = false;
     let target_norm: f64 = target.iter().map(|a| a * a).sum();
     let mut workspace = if reusable_fourier_workspaces {
         Some(AtomicWorkspace::new(
@@ -991,6 +997,16 @@ pub(crate) fn dual_space_guided_prediction(
         {
             break;
         }
+        if execution.phase_plateau_stopping
+            && checkpoint.is_none()
+            && !adaptive_checkpoints
+            && quality_trace
+                .as_ref()
+                .is_some_and(|q| crate::phase_plateau_ready(&q.cfom, options.omit_fraction > 0.))
+        {
+            plateau_stopped = true;
+            break;
+        }
         if let Some(accept) = &mut checkpoint {
             if (cycle + 1 == next_checkpoint || cycle + 1 == options.cycles)
                 && window_score.is_finite()
@@ -1129,6 +1145,7 @@ pub(crate) fn dual_space_guided_prediction(
         best = density;
     }
     Ok(DualSpaceResult {
+        plateau_stopped,
         trial: FlipResult {
             density: best,
             history,
@@ -1255,6 +1272,7 @@ mod tests {
                         batched_fft: false,
                         real_fft: false,
                         fused_phase_workspace: false,
+                        phase_plateau_stopping: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: false,
@@ -1264,6 +1282,7 @@ mod tests {
                         batched_fft: false,
                         real_fft: false,
                         fused_phase_workspace: false,
+                        phase_plateau_stopping: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: true,
@@ -1273,6 +1292,7 @@ mod tests {
                         batched_fft: false,
                         real_fft: false,
                         fused_phase_workspace: false,
+                        phase_plateau_stopping: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: true,
@@ -1282,6 +1302,7 @@ mod tests {
                         batched_fft: false,
                         real_fft: false,
                         fused_phase_workspace: false,
+                        phase_plateau_stopping: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: true,
@@ -1291,6 +1312,7 @@ mod tests {
                         batched_fft: true,
                         real_fft: false,
                         fused_phase_workspace: false,
+                        phase_plateau_stopping: false,
                     },
                 ] {
                     let new = dual_space_with_execution(

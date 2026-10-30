@@ -540,6 +540,9 @@ class SharedSearchAudit:
     ambiguous_assignments: bool = False
     short_phase_starts: bool = False
     blocked_normal_matrices: bool = False
+    phase_plateau_stopping: bool = False
+    assignment_convergence_stopping: bool = False
+    assignment_convergence_stops: int = 0
     reuse_normal_matrices: bool = False
     normal_matrix_builds: int = 0
     normal_matrix_reuses: int = 0
@@ -830,6 +833,8 @@ def solve_structure_elements(
     reuse_normal_matrices: bool = False,
     short_phase_starts: bool = False,
     blocked_normal_matrices: bool = False,
+    phase_plateau_stopping: bool = False,
+    assignment_convergence_stopping: bool = False,
     missing_reflections: bool = False,
     resolution_extension: float = 1.0,
     score_only_evaluation: bool = False,
@@ -861,6 +866,10 @@ def solve_structure_elements(
     ``cached_normal_refinement=True`` caches preconditioned normal matrices in final
     iterative fits, verifies steps against the original Jacobian and falls back
     to the matrix-free solver if needed. It requires iterative refinement.
+    ``phase_plateau_stopping=True`` hands off high-quality plateaued early starts
+    while keeping later full-length starts; requires work slicing without adaptive checkpoints.
+    ``assignment_convergence_stopping=True`` stops only short assignment screens
+    after repeated negligible accepted improvements; requires isotropic assignment refinement.
     ``blocked_normal_matrices=True`` uses blocked, single-threaded Gram formation
     within reused normal solves, checked against the original Jacobian operator.
     ``short_phase_starts=True`` uses quarter-work early starts, a 32-cycle floor
@@ -963,6 +972,8 @@ def solve_structure_elements(
         ("reuse_normal_matrices", reuse_normal_matrices),
         ("short_phase_starts", short_phase_starts),
         ("blocked_normal_matrices", blocked_normal_matrices),
+        ("phase_plateau_stopping", phase_plateau_stopping),
+        ("assignment_convergence_stopping", assignment_convergence_stopping),
         ("missing_reflections", missing_reflections),
         ("adaptive_checkpoints", adaptive_checkpoints),
         ("score_only_evaluation", score_only_evaluation),
@@ -999,6 +1010,10 @@ def solve_structure_elements(
         raise ValueError("cached_normal_refinement requires iterative_refinement")
     if fused_phase_workspace and not reusable_fourier_workspaces:
         raise ValueError("fused_phase_workspace requires reusable_fourier_workspaces")
+    if phase_plateau_stopping and (not work_sliced_phasing or adaptive_checkpoints):
+        raise ValueError("phase_plateau_stopping requires work_sliced_phasing without adaptive_checkpoints")
+    if assignment_convergence_stopping and not isotropic_assignment_refinement:
+        raise ValueError("assignment_convergence_stopping requires isotropic_assignment_refinement")
     if blocked_normal_matrices and not reuse_normal_matrices:
         raise ValueError("blocked_normal_matrices requires reuse_normal_matrices")
     if short_phase_starts and not work_sliced_phasing:
@@ -1162,7 +1177,7 @@ def solve_structure_elements(
                     specialized_isotropic_refinement,
                     streamed_peak_search,
                     reuse_normal_matrices,
-                    (short_phase_starts, blocked_normal_matrices),
+                    (short_phase_starts, blocked_normal_matrices, phase_plateau_stopping, assignment_convergence_stopping),
                 ),
             ),
         ),

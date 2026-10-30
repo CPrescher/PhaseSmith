@@ -77,7 +77,7 @@ type SharedSearchRequest = (
                 bool,
                 bool,
                 bool,
-                (bool, bool),
+                (bool, bool, bool, bool),
             ),
         ),
     ),
@@ -230,7 +230,12 @@ fn solve_structure<'py>(
                             specialized_isotropic_refinement,
                             streamed_peak_search,
                             reuse_normal_matrices,
-                            (short_phase_starts, blocked_normal_matrices),
+                            (
+                                short_phase_starts,
+                                blocked_normal_matrices,
+                                phase_plateau_stopping,
+                                assignment_convergence_stopping,
+                            ),
                         ),
                     ),
                 ),
@@ -293,6 +298,8 @@ fn solve_structure<'py>(
                         reuse_normal_matrices,
                         short_phase_starts,
                         blocked_normal_matrices,
+                        phase_plateau_stopping,
+                        assignment_convergence_stopping,
                     },
                 )
             } else {

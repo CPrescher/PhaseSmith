@@ -204,6 +204,43 @@ fn benchmark(c: &mut Criterion) {
             },
         );
     }
+    let assignment_model = PreparedSymmetricModel::new_with_family_weighting(
+        recover_symmetry(cell, &group, &elements, &points, 0.01, None, None).unwrap(),
+        &hkl,
+        &amplitudes,
+        AdpMode::Isotropic,
+        true,
+        false,
+    )
+    .unwrap()
+    .with_specialized_isotropic_evaluation(true)
+    .with_blocked_normal_matrices(true);
+    // A retained assignment can already have passed multiple short screens.
+    // Both modes restart from exactly the same independently prepared seed.
+    let assignment_seed = assignment_model
+        .clone()
+        .refine_with_normal_reuse(
+            &assignment_model.initial_parameters(0.015).unwrap(),
+            16,
+            None,
+            None,
+            true,
+            true,
+            true,
+        )
+        .unwrap()
+        .parameters;
+    for stopping in [false, true] {
+        let label = if stopping { "cache" } else { "control" };
+        let model = assignment_model
+            .clone()
+            .with_assignment_convergence_stopping(stopping);
+        c.bench_function(&format!("stopping_assignment_8_atoms_2108_rows_warm12_{label}"), |b| {
+            let sample = model.clone().refine_with_normal_reuse(&assignment_seed, 12, None, None, true, true, true).unwrap();
+            eprintln!("stopping_assignment_sample {label} termination {} accepted {} builds {} reuses {}",sample.termination,sample.accepted_steps,sample.normal_matrix_builds,sample.normal_matrix_reuses);
+            b.iter(|| model.clone().refine_with_normal_reuse(&assignment_seed, 12, None, None, true, true, true).unwrap());
+        });
+    }
     for blocked in [false, true] {
         let label = if blocked { "blocked" } else { "control" };
         c.bench_function(
@@ -926,6 +963,7 @@ fn benchmark(c: &mut Criterion) {
                     batched_fft: false,
                     real_fft: false,
                     fused_phase_workspace: false,
+                    phase_plateau_stopping: false,
                 };
                 let options = DualSpaceOptions {
                     cycles: 64,
@@ -988,6 +1026,7 @@ fn benchmark(c: &mut Criterion) {
                     batched_fft: false,
                     real_fft: false,
                     fused_phase_workspace: false,
+                    phase_plateau_stopping: false,
                 };
                 let options = DualSpaceOptions {
                     cycles: 64,
@@ -1050,6 +1089,7 @@ fn benchmark(c: &mut Criterion) {
                     batched_fft: batched,
                     real_fft: false,
                     fused_phase_workspace: false,
+                    phase_plateau_stopping: false,
                 };
                 let options = DualSpaceOptions {
                     cycles: 64,
@@ -1112,6 +1152,7 @@ fn benchmark(c: &mut Criterion) {
                     batched_fft: true,
                     real_fft: real,
                     fused_phase_workspace: false,
+                    phase_plateau_stopping: false,
                 };
                 let options = DualSpaceOptions {
                     cycles: 64,
@@ -1175,6 +1216,7 @@ fn benchmark(c: &mut Criterion) {
                     batched_fft: true,
                     real_fft: true,
                     fused_phase_workspace: cached,
+                    phase_plateau_stopping: false,
                 };
                 let options = DualSpaceOptions {
                     cycles: 64,
@@ -1285,6 +1327,7 @@ fn benchmark(c: &mut Criterion) {
                         real_fft: true,
                         fused_phase_workspace: true,
                         streamed_peak_search: streamed,
+                        phase_plateau_stopping: false,
                     };
                     let options = DualSpaceOptions {
                         cycles: 64,
@@ -2303,6 +2346,89 @@ fn benchmark(c: &mut Criterion) {
                 let a = sample.shared_search.unwrap();
                 eprintln!(
                     "blocked_normal_search_sample {label} starts {} cycles {} extra_fits {} cached_steps {} builds {} reuses {}",
+                    a.phasing_starts,
+                    a.fourier_workspace_cycles,
+                    a.phase_origins
+                        .iter()
+                        .map(|t| t.ambiguity_relaxations)
+                        .sum::<usize>(),
+                    a.assignment_cached_normal_solves,
+                    a.normal_matrix_builds,
+                    a.normal_matrix_reuses
+                );
+                b.iter(|| {
+                    phasesmith_solution::solve_elements(
+                        &ambiguity_observations,
+                        cell,
+                        &group,
+                        &ambiguity_elements,
+                        &options,
+                        &search,
+                    )
+                    .unwrap()
+                });
+            },
+        );
+    }
+    for (label, phase, assignment) in [
+        ("control", false, false),
+        ("phase", true, false),
+        ("assignment", false, true),
+        ("cache", true, true),
+    ] {
+        let options = SolveOptions {
+            phasing: PhasingMethod::DualSpace,
+            trials: 4,
+            cycles: 800,
+            max_seconds: 60.,
+            r1_target: 1e-6,
+            ..SolveOptions::default()
+        };
+        let search = SharedSearchOptions {
+            maximum_atoms: 32,
+            symmetry_recycling: true,
+            tangent_refinement: true,
+            wilson_normalization: true,
+            phase_quality_selection: true,
+            phase_origin_selection: true,
+            chemical_assignment: true,
+            iterative_refinement: true,
+            score_only_evaluation: true,
+            reusable_fourier_workspaces: true,
+            work_sliced_phasing: true,
+            isotropic_assignment_refinement: true,
+            filtered_peak_search: true,
+            batched_fft: true,
+            real_fft: true,
+            fused_phase_workspace: true,
+            cached_normal_refinement: true,
+            multiplicity_weighted_refinement: true,
+            ambiguous_assignments: true,
+            cached_assignment_refinement: true,
+            specialized_isotropic_refinement: true,
+            streamed_peak_search: true,
+            reuse_normal_matrices: true,
+            short_phase_starts: true,
+            blocked_normal_matrices: true,
+            phase_plateau_stopping: phase,
+            assignment_convergence_stopping: assignment,
+            ..SharedSearchOptions::default()
+        };
+        c.bench_function(
+            &format!("stopping_search_32cubed_8_atoms_2108_rows_{label}"),
+            |b| {
+                let sample = phasesmith_solution::solve_elements(
+                    &ambiguity_observations,
+                    cell,
+                    &group,
+                    &ambiguity_elements,
+                    &options,
+                    &search,
+                )
+                .unwrap();
+                let a = sample.shared_search.unwrap();
+                eprintln!(
+                    "stopping_search_sample {label} starts {} cycles {} extra_fits {} cached_steps {} builds {} reuses {}",
                     a.phasing_starts,
                     a.fourier_workspace_cycles,
                     a.phase_origins

@@ -522,8 +522,17 @@ fn phase_quota(cycles: usize, trials: usize, trial: usize, short: bool) -> PyRes
     phasesmith_solution::phase_cycle_quota_with_short_starts(cycles, trials, trial, short)
         .map_err(invalid)
 }
+#[pyfunction(name = "_phase_plateau_ready")]
+#[pyo3(signature=(scores,omit_every_third=true))]
+fn phase_plateau(scores: PyReadonlyArray1<'_, f64>, omit_every_third: bool) -> PyResult<bool> {
+    Ok(phasesmith_solution::phase_plateau_ready(
+        scores.as_slice()?,
+        omit_every_third,
+    ))
+}
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(phase_quota, module)?)?;
+    module.add_function(wrap_pyfunction!(phase_plateau, module)?)?;
     module.add_function(wrap_pyfunction!(normal_step, module)?)?;
     module.add_function(wrap_pyfunction!(checkpoint_select, module)?)?;
     module.add_function(wrap_pyfunction!(chemical_scales, module)?)?;

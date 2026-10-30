@@ -1,0 +1,535 @@
+{
+  "schema": "phasesmith.stopping-kernels.v1",
+  "baseline": "4c47491",
+  "created_utc": "2026-10-30T20:35:26.161864+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- stopping_ --sample-size 10 --warm-up-time 0.5 --measurement-time 1",
+  "benchmark_source_sha256": "70a2b4cb3d32371755ecb664b9ae9fe20c07a250f5469a5cf8b4174429bad219",
+  "executable_sha256": "45bfba7525eead4babc711f3c7bfdd0216d1470184aa73bf62c74d5f08e62fd1",
+  "source_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "1449841daf36693983fcbe9d9f3f7324c9dd52bd3062a4454c8e023fee3d6b17",
+    "crates/phasesmith-solution/src/assignment_ambiguity.rs": "14d991c0fd8553f4a23818fde9ba24fb2975ea5bb520a531b9417b6049cadded",
+    "crates/phasesmith-solution/src/atomic_mask.rs": "9a376037f445c67e0de4bf855ceda2d7615b41b073a7ae4746fab5b0eeac84eb",
+    "crates/phasesmith-solution/src/chemical_labels.rs": "4a45daa0a0eb236d448578a5ba5b6d2726599e3161e8888c378e7c42e5c6c0d5",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "da4fe07b0a6b1199f5171021fe0696d10b28e4e7d140e7969d80e26e5c981c11",
+    "crates/phasesmith-solution/src/fft_layout.rs": "b7222a0b26104f377447e1f69fa1697aced9b5e579b75526dd268e8abd285a36",
+    "crates/phasesmith-solution/src/fourier.rs": "80b353611b38b749ee0b3a30ddf4667c898b51a8eb473af241928b2177a3a14e",
+    "crates/phasesmith-solution/src/isotropic_assignment.rs": "af377a9977f443bf4562b24ee346098a4f9bf1e0c509c494ed4cd33990ba2dc2",
+    "crates/phasesmith-solution/src/isotropic_evaluation.rs": "004d05d17fd06d307cc65bf1734971f8dea67ac6b816d0a14b5a1bd32bda5bda",
+    "crates/phasesmith-solution/src/lib.rs": "720f0765d3f5a353af4989eb101b10a92c038dacc8421f43909e8d5d335f4e3e",
+    "crates/phasesmith-solution/src/linear_step.rs": "bc5d78f7fdcafb2a726e3880264bc7fab7fd56f01ce104d393ae69237248eade",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_completion.rs": "35ad4578efcdb407b78b8a513e24ca2bc6f0246ec4bf6c47f1890f297d71dfde",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/peak_scan.rs": "4f948de041ccfe83f985646f874b2303475fe26eb9dbc0d687e95bef365f3d2e",
+    "crates/phasesmith-solution/src/phase_checkpoint.rs": "1d227a8d3dff3c8a78bf44785e8d539e22fd5ec496abc765b7f0672ed66c9dec",
+    "crates/phasesmith-solution/src/phase_origin.rs": "99d6778b0eda65dd0c2fa559ed3c05171db7d9caab3e25ddf02dc8d24b29204e",
+    "crates/phasesmith-solution/src/phase_quality.rs": "848a42a21f5192c6f843f86161b355c9129e963cb806f62df186ce19eec56580",
+    "crates/phasesmith-solution/src/phase_schedule.rs": "9ff952316eb632f2d5e02d9054607ab617d6ba2cd61fffec2beeaa2d10c12ca8",
+    "crates/phasesmith-solution/src/phase_score.rs": "eb637d9c87787eb5eff9663aae9f6edbdc85b501170ad21d2624e115160699c6",
+    "crates/phasesmith-solution/src/real_fourier.rs": "3b9616133fec60090d339fcb6ba7aaaf721149a736b6429ab1a65f97a2daa113",
+    "crates/phasesmith-solution/src/refinement_families.rs": "70901272c21e54b67aaa7493678e83091e6f8661217115c4cf9769f36e9a2957",
+    "crates/phasesmith-solution/src/reflection_prediction.rs": "2dd0a2f8d1ccc5cccab9d1bafcb034bc52fd409d45284b026c6ad95f26ee07f9",
+    "crates/phasesmith-solution/src/shared_phase_path.rs": "2e2336ab565005645d89aa24b2bbd157b7c3d069671b00befa8927dfbb29a98e",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "9729e9c7db2e2727b4e9e3fcda51412dbfcc45b5ea60553d70716a57f862b577",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "aec3f512ca23f882476081e0708dbaaadf0ba6a8d88088e4d69fab602c207005",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "b47c3acab847ec5e6b334bf5994fb1c017279bf07541af162bda0991284de950",
+    "crates/phasesmith-solution/src/tangent.rs": "25fab86895c4401d46d722d04900fda1c912d4247f346f6ed7f0fd7c04393e79"
+  },
+  "sample_log_sha256": "1a507385054166e1a70012733835ff64033a014efe4786ec072ab4e20a8b4c08",
+  "sample_log": "   Compiling phasesmith-solution v0.7.0 (/Users/clemens/Programming/PhaseSmith-hkl-solution/crates/phasesmith-solution)\n    Finished `bench` profile [optimized] target(s) in 2.67s\n     Running benches/solution.rs (target/release/deps/solution-606c1fd8312a0a21)\nBenchmarking stopping_assignment_8_atoms_2108_rows_warm12_control\nBenchmarking stopping_assignment_8_atoms_2108_rows_warm12_control: Warming up for 500.00 ms\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nBenchmarking stopping_assignment_8_atoms_2108_rows_warm12_control: Collecting 10 samples in estimated 1.3395 s (165 iterations)\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample control termination max_iterations accepted 12 builds 0 reuses 0\nBenchmarking stopping_assignment_8_atoms_2108_rows_warm12_control: Analyzing\nstopping_assignment_8_atoms_2108_rows_warm12_control\n                        time:   [8.1144 ms 8.1320 ms 8.1529 ms]\nFound 1 outliers among 10 measurements (10.00%)\n  1 (10.00%) low mild\n\nBenchmarking stopping_assignment_8_atoms_2108_rows_warm12_cache\nBenchmarking stopping_assignment_8_atoms_2108_rows_warm12_cache: Warming up for 500.00 ms\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nBenchmarking stopping_assignment_8_atoms_2108_rows_warm12_cache: Collecting 10 samples in estimated 1.3456 s (165 iterations)\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nstopping_assignment_sample cache termination max_iterations accepted 12 builds 0 reuses 0\nBenchmarking stopping_assignment_8_atoms_2108_rows_warm12_cache: Analyzing\nstopping_assignment_8_atoms_2108_rows_warm12_cache\n                        time:   [8.1501 ms 8.1795 ms 8.2088 ms]\nFound 1 outliers among 10 measurements (10.00%)\n  1 (10.00%) high mild\n\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_control\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_control: Warming up for 500.00 ms\nstopping_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\n\nWarning: Unable to complete 10 samples in 1.0s. You may wish to increase target time to 11.0s.\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_control: Collecting 10 samples in estimated 11.014 s (10 iterations)\nstopping_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_control: Analyzing\nstopping_search_32cubed_8_atoms_2108_rows_control\n                        time:   [1.1036 s 1.1080 s 1.1131 s]\n                        change: [\u221212.705% \u221211.806% \u221210.823%] (p = 0.00 < 0.05)\n                        Performance has improved.\n\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_phase\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_phase: Warming up for 500.00 ms\nstopping_search_sample phase starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\n\nWarning: Unable to complete 10 samples in 1.0s. You may wish to increase target time to 11.2s.\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_phase: Collecting 10 samples in estimated 11.235 s (10 iterations)\nstopping_search_sample phase starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample phase starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample phase starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample phase starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample phase starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample phase starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample phase starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample phase starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample phase starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample phase starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_phase: Analyzing\nstopping_search_32cubed_8_atoms_2108_rows_phase\n                        time:   [1.1097 s 1.1271 s 1.1595 s]\n                        change: [\u221218.573% \u221214.524% \u221210.175%] (p = 0.00 < 0.05)\n                        Performance has improved.\nFound 1 outliers among 10 measurements (10.00%)\n  1 (10.00%) high severe\n\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_assignment\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_assignment: Warming up for 500.00 ms\nstopping_search_sample assignment starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\n\nWarning: Unable to complete 10 samples in 1.0s. You may wish to increase target time to 11.1s.\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_assignment: Collecting 10 samples in estimated 11.105 s (10 iterations)\nstopping_search_sample assignment starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample assignment starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample assignment starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample assignment starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample assignment starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample assignment starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample assignment starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample assignment starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample assignment starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample assignment starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_assignment: Analyzing\nstopping_search_32cubed_8_atoms_2108_rows_assignment\n                        time:   [1.1099 s 1.1114 s 1.1129 s]\n                        change: [\u221221.859% \u221220.198% \u221218.156%] (p = 0.00 < 0.05)\n                        Performance has improved.\n\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_cache\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_cache: Warming up for 500.00 ms\nstopping_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\n\nWarning: Unable to complete 10 samples in 1.0s. You may wish to increase target time to 11.1s.\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_cache: Collecting 10 samples in estimated 11.089 s (10 iterations)\nstopping_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nstopping_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nBenchmarking stopping_search_32cubed_8_atoms_2108_rows_cache: Analyzing\nstopping_search_32cubed_8_atoms_2108_rows_cache\n                        time:   [1.1093 s 1.1112 s 1.1133 s]\n                        change: [\u221221.642% \u221219.362% \u221216.909%] (p = 0.00 < 0.05)\n                        Performance has improved.\n\n",
+  "results": [
+    {
+      "id": "stopping_assignment_8_atoms_2108_rows_warm12_cache",
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          3.0,
+          6.0,
+          9.0,
+          12.0,
+          15.0,
+          18.0,
+          21.0,
+          24.0,
+          27.0,
+          30.0
+        ],
+        "times": [
+          24387791.0,
+          48480750.0,
+          72666417.0,
+          98053042.0,
+          121944250.0,
+          147514209.0,
+          171026583.0,
+          198053667.0,
+          220570292.0,
+          245420709.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 8121711.55,
+            "upper_bound": 8184317.945229165
+          },
+          "point_estimate": 8152569.18324074,
+          "standard_error": 16055.187258211967
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 8104870.833333334,
+            "upper_bound": 8183160.333333333
+          },
+          "point_estimate": 8156696.537037037,
+          "standard_error": 19647.41061494716
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 8465.8133285908,
+            "upper_bound": 91159.48174409545
+          },
+          "point_estimate": 40410.29399368493,
+          "standard_error": 22326.38860693237
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 8150145.714506173,
+            "upper_bound": 8208793.56638418
+          },
+          "point_estimate": 8179499.869264069,
+          "standard_error": 14895.90337039377
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 27155.63878551955,
+            "upper_bound": 70069.40168765045
+          },
+          "point_estimate": 53459.946324053795,
+          "standard_error": 10935.637055837566
+        }
+      },
+      "benchmark": {
+        "group_id": "stopping_assignment_8_atoms_2108_rows_warm12_cache",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "stopping_assignment_8_atoms_2108_rows_warm12_cache",
+        "directory_name": "stopping_assignment_8_atoms_2108_rows_warm12_cache",
+        "title": "stopping_assignment_8_atoms_2108_rows_warm12_cache"
+      }
+    },
+    {
+      "id": "stopping_assignment_8_atoms_2108_rows_warm12_control",
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          3.0,
+          6.0,
+          9.0,
+          12.0,
+          15.0,
+          18.0,
+          21.0,
+          24.0,
+          27.0,
+          30.0
+        ],
+        "times": [
+          24541291.0,
+          48982083.0,
+          73198041.0,
+          96648208.0,
+          121624542.0,
+          146292500.0,
+          171854417.0,
+          195682500.0,
+          219267833.0,
+          243608958.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 8111042.559629629,
+            "upper_bound": 8156022.856296295
+          },
+          "point_estimate": 8134521.836296296,
+          "standard_error": 11529.278940692977
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 8117831.955555555,
+            "upper_bound": 8166933.916666666
+          },
+          "point_estimate": 8130238.388888889,
+          "standard_error": 14027.393715870408
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 5235.439393719237,
+            "upper_bound": 70363.79664523783
+          },
+          "point_estimate": 33458.35251599564,
+          "standard_error": 15683.906097821155
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 8114414.613496932,
+            "upper_bound": 8152856.757687577
+          },
+          "point_estimate": 8132044.258008658,
+          "standard_error": 9812.987698733314
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 19555.28033388872,
+            "upper_bound": 51532.09620948003
+          },
+          "point_estimate": 38477.602759764544,
+          "standard_error": 8869.499902268024
+        }
+      },
+      "benchmark": {
+        "group_id": "stopping_assignment_8_atoms_2108_rows_warm12_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "stopping_assignment_8_atoms_2108_rows_warm12_control",
+        "directory_name": "stopping_assignment_8_atoms_2108_rows_warm12_control",
+        "title": "stopping_assignment_8_atoms_2108_rows_warm12_control"
+      }
+    },
+    {
+      "id": "stopping_search_32cubed_8_atoms_2108_rows_assignment",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          1110665959.0,
+          1113554791.0,
+          1108393250.0,
+          1116386917.0,
+          1110728417.0,
+          1109035667.0,
+          1113542500.0,
+          1111363334.0,
+          1111178750.0,
+          1108688041.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1109949769.7525,
+            "upper_bound": 1112909705.8225
+          },
+          "point_estimate": 1111353762.6,
+          "standard_error": 760404.3610814036
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1109035667.0,
+            "upper_bound": 1113542500.0
+          },
+          "point_estimate": 1110953583.5,
+          "standard_error": 945027.6006161509
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 333831.8469733,
+            "upper_bound": 4194645.975530148
+          },
+          "point_estimate": 3101198.101642728,
+          "standard_error": 1119152.6399166512
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1233706.4116570659,
+            "upper_bound": 3265952.2189687137
+          },
+          "point_estimate": 2518969.5045941663,
+          "standard_error": 529626.3913752206
+        }
+      },
+      "benchmark": {
+        "group_id": "stopping_search_32cubed_8_atoms_2108_rows_assignment",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "stopping_search_32cubed_8_atoms_2108_rows_assignment",
+        "directory_name": "stopping_search_32cubed_8_atoms_2108_rows_assignment",
+        "title": "stopping_search_32cubed_8_atoms_2108_rows_assignment"
+      }
+    },
+    {
+      "id": "stopping_search_32cubed_8_atoms_2108_rows_cache",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          1109218250.0,
+          1118592042.0,
+          1109337291.0,
+          1106639708.0,
+          1108098333.0,
+          1111013459.0,
+          1112348458.0,
+          1109695666.0,
+          1113662166.0,
+          1113398458.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1109322060.85,
+            "upper_bound": 1113323985.73
+          },
+          "point_estimate": 1111200383.1,
+          "standard_error": 1029545.295320394
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1108717812.0,
+            "upper_bound": 1113398458.0
+          },
+          "point_estimate": 1110354562.5,
+          "standard_error": 1311504.0979201747
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 390973.4738588333,
+            "upper_bound": 5526452.929785848
+          },
+          "point_estimate": 3150617.6065653563,
+          "standard_error": 1256031.1081254338
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1659695.2115794788,
+            "upper_bound": 4637679.807500299
+          },
+          "point_estimate": 3447513.6893252167,
+          "standard_error": 823662.380163749
+        }
+      },
+      "benchmark": {
+        "group_id": "stopping_search_32cubed_8_atoms_2108_rows_cache",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "stopping_search_32cubed_8_atoms_2108_rows_cache",
+        "directory_name": "stopping_search_32cubed_8_atoms_2108_rows_cache",
+        "title": "stopping_search_32cubed_8_atoms_2108_rows_cache"
+      }
+    },
+    {
+      "id": "stopping_search_32cubed_8_atoms_2108_rows_control",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          1103699833.0,
+          1102706375.0,
+          1101541375.0,
+          1112457875.0,
+          1100333958.0,
+          1104107583.0,
+          1106926000.0,
+          1103975500.0,
+          1122547708.0,
+          1121281958.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1103607537.4,
+            "upper_bound": 1113052337.3
+          },
+          "point_estimate": 1107957816.5,
+          "standard_error": 2427364.7720456156
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1102620604.0,
+            "upper_bound": 1114103979.0
+          },
+          "point_estimate": 1104041541.5,
+          "standard_error": 2994428.0633143825
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 400178.19579541683,
+            "upper_bound": 12979081.954175234
+          },
+          "point_estimate": 3991622.441634536,
+          "standard_error": 3096496.786275276
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2450953.110112302,
+            "upper_bound": 9954202.199831985
+          },
+          "point_estimate": 8078765.007809895,
+          "standard_error": 1825601.2790356579
+        }
+      },
+      "benchmark": {
+        "group_id": "stopping_search_32cubed_8_atoms_2108_rows_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "stopping_search_32cubed_8_atoms_2108_rows_control",
+        "directory_name": "stopping_search_32cubed_8_atoms_2108_rows_control",
+        "title": "stopping_search_32cubed_8_atoms_2108_rows_control"
+      }
+    },
+    {
+      "id": "stopping_search_32cubed_8_atoms_2108_rows_phase",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          1269268375.0,
+          1119972292.0,
+          1110023791.0,
+          1114592667.0,
+          1112235709.0,
+          1111007833.0,
+          1108389209.0,
+          1107034584.0,
+          1110089666.0,
+          1108640417.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1109697360.9725,
+            "upper_bound": 1159464604.4
+          },
+          "point_estimate": 1127125454.3,
+          "standard_error": 15040694.518832242
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1108640417.0,
+            "upper_bound": 1116104000.5
+          },
+          "point_estimate": 1110548749.5,
+          "standard_error": 3958016.1900711795
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 729470.321649313,
+            "upper_bound": 8916852.171394229
+          },
+          "point_estimate": 3015514.201363921,
+          "standard_error": 4675905.413218502
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1816367.5334466652,
+            "upper_bound": 76900723.15496239
+          },
+          "point_estimate": 50081491.54345826,
+          "standard_error": 27158653.916128404
+        }
+      },
+      "benchmark": {
+        "group_id": "stopping_search_32cubed_8_atoms_2108_rows_phase",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "stopping_search_32cubed_8_atoms_2108_rows_phase",
+        "directory_name": "stopping_search_32cubed_8_atoms_2108_rows_phase",
+        "title": "stopping_search_32cubed_8_atoms_2108_rows_phase"
+      }
+    }
+  ],
+  "qualification": "Final isolated run after all corpus predictions/audits. Within-executable medians, not Criterion historical deltas. Complete search plus warm-started 12-step multiatom isotropic fits; work and termination printed in log. Earlier overlapping smoke/benchmark measurements are not used."
+}
