@@ -535,6 +535,8 @@ class SharedSearchAudit:
     work_sliced_phasing: bool = False
     isotropic_assignment_refinement: bool = False
     filtered_peak_search: bool = False
+    batched_fft: bool = False
+    batched_phase_transforms: int = 0
     filtered_peak_cycles: int = 0
     phase_slices: tuple[PhaseSliceAudit, ...] = ()
     score_only_evaluations: int = 0
@@ -790,6 +792,7 @@ def solve_structure_elements(
     work_sliced_phasing: bool = False,
     isotropic_assignment_refinement: bool = False,
     filtered_peak_search: bool = False,
+    batched_fft: bool = False,
     adaptive_checkpoints: bool = False,
     independent_origin_sampling: bool = False,
     cancellation: SolutionCancellation | None = None,
@@ -808,6 +811,9 @@ def solve_structure_elements(
     ``phase_first_selection=False`` tests a checkpoint portfolio instead; this
     control is ignored when quality selection is off.
     ``calculated_shell_normalization=False`` retains the earlier statistic.
+    ``batched_fft=True`` batches contiguous Fourier lines after blocked layout
+    transposes, retaining the original plans, axis order and normalization.
+    It requires reusable Fourier workspaces.
     ``filtered_peak_search=True`` preserves adaptive peaks exactly while filtering
     below-threshold voxels before neighbor comparisons; it requires reusable workspaces.
     ``isotropic_assignment_refinement=True`` relaxes competing complete labelings
@@ -883,6 +889,7 @@ def solve_structure_elements(
         ("work_sliced_phasing", work_sliced_phasing),
         ("isotropic_assignment_refinement", isotropic_assignment_refinement),
         ("filtered_peak_search", filtered_peak_search),
+        ("batched_fft", batched_fft),
         ("independent_origin_sampling", independent_origin_sampling),
     ):
         if not isinstance(value, bool):
@@ -897,6 +904,8 @@ def solve_structure_elements(
         phase_origin_selection and wilson_normalization
     ):
         raise ValueError("prediction requires phase_origin_selection and wilson_normalization")
+    if batched_fft and not reusable_fourier_workspaces:
+        raise ValueError("batched_fft requires reusable_fourier_workspaces")
     if filtered_peak_search and not reusable_fourier_workspaces:
         raise ValueError("filtered_peak_search requires reusable_fourier_workspaces")
     if isotropic_assignment_refinement and not (phase_origin_selection and chemical_assignment):
@@ -1034,7 +1043,7 @@ def solve_structure_elements(
                 reusable_fourier_workspaces,
                 work_sliced_phasing,
                 isotropic_assignment_refinement,
-                filtered_peak_search,
+                (filtered_peak_search, batched_fft),
             ),
         ),
     )

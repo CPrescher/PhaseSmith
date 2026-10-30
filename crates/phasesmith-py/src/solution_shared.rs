@@ -55,6 +55,8 @@ pub(super) fn summary<'py>(
     d.set_item("reusable_fourier_workspaces", s.reusable_fourier_workspaces)?;
     d.set_item("work_sliced_phasing", s.work_sliced_phasing)?;
     d.set_item("filtered_peak_search", s.filtered_peak_search)?;
+    d.set_item("batched_fft", s.batched_fft)?;
+    d.set_item("batched_phase_transforms", s.batched_phase_transforms)?;
     d.set_item("filtered_peak_cycles", s.filtered_peak_cycles)?;
     d.set_item(
         "isotropic_assignment_refinement",

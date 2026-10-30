@@ -1,0 +1,2372 @@
+diff --git a/PROJECT_BRIEF.md b/PROJECT_BRIEF.md
+index 74ba7b7..fd69fe6 100644
+--- a/PROJECT_BRIEF.md
++++ b/PROJECT_BRIEF.md
+@@ -2306,6 +2306,17 @@ and source/native hashes match across panels. The 65 holdout outcomes stay close
+
+ ## Quality bar
+
++An experimental `batched_fft` execution option applies planned contiguous FFT
++batches after blocked cyclic XYZ/ZXY/YZX transposes in P1 phasing and supplied-
++symmetry recycling. It restores XYZ layout and preserves original f64 plans,
++z/y/x order, normalization, support and equations. One reusable complex grid
++adds at most 32 MiB per active FFT plan under the unchanged grid limits. The
++flag requires reusable workspaces and defaults to false. Direct FFT/NumPy,
++bitwise phase trajectories and synthetic complete models/counts accompany
++realistic Fourier/full-search benchmarks and a complete paired 35-case
++development experiment. Details are in `docs/solution-batched-fft.md`; the 65
++holdout outcomes remain unopened.
++
+ An experimental `filtered_peak_search` path targets the dominant remaining P1
+ phase work. It computes the unchanged RMS threshold before local-maxima tests,
+ skips voxels that cannot survive any raised threshold, and caches periodic axis
+diff --git a/benchmarks/solution_assignment_interleaved.py b/benchmarks/solution_assignment_interleaved.py
+index 99fbce0..088b049 100644
+--- a/benchmarks/solution_assignment_interleaved.py
++++ b/benchmarks/solution_assignment_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=17)
++    parser.add_argument("--lock-revision", type=int, default=18)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -52,6 +52,7 @@ def main():
+             adaptive_checkpoints=False,
+             isotropic_assignment_refinement=mode == "assignment",
+             filtered_peak_search=False,
++            batched_fft=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_corpus/run.py b/benchmarks/solution_corpus/run.py
+index 0b846ed..09df62b 100644
+--- a/benchmarks/solution_corpus/run.py
++++ b/benchmarks/solution_corpus/run.py
+@@ -78,6 +78,7 @@ def worker(args):
+         work_sliced_phasing=args.work_sliced_phasing,
+         isotropic_assignment_refinement=args.isotropic_assignment_refinement,
+         filtered_peak_search=args.filtered_peak_search,
++        batched_fft=args.batched_fft,
+         reusable_fourier_workspaces=args.reusable_fourier_workspaces,
+         independent_origin_sampling=args.independent_origin_sampling,
+         resolution_extension=args.resolution_extension,
+@@ -268,6 +269,7 @@ def collect_jobs(args):
+             or previous.get("score_only_evaluation", False) != args.score_only_evaluation
+             or previous.get("work_sliced_phasing", False) != args.work_sliced_phasing
+             or previous.get("filtered_peak_search", False) != args.filtered_peak_search
++            or previous.get("batched_fft", False) != args.batched_fft
+             or previous.get("isotropic_assignment_refinement", False)
+             != args.isotropic_assignment_refinement
+             or previous.get("reusable_fourier_workspaces", False)
+@@ -330,6 +332,7 @@ def collect_jobs(args):
+         "work_sliced_phasing": args.work_sliced_phasing,
+         "isotropic_assignment_refinement": args.isotropic_assignment_refinement,
+         "filtered_peak_search": args.filtered_peak_search,
++        "batched_fft": args.batched_fft,
+         "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
+         "independent_origin_sampling": args.independent_origin_sampling,
+         "resolution_extension": args.resolution_extension,
+@@ -458,6 +461,7 @@ def collect_jobs(args):
+                     *(["--score-only-evaluation"] if args.score_only_evaluation else []),
+                     *(["--work-sliced-phasing"] if args.work_sliced_phasing else []),
+                     *(["--filtered-peak-search"] if args.filtered_peak_search else []),
++                    *(["--batched-fft"] if args.batched_fft else []),
+                     *(
+                         ["--isotropic-assignment-refinement"]
+                         if args.isotropic_assignment_refinement
+diff --git a/benchmarks/solution_corpus_benchmark.py b/benchmarks/solution_corpus_benchmark.py
+index 06ea2f5..552e10c 100644
+--- a/benchmarks/solution_corpus_benchmark.py
++++ b/benchmarks/solution_corpus_benchmark.py
+@@ -192,7 +192,7 @@ def main():
+         "--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json"
+     )
+     seal_parser.add_argument("--discovery", type=Path, required=True)
+-    seal_parser.add_argument("--lock-revision", type=int, default=17)
++    seal_parser.add_argument("--lock-revision", type=int, default=18)
+     adapters = commands.add_parser("seal-adapters")
+     adapters.add_argument("--manifest", type=Path, required=True)
+     adapters.add_argument("--parent-lock", type=Path, required=True)
+@@ -212,6 +212,7 @@ def main():
+     r.add_argument("--iterative-refinement", action="store_true")
+     r.add_argument("--work-sliced-phasing", action="store_true")
+     r.add_argument("--filtered-peak-search", action="store_true")
++    r.add_argument("--batched-fft", action="store_true")
+     r.add_argument("--isotropic-assignment-refinement", action="store_true")
+     r.add_argument("--score-only-evaluation", action="store_true")
+     r.add_argument("--reusable-fourier-workspaces", action="store_true")
+@@ -223,7 +224,7 @@ def main():
+     r.add_argument("--phase-first-selection", action="store_true", default=True)
+     r.add_argument("--quality-checkpoints", dest="phase_first_selection", action="store_false")
+     r.add_argument("--legacy-quality-normalization", action="store_true")
+-    r.add_argument("--lock-revision", type=int, default=17)
++    r.add_argument("--lock-revision", type=int, default=18)
+     r.add_argument("--split", choices=["development", "holdout"], default="development")
+     r.add_argument("--open-holdout", action="store_true")
+     r.add_argument("--seconds", type=float, default=30)
+@@ -240,6 +241,7 @@ def main():
+     w.add_argument("--iterative-refinement", action="store_true")
+     w.add_argument("--work-sliced-phasing", action="store_true")
+     w.add_argument("--filtered-peak-search", action="store_true")
++    w.add_argument("--batched-fft", action="store_true")
+     w.add_argument("--isotropic-assignment-refinement", action="store_true")
+     w.add_argument("--score-only-evaluation", action="store_true")
+     w.add_argument("--reusable-fourier-workspaces", action="store_true")
+diff --git a/benchmarks/solution_execution_interleaved.py b/benchmarks/solution_execution_interleaved.py
+index a165646..f6e8f72 100644
+--- a/benchmarks/solution_execution_interleaved.py
++++ b/benchmarks/solution_execution_interleaved.py
+@@ -49,7 +49,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=17)
++    parser.add_argument("--lock-revision", type=int, default=18)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -80,6 +80,7 @@ def main():
+             adaptive_checkpoints=False,
+             isotropic_assignment_refinement=False,
+             filtered_peak_search=False,
++            batched_fft=False,
+             work_sliced_phasing=False,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_peak_interleaved.py b/benchmarks/solution_peak_interleaved.py
+index 4d9fd55..1bb6700 100644
+--- a/benchmarks/solution_peak_interleaved.py
++++ b/benchmarks/solution_peak_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=17)
++    parser.add_argument("--lock-revision", type=int, default=18)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -52,6 +52,7 @@ def main():
+             adaptive_checkpoints=False,
+             isotropic_assignment_refinement=True,
+             filtered_peak_search=mode == "peaks",
++            batched_fft=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_phase_ablation.py b/benchmarks/solution_phase_ablation.py
+index f61b4a6..9df4823 100644
+--- a/benchmarks/solution_phase_ablation.py
++++ b/benchmarks/solution_phase_ablation.py
+@@ -98,6 +98,7 @@ def compare(paths, manifest, pairs=()):
+                 "work_sliced_phasing",
+                 "isotropic_assignment_refinement",
+                 "filtered_peak_search",
++                "batched_fft",
+                 "reusable_fourier_workspaces",
+                 "independent_origin_sampling",
+                 "resolution_extension",
+@@ -151,6 +152,7 @@ def compare(paths, manifest, pairs=()):
+                     "score_only_evaluations": r["effort"].get("score_only_evaluations", 0),
+                     "fourier_workspace_cycles": r["effort"].get("fourier_workspace_cycles", 0),
+                     "filtered_peak_cycles": r["effort"].get("filtered_peak_cycles", 0),
++                    "batched_phase_transforms": r["effort"].get("batched_phase_transforms", 0),
+                     "adaptive_checkpoint_tests": len(r["effort"].get("phase_checkpoints", [])),
+                     "stable_map_handoffs": sum(
+                         c["reason"] == "stable_map"
+@@ -217,6 +219,7 @@ def compare(paths, manifest, pairs=()):
+             "work_sliced_phasing": report.get("work_sliced_phasing", False),
+             "isotropic_assignment_refinement": report.get("isotropic_assignment_refinement", False),
+             "filtered_peak_search": report.get("filtered_peak_search", False),
++            "batched_fft": report.get("batched_fft", False),
+             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
+             "independent_origin_sampling": report.get("independent_origin_sampling", False),
+             "resolution_extension": report.get("resolution_extension", 1.0),
+@@ -238,6 +241,7 @@ def compare(paths, manifest, pairs=()):
+                     "short_quota_completions",
+                     "fourier_workspace_cycles",
+                     "filtered_peak_cycles",
++                    "batched_phase_transforms",
+                     "stable_map_handoffs",
+                     "screening_refinements",
+                     "final_refinements",
+diff --git a/benchmarks/solution_timeslice_interleaved.py b/benchmarks/solution_timeslice_interleaved.py
+index 747123d..0c589b9 100644
+--- a/benchmarks/solution_timeslice_interleaved.py
++++ b/benchmarks/solution_timeslice_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=17)
++    parser.add_argument("--lock-revision", type=int, default=18)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -52,6 +52,7 @@ def main():
+             adaptive_checkpoints=False,
+             isotropic_assignment_refinement=False,
+             filtered_peak_search=False,
++            batched_fft=False,
+             work_sliced_phasing=mode == "work",
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/crates/phasesmith-py/src/solution.rs b/crates/phasesmith-py/src/solution.rs
+index a5f066e..7b84ec4 100644
+--- a/crates/phasesmith-py/src/solution.rs
++++ b/crates/phasesmith-py/src/solution.rs
+@@ -65,7 +65,7 @@ type SharedSearchRequest = (
+             bool,
+             bool,
+             bool,
+-            bool,
++            (bool, bool),
+         ),
+     ),
+ );
+@@ -205,7 +205,7 @@ fn solve_structure<'py>(
+                         reusable_fourier_workspaces,
+                         work_sliced_phasing,
+                         isotropic_assignment_refinement,
+-                        filtered_peak_search,
++                        (filtered_peak_search, batched_fft),
+                     ),
+                 ),
+             )) = shared_search
+@@ -255,6 +255,7 @@ fn solve_structure<'py>(
+                         work_sliced_phasing,
+                         isotropic_assignment_refinement,
+                         filtered_peak_search,
++                        batched_fft,
+                     },
+                 )
+             } else {
+diff --git a/crates/phasesmith-py/src/solution_dual.rs b/crates/phasesmith-py/src/solution_dual.rs
+index 480a91f..d7dd169 100644
+--- a/crates/phasesmith-py/src/solution_dual.rs
++++ b/crates/phasesmith-py/src/solution_dual.rs
+@@ -59,6 +59,7 @@ fn run<'py>(
+                     score_only_evaluation: false,
+                     reusable_fourier_workspaces: reusable_workspaces,
+                     filtered_peak_search: false,
++                    batched_fft: false,
+                 },
+             )
+         })
+@@ -119,7 +120,7 @@ pub(super) fn adaptive_record<'py>(
+ }
+ #[pyfunction(name = "_solution_count_free_dual_space")]
+ #[allow(clippy::too_many_arguments)]
+-#[pyo3(signature = (shape, cell_parameters, hkl, amplitudes, phases, support, cycles, peak_sigma, peak_cap, mask_sigma, hybrid_m, omit_fraction, seed, patterson_rank, checkpoint_accept_cycle=None, reusable_workspaces=false, filtered_peak_search=false))]
++#[pyo3(signature = (shape, cell_parameters, hkl, amplitudes, phases, support, cycles, peak_sigma, peak_cap, mask_sigma, hybrid_m, omit_fraction, seed, patterson_rank, checkpoint_accept_cycle=None, reusable_workspaces=false, filtered_peak_search=false,batched_fft=false))]
+ fn count_free<'py>(
+     py: Python<'py>,
+     shape: [usize; 3],
+@@ -139,6 +140,7 @@ fn count_free<'py>(
+     checkpoint_accept_cycle: Option<usize>,
+     reusable_workspaces: bool,
+     filtered_peak_search: bool,
++    batched_fft: bool,
+ ) -> PyResult<Bound<'py, PyDict>> {
+     let cell = cell(&cell_parameters)?;
+     let hkl = hkl_rows(&hkl)?;
+@@ -175,10 +177,11 @@ fn count_free<'py>(
+                         score_only_evaluation: false,
+                         reusable_fourier_workspaces: reusable_workspaces,
+                         filtered_peak_search,
++                        batched_fft,
+                     },
+                 );
+             }
+-            if filtered_peak_search || reusable_workspaces {
++            if filtered_peak_search || reusable_workspaces || batched_fft {
+                 return Err(phasesmith_solution::SolutionError(
+                     "diagnostic checkpoint and execution modes must be tested separately".into(),
+                 ));
+@@ -328,6 +331,7 @@ pub(super) fn trial_records(
+ }
+
+ pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
++    module.add_function(wrap_pyfunction!(fft_transform, module)?)?;
+     module.add_function(wrap_pyfunction!(filtered_peaks, module)?)?;
+     module.add_function(wrap_pyfunction!(run, module)?)?;
+     module.add_function(wrap_pyfunction!(count_free, module)?)?;
+@@ -335,3 +339,47 @@ pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
+     module.add_function(wrap_pyfunction!(projection, module)?)?;
+     Ok(())
+ }
++
++#[pyfunction(name = "_solution_fft_transform")]
++#[pyo3(signature=(real,imaginary,shape,inverse=false,batched=false))]
++fn fft_transform<'py>(
++    py: Python<'py>,
++    real: PyReadonlyArray1<'_, f64>,
++    imaginary: PyReadonlyArray1<'_, f64>,
++    shape: [usize; 3],
++    inverse: bool,
++    batched: bool,
++) -> PyResult<Bound<'py, PyDict>> {
++    use phasesmith_solution::FourierComplex as Complex;
++    let real = real.as_slice()?;
++    let imaginary = imaginary.as_slice()?;
++    if real.len() != imaginary.len() {
++        return Err(invalid("FFT real/imaginary lengths differ"));
++    }
++    let values: Vec<_> = real
++        .iter()
++        .zip(imaginary)
++        .map(|(&re, &im)| Complex::new(re, im))
++        .collect();
++    let output = py
++        .detach(|| phasesmith_solution::transform_3d(shape, &values, inverse, batched))
++        .map_err(invalid)?;
++    let out = PyDict::new(py);
++    out.set_item(
++        "real",
++        output
++            .iter()
++            .map(|v| v.re)
++            .collect::<Vec<_>>()
++            .into_pyarray(py),
++    )?;
++    out.set_item(
++        "imaginary",
++        output
++            .iter()
++            .map(|v| v.im)
++            .collect::<Vec<_>>()
++            .into_pyarray(py),
++    )?;
++    Ok(out)
++}
+diff --git a/crates/phasesmith-py/src/solution_shared.rs b/crates/phasesmith-py/src/solution_shared.rs
+index 805016c..f1593e7 100644
+--- a/crates/phasesmith-py/src/solution_shared.rs
++++ b/crates/phasesmith-py/src/solution_shared.rs
+@@ -55,6 +55,8 @@ pub(super) fn summary<'py>(
+     d.set_item("reusable_fourier_workspaces", s.reusable_fourier_workspaces)?;
+     d.set_item("work_sliced_phasing", s.work_sliced_phasing)?;
+     d.set_item("filtered_peak_search", s.filtered_peak_search)?;
++    d.set_item("batched_fft", s.batched_fft)?;
++    d.set_item("batched_phase_transforms", s.batched_phase_transforms)?;
+     d.set_item("filtered_peak_cycles", s.filtered_peak_cycles)?;
+     d.set_item(
+         "isotropic_assignment_refinement",
+diff --git a/crates/phasesmith-solution/benches/solution.rs b/crates/phasesmith-solution/benches/solution.rs
+index 7a525cf..7b940d3 100644
+--- a/crates/phasesmith-solution/benches/solution.rs
++++ b/crates/phasesmith-solution/benches/solution.rs
+@@ -770,6 +770,7 @@ fn benchmark(c: &mut Criterion) {
+                     score_only_evaluation: score_only,
+                     reusable_fourier_workspaces: reuse,
+                     filtered_peak_search: false,
++                    batched_fft: false,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -828,6 +829,66 @@ fn benchmark(c: &mut Criterion) {
+                     score_only_evaluation: true,
+                     reusable_fourier_workspaces: true,
+                     filtered_peak_search: filtered,
++                    batched_fft: false,
++                };
++                let options = DualSpaceOptions {
++                    cycles: 64,
++                    peak_selection: PeakSelection::Adaptive {
++                        sigma: 2.,
++                        cap: 128,
++                    },
++                    mask_sigma: 0.25,
++                    hybrid_m: 3.,
++                    omit_fraction: 0.1,
++                    seed: 1034,
++                    patterson_rank: Some(0),
++                    cancellation: None,
++                };
++                let sample = phasesmith_solution::dual_space_with_execution(
++                    shape,
++                    cell,
++                    &quality_data.hkl,
++                    &quality_data.amplitudes,
++                    &phases,
++                    &support,
++                    &options,
++                    None,
++                    Some(&quality_plan),
++                    execution,
++                )
++                .unwrap();
++                eprintln!(
++                    "execution_sample {label} completed_cycles {}",
++                    sample.trial.history.len()
++                );
++                drop(sample);
++                b.iter(|| {
++                    phasesmith_solution::dual_space_with_execution(
++                        shape,
++                        cell,
++                        &quality_data.hkl,
++                        &quality_data.amplitudes,
++                        &phases,
++                        &support,
++                        &options,
++                        None,
++                        Some(&quality_plan),
++                        execution,
++                    )
++                    .unwrap()
++                });
++            },
++        );
++    }
++    for (label, batched) in [("control", false), ("batched", true)] {
++        c.bench_function(
++            &format!("batched_fft_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_{label}"),
++            |b| {
++                let execution = phasesmith_solution::PhasingExecution {
++                    score_only_evaluation: true,
++                    reusable_fourier_workspaces: true,
++                    filtered_peak_search: true,
++                    batched_fft: batched,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -1026,6 +1087,50 @@ fn benchmark(c: &mut Criterion) {
+             },
+         );
+     }
++    for batched in [false, true] {
++        let options = SolveOptions {
++            phasing: PhasingMethod::DualSpace,
++            trials: 2,
++            cycles: 128,
++            max_seconds: 60.,
++            r1_target: 1e-6,
++            ..SolveOptions::default()
++        };
++        let search = SharedSearchOptions {
++            maximum_atoms: 32,
++            symmetry_recycling: true,
++            tangent_refinement: true,
++            wilson_normalization: true,
++            phase_quality_selection: true,
++            phase_origin_selection: true,
++            chemical_assignment: true,
++            iterative_refinement: true,
++            score_only_evaluation: true,
++            reusable_fourier_workspaces: true,
++            work_sliced_phasing: true,
++            isotropic_assignment_refinement: true,
++            filtered_peak_search: true,
++            batched_fft: batched,
++            ..SharedSearchOptions::default()
++        };
++        let label = if batched { "batched" } else { "control" };
++        c.bench_function(
++            &format!("batched_fft_search_32cubed_8_atoms_2108_rows_{label}"),
++            |b| {
++                b.iter(|| {
++                    phasesmith_solution::solve_elements(
++                        &count_observations,
++                        cell,
++                        &group,
++                        &quality_elements,
++                        &options,
++                        &search,
++                    )
++                    .unwrap()
++                });
++            },
++        );
++    }
+     let mut count_benches = c.benchmark_group("count_selection_8_atoms_2108_reflections");
+     count_benches
+         .sample_size(10)
+diff --git a/crates/phasesmith-solution/src/dual_space.rs b/crates/phasesmith-solution/src/dual_space.rs
+index e9637bb..59b67aa 100644
+--- a/crates/phasesmith-solution/src/dual_space.rs
++++ b/crates/phasesmith-solution/src/dual_space.rs
+@@ -98,6 +98,8 @@ pub struct DualSpaceResult {
+     pub fourier_workspace_cycles: usize,
+     /// Actual cycles using exact threshold-filtered peak selection.
+     pub filtered_peak_cycles: usize,
++    /// Actual batched 3D transforms in this P1 phase call.
++    pub batched_phase_transforms: usize,
+ }
+
+ pub(crate) fn hash64(mut value: u64) -> u64 {
+@@ -523,6 +525,7 @@ pub fn dual_space_with_prediction(
+
+ /// Execution-only optimizations, independent of the numerical phasing options.
+ #[derive(Clone, Copy, Debug, Default)]
++#[allow(clippy::struct_excessive_bools)] // Independent execution ablation controls.
+ pub struct PhasingExecution {
+     /// Cache scalar merits; no gradient computation in scoring-only callers.
+     pub score_only_evaluation: bool,
+@@ -530,6 +533,8 @@ pub struct PhasingExecution {
+     pub reusable_fourier_workspaces: bool,
+     /// Filter impossible adaptive peaks before cached periodic neighbor comparisons.
+     pub filtered_peak_search: bool,
++    /// Batch contiguous FFT lines after blocked cyclic layout transposes.
++    pub batched_fft: bool,
+ }
+
+ /// Diagnostic/benchmark entry point with explicit arithmetic-preserving execution.
+@@ -648,11 +653,12 @@ pub(crate) fn dual_space_guided_prediction(
+         score_only_evaluation,
+         reusable_fourier_workspaces,
+         filtered_peak_search,
++        batched_fft,
+     } = execution;
+     validate_options(options)?;
+-    if filtered_peak_search && !reusable_fourier_workspaces {
++    if (filtered_peak_search || batched_fft) && !reusable_fourier_workspaces {
+         return Err(error(
+-            "filtered peak search requires reusable Fourier workspaces",
++            "filtered peak search and batched FFT require reusable Fourier workspaces",
+         ));
+     }
+     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
+@@ -675,7 +681,9 @@ pub(crate) fn dual_space_guided_prediction(
+     for (&i, &a) in indices.iter().zip(&target) {
+         f[i] = Complex::from_polar(a, f[i].arg());
+     }
+-    let mut fft = if reusable_fourier_workspaces {
++    let mut fft = if batched_fft {
++        Transform::batched(shape)
++    } else if reusable_fourier_workspaces {
+         Transform::reusable(shape)
+     } else {
+         Transform::new(shape)
+@@ -1057,6 +1065,7 @@ pub(crate) fn dual_space_guided_prediction(
+         phase_checkpoints,
+         score_only_evaluations,
+         fourier_workspace_cycles,
++        batched_phase_transforms: fft.batched_calls(),
+         filtered_peak_cycles: if filtered_peak_search
+             && matches!(options.peak_selection, PeakSelection::Adaptive { .. })
+         {
+@@ -1146,21 +1155,31 @@ mod tests {
+                         score_only_evaluation: true,
+                         reusable_fourier_workspaces: false,
+                         filtered_peak_search: false,
++                        batched_fft: false,
+                     },
+                     PhasingExecution {
+                         score_only_evaluation: false,
+                         reusable_fourier_workspaces: true,
+                         filtered_peak_search: false,
++                        batched_fft: false,
+                     },
+                     PhasingExecution {
+                         score_only_evaluation: true,
+                         reusable_fourier_workspaces: true,
+                         filtered_peak_search: false,
++                        batched_fft: false,
+                     },
+                     PhasingExecution {
+                         score_only_evaluation: true,
+                         reusable_fourier_workspaces: true,
+                         filtered_peak_search: true,
++                        batched_fft: false,
++                    },
++                    PhasingExecution {
++                        score_only_evaluation: true,
++                        reusable_fourier_workspaces: true,
++                        filtered_peak_search: true,
++                        batched_fft: true,
+                     },
+                 ] {
+                     let new = dual_space_with_execution(
+diff --git a/crates/phasesmith-solution/src/fourier.rs b/crates/phasesmith-solution/src/fourier.rs
+index bf724cd..ee8353c 100644
+--- a/crates/phasesmith-solution/src/fourier.rs
++++ b/crates/phasesmith-solution/src/fourier.rs
+@@ -7,6 +7,9 @@ use rustfft::{Fft, FftPlanner, num_complex::Complex};
+
+ use crate::{SolutionError, error};
+
++#[path = "fft_layout.rs"]
++mod layout;
++
+ /// Charge-flipping controls; delta is fixed within a trial.
+ #[derive(Clone, Debug)]
+ pub struct FlipOptions {
+@@ -44,6 +47,8 @@ pub(crate) struct Transform {
+     inverse: [Arc<dyn Fft<f64>>; 3],
+     line: Vec<Complex<f64>>,
+     scratch: Vec<Complex<f64>>,
++    transpose: Vec<Complex<f64>>,
++    batched_calls: usize,
+ }
+
+ impl Transform {
+@@ -64,6 +69,8 @@ impl Transform {
+             inverse,
+             line: vec![Complex::default(); *shape.iter().max().unwrap()],
+             scratch: vec![Complex::default(); scratch_len],
++            transpose: Vec::new(),
++            batched_calls: 0,
+         }
+     }
+
+@@ -73,7 +80,38 @@ impl Transform {
+         plan
+     }
+
++    pub(crate) fn batched(shape: [usize; 3]) -> Self {
++        let mut plan = Self::reusable(shape);
++        plan.transpose = vec![Complex::default(); shape.iter().product()];
++        plan
++    }
++
++    pub(crate) fn batched_calls(&self) -> usize {
++        self.batched_calls
++    }
++
+     pub(crate) fn apply(&mut self, values: &mut [Complex<f64>], inverse: bool) {
++        if !self.transpose.is_empty() {
++            // Preserve z,y,x transform order; only independent line order/layout changes.
++            let [nx, ny, nz] = self.shape;
++            let plans = if inverse {
++                &self.inverse
++            } else {
++                &self.forward
++            };
++            plans[2].process_with_scratch(values, &mut self.scratch);
++            // XYZ -> ZXY, contiguous y lines.
++            layout::transpose(values, &mut self.transpose, nx * ny, nz);
++            plans[1].process_with_scratch(&mut self.transpose, &mut self.scratch);
++            // ZXY -> YZX, contiguous x lines.
++            layout::transpose(&self.transpose, values, nz * nx, ny);
++            plans[0].process_with_scratch(values, &mut self.scratch);
++            // YZX -> XYZ; restore the externally observable C-order buffer.
++            layout::transpose(values, &mut self.transpose, ny * nz, nx);
++            values.copy_from_slice(&self.transpose);
++            self.batched_calls += 1;
++            return;
++        }
+         for axis in (0..3).rev() {
+             let length = self.shape[axis];
+             let stride: usize = self.shape[axis + 1..].iter().product();
+@@ -105,6 +143,33 @@ impl Transform {
+     }
+ }
+
++/// Unnormalized complex 3D transform in C-order XYZ layout, for independent checks.
++/// `inverse=true` uses the positive-exponent transform; a round trip multiplies by N.
++/// # Errors
++/// Rejects invalid Fourier grid bounds, length mismatch or nonfinite complex inputs.
++pub fn transform_3d(
++    shape: [usize; 3],
++    values: &[Complex<f64>],
++    inverse: bool,
++    batched: bool,
++) -> Result<Vec<Complex<f64>>, SolutionError> {
++    if values.len() != grid_len(shape)?
++        || values
++            .iter()
++            .any(|v| !v.re.is_finite() || !v.im.is_finite())
++    {
++        return Err(error("invalid complex transform input"));
++    }
++    let mut plan = if batched {
++        Transform::batched(shape)
++    } else {
++        Transform::reusable(shape)
++    };
++    let mut output = values.to_vec();
++    plan.apply(&mut output, inverse);
++    Ok(output)
++}
++
+ pub(crate) fn grid_len(shape: [usize; 3]) -> Result<usize, SolutionError> {
+     if shape.iter().any(|&n| !(8..=128).contains(&n) || n % 2 != 0) {
+         return Err(error("grid axes must be even and lie in [8,128]"));
+@@ -470,6 +535,29 @@ pub(crate) fn refine_peak_indices(
+ mod tests {
+     use super::*;
+     #[test]
++    #[allow(clippy::cast_precision_loss)]
++    fn batched_fft_layout_preserves_every_complex_value_bitwise() {
++        for shape in [[8; 3], [16, 24, 8], [32, 16, 64], [8, 128, 8]] {
++            let n = grid_len(shape).unwrap();
++            let values: Vec<_> = (0..n)
++                .map(|i| Complex::new((i as f64 * 0.137).sin(), (i as f64 * 0.371).cos()))
++                .collect();
++            for inverse in [false, true] {
++                let old = transform_3d(shape, &values, inverse, false).unwrap();
++                let new = transform_3d(shape, &values, inverse, true).unwrap();
++                assert_eq!(
++                    old.iter()
++                        .flat_map(|v| [v.re.to_bits(), v.im.to_bits()])
++                        .collect::<Vec<_>>(),
++                    new.iter()
++                        .flat_map(|v| [v.re.to_bits(), v.im.to_bits()])
++                        .collect::<Vec<_>>(),
++                    "shape={shape:?},inverse={inverse}"
++                );
++            }
++        }
++    }
++    #[test]
+     fn periodic_peak_and_plateau_ties() {
+         let mut map = vec![0.0; 512];
+         map[0] = 4.;
+diff --git a/crates/phasesmith-solution/src/lib.rs b/crates/phasesmith-solution/src/lib.rs
+index 1c5dc43..b19876e 100644
+--- a/crates/phasesmith-solution/src/lib.rs
++++ b/crates/phasesmith-solution/src/lib.rs
+@@ -54,7 +54,7 @@ pub use dual_space::{
+     DualSpaceResult, PeakSelection, adaptive_peaks, atomic_projection, dual_space,
+     dual_space_monitored, dual_space_with_prediction,
+ };
+-pub use fourier::{FlipOptions, FlipResult, charge_flip, extract_peaks};
++pub use fourier::{FlipOptions, FlipResult, charge_flip, extract_peaks, transform_3d};
+ pub use linear_step::iterative_normal_step;
+ pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
+ pub use peak_completion::{
+@@ -73,6 +73,7 @@ pub use reflection_prediction::{
+     PredictedCoefficient, PredictionAudit, PredictionStep, PreparedReflectionPrediction,
+     prediction_coefficient,
+ };
++pub use rustfft::num_complex::Complex as FourierComplex;
+ pub use shared_pool::PreparedElementPool;
+ pub use shared_search::{
+     DensityCalibration, PhaseOriginAudit, PhaseSettingAudit, RecyclingAudit, SharedMove,
+diff --git a/crates/phasesmith-solution/src/shared_phase_path.rs b/crates/phasesmith-solution/src/shared_phase_path.rs
+index 18f5e3f..4ac746d 100644
+--- a/crates/phasesmith-solution/src/shared_phase_path.rs
++++ b/crates/phasesmith-solution/src/shared_phase_path.rs
+@@ -369,6 +369,7 @@ pub(super) fn search(
+             options.seed.wrapping_add(trial as u64),
+             context.prediction.as_ref(),
+             search.reusable_fourier_workspaces,
++            search.batched_fft,
+         );
+         trace.recycling_seconds += start.elapsed().as_secs_f64();
+         let recycled = match recycled {
+diff --git a/crates/phasesmith-solution/src/shared_search.rs b/crates/phasesmith-solution/src/shared_search.rs
+index 9044e1a..cf45557 100644
+--- a/crates/phasesmith-solution/src/shared_search.rs
++++ b/crates/phasesmith-solution/src/shared_search.rs
+@@ -75,6 +75,8 @@ pub struct SharedSearchOptions {
+     pub isotropic_assignment_refinement: bool,
+     /// Exact adaptive threshold filtering and cached periodic neighbor offsets.
+     pub filtered_peak_search: bool,
++    /// Batch Fourier lines with blocked transposes, preserving axis order.
++    pub batched_fft: bool,
+     /// Select origin FFT sampling from phase-equivalence frequencies.
+     pub independent_origin_sampling: bool,
+     /// Add motif density scales and post-screen coupled element assignments.
+@@ -117,6 +119,7 @@ impl Default for SharedSearchOptions {
+             work_sliced_phasing: false,
+             isotropic_assignment_refinement: false,
+             filtered_peak_search: false,
++            batched_fft: false,
+             independent_origin_sampling: false,
+             chemical_assignment: false,
+             iterative_refinement: false,
+@@ -249,6 +252,8 @@ pub struct SharedSearchSummary {
+     pub isotropic_assignment_refinement: bool,
+     /// Exact adaptive threshold filtering and cached periodic neighbor offsets.
+     pub filtered_peak_search: bool,
++    /// Batch Fourier lines with blocked transposes, preserving axis order.
++    pub batched_fft: bool,
+     /// Select origin FFT sampling from phase-equivalence frequencies.
+     pub independent_origin_sampling: bool,
+     /// Add motif density scales and post-screen coupled element assignments.
+@@ -267,6 +272,8 @@ pub struct SharedSearchSummary {
+     pub fourier_workspace_cycles: usize,
+     /// Actual threshold-filtered adaptive peak cycles.
+     pub filtered_peak_cycles: usize,
++    /// Actual batched 3D transforms inside P1 phase calls.
++    pub batched_phase_transforms: usize,
+     /// Per-start phase checkpoint decisions (start index, decision).
+     pub phase_checkpoints: Vec<(usize, crate::PhaseCheckpoint)>,
+     /// Actual reciprocal support provenance, absent for the original path.
+@@ -1759,7 +1766,8 @@ pub fn solve_elements(
+         || (search.independent_origin_sampling && !search.phase_origin_selection)
+         || (search.score_only_evaluation && !search.phase_quality_selection)
+         || (search.reusable_fourier_workspaces && options.phasing != PhasingMethod::DualSpace)
+-        || (search.filtered_peak_search && !search.reusable_fourier_workspaces)
++        || ((search.filtered_peak_search || search.batched_fft)
++            && !search.reusable_fourier_workspaces)
+         || (search.isotropic_assignment_refinement
+             && (!search.phase_origin_selection || !search.chemical_assignment))
+         || (search.work_sliced_phasing
+@@ -2001,6 +2009,7 @@ pub fn solve_elements(
+         work_sliced_phasing: search.work_sliced_phasing,
+         isotropic_assignment_refinement: search.isotropic_assignment_refinement,
+         filtered_peak_search: search.filtered_peak_search,
++        batched_fft: search.batched_fft,
+         independent_origin_sampling: search.independent_origin_sampling,
+         chemical_assignment: search.chemical_assignment,
+         iterative_refinement: search.iterative_refinement,
+@@ -2191,6 +2200,7 @@ pub fn solve_elements(
+                     score_only_evaluation: search.score_only_evaluation,
+                     reusable_fourier_workspaces: search.reusable_fourier_workspaces,
+                     filtered_peak_search: search.filtered_peak_search,
++                    batched_fft: search.batched_fft,
+                 },
+             )?;
+             audit.phase_slices.push(crate::PhaseSliceAudit {
+@@ -2218,6 +2228,7 @@ pub fn solve_elements(
+             audit.score_only_evaluations += state.score_only_evaluations;
+             audit.fourier_workspace_cycles += state.fourier_workspace_cycles;
+             audit.filtered_peak_cycles += state.filtered_peak_cycles;
++            audit.batched_phase_transforms += state.batched_phase_transforms;
+             audit
+                 .phase_checkpoints
+                 .extend(state.phase_checkpoints.drain(..).map(|c| (trial, c)));
+diff --git a/crates/phasesmith-solution/src/symmetry_recycling.rs b/crates/phasesmith-solution/src/symmetry_recycling.rs
+index 4ca7f73..083794b 100644
+--- a/crates/phasesmith-solution/src/symmetry_recycling.rs
++++ b/crates/phasesmith-solution/src/symmetry_recycling.rs
+@@ -283,6 +283,7 @@ pub fn recycle_density_guided(
+         seed,
+         None,
+         false,
++        false,
+     )
+ }
+
+@@ -307,6 +308,7 @@ pub(crate) fn recycle_density_guided_prediction(
+     seed: u64,
+     prediction: Option<&crate::PreparedReflectionPrediction>,
+     reusable_fourier_workspaces: bool,
++    batched_fft: bool,
+ ) -> Result<RecycledDensity, SolutionError> {
+     let n = grid_len(shape)?;
+     if source.len() != n
+@@ -324,7 +326,9 @@ pub(crate) fn recycle_density_guided_prediction(
+         ));
+     }
+     let orbits = plan(shape, hkl, amplitudes, support, group)?;
+-    let mut fft = if reusable_fourier_workspaces {
++    let mut fft = if batched_fft {
++        Transform::batched(shape)
++    } else if reusable_fourier_workspaces {
+         Transform::reusable(shape)
+     } else {
+         Transform::new(shape)
+diff --git a/python/phasesmith/experimental/solution.py b/python/phasesmith/experimental/solution.py
+index d4dd46b..bee6583 100644
+--- a/python/phasesmith/experimental/solution.py
++++ b/python/phasesmith/experimental/solution.py
+@@ -535,6 +535,8 @@ class SharedSearchAudit:
+     work_sliced_phasing: bool = False
+     isotropic_assignment_refinement: bool = False
+     filtered_peak_search: bool = False
++    batched_fft: bool = False
++    batched_phase_transforms: int = 0
+     filtered_peak_cycles: int = 0
+     phase_slices: tuple[PhaseSliceAudit, ...] = ()
+     score_only_evaluations: int = 0
+@@ -790,6 +792,7 @@ def solve_structure_elements(
+     work_sliced_phasing: bool = False,
+     isotropic_assignment_refinement: bool = False,
+     filtered_peak_search: bool = False,
++    batched_fft: bool = False,
+     adaptive_checkpoints: bool = False,
+     independent_origin_sampling: bool = False,
+     cancellation: SolutionCancellation | None = None,
+@@ -808,6 +811,9 @@ def solve_structure_elements(
+     ``phase_first_selection=False`` tests a checkpoint portfolio instead; this
+     control is ignored when quality selection is off.
+     ``calculated_shell_normalization=False`` retains the earlier statistic.
++    ``batched_fft=True`` batches contiguous Fourier lines after blocked layout
++    transposes, retaining the original plans, axis order and normalization.
++    It requires reusable Fourier workspaces.
+     ``filtered_peak_search=True`` preserves adaptive peaks exactly while filtering
+     below-threshold voxels before neighbor comparisons; it requires reusable workspaces.
+     ``isotropic_assignment_refinement=True`` relaxes competing complete labelings
+@@ -883,6 +889,7 @@ def solve_structure_elements(
+         ("work_sliced_phasing", work_sliced_phasing),
+         ("isotropic_assignment_refinement", isotropic_assignment_refinement),
+         ("filtered_peak_search", filtered_peak_search),
++        ("batched_fft", batched_fft),
+         ("independent_origin_sampling", independent_origin_sampling),
+     ):
+         if not isinstance(value, bool):
+@@ -897,6 +904,8 @@ def solve_structure_elements(
+         phase_origin_selection and wilson_normalization
+     ):
+         raise ValueError("prediction requires phase_origin_selection and wilson_normalization")
++    if batched_fft and not reusable_fourier_workspaces:
++        raise ValueError("batched_fft requires reusable_fourier_workspaces")
+     if filtered_peak_search and not reusable_fourier_workspaces:
+         raise ValueError("filtered_peak_search requires reusable_fourier_workspaces")
+     if isotropic_assignment_refinement and not (phase_origin_selection and chemical_assignment):
+@@ -1034,7 +1043,7 @@ def solve_structure_elements(
+                 reusable_fourier_workspaces,
+                 work_sliced_phasing,
+                 isotropic_assignment_refinement,
+-                filtered_peak_search,
++                (filtered_peak_search, batched_fft),
+             ),
+         ),
+     )
+diff --git a/tests/test_solution_phase_ablation_report.py b/tests/test_solution_phase_ablation_report.py
+index c407dbd..8af4312 100644
+--- a/tests/test_solution_phase_ablation_report.py
++++ b/tests/test_solution_phase_ablation_report.py
+@@ -46,6 +46,7 @@ def test_pair_labels_are_distinct_from_prediction_case_pairs():
+         "work_slice_flag",
+         "assignment_flag",
+         "peak_flag",
++        "fft_flag",
+     ],
+ )
+ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corruption):
+@@ -66,6 +67,7 @@ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corrup
+             "work_slice_flag": "work_sliced_phasing",
+             "assignment_flag": "isotropic_assignment_refinement",
+             "peak_flag": "filtered_peak_search",
++            "fft_flag": "batched_fft",
+         }[corruption]
+         report[key] = 1.2 if corruption == "extension_flag" else True
+     else:
+diff --git a/crates/phasesmith-solution/src/fft_layout.rs b/crates/phasesmith-solution/src/fft_layout.rs
+new file mode 100644
+--- /dev/null
++++ b/crates/phasesmith-solution/src/fft_layout.rs
+@@ -0,0 +1,23 @@
++//! Pure layout permutation; no floating-point arithmetic on transform values.
++use rustfft::num_complex::Complex;
++
++/// Transpose a row-major matrix in small tiles to keep both access directions local.
++pub(super) fn transpose(
++    input: &[Complex<f64>],
++    output: &mut [Complex<f64>],
++    rows: usize,
++    columns: usize,
++) {
++    const TILE: usize = 16;
++    debug_assert_eq!(input.len(), rows * columns);
++    debug_assert_eq!(output.len(), input.len());
++    for row0 in (0..rows).step_by(TILE) {
++        for col0 in (0..columns).step_by(TILE) {
++            for row in row0..(row0 + TILE).min(rows) {
++                for col in col0..(col0 + TILE).min(columns) {
++                    output[col * rows + row] = input[row * columns + col];
++                }
++            }
++        }
++    }
++}
+diff --git a/python/phasesmith/experimental/solution_fft_reference.py b/python/phasesmith/experimental/solution_fft_reference.py
+new file mode 100644
+--- /dev/null
++++ b/python/phasesmith/experimental/solution_fft_reference.py
+@@ -0,0 +1,11 @@
++"""Independent unnormalized 3D DFT conventions, using NumPy's FFT backend."""
++
++import numpy as np
++
++
++def transform_3d_reference(values, *, inverse=False):
++    """C-order XYZ transform; inverse uses the positive exponent without scaling."""
++    values = np.asarray(values, dtype=np.complex128)
++    if values.ndim != 3 or not np.all(np.isfinite(values)):
++        raise ValueError("finite three-dimensional complex input required")
++    return np.fft.ifftn(values) * values.size if inverse else np.fft.fftn(values)
+diff --git a/tests/test_solution_batched_fft.py b/tests/test_solution_batched_fft.py
+new file mode 100644
+--- /dev/null
++++ b/tests/test_solution_batched_fft.py
+@@ -0,0 +1,157 @@
++"""Blocked layout permutation, batch FFT conventions and complete structure recovery."""
++
++import numpy as np
++import pytest
++from phasesmith import _core
++from phasesmith.experimental.solution_fft_reference import transform_3d_reference
++
++pytestmark = pytest.mark.skipif(
++    not hasattr(_core, "_solution_fft_transform"), reason="experimental-solution"
++)
++
++
++def transform(values, *, inverse=False, batched=False):
++    values = np.asarray(values, complex)
++    out = _core._solution_fft_transform(
++        np.ascontiguousarray(values.real).ravel(),
++        np.ascontiguousarray(values.imag).ravel(),
++        values.shape,
++        inverse,
++        batched,
++    )
++    return (out["real"] + 1j * out["imaginary"]).reshape(values.shape)
++
++
++@pytest.mark.parametrize("shape", [(8, 8, 8), (16, 24, 8), (10, 14, 18), (8, 128, 8), (32, 16, 64)])
++@pytest.mark.parametrize("kind", ["complex", "real", "impulse", "constant"])
++@pytest.mark.parametrize("inverse", [False, True])
++def test_direct_fft_is_bitwise_equal_and_matches_independent_numpy(shape, kind, inverse):
++    rng = np.random.default_rng(534)
++    values = rng.normal(size=shape) + 1j * rng.normal(size=shape)
++    if kind == "real":
++        values.imag = 0
++    elif kind == "impulse":
++        values.fill(0)
++        values[-1, 1, -2] = 1 + 2j
++    elif kind == "constant":
++        values.fill(1 - 0.3j)
++    for scale in (1e-150, 1.0, 1e150):
++        sample = values * scale
++        before = sample.copy()
++        old = transform(sample, inverse=inverse)
++        new = transform(sample, inverse=inverse, batched=True)
++        np.testing.assert_array_equal(new.ravel().view(np.uint64), old.ravel().view(np.uint64))
++        ref = transform_3d_reference(sample, inverse=inverse)
++        np.testing.assert_allclose(new, ref, rtol=2e-12, atol=2e-12 * scale)
++        restored = transform(new, inverse=not inverse, batched=True) / sample.size
++        np.testing.assert_allclose(restored, sample, rtol=2e-12, atol=2e-12 * scale)
++        np.testing.assert_array_equal(before, sample)
++
++
++@pytest.mark.parametrize("invalid", ["nan", "inf", "length", "odd", "small", "large"])
++def test_fft_input_and_grid_boundaries_fail(invalid):
++    real, imaginary = np.ones(512), np.zeros(512)
++    shape = (8, 8, 8)
++    if invalid == "nan":
++        real[0] = np.nan
++    elif invalid == "inf":
++        imaginary[1] = np.inf
++    elif invalid == "length":
++        imaginary = imaginary[:-1]
++    elif invalid == "odd":
++        shape = (8, 7, 8)
++    elif invalid == "small":
++        shape = (8, 6, 8)
++    else:
++        shape = (8, 130, 8)
++    for batched in (False, True):
++        with pytest.raises(ValueError):
++            _core._solution_fft_transform(real, imaginary, shape, False, batched)
++
++
++@pytest.mark.parametrize("rank,omit", [(None, 0.0), (None, 0.1), (0, 0.1)])
++def test_complete_dual_space_trajectory_is_bitwise_equal(rank, omit):
++    from test_solution_dual_space import inputs
++
++    shape, cell, h, amplitude, phases, support = inputs()
++    args = (
++        shape,
++        list(cell.as_tuple()),
++        h.ravel(),
++        amplitude,
++        phases,
++        support.ravel(),
++        80,
++        1.5,
++        64,
++        0.25,
++        3.0,
++        omit,
++        1034,
++        rank,
++    )
++    common = dict(reusable_workspaces=True, filtered_peak_search=True)
++    old = _core._solution_count_free_dual_space(*args, **common)
++    new = _core._solution_count_free_dual_space(*args, **common, batched_fft=True)
++    for key in ("density", "history"):
++        np.testing.assert_array_equal(new[key].view(np.uint64), old[key].view(np.uint64))
++    assert new["adaptive_peaks"] == old["adaptive_peaks"]
++    assert new["best_cycle"] == old["best_cycle"]
++
++
++@pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
++def test_shared_counts_models_histories_and_final_adp_mode_are_preserved(symbol):
++    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
++    from test_solution_shared_search import synthetic
++
++    cell, group, data, _, species = synthetic(symbol)
++    common = dict(
++        cell=cell,
++        space_group=group,
++        elements=["Fe", "O"],
++        maximum_atoms=12,
++        symmetry_recycling=True,
++        tangent_refinement=True,
++        wilson_normalization=True,
++        phase_quality_selection=True,
++        phase_origin_selection=True,
++        chemical_assignment=True,
++        iterative_refinement=True,
++        score_only_evaluation=True,
++        reusable_fourier_workspaces=True,
++        work_sliced_phasing=True,
++        isotropic_assignment_refinement=True,
++        filtered_peak_search=True,
++        options=SolutionOptions(
++            phasing="dual_space",
++            trials=4,
++            cycles=800,
++            max_seconds=60,
++            r1_target=0.005,
++            completion=False,
++        ),
++    )
++    old = solve_structure_elements(data, **common)
++    new = solve_structure_elements(data, **common, batched_fft=True)
++    assert old.target_met and new.target_met
++    assert (
++        dict(new.composition)
++        == dict(old.composition)
++        == {e: int(np.count_nonzero(species == e)) for e in set(species)}
++    )
++    assert new.best.species == old.best.species
++    assert new.best.refinement.mode == old.best.refinement.mode == "anisotropic"
++    np.testing.assert_array_equal(
++        new.best.fractional_xyz.view(np.uint64), old.best.fractional_xyz.view(np.uint64)
++    )
++    for a, b in zip(new.histories, old.histories, strict=True):
++        np.testing.assert_array_equal(a.view(np.uint64), b.view(np.uint64))
++    assert old.shared_search.batched_phase_transforms == 0
++    assert new.shared_search.batched_phase_transforms > 0
++    assert new.shared_search.batched_fft
++    with pytest.raises(ValueError, match="requires"):
++        solve_structure_elements(
++            data, cell=cell, space_group=group, elements=["Fe", "O"], batched_fft=True
++        )
++    with pytest.raises(TypeError, match="boolean"):
++        solve_structure_elements(data, **common, batched_fft=1)
+diff --git a/benchmarks/solution_fft_interleaved.py b/benchmarks/solution_fft_interleaved.py
+new file mode 100644
+--- /dev/null
++++ b/benchmarks/solution_fft_interleaved.py
+@@ -0,0 +1,83 @@
++"""Balanced serial batched-FFT comparison with optimized kernels; development only."""
++
++from __future__ import annotations
++
++import argparse
++import json
++from pathlib import Path
++from types import SimpleNamespace
++
++from solution_corpus.run import collect_jobs
++from solution_execution_interleaved import collect_balanced
++
++ROOT = Path(__file__).resolve().parents[1]
++MODES = ("control", "batched")
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument(
++        "--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json"
++    )
++    parser.add_argument("--output", type=Path, required=True)
++    parser.add_argument("--seconds", type=float, default=15.0)
++    parser.add_argument("--lock-revision", type=int, default=18)
++    parser.add_argument(
++        "--shelxt",
++        type=Path,
++        default=Path("/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt"),
++    )
++    args = parser.parse_args()
++    if args.output.exists() or not 5 <= args.seconds <= 120:
++        parser.error("a new directory and seconds in [5,120] are required")
++    args.output.mkdir(parents=True)
++    streams = {}
++    for mode in MODES:
++        controls = SimpleNamespace(
++            manifest=args.manifest.resolve(),
++            output=(args.output / mode).resolve(),
++            seconds=args.seconds,
++            shelxt=args.shelxt.resolve(),
++            split="development",
++            resume=False,
++            lock_revision=args.lock_revision,
++            legacy_counts=False,
++            wilson_normalization=True,
++            phase_quality_selection=True,
++            phase_origin_selection=True,
++            chemical_assignment=True,
++            iterative_refinement=True,
++            missing_reflections=False,
++            resolution_extension=1.0,
++            adaptive_checkpoints=False,
++            isotropic_assignment_refinement=True,
++            filtered_peak_search=True,
++            batched_fft=mode == "batched",
++            work_sliced_phasing=True,
++            independent_origin_sampling=False,
++            phase_first_selection=True,
++            legacy_quality_normalization=False,
++            score_only_evaluation=True,
++            reusable_fourier_workspaces=True,
++            collection_schedule="balanced serial case-interleaved batched-FFT comparison",
++            collection_scheduler_source="benchmarks/solution_fft_interleaved.py",
++        )
++        streams[mode] = collect_jobs(controls)
++    events = []
++
++    def record(mode, event):
++        events.append({"mode": mode, **event})
++        (args.output / "schedule.json").write_text(json.dumps(events, indent=2) + "\n")
++        print(json.dumps({"mode": mode, **event}), flush=True)
++
++    count = collect_balanced(streams, record)
++    expected = 2 * sum(
++        c["split"] == "development" for c in json.loads(args.manifest.read_text())["cases"]
++    )
++    if count != expected:
++        raise ValueError("incomplete development collection")
++    print(json.dumps({"complete_rounds": count, "modes": MODES, "holdout_opened": False}))
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/validation/solution-corpus-v5.benchmark18.lock.json b/validation/solution-corpus-v5.benchmark18.lock.json
+new file mode 100644
+--- /dev/null
++++ b/validation/solution-corpus-v5.benchmark18.lock.json
+@@ -0,0 +1,1049 @@
++{
++  "schema": "phasesmith.solution-corpus-lock.v1",
++  "manifest_sha256": "f815629e42e608c784113ddd7400268f9e897b3db5b2af7d54224886af206f6c",
++  "cases": 100,
++  "families": 100,
++  "splits": {
++    "holdout": 65,
++    "development": 35
++  },
++  "crystal_systems": {
++    "triclinic": 18,
++    "monoclinic": 29,
++    "orthorhombic": 17,
++    "tetragonal": 16,
++    "trigonal": 8,
++    "hexagonal": 6,
++    "cubic": 6
++  },
++  "space_group_types": 27,
++  "chemistry": {
++    "light": 39,
++    "heavy": 61
++  },
++  "hydrogen_present": 66,
++  "observation_count_range": [
++    50,
++    7459
++  ],
++  "gemmi_version": "0.7.5",
++  "discovery_snapshot": "validation/data/solution-corpus-v1/discovery-v3",
++  "holdout_solver_outcomes_opened": false,
++  "verified_implementation_sha256": {
++    "benchmarks/solution_corpus/__init__.py": "2b8ea6877c5325bde0eb18eebea8099c15c3656cd618e11f124813a6376dce62",
++    "benchmarks/solution_corpus/audit.py": "d65dc309cea50780f937940c4ece3d880968c657b274c5efac6ab9ff522298c5",
++    "benchmarks/solution_corpus/data.py": "cddb7ad095f7add50f4dc5aa02b2a48e3109ab5adfd342145ad8b274158d8bd5",
++    "benchmarks/solution_corpus/run.py": "0e1b722f1840da7d6fe9a924c536140d76a6bc08fabe5f6229640d85e9bb29a1",
++    "benchmarks/solution_corpus/seal.py": "939ba9e5a3710a4395e9ed789caa8a1aa06d222f4399a14968c170a27d9858ee",
++    "benchmarks/solution_corpus_benchmark.py": "9169269131b0787d42c1c8d631b9fb6fdce488762cd96f430a436f831e425529"
++  },
++  "quality_checks": [
++    {
++      "id": "cod-2011007",
++      "observations": 7459,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010901",
++      "observations": 3398,
++      "quantization": {
++        "intensity_maximum_relative_change": 1.924419946542937e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021292",
++      "observations": 2643,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011426",
++      "observations": 2002,
++      "quantization": {
++        "intensity_maximum_relative_change": 9.768926777655329e-08,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243196",
++      "observations": 3068,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021226",
++      "observations": 2353,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2102156",
++      "observations": 1862,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010532",
++      "observations": 2184,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011371",
++      "observations": 1133,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243197",
++      "observations": 1592,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242644",
++      "observations": 2159,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2241300",
++      "observations": 601,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2108342",
++      "observations": 553,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.9152068010420197e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2241159",
++      "observations": 1112,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.7674827155732656e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-4326074",
++      "observations": 176,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021310",
++      "observations": 2180,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2206101",
++      "observations": 554,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021185",
++      "observations": 737,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2215687",
++      "observations": 50,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010918",
++      "observations": 4817,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010825",
++      "observations": 2694,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021316",
++      "observations": 3712,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011512",
++      "observations": 994,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010934",
++      "observations": 2630,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011363",
++      "observations": 1938,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2006996",
++      "observations": 252,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011038",
++      "observations": 495,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.834764664286847e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010543",
++      "observations": 3004,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010993",
++      "observations": 2003,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242680",
++      "observations": 2079,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1548676",
++      "observations": 1334,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011638",
++      "observations": 721,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010647",
++      "observations": 4157,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2241796",
++      "observations": 167,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011590",
++      "observations": 903,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021199",
++      "observations": 3050,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011318",
++      "observations": 3442,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011236",
++      "observations": 1019,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011346",
++      "observations": 3039,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2101990",
++      "observations": 1615,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021040",
++      "observations": 1959,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2211527",
++      "observations": 102,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2207460",
++      "observations": 209,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2200818",
++      "observations": 89,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2023383",
++      "observations": 85,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242589",
++      "observations": 2483,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242657",
++      "observations": 2407,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1562003",
++      "observations": 1350,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242610",
++      "observations": 2642,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2022708",
++      "observations": 288,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2312802",
++      "observations": 500,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2020973",
++      "observations": 3233,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011355",
++      "observations": 2071,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1519649",
++      "observations": 2901,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2232654",
++      "observations": 113,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011750",
++      "observations": 1708,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.283405530382871e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011241",
++      "observations": 1795,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010705",
++      "observations": 1826,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010654",
++      "observations": 1507,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021374",
++      "observations": 1898,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2201295",
++      "observations": 1367,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2017324",
++      "observations": 189,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011344",
++      "observations": 3914,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011666",
++      "observations": 3097,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2207083",
++      "observations": 109,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2232444",
++      "observations": 419,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.54507647667112e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010746",
++      "observations": 116,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011393",
++      "observations": 2428,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011271",
++      "observations": 3119,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011181",
++      "observations": 1956,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2223219",
++      "observations": 181,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2014187",
++      "observations": 231,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.243834848063411e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2107296",
++      "observations": 115,
++      "quantization": {
++        "intensity_maximum_relative_change": 2.2474346094918188e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011089",
++      "observations": 3969,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2101973",
++      "observations": 1435,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1556408",
++      "observations": 322,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242352",
++      "observations": 848,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2203173",
++      "observations": 440,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243590",
++      "observations": 480,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.548561263173286e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2240852",
++      "observations": 1291,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2020988",
++      "observations": 4807,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011056",
++      "observations": 347,
++      "quantization": {
++        "intensity_maximum_relative_change": 2.671036481729895e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1550276",
++      "observations": 2892,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242615",
++      "observations": 2972,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011144",
++      "observations": 3777,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011501",
++      "observations": 5291,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1548678",
++      "observations": 3347,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011044",
++      "observations": 1469,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2233659",
++      "observations": 294,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2012343",
++      "observations": 450,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.2280133781411257e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243618",
++      "observations": 489,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.7444930203209104e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021003",
++      "observations": 1515,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1549038",
++      "observations": 2652,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011451",
++      "observations": 1758,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1550295",
++      "observations": 101,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2022343",
++      "observations": 91,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2200381",
++      "observations": 358,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.2139242618408827e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010875",
++      "observations": 2445,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1549173",
++      "observations": 1787,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2211965",
++      "observations": 89,
++      "quantization": {
++        "intensity_maximum_relative_change": 2.561961683714032e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    }
++  ],
++  "qualification": "Format, provenance and supported-model checks do not prove the published model is physically correct; no solver outcomes used in curation.",
++  "adapter_revision_parent": {
++    "path": "validation/solution-corpus-v5.benchmark17.lock.json",
++    "sha256": "37fc99489bf3d18e2181f28ca55f11d340fcfaa452a77dacaa0ab4b89dedfadd"
++  },
++  "adapter_only_revision": true,
++  "adapter_revision_qualification": "Unchanged registry and inherited input/split/curation provenance; only adapter source hashes refreshed. No raw/reference data reopened."
++}
+diff --git a/docs/solution-batched-fft.md b/docs/solution-batched-fft.md
+new file mode 100644
+--- /dev/null
++++ b/docs/solution-batched-fft.md
+@@ -0,0 +1,87 @@
++# Batched FFTs with blocked cyclic layout transposes
++
++The experimental `batched_fft=False` default retains the existing Fourier path.
++The true option requires reusable Fourier workspaces. It applies to P1 phasing
++and the supplied-symmetry recycling used by phase-origin completion. It retains
++the same complex f64 RustFFT plans, z/y/x axis order, normalization, grid limits,
++observations, reciprocal support, seeds, iteration equations and model validation.
++No additional dependency or numerical thread is introduced.
++
++## Layout and transform conventions
++
++For C-order XYZ input with dimensions Nx,Ny,Nz, the forward transform is
++
++    F(h,k,l) = sum_xyz rho(x,y,z) exp(-2*pi*i*(h*x/Nx+k*y/Ny+l*z/Nz)).
++
++The inverse uses the positive exponent. Both directions remain unnormalized;
++an inverse/forward round trip gives N=Nx*Ny*Nz times the input. Physical density
++normalization remains in the existing callers. All original complex coefficients,
++including measured, free, fixed-zero and Nyquist locations, retain their layout
++and meaning at the boundary.
++
++The old execution path calls the planned one-dimensional FFT on each contiguous
++z line, then gathers/scatters each y and x line separately. The new path uses
++the same per-axis plans on whole contiguous batches. A matrix transpose is
++
++    output[column*rows+row] = input[row*columns+column].
++
++The three cyclic permutations are:
++
++| Step | Stored axis order | Matrix transpose | Contiguous FFT axis |
++| --- | --- | --- | --- |
++| Initial | XYZ | none | z |
++| First permutation | ZXY | (Nx*Ny,Nz) | y |
++| Second permutation | YZX | (Nz*Nx,Ny) | x |
++| Final permutation | XYZ | (Ny*Nz,Nx) | none |
++
++The final scratch array is copied back to the caller's original C-order buffer.
++Transposes use 16-by-16 tiles, including partial tiles. They perform only index
++arithmetic and exact complex-value copies. Independent line order changes, but
++each line's values, its planned transform and the z/y/x transform order remain
++the same. The existing backend's batch API processes multiple complete lines
++using the original scratch requirement. A separate one-grid transpose buffer is
++allocated once per active transform plan and reused across all its applications.
++
++The extra complex buffer costs 16*N bytes: 512 KiB for a 32-cubed grid and at
++most 32 MiB for the existing 2,097,152-voxel bound. No grid, atom or Jacobian cap
++is increased. The buffer is owned by each FFT plan, with no shared mutable cache;
++nested legacy callbacks may have more than one active plan. Even axes in [8,128]
++and non-cubic/non-power-of-two shapes retain their existing boundary. No signal
++is dropped, padded, resampled or rounded to another precision.
++
++Bitwise equivalence is checked rather than assumed: FFT backends can in general
++choose different arithmetic for batches. On this installed backend the direct
++complex transforms, complete phase trajectories and synthetic complete models
++match the original path bitwise. Independent NumPy forward/inverse transforms,
++round trips, complex and real inputs, impulses, constants, extreme finite scales
++and invalid boundaries provide separate numerical checks. Equations and fused
++value/analytical derivative kernels are unchanged; their existing independent
++tests continue to apply. The GSAS-II powder oracle does not cover this FFT stage.
++`batched_phase_transforms` records actual batched 3D calls inside P1 phasing;
++recycling also uses the layout but is not included in that P1 counter.
++
++## Benchmarks and comparison protocol
++
++The realistic fixed-work benchmark compares complete 64-cycle P1 phasing on a
++32-cubed map with eight atoms and 2,108 measured rows. A complete eight-atom search
++uses two starts and 128 requested cycles with a generous 60-second backstop.
++Both modes already enable fast scalar scoring, reusable Fourier workspaces,
++filtered peak search, work-sliced phasing and competing isotropic assignments.
++Only the batch/layout execution option differs. Raw samples, confidence intervals,
++source and executable hashes are retained separately from corpus timings.
++
++The complete matched experiment uses all 35 development cases, seed zero, four
++starts, 800 requested cycles, native 13-second/outer 15-second caps and one
++numerical thread. Final anisotropic fitting still uses all original prepared
++observations. Counts, element types and coordinates are never taken from
++references by a solver worker. Original input-derived resource caps and exact
++non-H per-element counts with RMS <=0.025/max <=0.05 angstrom remain the scoring
++gate; strict 0.02-angstrom recovery is secondary. Seven references above native
++capacity remain in every denominator.
++
++The balanced serial two-mode scheduler alternates the leading mode by case.
++All 140 predictions precede both reference barriers. Both panels use the same
++native build and retain full source snapshots, per-job load samples, models,
++failures and actual phase/fit effort. The adapter-only revision-18 seal preserves
++registry/source data and splits. No task-owned tests, builds or microbenchmarks
++overlap timed collection. The 65 holdout solver outcomes remain unopened.

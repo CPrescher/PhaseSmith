@@ -2306,6 +2306,26 @@ and source/native hashes match across panels. The 65 holdout outcomes stay close
 
 ## Quality bar
 
+An experimental `batched_fft` execution option applies planned contiguous FFT
+batches after blocked small-slab line packing in P1 phasing and supplied-
+symmetry recycling. It restores each group to XYZ layout and preserves original
+f64 plans, z/y/x order, normalization, support and equations. A reusable eight-
+line buffer adds at most 16 KiB per FFT plan under the unchanged grid limits. The
+flag requires reusable workspaces and defaults to false. Direct FFT/NumPy,
+bitwise phase trajectories and synthetic complete models/counts accompany
+realistic Fourier/full-search benchmarks and a complete paired 35-case
+development experiment. The fresh paired panels retain the same 16/35 labelled
+structures, 26/35 total counts and 16/35 per-element counts (13 strict structures).
+Batching is faster on 30/35 cases: the typical paired wall ratio is 1.07339x,
+with wall medians 2.582/2.362 seconds and summed wall time 106.100/98.776 seconds.
+P1 phase time falls 12.73% while scored cycles rise 7.75%; fixed-work phasing and
+whole-search microbenchmarks fall 26.2% and 11.9%. Direct transforms and fixed-work
+trajectories match bitwise; deadline-limited selected models agree in 28/31
+nonempty cases, with no recovery-set changes. The initial slower whole-grid
+layout is preserved with its benchmark and reproducible patch. The flag stays
+opt-in. Details are in `docs/solution-batched-fft.md`; the 65 holdout outcomes
+remain unopened.
+
 An experimental `filtered_peak_search` path targets the dominant remaining P1
 phase work. It computes the unchanged RMS threshold before local-maxima tests,
 skips voxels that cannot survive any raised threshold, and caches periodic axis

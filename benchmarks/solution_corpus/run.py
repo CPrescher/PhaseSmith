@@ -78,6 +78,7 @@ def worker(args):
         work_sliced_phasing=args.work_sliced_phasing,
         isotropic_assignment_refinement=args.isotropic_assignment_refinement,
         filtered_peak_search=args.filtered_peak_search,
+        batched_fft=args.batched_fft,
         reusable_fourier_workspaces=args.reusable_fourier_workspaces,
         independent_origin_sampling=args.independent_origin_sampling,
         resolution_extension=args.resolution_extension,
@@ -268,6 +269,7 @@ def collect_jobs(args):
             or previous.get("score_only_evaluation", False) != args.score_only_evaluation
             or previous.get("work_sliced_phasing", False) != args.work_sliced_phasing
             or previous.get("filtered_peak_search", False) != args.filtered_peak_search
+            or previous.get("batched_fft", False) != args.batched_fft
             or previous.get("isotropic_assignment_refinement", False)
             != args.isotropic_assignment_refinement
             or previous.get("reusable_fourier_workspaces", False)
@@ -330,6 +332,7 @@ def collect_jobs(args):
         "work_sliced_phasing": args.work_sliced_phasing,
         "isotropic_assignment_refinement": args.isotropic_assignment_refinement,
         "filtered_peak_search": args.filtered_peak_search,
+        "batched_fft": args.batched_fft,
         "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
         "independent_origin_sampling": args.independent_origin_sampling,
         "resolution_extension": args.resolution_extension,
@@ -458,6 +461,7 @@ def collect_jobs(args):
                     *(["--score-only-evaluation"] if args.score_only_evaluation else []),
                     *(["--work-sliced-phasing"] if args.work_sliced_phasing else []),
                     *(["--filtered-peak-search"] if args.filtered_peak_search else []),
+                    *(["--batched-fft"] if args.batched_fft else []),
                     *(
                         ["--isotropic-assignment-refinement"]
                         if args.isotropic_assignment_refinement

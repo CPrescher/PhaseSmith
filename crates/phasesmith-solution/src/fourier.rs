@@ -7,6 +7,9 @@ use rustfft::{Fft, FftPlanner, num_complex::Complex};
 
 use crate::{SolutionError, error};
 
+#[path = "fft_layout.rs"]
+mod layout;
+
 /// Charge-flipping controls; delta is fixed within a trial.
 #[derive(Clone, Debug)]
 pub struct FlipOptions {
@@ -44,6 +47,8 @@ pub(crate) struct Transform {
     inverse: [Arc<dyn Fft<f64>>; 3],
     line: Vec<Complex<f64>>,
     scratch: Vec<Complex<f64>>,
+    batch: Vec<Complex<f64>>,
+    batched_calls: usize,
 }
 
 impl Transform {
@@ -64,6 +69,8 @@ impl Transform {
             inverse,
             line: vec![Complex::default(); *shape.iter().max().unwrap()],
             scratch: vec![Complex::default(); scratch_len],
+            batch: Vec::new(),
+            batched_calls: 0,
         }
     }
 
@@ -73,7 +80,19 @@ impl Transform {
         plan
     }
 
+    pub(crate) fn batched(shape: [usize; 3]) -> Self {
+        let mut plan = Self::reusable(shape);
+        plan.batch = vec![Complex::default(); layout::BATCH_LINES * shape.iter().max().unwrap()];
+        plan
+    }
+
+    pub(crate) fn batched_calls(&self) -> usize {
+        self.batched_calls
+    }
+
     pub(crate) fn apply(&mut self, values: &mut [Complex<f64>], inverse: bool) {
+        let batched = !self.batch.is_empty();
+        self.batched_calls += usize::from(batched);
         for axis in (0..3).rev() {
             let length = self.shape[axis];
             let stride: usize = self.shape[axis + 1..].iter().product();
@@ -83,6 +102,23 @@ impl Transform {
             } else {
                 &self.forward[axis]
             };
+            if batched {
+                if stride == 1 {
+                    plan.process_with_scratch(values, &mut self.scratch);
+                } else {
+                    for outer in 0..values.len() / block {
+                        for inner in (0..stride).step_by(layout::BATCH_LINES) {
+                            let lanes = layout::BATCH_LINES.min(stride - inner);
+                            let offset = outer * block + inner;
+                            let batch = &mut self.batch[..lanes * length];
+                            layout::pack(values, batch, offset, stride, length, lanes);
+                            plan.process_with_scratch(batch, &mut self.scratch);
+                            layout::unpack(batch, values, offset, stride, length, lanes);
+                        }
+                    }
+                }
+                continue;
+            }
             if self.direct_contiguous && stride == 1 {
                 for line in values.chunks_exact_mut(length) {
                     plan.process_with_scratch(line, &mut self.scratch);
@@ -103,6 +139,33 @@ impl Transform {
             }
         }
     }
+}
+
+/// Unnormalized complex 3D transform in C-order XYZ layout, for independent checks.
+/// `inverse=true` uses the positive-exponent transform; a round trip multiplies by N.
+/// # Errors
+/// Rejects invalid Fourier grid bounds, length mismatch or nonfinite complex inputs.
+pub fn transform_3d(
+    shape: [usize; 3],
+    values: &[Complex<f64>],
+    inverse: bool,
+    batched: bool,
+) -> Result<Vec<Complex<f64>>, SolutionError> {
+    if values.len() != grid_len(shape)?
+        || values
+            .iter()
+            .any(|v| !v.re.is_finite() || !v.im.is_finite())
+    {
+        return Err(error("invalid complex transform input"));
+    }
+    let mut plan = if batched {
+        Transform::batched(shape)
+    } else {
+        Transform::reusable(shape)
+    };
+    let mut output = values.to_vec();
+    plan.apply(&mut output, inverse);
+    Ok(output)
 }
 
 pub(crate) fn grid_len(shape: [usize; 3]) -> Result<usize, SolutionError> {
@@ -469,6 +532,29 @@ pub(crate) fn refine_peak_indices(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    #[allow(clippy::cast_precision_loss)]
+    fn batched_fft_layout_preserves_every_complex_value_bitwise() {
+        for shape in [[8; 3], [16, 24, 8], [32, 16, 64], [8, 128, 8]] {
+            let n = grid_len(shape).unwrap();
+            let values: Vec<_> = (0..n)
+                .map(|i| Complex::new((i as f64 * 0.137).sin(), (i as f64 * 0.371).cos()))
+                .collect();
+            for inverse in [false, true] {
+                let old = transform_3d(shape, &values, inverse, false).unwrap();
+                let new = transform_3d(shape, &values, inverse, true).unwrap();
+                assert_eq!(
+                    old.iter()
+                        .flat_map(|v| [v.re.to_bits(), v.im.to_bits()])
+                        .collect::<Vec<_>>(),
+                    new.iter()
+                        .flat_map(|v| [v.re.to_bits(), v.im.to_bits()])
+                        .collect::<Vec<_>>(),
+                    "shape={shape:?},inverse={inverse}"
+                );
+            }
+        }
+    }
     #[test]
     fn periodic_peak_and_plateau_ties() {
         let mut map = vec![0.0; 512];

@@ -283,6 +283,7 @@ pub fn recycle_density_guided(
         seed,
         None,
         false,
+        false,
     )
 }
 
@@ -307,6 +308,7 @@ pub(crate) fn recycle_density_guided_prediction(
     seed: u64,
     prediction: Option<&crate::PreparedReflectionPrediction>,
     reusable_fourier_workspaces: bool,
+    batched_fft: bool,
 ) -> Result<RecycledDensity, SolutionError> {
     let n = grid_len(shape)?;
     if source.len() != n
@@ -324,7 +326,9 @@ pub(crate) fn recycle_density_guided_prediction(
         ));
     }
     let orbits = plan(shape, hkl, amplitudes, support, group)?;
-    let mut fft = if reusable_fourier_workspaces {
+    let mut fft = if batched_fft {
+        Transform::batched(shape)
+    } else if reusable_fourier_workspaces {
         Transform::reusable(shape)
     } else {
         Transform::new(shape)

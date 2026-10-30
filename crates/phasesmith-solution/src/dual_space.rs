@@ -98,6 +98,8 @@ pub struct DualSpaceResult {
     pub fourier_workspace_cycles: usize,
     /// Actual cycles using exact threshold-filtered peak selection.
     pub filtered_peak_cycles: usize,
+    /// Actual batched 3D transforms in this P1 phase call.
+    pub batched_phase_transforms: usize,
 }
 
 pub(crate) fn hash64(mut value: u64) -> u64 {
@@ -523,6 +525,7 @@ pub fn dual_space_with_prediction(
 
 /// Execution-only optimizations, independent of the numerical phasing options.
 #[derive(Clone, Copy, Debug, Default)]
+#[allow(clippy::struct_excessive_bools)] // Independent execution ablation controls.
 pub struct PhasingExecution {
     /// Cache scalar merits; no gradient computation in scoring-only callers.
     pub score_only_evaluation: bool,
@@ -530,6 +533,8 @@ pub struct PhasingExecution {
     pub reusable_fourier_workspaces: bool,
     /// Filter impossible adaptive peaks before cached periodic neighbor comparisons.
     pub filtered_peak_search: bool,
+    /// Batch contiguous FFT lines through blocked small-slab staging.
+    pub batched_fft: bool,
 }
 
 /// Diagnostic/benchmark entry point with explicit arithmetic-preserving execution.
@@ -648,11 +653,12 @@ pub(crate) fn dual_space_guided_prediction(
         score_only_evaluation,
         reusable_fourier_workspaces,
         filtered_peak_search,
+        batched_fft,
     } = execution;
     validate_options(options)?;
-    if filtered_peak_search && !reusable_fourier_workspaces {
+    if (filtered_peak_search || batched_fft) && !reusable_fourier_workspaces {
         return Err(error(
-            "filtered peak search requires reusable Fourier workspaces",
+            "filtered peak search and batched FFT require reusable Fourier workspaces",
         ));
     }
     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
@@ -675,7 +681,9 @@ pub(crate) fn dual_space_guided_prediction(
     for (&i, &a) in indices.iter().zip(&target) {
         f[i] = Complex::from_polar(a, f[i].arg());
     }
-    let mut fft = if reusable_fourier_workspaces {
+    let mut fft = if batched_fft {
+        Transform::batched(shape)
+    } else if reusable_fourier_workspaces {
         Transform::reusable(shape)
     } else {
         Transform::new(shape)
@@ -1057,6 +1065,7 @@ pub(crate) fn dual_space_guided_prediction(
         phase_checkpoints,
         score_only_evaluations,
         fourier_workspace_cycles,
+        batched_phase_transforms: fft.batched_calls(),
         filtered_peak_cycles: if filtered_peak_search
             && matches!(options.peak_selection, PeakSelection::Adaptive { .. })
         {
@@ -1146,21 +1155,31 @@ mod tests {
                         score_only_evaluation: true,
                         reusable_fourier_workspaces: false,
                         filtered_peak_search: false,
+                        batched_fft: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: false,
                         reusable_fourier_workspaces: true,
                         filtered_peak_search: false,
+                        batched_fft: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: true,
                         reusable_fourier_workspaces: true,
                         filtered_peak_search: false,
+                        batched_fft: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: true,
                         reusable_fourier_workspaces: true,
                         filtered_peak_search: true,
+                        batched_fft: false,
+                    },
+                    PhasingExecution {
+                        score_only_evaluation: true,
+                        reusable_fourier_workspaces: true,
+                        filtered_peak_search: true,
+                        batched_fft: true,
                     },
                 ] {
                     let new = dual_space_with_execution(
