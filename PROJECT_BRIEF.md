@@ -2306,6 +2306,29 @@ and source/native hashes match across panels. The 65 holdout outcomes stay close
 
 ## Quality bar
 
+An experimental `real_fft` option targets the remaining dominant P1 Fourier
+cycles. It packs even/odd real samples into half-length z transforms, runs x/y
+FFTs on a half spectrum, restores the full reciprocal array before constraints,
+and computes the real return map through an explicit Hermitian projection. The
+original normalization, support classes, observations, f64 precision and all
+search/refinement gates remain. It requires batched FFTs, is false by default,
+and leaves initialization/Patterson/symmetry-recycling transforms unchanged.
+The additional array workspace stays below 18 MiB at the existing maximum grid;
+x/y plans are shared. Operation/axis order changes round-off, with independent
+NumPy, short-trajectory, deterministic repeated-run and complete-model checks.
+Fixed-work phasing and small-search benchmarks improve 28.2% and 8.5%; these are
+separate from the matched 35-case experiment. Fresh paired panels retain the
+same 16/35 labelled structures, 26 total counts, 16 per-element counts and 13
+strict structures, including identical recovery case sets. The typical paired
+wall ratio is 1.13421x (30 faster cases; 11.83% less time), and 1.16179x on the
+same 16 successful cases. Summed wall time falls 96.077 to 86.990 seconds, and
+P1 phase time 49.084 to 36.964 seconds (24.69%). Nonlinear trajectories change:
+starts fall 98 to 96, screening fits rise 425 to 433, final fits fall 98 to 96,
+and final-fit time rises 23.955 to 26.636 seconds. All original validation gates
+remain. Actual packed-real transform count is 99,596. The preceding profile and
+small copy-only prototype are retained separately. Details and results are in
+`docs/solution-real-fft.md`; the 65 holdout outcomes remain unopened.
+
 An experimental `cached_normal_refinement` option targets the final-fit linear
 solver after the batched-FFT work. It caches a bounded (at most 8 MiB), f64,
 diagonally preconditioned normal matrix per current Jacobian and checks each

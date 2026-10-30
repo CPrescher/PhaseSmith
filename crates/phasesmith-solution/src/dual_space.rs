@@ -100,6 +100,8 @@ pub struct DualSpaceResult {
     pub filtered_peak_cycles: usize,
     /// Actual batched 3D transforms in this P1 phase call.
     pub batched_phase_transforms: usize,
+    /// Actual packed-real transforms in P1 cycles, excluding initialization.
+    pub real_phase_transforms: usize,
 }
 
 pub(crate) fn hash64(mut value: u64) -> u64 {
@@ -535,6 +537,8 @@ pub struct PhasingExecution {
     pub filtered_peak_search: bool,
     /// Batch contiguous FFT lines through blocked small-slab staging.
     pub batched_fft: bool,
+    /// Packed real-density transforms for the two P1 cycle Fourier operations.
+    pub real_fft: bool,
 }
 
 /// Diagnostic/benchmark entry point with explicit arithmetic-preserving execution.
@@ -654,12 +658,16 @@ pub(crate) fn dual_space_guided_prediction(
         reusable_fourier_workspaces,
         filtered_peak_search,
         batched_fft,
+        real_fft,
     } = execution;
     validate_options(options)?;
     if (filtered_peak_search || batched_fft) && !reusable_fourier_workspaces {
         return Err(error(
             "filtered peak search and batched FFT require reusable Fourier workspaces",
         ));
+    }
+    if real_fft && !batched_fft {
+        return Err(error("real FFT requires batched FFTs"));
     }
     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
     mask_bounds(shape, &geometry, options.mask_sigma)?;
@@ -681,7 +689,9 @@ pub(crate) fn dual_space_guided_prediction(
     for (&i, &a) in indices.iter().zip(&target) {
         f[i] = Complex::from_polar(a, f[i].arg());
     }
-    let mut fft = if batched_fft {
+    let mut fft = if real_fft {
+        Transform::real(shape)
+    } else if batched_fft {
         Transform::batched(shape)
     } else if reusable_fourier_workspaces {
         Transform::reusable(shape)
@@ -796,7 +806,7 @@ pub(crate) fn dual_space_guided_prediction(
         } else {
             projected.iter().map(|&v| Complex::new(v, 0.)).collect()
         };
-        fft.apply(&mut calculated, true);
+        fft.density_to_fourier(&mut calculated);
         if let Some(audit) = &mut adaptive_history {
             audit.selected.push(projection.selected);
             audit.thresholds.push(projection.sigma);
@@ -1026,7 +1036,7 @@ pub(crate) fn dual_space_guided_prediction(
             };
             calculated[i] = phase * (options.hybrid_m * a - (options.hybrid_m - 1.) * magnitude);
         }
-        fft.apply(&mut calculated, false);
+        fft.fourier_to_density(&mut calculated);
         if reusable_fourier_workspaces {
             for (out, v) in density.iter_mut().zip(&calculated) {
                 *out = v.re / n as f64;
@@ -1066,6 +1076,7 @@ pub(crate) fn dual_space_guided_prediction(
         score_only_evaluations,
         fourier_workspace_cycles,
         batched_phase_transforms: fft.batched_calls(),
+        real_phase_transforms: fft.real_calls(),
         filtered_peak_cycles: if filtered_peak_search
             && matches!(options.peak_selection, PeakSelection::Adaptive { .. })
         {
@@ -1156,30 +1167,35 @@ mod tests {
                         reusable_fourier_workspaces: false,
                         filtered_peak_search: false,
                         batched_fft: false,
+                        real_fft: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: false,
                         reusable_fourier_workspaces: true,
                         filtered_peak_search: false,
                         batched_fft: false,
+                        real_fft: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: true,
                         reusable_fourier_workspaces: true,
                         filtered_peak_search: false,
                         batched_fft: false,
+                        real_fft: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: true,
                         reusable_fourier_workspaces: true,
                         filtered_peak_search: true,
                         batched_fft: false,
+                        real_fft: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: true,
                         reusable_fourier_workspaces: true,
                         filtered_peak_search: true,
                         batched_fft: true,
+                        real_fft: false,
                     },
                 ] {
                     let new = dual_space_with_execution(

@@ -9,6 +9,8 @@ use crate::{SolutionError, error};
 
 #[path = "fft_layout.rs"]
 mod layout;
+#[path = "real_fourier.rs"]
+mod real;
 
 /// Charge-flipping controls; delta is fixed within a trial.
 #[derive(Clone, Debug)]
@@ -49,6 +51,8 @@ pub(crate) struct Transform {
     scratch: Vec<Complex<f64>>,
     batch: Vec<Complex<f64>>,
     batched_calls: usize,
+    real: Option<real::RealTransform>,
+    real_calls: usize,
 }
 
 impl Transform {
@@ -71,6 +75,8 @@ impl Transform {
             scratch: vec![Complex::default(); scratch_len],
             batch: Vec::new(),
             batched_calls: 0,
+            real: None,
+            real_calls: 0,
         }
     }
 
@@ -86,6 +92,34 @@ impl Transform {
         plan
     }
 
+    pub(crate) fn real(shape: [usize; 3]) -> Self {
+        let mut plan = Self::batched(shape);
+        plan.real = Some(real::RealTransform::new(
+            shape,
+            &plan.forward,
+            &plan.inverse,
+        ));
+        plan
+    }
+    pub(crate) fn real_calls(&self) -> usize {
+        self.real_calls
+    }
+    pub(crate) fn density_to_fourier(&mut self, values: &mut [Complex<f64>]) {
+        if let Some(plan) = &mut self.real {
+            self.real_calls += 1;
+            plan.density_to_spectrum(values);
+        } else {
+            self.apply(values, true);
+        }
+    }
+    pub(crate) fn fourier_to_density(&mut self, values: &mut [Complex<f64>]) {
+        if let Some(plan) = &mut self.real {
+            self.real_calls += 1;
+            plan.spectrum_to_density(values);
+        } else {
+            self.apply(values, false);
+        }
+    }
     pub(crate) fn batched_calls(&self) -> usize {
         self.batched_calls
     }
@@ -166,6 +200,32 @@ pub fn transform_3d(
     let mut output = values.to_vec();
     plan.apply(&mut output, inverse);
     Ok(output)
+}
+
+/// Positive DFT of a real density, or real part of a negative complex DFT.
+/// Both directions remain unnormalized; the latter accepts arbitrary complex input.
+/// # Errors
+/// Rejects the original grid/array bounds and non-real density input.
+pub fn real_density_transform(
+    shape: [usize; 3],
+    values: &[Complex<f64>],
+    to_density: bool,
+) -> Result<Vec<Complex<f64>>, SolutionError> {
+    if values.len() != grid_len(shape)?
+        || values
+            .iter()
+            .any(|v| !v.re.is_finite() || !v.im.is_finite() || (!to_density && v.im != 0.))
+    {
+        return Err(error("invalid real-density transform input"));
+    }
+    let mut fft = Transform::real(shape);
+    let mut out = values.to_vec();
+    if to_density {
+        fft.fourier_to_density(&mut out);
+    } else {
+        fft.density_to_fourier(&mut out);
+    }
+    Ok(out)
 }
 
 pub(crate) fn grid_len(shape: [usize; 3]) -> Result<usize, SolutionError> {

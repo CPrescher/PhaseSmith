@@ -1,0 +1,702 @@
+{
+  "schema": "phasesmith.real-fft-kernels.v1",
+  "recorded_utc": "2026-10-30T13:57:30.921476+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- 'real_fft_' --sample-size 10 --warm-up-time 1 --measurement-time 2 --noplot",
+  "qualification": "Matched same-executable complex-batched versus packed-real P1 transforms, 32-cubed multi-atom maps and 2108 measured rows. Fixed 64-cycle phase calls plus complete count-free search. Both enable all existing execution controls, including guarded normal refinement for whole searches. One numerical thread; no task-owned heavy workload overlaps measured intervals. External host activity uncontrolled.",
+  "benchmark_source": "crates/phasesmith-solution/benches/solution.rs",
+  "benchmark_source_sha256": "46c6b0bb7946f41adaa6ec9a446dd6f9b04820cf6792cabec6cff43769b6fbc2",
+  "executable": "target/release/deps/solution-a51ba219c0abff5d",
+  "executable_sha256": "f82370b0e208958cfc34944790cf88ac7dac34022f7e307cd4dd8e04b9691e7d",
+  "numerical_source_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "96e2d89e4ec0730c34ba86240d67345a24a0964480b55a2ccebb79f0e57d9bb9",
+    "crates/phasesmith-solution/src/chemical_labels.rs": "a7b123f660f138aa4ebf0afc75bb2165aad46762ec6d3c645946b3a38191b287",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "981b4ff8f06daa1d9471c55566a4a2ff1e566812b4ae00a9295f63b9076c02ed",
+    "crates/phasesmith-solution/src/fft_layout.rs": "b7222a0b26104f377447e1f69fa1697aced9b5e579b75526dd268e8abd285a36",
+    "crates/phasesmith-solution/src/fourier.rs": "6999d3833a614cc1919757759c409380673511581bb6c047df3ed1e6b479b696",
+    "crates/phasesmith-solution/src/isotropic_assignment.rs": "59ed650a338b942870b0e45e935bf0764fdce8da1ce52e6a7d3e1d0cf7354994",
+    "crates/phasesmith-solution/src/lib.rs": "aea5eb504f2cf7f0141e08cc5d08ce64a4c2355c77bda42747b6c6b082a7c63d",
+    "crates/phasesmith-solution/src/linear_step.rs": "7d52c8d85a9c27f4c8284749804ff77b233379f665c34095d07f1e3492f7fd63",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_completion.rs": "4bf240d56f4aac6cfda5cad4d0ba35c159b8bd9db297a2163890bc4601c77550",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/peak_scan.rs": "fd5af96e0c2c8b662dfddad732223fa8da4a5596a06880ee2e921b01c15a0a02",
+    "crates/phasesmith-solution/src/phase_checkpoint.rs": "1d227a8d3dff3c8a78bf44785e8d539e22fd5ec496abc765b7f0672ed66c9dec",
+    "crates/phasesmith-solution/src/phase_origin.rs": "99d6778b0eda65dd0c2fa559ed3c05171db7d9caab3e25ddf02dc8d24b29204e",
+    "crates/phasesmith-solution/src/phase_quality.rs": "848a42a21f5192c6f843f86161b355c9129e963cb806f62df186ce19eec56580",
+    "crates/phasesmith-solution/src/phase_schedule.rs": "b11fb2c8e54d6e51836f42396cbbbd1f3759d0c04b9b75120b14019ec438240e",
+    "crates/phasesmith-solution/src/phase_score.rs": "eb637d9c87787eb5eff9663aae9f6edbdc85b501170ad21d2624e115160699c6",
+    "crates/phasesmith-solution/src/real_fourier.rs": "651510f3a93064d3b599cf8daff295f919797dc6ca23731781f27715f2e4179c",
+    "crates/phasesmith-solution/src/reflection_prediction.rs": "2dd0a2f8d1ccc5cccab9d1bafcb034bc52fd409d45284b026c6ad95f26ee07f9",
+    "crates/phasesmith-solution/src/shared_phase_path.rs": "c0ee60acb38d207deab3ac02a4ba1103650fbc65b6b12b5707e77390193024bd",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "2a22e9fa1c4756e0238d68ca9635d5aae7bc60b886d63014be521f9c1158d2c3",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "aec3f512ca23f882476081e0708dbaaadf0ba6a8d88088e4d69fab602c207005",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "b47c3acab847ec5e6b334bf5994fb1c017279bf07541af162bda0991284de950",
+    "crates/phasesmith-solution/src/tangent.rs": "25fab86895c4401d46d722d04900fda1c912d4247f346f6ed7f0fd7c04393e79"
+  },
+  "phase_samples": [
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ],
+    [
+      "real",
+      "64",
+      "128"
+    ]
+  ],
+  "search_samples": [
+    [
+      "control",
+      "1",
+      "0",
+      "53"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53"
+    ],
+    [
+      "real",
+      "1",
+      "105",
+      "53"
+    ],
+    [
+      "real",
+      "1",
+      "105",
+      "53"
+    ],
+    [
+      "real",
+      "1",
+      "105",
+      "53"
+    ],
+    [
+      "real",
+      "1",
+      "105",
+      "53"
+    ],
+    [
+      "real",
+      "1",
+      "105",
+      "53"
+    ],
+    [
+      "real",
+      "1",
+      "105",
+      "53"
+    ],
+    [
+      "real",
+      "1",
+      "105",
+      "53"
+    ],
+    [
+      "real",
+      "1",
+      "105",
+      "53"
+    ],
+    [
+      "real",
+      "1",
+      "105",
+      "53"
+    ],
+    [
+      "real",
+      "1",
+      "105",
+      "53"
+    ],
+    [
+      "real",
+      "1",
+      "105",
+      "53"
+    ],
+    [
+      "real",
+      "1",
+      "105",
+      "53"
+    ],
+    [
+      "real",
+      "1",
+      "105",
+      "53"
+    ],
+    [
+      "real",
+      "1",
+      "105",
+      "53"
+    ]
+  ],
+  "samples": {
+    "real_fft_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control": {
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          2.0,
+          4.0,
+          6.0,
+          8.0,
+          10.0,
+          12.0,
+          14.0,
+          16.0,
+          18.0,
+          20.0
+        ],
+        "times": [
+          60777042.0,
+          120929875.0,
+          181319875.0,
+          242324500.0,
+          303601000.0,
+          362635000.0,
+          421546833.0,
+          483132125.0,
+          548373875.0,
+          605175667.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 30214532.303242557,
+            "upper_bound": 30337110.226024304
+          },
+          "point_estimate": 30274145.92617064,
+          "standard_error": 31334.75208083849
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 30207868.489583336,
+            "upper_bound": 30360100.0
+          },
+          "point_estimate": 30245626.05,
+          "standard_error": 39638.03855377895
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 9845.390450214902,
+            "upper_bound": 180848.5508392972
+          },
+          "point_estimate": 70278.71359605342,
+          "standard_error": 44595.14972615932
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 30187860.441285282,
+            "upper_bound": 30373746.70893907
+          },
+          "point_estimate": 30276254.276623376,
+          "standard_error": 48427.8412810566
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 52798.84623210036,
+            "upper_bound": 134783.54267732913
+          },
+          "point_estimate": 104381.49115265516,
+          "standard_error": 20922.26854355832
+        }
+      },
+      "benchmark": {
+        "group_id": "real_fft_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "real_fft_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control",
+        "directory_name": "real_fft_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control",
+        "title": "real_fft_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control"
+      }
+    },
+    "real_fft_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_real": {
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          2.0,
+          4.0,
+          6.0,
+          8.0,
+          10.0,
+          12.0,
+          14.0,
+          16.0,
+          18.0,
+          20.0
+        ],
+        "times": [
+          44472041.0,
+          86853042.0,
+          129551625.0,
+          173934458.0,
+          217066042.0,
+          260848334.0,
+          303490292.0,
+          349261333.0,
+          390629791.0,
+          433575167.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21681551.676680557,
+            "upper_bound": 21878723.784583334
+          },
+          "point_estimate": 21761411.583472222,
+          "standard_error": 52981.55035332733
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21678758.35,
+            "upper_bound": 21783097.239583336
+          },
+          "point_estimate": 21709932.35,
+          "standard_error": 25069.502383629417
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 8603.115813930523,
+            "upper_bound": 155120.85847355204
+          },
+          "point_estimate": 46738.148740230885,
+          "standard_error": 37537.65296938123
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21684981.696881093,
+            "upper_bound": 21769919.26685432
+          },
+          "point_estimate": 21718095.51038961,
+          "standard_error": 22754.14901342951
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 27251.742897222925,
+            "upper_bound": 266063.89735233644
+          },
+          "point_estimate": 177070.65944397784,
+          "standard_error": 73990.95421171046
+        }
+      },
+      "benchmark": {
+        "group_id": "real_fft_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_real",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "real_fft_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_real",
+        "directory_name": "real_fft_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_real",
+        "title": "real_fft_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_real"
+      }
+    },
+    "real_fft_search_32cubed_8_atoms_2108_rows_control": {
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ],
+        "times": [
+          241098125.0,
+          240810250.0,
+          240995709.0,
+          240494541.0,
+          240340250.0,
+          243559542.0,
+          239301625.0,
+          240830500.0,
+          240112750.0,
+          240852792.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 80091330.49666667,
+            "upper_bound": 80517816.02666666
+          },
+          "point_estimate": 80279869.46666667,
+          "standard_error": 109454.0155678532
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 80101215.16666666,
+            "upper_bound": 80331903.0
+          },
+          "point_estimate": 80273458.33333333,
+          "standard_error": 67021.52805281857
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 11016.706204421731,
+            "upper_bound": 430757.06735254073
+          },
+          "point_estimate": 149145.60375213993,
+          "standard_error": 99932.80976858179
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 91683.68324410824,
+            "upper_bound": 531477.6831455299
+          },
+          "point_estimate": 364344.5340461612,
+          "standard_error": 127170.55874439594
+        }
+      },
+      "benchmark": {
+        "group_id": "real_fft_search_32cubed_8_atoms_2108_rows_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "real_fft_search_32cubed_8_atoms_2108_rows_control",
+        "directory_name": "real_fft_search_32cubed_8_atoms_2108_rows_control",
+        "title": "real_fft_search_32cubed_8_atoms_2108_rows_control"
+      }
+    },
+    "real_fft_search_32cubed_8_atoms_2108_rows_real": {
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ],
+        "times": [
+          220416625.0,
+          219700375.0,
+          220500458.0,
+          224287000.0,
+          219071917.0,
+          219294375.0,
+          220922167.0,
+          219041708.0,
+          220941417.0,
+          220209959.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 73225297.165,
+            "upper_bound": 73814679.19999999
+          },
+          "point_estimate": 73479533.36666664,
+          "standard_error": 152861.00265130828
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 73098125.0,
+            "upper_bound": 73640722.33333333
+          },
+          "point_estimate": 73437764.0,
+          "standard_error": 142331.46404824549
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 62434.01459157099,
+            "upper_bound": 637940.0354742856
+          },
+          "point_estimate": 306661.4727556742,
+          "standard_error": 141724.37973040532
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 184920.18671862397,
+            "upper_bound": 739493.7193706023
+          },
+          "point_estimate": 509499.72124746477,
+          "standard_error": 173989.07082292164
+        }
+      },
+      "benchmark": {
+        "group_id": "real_fft_search_32cubed_8_atoms_2108_rows_real",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "real_fft_search_32cubed_8_atoms_2108_rows_real",
+        "directory_name": "real_fft_search_32cubed_8_atoms_2108_rows_real",
+        "title": "real_fft_search_32cubed_8_atoms_2108_rows_real"
+      }
+    }
+  }
+}

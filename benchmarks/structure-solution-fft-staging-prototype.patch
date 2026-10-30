@@ -1,0 +1,225 @@
+diff --git a/crates/phasesmith-solution/benches/solution.rs b/crates/phasesmith-solution/benches/solution.rs
+index 2663266..578eaa8 100644
+--- a/crates/phasesmith-solution/benches/solution.rs
++++ b/crates/phasesmith-solution/benches/solution.rs
+@@ -100,6 +100,32 @@ fn benchmark(c: &mut Criterion) {
+             });
+         },
+     );
++    let complex: Vec<_> = source
++        .iter()
++        .map(|&v| phasesmith_solution::FourierComplex::new(v, 0.))
++        .collect();
++    for specialized in [false, true] {
++        let label = if specialized {
++            "specialized"
++        } else {
++            "control"
++        };
++        c.bench_function(
++            &format!("specialized_fft_32cubed_complex_transform_{label}"),
++            |b| {
++                b.iter(|| {
++                    phasesmith_solution::transform_3d_with_layout(
++                        shape,
++                        &complex,
++                        false,
++                        true,
++                        specialized,
++                    )
++                    .unwrap()
++                });
++            },
++        );
++    }
+     let points = [
+         [0.03, 0.07, 0.11],
+         [0.17, 0.29, 0.41],
+diff --git a/crates/phasesmith-solution/src/fft_layout.rs b/crates/phasesmith-solution/src/fft_layout.rs
+index 0473aaf..08e0408 100644
+--- a/crates/phasesmith-solution/src/fft_layout.rs
++++ b/crates/phasesmith-solution/src/fft_layout.rs
+@@ -42,3 +42,63 @@ pub(super) fn unpack(
+         }
+     }
+ }
++
++/// Fixed-width views remove per-value lane multiplication and bounds checks.
++#[inline]
++pub(super) fn pack_specialized(
++    input: &[Complex<f64>],
++    output: &mut [Complex<f64>],
++    offset: usize,
++    stride: usize,
++    length: usize,
++    lanes: usize,
++) {
++    if lanes != 8 {
++        return pack(input, output, offset, stride, length, lanes);
++    }
++    let mut lines = output.chunks_exact_mut(length);
++    let [a, b, c, d, e, f, g, h]: [&mut [Complex<f64>]; 8] =
++        std::array::from_fn(|_| lines.next().expect("eight packed lines"));
++    for row in 0..length {
++        let start = offset + row * stride;
++        let source = &input[start..start + 8];
++        a[row] = source[0];
++        b[row] = source[1];
++        c[row] = source[2];
++        d[row] = source[3];
++        e[row] = source[4];
++        f[row] = source[5];
++        g[row] = source[6];
++        h[row] = source[7];
++    }
++}
++
++/// Restore fixed-width views in exactly the original row/lane copy order.
++#[inline]
++pub(super) fn unpack_specialized(
++    input: &[Complex<f64>],
++    output: &mut [Complex<f64>],
++    offset: usize,
++    stride: usize,
++    length: usize,
++    lanes: usize,
++) {
++    if lanes != 8 {
++        return unpack(input, output, offset, stride, length, lanes);
++    }
++    let mut lines = input.chunks_exact(length);
++    let [a, b, c, d, e, f, g, h]: [&[Complex<f64>]; 8] =
++        std::array::from_fn(|_| lines.next().expect("eight packed lines"));
++    for row in 0..length {
++        let start = offset + row * stride;
++        let target = &mut output[start..start + 8];
++        target[0] = a[row];
++        target[1] = b[row];
++        target[2] = c[row];
++        target[3] = d[row];
++        target[4] = e[row];
++        target[5] = f[row];
++        target[6] = g[row];
++        target[7] = h[row];
++    }
++}
+diff --git a/crates/phasesmith-solution/src/fourier.rs b/crates/phasesmith-solution/src/fourier.rs
+index f17274f..40bb961 100644
+--- a/crates/phasesmith-solution/src/fourier.rs
++++ b/crates/phasesmith-solution/src/fourier.rs
+@@ -49,6 +49,8 @@ pub(crate) struct Transform {
+     scratch: Vec<Complex<f64>>,
+     batch: Vec<Complex<f64>>,
+     batched_calls: usize,
++    specialized_layout: bool,
++    specialized_calls: usize,
+ }
+
+ impl Transform {
+@@ -71,6 +73,8 @@ impl Transform {
+             scratch: vec![Complex::default(); scratch_len],
+             batch: Vec::new(),
+             batched_calls: 0,
++            specialized_layout: false,
++            specialized_calls: 0,
+         }
+     }
+
+@@ -86,6 +90,16 @@ impl Transform {
+         plan
+     }
+
++    pub(crate) fn specialized(shape: [usize; 3]) -> Self {
++        let mut plan = Self::batched(shape);
++        plan.specialized_layout = true;
++        plan
++    }
++
++    pub(crate) fn specialized_calls(&self) -> usize {
++        self.specialized_calls
++    }
++
+     pub(crate) fn batched_calls(&self) -> usize {
+         self.batched_calls
+     }
+@@ -93,6 +107,7 @@ impl Transform {
+     pub(crate) fn apply(&mut self, values: &mut [Complex<f64>], inverse: bool) {
+         let batched = !self.batch.is_empty();
+         self.batched_calls += usize::from(batched);
++        self.specialized_calls += usize::from(self.specialized_layout);
+         for axis in (0..3).rev() {
+             let length = self.shape[axis];
+             let stride: usize = self.shape[axis + 1..].iter().product();
+@@ -111,9 +126,21 @@ impl Transform {
+                             let lanes = layout::BATCH_LINES.min(stride - inner);
+                             let offset = outer * block + inner;
+                             let batch = &mut self.batch[..lanes * length];
+-                            layout::pack(values, batch, offset, stride, length, lanes);
++                            if self.specialized_layout {
++                                layout::pack_specialized(
++                                    values, batch, offset, stride, length, lanes,
++                                );
++                            } else {
++                                layout::pack(values, batch, offset, stride, length, lanes);
++                            }
+                             plan.process_with_scratch(batch, &mut self.scratch);
+-                            layout::unpack(batch, values, offset, stride, length, lanes);
++                            if self.specialized_layout {
++                                layout::unpack_specialized(
++                                    batch, values, offset, stride, length, lanes,
++                                );
++                            } else {
++                                layout::unpack(batch, values, offset, stride, length, lanes);
++                            }
+                         }
+                     }
+                 }
+@@ -151,6 +178,22 @@ pub fn transform_3d(
+     inverse: bool,
+     batched: bool,
+ ) -> Result<Vec<Complex<f64>>, SolutionError> {
++    transform_3d_with_layout(shape, values, inverse, batched, false)
++}
++
++/// Diagnostic transform with fixed-eight-line staging, for independent checks.
++/// # Errors
++/// Rejects the same arrays as `transform_3d`, or specialization without batching.
++pub fn transform_3d_with_layout(
++    shape: [usize; 3],
++    values: &[Complex<f64>],
++    inverse: bool,
++    batched: bool,
++    specialized: bool,
++) -> Result<Vec<Complex<f64>>, SolutionError> {
++    if specialized && !batched {
++        return Err(error("specialized FFT requires batching"));
++    }
+     if values.len() != grid_len(shape)?
+         || values
+             .iter()
+@@ -158,7 +201,9 @@ pub fn transform_3d(
+     {
+         return Err(error("invalid complex transform input"));
+     }
+-    let mut plan = if batched {
++    let mut plan = if specialized {
++        Transform::specialized(shape)
++    } else if batched {
+         Transform::batched(shape)
+     } else {
+         Transform::reusable(shape)
+diff --git a/crates/phasesmith-solution/src/lib.rs b/crates/phasesmith-solution/src/lib.rs
+index dd0689a..0782206 100644
+--- a/crates/phasesmith-solution/src/lib.rs
++++ b/crates/phasesmith-solution/src/lib.rs
+@@ -54,7 +54,9 @@ pub use dual_space::{
+     DualSpaceResult, PeakSelection, adaptive_peaks, atomic_projection, dual_space,
+     dual_space_monitored, dual_space_with_prediction,
+ };
+-pub use fourier::{FlipOptions, FlipResult, charge_flip, extract_peaks, transform_3d};
++pub use fourier::{
++    FlipOptions, FlipResult, charge_flip, extract_peaks, transform_3d, transform_3d_with_layout,
++};
+ pub use linear_step::{CachedNormalStep, cached_normal_step, iterative_normal_step};
+ pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
+ pub use peak_completion::{

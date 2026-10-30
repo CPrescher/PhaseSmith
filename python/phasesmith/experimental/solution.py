@@ -539,6 +539,8 @@ class SharedSearchAudit:
     isotropic_assignment_refinement: bool = False
     filtered_peak_search: bool = False
     batched_fft: bool = False
+    real_fft: bool = False
+    real_phase_transforms: int = 0
     batched_phase_transforms: int = 0
     filtered_peak_cycles: int = 0
     phase_slices: tuple[PhaseSliceAudit, ...] = ()
@@ -797,6 +799,7 @@ def solve_structure_elements(
     isotropic_assignment_refinement: bool = False,
     filtered_peak_search: bool = False,
     batched_fft: bool = False,
+    real_fft: bool = False,
     adaptive_checkpoints: bool = False,
     independent_origin_sampling: bool = False,
     cancellation: SolutionCancellation | None = None,
@@ -818,6 +821,9 @@ def solve_structure_elements(
     ``cached_normal_refinement=True`` caches preconditioned normal matrices in final
     iterative fits, verifies steps against the original Jacobian and falls back
     to the matrix-free solver if needed. It requires iterative refinement.
+    ``real_fft=True`` uses packed real-density Fourier cycles in P1 phasing,
+    retains full spectra and observations at boundaries, and requires batched FFTs.
+    It changes floating-point operation order and remains experimental.
     ``batched_fft=True`` batches contiguous Fourier lines after blocked layout
     transposes, retaining the original plans, axis order and normalization.
     It requires reusable Fourier workspaces.
@@ -898,6 +904,7 @@ def solve_structure_elements(
         ("isotropic_assignment_refinement", isotropic_assignment_refinement),
         ("filtered_peak_search", filtered_peak_search),
         ("batched_fft", batched_fft),
+        ("real_fft", real_fft),
         ("independent_origin_sampling", independent_origin_sampling),
     ):
         if not isinstance(value, bool):
@@ -914,6 +921,8 @@ def solve_structure_elements(
         raise ValueError("prediction requires phase_origin_selection and wilson_normalization")
     if cached_normal_refinement and not iterative_refinement:
         raise ValueError("cached_normal_refinement requires iterative_refinement")
+    if real_fft and not batched_fft:
+        raise ValueError("real_fft requires batched_fft")
     if batched_fft and not reusable_fourier_workspaces:
         raise ValueError("batched_fft requires reusable_fourier_workspaces")
     if filtered_peak_search and not reusable_fourier_workspaces:
@@ -1053,7 +1062,7 @@ def solve_structure_elements(
                 reusable_fourier_workspaces,
                 work_sliced_phasing,
                 isotropic_assignment_refinement,
-                (filtered_peak_search, batched_fft, cached_normal_refinement),
+                (filtered_peak_search, batched_fft, cached_normal_refinement, real_fft),
             ),
         ),
     )
