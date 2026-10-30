@@ -85,6 +85,7 @@ def worker(args):
         multiplicity_weighted_refinement=args.multiplicity_weighted_refinement,
         ambiguous_assignments=args.ambiguous_assignments,
         cached_assignment_refinement=args.cached_assignment_refinement,
+        specialized_isotropic_refinement=args.specialized_isotropic_refinement,
         reusable_fourier_workspaces=args.reusable_fourier_workspaces,
         independent_origin_sampling=args.independent_origin_sampling,
         resolution_extension=args.resolution_extension,
@@ -280,6 +281,8 @@ def collect_jobs(args):
             or previous.get("fused_phase_workspace", False) != args.fused_phase_workspace
             or previous.get("cached_normal_refinement", False) != args.cached_normal_refinement
             or previous.get("ambiguous_assignments", False) != args.ambiguous_assignments
+            or previous.get("specialized_isotropic_refinement", False)
+            != args.specialized_isotropic_refinement
             or previous.get("cached_assignment_refinement", False)
             != args.cached_assignment_refinement
             or previous.get("multiplicity_weighted_refinement", False)
@@ -353,6 +356,7 @@ def collect_jobs(args):
         "multiplicity_weighted_refinement": args.multiplicity_weighted_refinement,
         "ambiguous_assignments": args.ambiguous_assignments,
         "cached_assignment_refinement": args.cached_assignment_refinement,
+        "specialized_isotropic_refinement": args.specialized_isotropic_refinement,
         "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
         "independent_origin_sampling": args.independent_origin_sampling,
         "resolution_extension": args.resolution_extension,
@@ -486,6 +490,11 @@ def collect_jobs(args):
                     *(["--fused-phase-workspace"] if args.fused_phase_workspace else []),
                     *(["--cached-normal-refinement"] if args.cached_normal_refinement else []),
                     *(["--ambiguous-assignments"] if args.ambiguous_assignments else []),
+                    *(
+                        ["--specialized-isotropic-refinement"]
+                        if args.specialized_isotropic_refinement
+                        else []
+                    ),
                     *(
                         ["--cached-assignment-refinement"]
                         if args.cached_assignment_refinement

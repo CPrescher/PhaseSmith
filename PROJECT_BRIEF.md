@@ -2502,6 +2502,21 @@ Both panels preserve final anisotropic fits on all original observations, and
 all 140 predictions precede reference auditing. The flag stays opt-in; the 65
 holdout outcomes remain unopened.
 
+An opt-in `specialized_isotropic_refinement` execution path hoists canonical
+isotropic tensor/cache dispatch outside the structure-factor loop and evaluates
+values and derivatives together with unchanged per-reflection reduction order.
+It retains the generic evaluator for anisotropic models, noncanonical tensor
+bases and unavailable or mutated geometry caches. The independent NumPy equations
+and centered derivatives remain authoritative cross-checks. Actual eligible-fit
+counts and requested flags are distinct. Profile evidence, rejected tiled/Gram
+prototypes and a paired complete 35-case development protocol are recorded in
+`docs/solution-isotropic-evaluation.md`. The matched run preserves all 19
+successful cases, all 35 model records and count vectors (26 correct total counts,
+19 per-element counts, 15 strict structures). Screening time falls 6.58%; summed
+wall time changes only 70.044-to-69.438 seconds (0.87% less), with a paired median
+ratio of 1.00961. The small overall gain remains host-sensitive despite 16.5%
+lower isolated evaluation cost. The flag stays opt-in; the holdout remains closed.
+
 Public behavior is typed and documented. Invalid shapes, non-finite values,
 unsorted grids, non-positive widths, and fractions outside `[0, 1]` fail with a
 clear error. Tests are deterministic. Numerical tolerances are justified near

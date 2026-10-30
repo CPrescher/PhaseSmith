@@ -65,6 +65,10 @@ pub(super) fn metadata<'py>(
     out.set_item("origin_gauge_dimension", symmetry.origin_gauge_dimension)?;
     out.set_item("full_count", symmetry.full_count)?;
     out.set_item("parameter_count", model.parameter_count)?;
+    out.set_item(
+        "specialized_isotropic_evaluation",
+        model.uses_specialized_isotropic_evaluation(),
+    )?;
     out.set_item("geometry_cache_bytes", model.geometry_cache_bytes())?;
     out.set_item("input_reflection_count", model.input_reflection_count())?;
     out.set_item(
@@ -132,7 +136,7 @@ struct NativeModel {
 #[pymethods]
 impl NativeModel {
     #[new]
-    #[pyo3(signature = (cell_parameters, group, species, xyz, hkl, observed, mode, tolerance, cache_geometry=true, weight_families=false))]
+    #[pyo3(signature = (cell_parameters, group, species, xyz, hkl, observed, mode, tolerance, cache_geometry=true, weight_families=false, specialized_isotropic=false))]
     #[allow(clippy::too_many_arguments)]
     fn new(
         py: Python<'_>,
@@ -146,6 +150,7 @@ impl NativeModel {
         tolerance: f64,
         cache_geometry: bool,
         weight_families: bool,
+        specialized_isotropic: bool,
     ) -> PyResult<Self> {
         let cell = cell(&cell_parameters)?;
         let group = group.space_group().clone();
@@ -183,6 +188,7 @@ impl NativeModel {
                     cache_geometry,
                     weight_families,
                 )
+                .map(|p| p.with_specialized_isotropic_evaluation(specialized_isotropic))
             })
             .map_err(invalid)?;
         Ok(Self { inner })

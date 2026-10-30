@@ -59,6 +59,7 @@ def main():
             multiplicity_weighted_refinement=True,
             ambiguous_assignments=mode == "ambiguity",
             cached_assignment_refinement=False,
+            specialized_isotropic_refinement=False,
             work_sliced_phasing=True,
             independent_origin_sampling=False,
             phase_first_selection=True,

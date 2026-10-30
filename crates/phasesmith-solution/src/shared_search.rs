@@ -95,6 +95,8 @@ pub struct SharedSearchOptions {
     pub ambiguous_assignments: bool,
     /// Use checked normal caches for short isotropic assignment fits.
     pub cached_assignment_refinement: bool,
+    /// Specialize canonical isotropic cached structure-factor/derivative evaluation.
+    pub specialized_isotropic_refinement: bool,
     /// Regularize allowed unmeasured coefficients using the observed Wilson envelope.
     pub missing_reflections: bool,
     /// Reciprocal-radius extension multiplier, in [1,1.5].
@@ -141,6 +143,7 @@ impl Default for SharedSearchOptions {
             multiplicity_weighted_refinement: false,
             ambiguous_assignments: false,
             cached_assignment_refinement: false,
+            specialized_isotropic_refinement: false,
             missing_reflections: false,
             resolution_extension: 1.,
         }
@@ -290,6 +293,8 @@ pub struct SharedSearchSummary {
     pub ambiguous_assignments: bool,
     /// Use checked normal caches for short isotropic assignment fits.
     pub cached_assignment_refinement: bool,
+    /// Specialize canonical isotropic cached structure-factor/derivative evaluation.
+    pub specialized_isotropic_refinement: bool,
     /// Requested observed-envelope gap treatment.
     pub missing_reflections: bool,
     /// Requested reciprocal-radius extension.
@@ -336,6 +341,8 @@ pub struct SharedSearchSummary {
     pub ambiguity_continuations: usize,
     /// Isotropic fits that actually used a checked cached step.
     pub assignment_cached_refinements: usize,
+    /// Fits that actually used the specialized isotropic evaluator.
+    pub specialized_isotropic_fits: usize,
     /// Actual accepted cached linear steps in isotropic fits.
     pub assignment_cached_normal_solves: usize,
     /// Actual fallbacks to the original isotropic linear operator.
@@ -597,7 +604,8 @@ fn refine(
         audit.cached_refinement,
         audit.multiplicity_weighted_refinement
             && !matches!(pass, FitPass::Screen(_) | FitPass::ScreenSeed(_, _)),
-    )?;
+    )?
+    .with_specialized_isotropic_evaluation(audit.specialized_isotropic_refinement);
     if data.family_count <= prepared.parameter_count + 1 {
         return Err(error("shared model is underdetermined"));
     }
@@ -609,6 +617,8 @@ fn refine(
     };
     let baseline = prepared.evaluate(&initial)?;
     audit.refinements += 1;
+    audit.specialized_isotropic_fits +=
+        usize::from(prepared.uses_specialized_isotropic_evaluation());
     if prepared.reflection_multiplicities().is_some() {
         audit.weighted_refinement_fits += 1;
         audit.weighted_refinement_input_rows += prepared.input_reflection_count();
@@ -2104,6 +2114,7 @@ pub fn solve_elements(
         multiplicity_weighted_refinement: search.multiplicity_weighted_refinement,
         ambiguous_assignments: search.ambiguous_assignments,
         cached_assignment_refinement: search.cached_assignment_refinement,
+        specialized_isotropic_refinement: search.specialized_isotropic_refinement,
         missing_reflections: search.missing_reflections,
         resolution_extension: search.resolution_extension,
         prediction: prediction_f.as_ref().map(|p| p.audit.clone()),

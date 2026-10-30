@@ -1,0 +1,15 @@
+{
+  "baseline": "e9cf62b",
+  "qualification": "Rejected kernel-only prototype. Four simultaneous Gram products were slower; no corpus outcomes inferred.",
+  "control_median_seconds": 0.00093942,
+  "blocked_median_seconds": 0.00096624,
+  "control_95pct": [
+    0.00093726,
+    0.0009416
+  ],
+  "blocked_95pct": [
+    0.00094639,
+    0.00099115
+  ],
+  "command": "cargo bench -p phasesmith-solution --bench solution -- gram_blocks_step --sample-size 20 --warm-up-time 1 --measurement-time 2"
+}

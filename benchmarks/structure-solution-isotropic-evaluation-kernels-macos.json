@@ -1,0 +1,1096 @@
+{
+  "schema": "phasesmith.isotropic-evaluation-kernels.v1",
+  "baseline": "e9cf62b",
+  "created_utc": "2026-10-30T17:24:52.367261+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- isotropic_evaluation_ --sample-size 20 --warm-up-time 1 --measurement-time 2",
+  "benchmark_source_sha256": "b99e6c98054ce1ec9bc8dd7a060db3fd32fb7fb94d79f16b4d3e3cd852790947",
+  "executable": "target/release/deps/solution-a51ba219c0abff5d",
+  "executable_sha256": "a23650166c4524f19dcfc67d671dc95fd4c0cc0cdb0dfb08499cf56ac060387a",
+  "source_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "19b6a573cf02a5581bb7922fe2aebd76280ce7575eeb100809a69dddf425bd51",
+    "crates/phasesmith-solution/src/assignment_ambiguity.rs": "14d991c0fd8553f4a23818fde9ba24fb2975ea5bb520a531b9417b6049cadded",
+    "crates/phasesmith-solution/src/atomic_mask.rs": "9a376037f445c67e0de4bf855ceda2d7615b41b073a7ae4746fab5b0eeac84eb",
+    "crates/phasesmith-solution/src/chemical_labels.rs": "4a45daa0a0eb236d448578a5ba5b6d2726599e3161e8888c378e7c42e5c6c0d5",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "ba8dd45fac98e041811bc86190ec4a2496d097e591610cf7fb9c8c6a633b057d",
+    "crates/phasesmith-solution/src/fft_layout.rs": "b7222a0b26104f377447e1f69fa1697aced9b5e579b75526dd268e8abd285a36",
+    "crates/phasesmith-solution/src/fourier.rs": "80b353611b38b749ee0b3a30ddf4667c898b51a8eb473af241928b2177a3a14e",
+    "crates/phasesmith-solution/src/isotropic_assignment.rs": "af377a9977f443bf4562b24ee346098a4f9bf1e0c509c494ed4cd33990ba2dc2",
+    "crates/phasesmith-solution/src/isotropic_evaluation.rs": "004d05d17fd06d307cc65bf1734971f8dea67ac6b816d0a14b5a1bd32bda5bda",
+    "crates/phasesmith-solution/src/lib.rs": "8007593a7d3f4ef185b682a56689bd8aee6df106871dac63e5c2c044563d5479",
+    "crates/phasesmith-solution/src/linear_step.rs": "7d52c8d85a9c27f4c8284749804ff77b233379f665c34095d07f1e3492f7fd63",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_completion.rs": "35ad4578efcdb407b78b8a513e24ca2bc6f0246ec4bf6c47f1890f297d71dfde",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/peak_scan.rs": "fd5af96e0c2c8b662dfddad732223fa8da4a5596a06880ee2e921b01c15a0a02",
+    "crates/phasesmith-solution/src/phase_checkpoint.rs": "1d227a8d3dff3c8a78bf44785e8d539e22fd5ec496abc765b7f0672ed66c9dec",
+    "crates/phasesmith-solution/src/phase_origin.rs": "99d6778b0eda65dd0c2fa559ed3c05171db7d9caab3e25ddf02dc8d24b29204e",
+    "crates/phasesmith-solution/src/phase_quality.rs": "848a42a21f5192c6f843f86161b355c9129e963cb806f62df186ce19eec56580",
+    "crates/phasesmith-solution/src/phase_schedule.rs": "b11fb2c8e54d6e51836f42396cbbbd1f3759d0c04b9b75120b14019ec438240e",
+    "crates/phasesmith-solution/src/phase_score.rs": "eb637d9c87787eb5eff9663aae9f6edbdc85b501170ad21d2624e115160699c6",
+    "crates/phasesmith-solution/src/real_fourier.rs": "3b9616133fec60090d339fcb6ba7aaaf721149a736b6429ab1a65f97a2daa113",
+    "crates/phasesmith-solution/src/refinement_families.rs": "70901272c21e54b67aaa7493678e83091e6f8661217115c4cf9769f36e9a2957",
+    "crates/phasesmith-solution/src/reflection_prediction.rs": "2dd0a2f8d1ccc5cccab9d1bafcb034bc52fd409d45284b026c6ad95f26ee07f9",
+    "crates/phasesmith-solution/src/shared_phase_path.rs": "2e2336ab565005645d89aa24b2bbd157b7c3d069671b00befa8927dfbb29a98e",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "4f1886aa153e560fcfcea9a2a8f3dbe9e651890da74367601a41ff3ab4f63a9f",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "aec3f512ca23f882476081e0708dbaaadf0ba6a8d88088e4d69fab602c207005",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "b47c3acab847ec5e6b334bf5994fb1c017279bf07541af162bda0991284de950",
+    "crates/phasesmith-solution/src/tangent.rs": "25fab86895c4401d46d722d04900fda1c912d4247f346f6ed7f0fd7c04393e79"
+  },
+  "sample_log_sha256": "7126232237d1f612f45c01b74e99c00640f46d47898bc76af555c70da8ec5119",
+  "sample_log": "   Compiling phasesmith-solution v0.7.0 (/Users/clemens/Programming/PhaseSmith-hkl-solution/crates/phasesmith-solution)\n    Finished `bench` profile [optimized] target(s) in 8.54s\n     Running benches/solution.rs (target/release/deps/solution-a51ba219c0abff5d)\nBenchmarking isotropic_evaluation_search_32cubed_8_atoms_2108_rows_control\nBenchmarking isotropic_evaluation_search_32cubed_8_atoms_2108_rows_control: Warming up for 1.0000 s\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\n\nWarning: Unable to complete 20 samples in 2.0s. You may wish to increase target time to 4.4s, or reduce sample count to 10.\nBenchmarking isotropic_evaluation_search_32cubed_8_atoms_2108_rows_control: Collecting 20 samples in estimated 4.4368 s (20 iterations)\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nBenchmarking isotropic_evaluation_search_32cubed_8_atoms_2108_rows_control: Analyzing\nisotropic_evaluation_search_32cubed_8_atoms_2108_rows_control\n                        time:   [222.34 ms 223.02 ms 223.71 ms]\n\nBenchmarking isotropic_evaluation_search_32cubed_8_atoms_2108_rows_cache\nBenchmarking isotropic_evaluation_search_32cubed_8_atoms_2108_rows_cache: Warming up for 1.0000 s\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\n\nWarning: Unable to complete 20 samples in 2.0s. You may wish to increase target time to 4.5s, or reduce sample count to 10.\nBenchmarking isotropic_evaluation_search_32cubed_8_atoms_2108_rows_cache: Collecting 20 samples in estimated 4.4613 s (20 iterations)\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nisotropic_evaluation_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nBenchmarking isotropic_evaluation_search_32cubed_8_atoms_2108_rows_cache: Analyzing\nisotropic_evaluation_search_32cubed_8_atoms_2108_rows_cache\n                        time:   [223.05 ms 225.59 ms 229.64 ms]\nFound 1 outliers among 20 measurements (5.00%)\n  1 (5.00%) high severe\n\nBenchmarking isotropic_evaluation_value_jacobian_8_atoms_1054_rows_control\nBenchmarking isotropic_evaluation_value_jacobian_8_atoms_1054_rows_control: Warming up for 1.0000 s\nBenchmarking isotropic_evaluation_value_jacobian_8_atoms_1054_rows_control: Collecting 20 samples in estimated 2.0209 s (8820 iterations)\nBenchmarking isotropic_evaluation_value_jacobian_8_atoms_1054_rows_control: Analyzing\nisotropic_evaluation_value_jacobian_8_atoms_1054_rows_control\n                        time:   [236.36 \u00b5s 243.28 \u00b5s 249.55 \u00b5s]\nFound 1 outliers among 20 measurements (5.00%)\n  1 (5.00%) high mild\n\nBenchmarking isotropic_evaluation_value_jacobian_8_atoms_1054_rows_cache\nBenchmarking isotropic_evaluation_value_jacobian_8_atoms_1054_rows_cache: Warming up for 1.0000 s\nBenchmarking isotropic_evaluation_value_jacobian_8_atoms_1054_rows_cache: Collecting 20 samples in estimated 2.0254 s (10k iterations)\nBenchmarking isotropic_evaluation_value_jacobian_8_atoms_1054_rows_cache: Analyzing\nisotropic_evaluation_value_jacobian_8_atoms_1054_rows_cache\n                        time:   [196.45 \u00b5s 198.18 \u00b5s 199.93 \u00b5s]\n\nBenchmarking isotropic_evaluation_fit_8_atoms_1054_rows_fit8_control\nBenchmarking isotropic_evaluation_fit_8_atoms_1054_rows_fit8_control: Warming up for 1.0000 s\nBenchmarking isotropic_evaluation_fit_8_atoms_1054_rows_fit8_control: Collecting 20 samples in estimated 2.3146 s (1260 iterations)\nBenchmarking isotropic_evaluation_fit_8_atoms_1054_rows_fit8_control: Analyzing\nisotropic_evaluation_fit_8_atoms_1054_rows_fit8_control\n                        time:   [1.8189 ms 1.8288 ms 1.8383 ms]\nFound 1 outliers among 20 measurements (5.00%)\n  1 (5.00%) high mild\n\nBenchmarking isotropic_evaluation_fit_8_atoms_1054_rows_fit8_cache\nBenchmarking isotropic_evaluation_fit_8_atoms_1054_rows_fit8_cache: Warming up for 1.0000 s\nBenchmarking isotropic_evaluation_fit_8_atoms_1054_rows_fit8_cache: Collecting 20 samples in estimated 2.1210 s (1260 iterations)\nBenchmarking isotropic_evaluation_fit_8_atoms_1054_rows_fit8_cache: Analyzing\nisotropic_evaluation_fit_8_atoms_1054_rows_fit8_cache\n                        time:   [1.6779 ms 1.6939 ms 1.7146 ms]\n\nBenchmarking isotropic_evaluation_value_jacobian_12_atoms_1054_rows_control\nBenchmarking isotropic_evaluation_value_jacobian_12_atoms_1054_rows_control: Warming up for 1.0000 s\nBenchmarking isotropic_evaluation_value_jacobian_12_atoms_1054_rows_control: Collecting 20 samples in estimated 2.0177 s (5880 iterations)\nBenchmarking isotropic_evaluation_value_jacobian_12_atoms_1054_rows_control: Analyzing\nisotropic_evaluation_value_jacobian_12_atoms_1054_rows_control\n                        time:   [341.45 \u00b5s 344.09 \u00b5s 346.49 \u00b5s]\nFound 1 outliers among 20 measurements (5.00%)\n  1 (5.00%) high mild\n\nBenchmarking isotropic_evaluation_value_jacobian_12_atoms_1054_rows_cache\nBenchmarking isotropic_evaluation_value_jacobian_12_atoms_1054_rows_cache: Warming up for 1.0000 s\nBenchmarking isotropic_evaluation_value_jacobian_12_atoms_1054_rows_cache: Collecting 20 samples in estimated 2.0032 s (6930 iterations)\nBenchmarking isotropic_evaluation_value_jacobian_12_atoms_1054_rows_cache: Analyzing\nisotropic_evaluation_value_jacobian_12_atoms_1054_rows_cache\n                        time:   [285.63 \u00b5s 289.01 \u00b5s 293.54 \u00b5s]\nFound 2 outliers among 20 measurements (10.00%)\n  1 (5.00%) high mild\n  1 (5.00%) high severe\n\nBenchmarking isotropic_evaluation_fit_12_atoms_1054_rows_fit8_control\nBenchmarking isotropic_evaluation_fit_12_atoms_1054_rows_fit8_control: Warming up for 1.0000 s\nBenchmarking isotropic_evaluation_fit_12_atoms_1054_rows_fit8_control: Collecting 20 samples in estimated 2.4654 s (840 iterations)\nBenchmarking isotropic_evaluation_fit_12_atoms_1054_rows_fit8_control: Analyzing\nisotropic_evaluation_fit_12_atoms_1054_rows_fit8_control\n                        time:   [2.9061 ms 2.9154 ms 2.9242 ms]\nFound 2 outliers among 20 measurements (10.00%)\n  2 (10.00%) high mild\n\nBenchmarking isotropic_evaluation_fit_12_atoms_1054_rows_fit8_cache\nBenchmarking isotropic_evaluation_fit_12_atoms_1054_rows_fit8_cache: Warming up for 1.0000 s\nBenchmarking isotropic_evaluation_fit_12_atoms_1054_rows_fit8_cache: Collecting 20 samples in estimated 2.2308 s (840 iterations)\nBenchmarking isotropic_evaluation_fit_12_atoms_1054_rows_fit8_cache: Analyzing\nisotropic_evaluation_fit_12_atoms_1054_rows_fit8_cache\n                        time:   [2.6607 ms 2.6808 ms 2.6978 ms]\n\n",
+  "results": [
+    {
+      "id": "isotropic_evaluation_fit_12_atoms_1054_rows_fit8_cache",
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          4.0,
+          8.0,
+          12.0,
+          16.0,
+          20.0,
+          24.0,
+          28.0,
+          32.0,
+          36.0,
+          40.0,
+          44.0,
+          48.0,
+          52.0,
+          56.0,
+          60.0,
+          64.0,
+          68.0,
+          72.0,
+          76.0,
+          80.0
+        ],
+        "times": [
+          10638292.0,
+          21107041.0,
+          31584875.0,
+          42212791.0,
+          52810458.0,
+          63192500.0,
+          73790167.0,
+          85482292.0,
+          97953709.0,
+          105307416.0,
+          116682292.0,
+          131148708.0,
+          138476875.0,
+          147590000.0,
+          159176709.0,
+          169953292.0,
+          181383333.0,
+          194148167.0,
+          207152250.0,
+          216786375.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2651039.329584619,
+            "upper_bound": 2679824.3141337805
+          },
+          "point_estimate": 2664637.503500842,
+          "standard_error": 7390.001640765848
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2638339.78125,
+            "upper_bound": 2669361.7904411764
+          },
+          "point_estimate": 2654232.66875,
+          "standard_error": 8895.509665692143
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 8046.453944647133,
+            "upper_bound": 48229.74530808887
+          },
+          "point_estimate": 26528.095141532314,
+          "standard_error": 10724.116438320316
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2660720.696437707,
+            "upper_bound": 2697787.024632671
+          },
+          "point_estimate": 2680763.8332752613,
+          "standard_error": 9486.785935950322
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 21801.68840852753,
+            "upper_bound": 40327.68838501523
+          },
+          "point_estimate": 33826.80917512681,
+          "standard_error": 4726.094813039728
+        }
+      },
+      "benchmark": {
+        "group_id": "isotropic_evaluation_fit_12_atoms_1054_rows_fit8_cache",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "isotropic_evaluation_fit_12_atoms_1054_rows_fit8_cache",
+        "directory_name": "isotropic_evaluation_fit_12_atoms_1054_rows_fit8_cache",
+        "title": "isotropic_evaluation_fit_12_atoms_1054_rows_fit8_cache"
+      }
+    },
+    {
+      "id": "isotropic_evaluation_fit_12_atoms_1054_rows_fit8_control",
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          4.0,
+          8.0,
+          12.0,
+          16.0,
+          20.0,
+          24.0,
+          28.0,
+          32.0,
+          36.0,
+          40.0,
+          44.0,
+          48.0,
+          52.0,
+          56.0,
+          60.0,
+          64.0,
+          68.0,
+          72.0,
+          76.0,
+          80.0
+        ],
+        "times": [
+          11672167.0,
+          23243958.0,
+          34912667.0,
+          48081209.0,
+          60094708.0,
+          70716291.0,
+          81714333.0,
+          91830875.0,
+          105748292.0,
+          116532500.0,
+          128073709.0,
+          138507000.0,
+          150885250.0,
+          162585084.0,
+          174107292.0,
+          185736625.0,
+          199729250.0,
+          209172292.0,
+          222814166.0,
+          233944083.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2908390.759487752,
+            "upper_bound": 2936966.1935997223
+          },
+          "point_estimate": 2921586.2733861017,
+          "standard_error": 7332.810888379118
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2904237.8968253965,
+            "upper_bound": 2928033.1898026317
+          },
+          "point_estimate": 2912039.3068181816,
+          "standard_error": 6117.873679095138
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 5744.6994960880575,
+            "upper_bound": 34291.631804127755
+          },
+          "point_estimate": 15308.579029931345,
+          "standard_error": 7462.747091861143
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2906147.8175606267,
+            "upper_bound": 2924194.3578592
+          },
+          "point_estimate": 2915378.056620209,
+          "standard_error": 4605.724238761782
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 15566.183121060401,
+            "upper_bound": 44851.51742694141
+          },
+          "point_estimate": 33629.777447931665,
+          "standard_error": 7521.428276213579
+        }
+      },
+      "benchmark": {
+        "group_id": "isotropic_evaluation_fit_12_atoms_1054_rows_fit8_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "isotropic_evaluation_fit_12_atoms_1054_rows_fit8_control",
+        "directory_name": "isotropic_evaluation_fit_12_atoms_1054_rows_fit8_control",
+        "title": "isotropic_evaluation_fit_12_atoms_1054_rows_fit8_control"
+      }
+    },
+    {
+      "id": "isotropic_evaluation_fit_8_atoms_1054_rows_fit8_cache",
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          6.0,
+          12.0,
+          18.0,
+          24.0,
+          30.0,
+          36.0,
+          42.0,
+          48.0,
+          54.0,
+          60.0,
+          66.0,
+          72.0,
+          78.0,
+          84.0,
+          90.0,
+          96.0,
+          102.0,
+          108.0,
+          114.0,
+          120.0
+        ],
+        "times": [
+          9955542.0,
+          19954833.0,
+          30452625.0,
+          40547542.0,
+          49638250.0,
+          59596416.0,
+          71797250.0,
+          81102416.0,
+          93840459.0,
+          102995541.0,
+          113559542.0,
+          122621792.0,
+          130666125.0,
+          145990958.0,
+          156015916.0,
+          167303208.0,
+          171544542.0,
+          179317041.0,
+          190424833.0,
+          199574125.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1680180.2489360112,
+            "upper_bound": 1706015.398601998
+          },
+          "point_estimate": 1692788.8567499474,
+          "standard_error": 6633.997629247449
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1666755.4901315789,
+            "upper_bound": 1713025.3416666668
+          },
+          "point_estimate": 1689557.2916666667,
+          "standard_error": 11124.217096183833
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 14830.839989641214,
+            "upper_bound": 52173.74324873113
+          },
+          "point_estimate": 39800.09977340705,
+          "standard_error": 9370.95343361898
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1677875.9979386444,
+            "upper_bound": 1714596.4055844885
+          },
+          "point_estimate": 1693894.3360046458,
+          "standard_error": 9413.158745664328
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 23065.033393936537,
+            "upper_bound": 35042.52921520431
+          },
+          "point_estimate": 30522.02394586009,
+          "standard_error": 3046.016650141044
+        }
+      },
+      "benchmark": {
+        "group_id": "isotropic_evaluation_fit_8_atoms_1054_rows_fit8_cache",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "isotropic_evaluation_fit_8_atoms_1054_rows_fit8_cache",
+        "directory_name": "isotropic_evaluation_fit_8_atoms_1054_rows_fit8_cache",
+        "title": "isotropic_evaluation_fit_8_atoms_1054_rows_fit8_cache"
+      }
+    },
+    {
+      "id": "isotropic_evaluation_fit_8_atoms_1054_rows_fit8_control",
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          6.0,
+          12.0,
+          18.0,
+          24.0,
+          30.0,
+          36.0,
+          42.0,
+          48.0,
+          54.0,
+          60.0,
+          66.0,
+          72.0,
+          78.0,
+          84.0,
+          90.0,
+          96.0,
+          102.0,
+          108.0,
+          114.0,
+          120.0
+        ],
+        "times": [
+          11021292.0,
+          21844709.0,
+          32609917.0,
+          43716667.0,
+          56800250.0,
+          66918458.0,
+          76351375.0,
+          87098875.0,
+          98201417.0,
+          108786417.0,
+          119328333.0,
+          130153917.0,
+          143364042.0,
+          153337083.0,
+          162394125.0,
+          177195792.0,
+          185724250.0,
+          199400875.0,
+          211111708.0,
+          218158875.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1820070.6821195278,
+            "upper_bound": 1838643.702237101
+          },
+          "point_estimate": 1828652.0284975413,
+          "standard_error": 4760.4278068407375
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1816224.8883928573,
+            "upper_bound": 1837441.2692307692
+          },
+          "point_estimate": 1820609.1985294118,
+          "standard_error": 5218.90051393293
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 5165.30108954769,
+            "upper_bound": 27597.19207659031
+          },
+          "point_estimate": 15975.975477287873,
+          "standard_error": 6103.629795960437
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1818920.0574620797,
+            "upper_bound": 1838265.2637110017
+          },
+          "point_estimate": 1828840.275783972,
+          "standard_error": 4969.735489406834
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 12308.138161269751,
+            "upper_bound": 29729.17706742538
+          },
+          "point_estimate": 21886.23893220143,
+          "standard_error": 4745.110114854088
+        }
+      },
+      "benchmark": {
+        "group_id": "isotropic_evaluation_fit_8_atoms_1054_rows_fit8_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "isotropic_evaluation_fit_8_atoms_1054_rows_fit8_control",
+        "directory_name": "isotropic_evaluation_fit_8_atoms_1054_rows_fit8_control",
+        "title": "isotropic_evaluation_fit_8_atoms_1054_rows_fit8_control"
+      }
+    },
+    {
+      "id": "isotropic_evaluation_search_32cubed_8_atoms_2108_rows_cache",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          223851417.0,
+          221511333.0,
+          223790083.0,
+          228276209.0,
+          224398334.0,
+          221936042.0,
+          223402042.0,
+          223266292.0,
+          220190500.0,
+          224697333.0,
+          223288042.0,
+          223296167.0,
+          221554792.0,
+          221547833.0,
+          222071750.0,
+          259100375.0,
+          228997292.0,
+          227733958.0,
+          226742833.0,
+          222062167.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 223045221.95875,
+            "upper_bound": 229641559.7925
+          },
+          "point_estimate": 225585739.7,
+          "standard_error": 1799508.6611299021
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 222066958.5,
+            "upper_bound": 224547833.5
+          },
+          "point_estimate": 223349104.5,
+          "standard_error": 592147.7015986328
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 803816.7799293995,
+            "upper_bound": 4066524.874904752
+          },
+          "point_estimate": 2046944.9819594622,
+          "standard_error": 809806.5946528666
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1806604.565700808,
+            "upper_bound": 13302217.488537952
+          },
+          "point_estimate": 8251028.00954683,
+          "standard_error": 3826718.291399198
+        }
+      },
+      "benchmark": {
+        "group_id": "isotropic_evaluation_search_32cubed_8_atoms_2108_rows_cache",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "isotropic_evaluation_search_32cubed_8_atoms_2108_rows_cache",
+        "directory_name": "isotropic_evaluation_search_32cubed_8_atoms_2108_rows_cache",
+        "title": "isotropic_evaluation_search_32cubed_8_atoms_2108_rows_cache"
+      }
+    },
+    {
+      "id": "isotropic_evaluation_search_32cubed_8_atoms_2108_rows_control",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          221466500.0,
+          220374875.0,
+          222724666.0,
+          224857458.0,
+          221546167.0,
+          222210666.0,
+          223344666.0,
+          221487667.0,
+          223216459.0,
+          222332500.0,
+          224818625.0,
+          226093750.0,
+          222170000.0,
+          225239167.0,
+          221833041.0,
+          224394333.0,
+          221520625.0,
+          221587916.0,
+          224114917.0,
+          224974250.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 222341733.14874998,
+            "upper_bound": 223708385.28375
+          },
+          "point_estimate": 223015412.4,
+          "standard_error": 351705.74336909986
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 221710478.5,
+            "upper_bound": 224254625.0
+          },
+          "point_estimate": 222528583.0,
+          "standard_error": 641352.6777923631
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 543433.6769521236,
+            "upper_bound": 2514243.443763256
+          },
+          "point_estimate": 1518830.2692353725,
+          "standard_error": 547053.4090622707
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1203503.9124916287,
+            "upper_bound": 1901843.8247034536
+          },
+          "point_estimate": 1615871.8355360595,
+          "standard_error": 178039.27488049032
+        }
+      },
+      "benchmark": {
+        "group_id": "isotropic_evaluation_search_32cubed_8_atoms_2108_rows_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "isotropic_evaluation_search_32cubed_8_atoms_2108_rows_control",
+        "directory_name": "isotropic_evaluation_search_32cubed_8_atoms_2108_rows_control",
+        "title": "isotropic_evaluation_search_32cubed_8_atoms_2108_rows_control"
+      }
+    },
+    {
+      "id": "isotropic_evaluation_value_jacobian_12_atoms_1054_rows_cache",
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          33.0,
+          66.0,
+          99.0,
+          132.0,
+          165.0,
+          198.0,
+          231.0,
+          264.0,
+          297.0,
+          330.0,
+          363.0,
+          396.0,
+          429.0,
+          462.0,
+          495.0,
+          528.0,
+          561.0,
+          594.0,
+          627.0,
+          660.0
+        ],
+        "times": [
+          9326792.0,
+          18813542.0,
+          27952208.0,
+          37110792.0,
+          46886416.0,
+          56149750.0,
+          66113541.0,
+          74494833.0,
+          83972750.0,
+          110501708.0,
+          102437458.0,
+          111819417.0,
+          122460208.0,
+          132359917.0,
+          140564458.0,
+          151296958.0,
+          161661792.0,
+          175319583.0,
+          180874375.0,
+          190944000.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 284131.1751708261,
+            "upper_bound": 293332.83591277164
+          },
+          "point_estimate": 287651.30151771044,
+          "standard_error": 2522.02493445303
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 282683.2962962963,
+            "upper_bound": 286520.2978896104
+          },
+          "point_estimate": 284606.88181818184,
+          "standard_error": 1081.0159189779772
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1056.1811960217497,
+            "upper_bound": 5042.665883202083
+          },
+          "point_estimate": 3121.938844119995,
+          "standard_error": 1016.8090249678025
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 285634.58320403175,
+            "upper_bound": 293537.52437736123
+          },
+          "point_estimate": 289013.73027135467,
+          "standard_error": 2011.8978070935207
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2157.6307830123965,
+            "upper_bound": 18682.698417127525
+          },
+          "point_estimate": 11593.957692952474,
+          "standard_error": 5438.526742117827
+        }
+      },
+      "benchmark": {
+        "group_id": "isotropic_evaluation_value_jacobian_12_atoms_1054_rows_cache",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "isotropic_evaluation_value_jacobian_12_atoms_1054_rows_cache",
+        "directory_name": "isotropic_evaluation_value_jacobian_12_atoms_1054_rows_cache",
+        "title": "isotropic_evaluation_value_jacobian_12_atoms_1054_rows_cache"
+      }
+    },
+    {
+      "id": "isotropic_evaluation_value_jacobian_12_atoms_1054_rows_control",
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          28.0,
+          56.0,
+          84.0,
+          112.0,
+          140.0,
+          168.0,
+          196.0,
+          224.0,
+          252.0,
+          280.0,
+          308.0,
+          336.0,
+          364.0,
+          392.0,
+          420.0,
+          448.0,
+          476.0,
+          504.0,
+          532.0,
+          560.0
+        ],
+        "times": [
+          9434750.0,
+          19203083.0,
+          28747667.0,
+          37821875.0,
+          47439917.0,
+          57847250.0,
+          66266458.0,
+          76179458.0,
+          85221500.0,
+          94998125.0,
+          105115708.0,
+          115358250.0,
+          125059291.0,
+          132559708.0,
+          142690917.0,
+          155744209.0,
+          165260042.0,
+          177641583.0,
+          181923083.0,
+          193655500.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 340351.068013025,
+            "upper_bound": 343786.3829460382
+          },
+          "point_estimate": 341988.70096872124,
+          "standard_error": 879.4129522231295
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 339067.7839285714,
+            "upper_bound": 343448.8028846154
+          },
+          "point_estimate": 341622.7242822966,
+          "standard_error": 1272.1002714463464
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1721.650686934573,
+            "upper_bound": 6166.833987775607
+          },
+          "point_estimate": 4056.630037980433,
+          "standard_error": 1137.705981893397
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 341454.3144643756,
+            "upper_bound": 346486.6892480723
+          },
+          "point_estimate": 344089.06780736684,
+          "standard_error": 1284.5240226747858
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2563.952442098438,
+            "upper_bound": 5187.080654406905
+          },
+          "point_estimate": 4028.87757051724,
+          "standard_error": 690.916802281361
+        }
+      },
+      "benchmark": {
+        "group_id": "isotropic_evaluation_value_jacobian_12_atoms_1054_rows_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "isotropic_evaluation_value_jacobian_12_atoms_1054_rows_control",
+        "directory_name": "isotropic_evaluation_value_jacobian_12_atoms_1054_rows_control",
+        "title": "isotropic_evaluation_value_jacobian_12_atoms_1054_rows_control"
+      }
+    },
+    {
+      "id": "isotropic_evaluation_value_jacobian_8_atoms_1054_rows_cache",
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          48.0,
+          96.0,
+          144.0,
+          192.0,
+          240.0,
+          288.0,
+          336.0,
+          384.0,
+          432.0,
+          480.0,
+          528.0,
+          576.0,
+          624.0,
+          672.0,
+          720.0,
+          768.0,
+          816.0,
+          864.0,
+          912.0,
+          960.0
+        ],
+        "times": [
+          9111000.0,
+          18334875.0,
+          27617958.0,
+          37738792.0,
+          46252500.0,
+          56146625.0,
+          64271083.0,
+          73827958.0,
+          82615417.0,
+          94565209.0,
+          104085292.0,
+          114857292.0,
+          124494166.0,
+          134736792.0,
+          141814042.0,
+          150784875.0,
+          160241708.0,
+          172749833.0,
+          186145750.0,
+          189282500.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 194179.48053210677,
+            "upper_bound": 197460.63315509062
+          },
+          "point_estimate": 195802.64881005854,
+          "standard_error": 839.1324989521498
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 192489.5286458333,
+            "upper_bound": 197150.25284090912
+          },
+          "point_estimate": 196465.42524509804,
+          "standard_error": 1210.6018169968725
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 880.7303712957317,
+            "upper_bound": 6108.957771231833
+          },
+          "point_estimate": 4833.99294598407,
+          "standard_error": 1367.1544223272267
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 196452.20657079015,
+            "upper_bound": 199930.45021075473
+          },
+          "point_estimate": 198179.4643002323,
+          "standard_error": 901.6949086952565
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 2774.5383936841004,
+            "upper_bound": 4697.109375387347
+          },
+          "point_estimate": 3850.464274287329,
+          "standard_error": 496.2940128030984
+        }
+      },
+      "benchmark": {
+        "group_id": "isotropic_evaluation_value_jacobian_8_atoms_1054_rows_cache",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "isotropic_evaluation_value_jacobian_8_atoms_1054_rows_cache",
+        "directory_name": "isotropic_evaluation_value_jacobian_8_atoms_1054_rows_cache",
+        "title": "isotropic_evaluation_value_jacobian_8_atoms_1054_rows_cache"
+      }
+    },
+    {
+      "id": "isotropic_evaluation_value_jacobian_8_atoms_1054_rows_control",
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          42.0,
+          84.0,
+          126.0,
+          168.0,
+          210.0,
+          252.0,
+          294.0,
+          336.0,
+          378.0,
+          420.0,
+          462.0,
+          504.0,
+          546.0,
+          588.0,
+          630.0,
+          672.0,
+          714.0,
+          756.0,
+          798.0,
+          840.0
+        ],
+        "times": [
+          9390125.0,
+          18764167.0,
+          28483541.0,
+          42003958.0,
+          49178250.0,
+          64514250.0,
+          83804583.0,
+          77103083.0,
+          85314208.0,
+          99034000.0,
+          107894625.0,
+          121630334.0,
+          145403333.0,
+          136001833.0,
+          147840459.0,
+          171192625.0,
+          172481125.0,
+          171077958.0,
+          199426875.0,
+          211597542.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 234586.45235875566,
+            "upper_bound": 248347.13865881495
+          },
+          "point_estimate": 241040.58479881968,
+          "standard_error": 3515.7168240634023
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 230384.54783163266,
+            "upper_bound": 249965.96209273185
+          },
+          "point_estimate": 235231.31666666665,
+          "standard_error": 4914.1233528168605
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 6530.638877807988,
+            "upper_bound": 22748.677559976382
+          },
+          "point_estimate": 13865.142382733397,
+          "standard_error": 4034.533271661958
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 236360.40521810474,
+            "upper_bound": 249553.32997305287
+          },
+          "point_estimate": 243280.17980753278,
+          "standard_error": 3366.7818525457587
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 9841.862917836068,
+            "upper_bound": 21261.357489706174
+          },
+          "point_estimate": 16155.79673456559,
+          "standard_error": 3041.602404442404
+        }
+      },
+      "benchmark": {
+        "group_id": "isotropic_evaluation_value_jacobian_8_atoms_1054_rows_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "isotropic_evaluation_value_jacobian_8_atoms_1054_rows_control",
+        "directory_name": "isotropic_evaluation_value_jacobian_8_atoms_1054_rows_control",
+        "title": "isotropic_evaluation_value_jacobian_8_atoms_1054_rows_control"
+      }
+    }
+  ],
+  "qualification": "Control/treatment within the same executable; sequential pairs, not the Criterion comparison to prior builds. Full search work counters printed in sample log. No corpus runs overlapped."
+}

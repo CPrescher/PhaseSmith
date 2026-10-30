@@ -455,7 +455,6 @@ class PhaseOriginAudit:
     ambiguity_unresolved: bool = False
     ambiguity_metric_disagreements: int = 0
 
-
     def __post_init__(self):
         object.__setattr__(self, "assignment_scores", tuple(self.assignment_scores))
         object.__setattr__(self, "origin_sampling_shape", tuple(self.origin_sampling_shape))
@@ -539,7 +538,9 @@ class SharedSearchAudit:
     cached_normal_refinement: bool = False
     multiplicity_weighted_refinement: bool = False
     ambiguous_assignments: bool = False
+    specialized_isotropic_refinement: bool = False
     cached_assignment_refinement: bool = False
+    specialized_isotropic_fits: int = 0
     assignment_cached_refinements: int = 0
     assignment_cached_normal_solves: int = 0
     assignment_normal_cache_fallbacks: int = 0
@@ -814,6 +815,7 @@ def solve_structure_elements(
     multiplicity_weighted_refinement: bool = False,
     ambiguous_assignments: bool = False,
     cached_assignment_refinement: bool = False,
+    specialized_isotropic_refinement: bool = False,
     missing_reflections: bool = False,
     resolution_extension: float = 1.0,
     score_only_evaluation: bool = False,
@@ -845,6 +847,8 @@ def solve_structure_elements(
     ``cached_normal_refinement=True`` caches preconditioned normal matrices in final
     iterative fits, verifies steps against the original Jacobian and falls back
     to the matrix-free solver if needed. It requires iterative refinement.
+    ``specialized_isotropic_refinement=True`` uses a fused canonical isotropic
+    cached evaluator with unchanged equations and generic fallback.
     ``cached_assignment_refinement=True`` uses guarded normal caches in short
     isotropic fits; it requires iterative and isotropic assignment refinement.
     ``ambiguous_assignments=True`` retains coupled near-element relabels through
@@ -932,6 +936,7 @@ def solve_structure_elements(
         ("multiplicity_weighted_refinement", multiplicity_weighted_refinement),
         ("ambiguous_assignments", ambiguous_assignments),
         ("cached_assignment_refinement", cached_assignment_refinement),
+        ("specialized_isotropic_refinement", specialized_isotropic_refinement),
         ("missing_reflections", missing_reflections),
         ("adaptive_checkpoints", adaptive_checkpoints),
         ("score_only_evaluation", score_only_evaluation),
@@ -1110,9 +1115,15 @@ def solve_structure_elements(
                 work_sliced_phasing,
                 isotropic_assignment_refinement,
                 (
-                    filtered_peak_search, batched_fft, cached_normal_refinement,
-                    real_fft, fused_phase_workspace, multiplicity_weighted_refinement,
-                    ambiguous_assignments, cached_assignment_refinement,
+                    filtered_peak_search,
+                    batched_fft,
+                    cached_normal_refinement,
+                    real_fft,
+                    fused_phase_workspace,
+                    multiplicity_weighted_refinement,
+                    ambiguous_assignments,
+                    cached_assignment_refinement,
+                    specialized_isotropic_refinement,
                 ),
             ),
         ),
