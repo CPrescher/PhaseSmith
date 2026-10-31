@@ -1,6 +1,8 @@
 use super::{Error, Result};
 use nalgebra::{DMatrix, Matrix3};
+/// Three Cartesian components in the units declared by the owning record.
 pub type V3 = [f64; 3];
+/// Row-major 3-by-3 matrix with explicit basis convention.
 pub type M3 = [V3; 3];
 pub fn dot(a: V3, b: V3) -> f64 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
@@ -40,9 +42,6 @@ pub fn mul(a: M3, b: M3) -> M3 {
 pub fn row(v: V3, a: M3) -> V3 {
     std::array::from_fn(|j| (0..3).map(|k| v[k] * a[k][j]).sum())
 }
-pub fn transpose(a: M3) -> M3 {
-    std::array::from_fn(|i| std::array::from_fn(|j| a[j][i]))
-}
 pub fn least(h: &[V3], q: &[V3]) -> Result<M3> {
     let a = DMatrix::from_fn(h.len(), 3, |i, j| h[i][j]);
     let b = DMatrix::from_fn(q.len(), 3, |i, j| q[i][j]);
@@ -70,19 +69,9 @@ pub fn median(a: &[f64]) -> f64 {
     let mut x = a.to_vec();
     x.sort_by(f64::total_cmp);
     let n = x.len();
-    if n % 2 == 0 {
-        (x[n / 2 - 1] + x[n / 2]) / 2.
+    if n.is_multiple_of(2) {
+        f64::midpoint(x[n / 2 - 1], x[n / 2])
     } else {
         x[n / 2]
     }
-}
-pub fn cell(a: M3) -> [f64; 6] {
-    let l = a.map(norm);
-    let angle = |i: usize, j: usize| {
-        (dot(a[i], a[j]) / (l[i] * l[j]))
-            .clamp(-1., 1.)
-            .acos()
-            .to_degrees()
-    };
-    [l[0], l[1], l[2], angle(1, 2), angle(0, 2), angle(0, 1)]
 }

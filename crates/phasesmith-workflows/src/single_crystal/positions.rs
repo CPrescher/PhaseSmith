@@ -1,14 +1,26 @@
-use super::{math::*, *};
+use super::{
+    Error, FrameSource, Options, Result, bounds, image,
+    math::{V3, dot},
+    prepared,
+};
 use phasesmith_spots::{self as spots, Bounds, frame_input, frame_validity, rotation};
 /// Owned linked tracks and source-ordered detected observations.
 pub struct Positions {
+    /// Half-open detector-pixel rectangles.
     pub boxes: Vec<Bounds>,
+    /// Half-open selected-frame ranges per track.
     pub ranges: Vec<[usize; 2]>,
+    /// Source-ordered numerical measurement rows; units follow the containing record.
     pub values: Vec<[f64; 5]>,
+    /// Original quality bits; source rows are retained even when excluded.
     pub flags: Vec<u32>,
+    /// Track quality before shared-mask support checks.
     pub original_flags: Vec<u32>,
+    /// Source-ordered track/frame/x/y/omega samples, with pixels and degrees.
     pub observations: Vec<[f64; 5]>,
+    /// Increasing full exposure bounds in degrees.
     pub angles: Vec<[f64; 2]>,
+    /// SHA256 of oriented original u32 frame payloads, in selected-source order.
     pub hashes: Vec<String>,
 }
 pub(super) fn validity_mask(plan: &frame_input::Plan, i: usize) -> Result<Vec<bool>> {
@@ -53,7 +65,7 @@ pub(super) fn detect(
         o.checkpoint()?;
         let batch: (Vec<_>, Vec<_>) = (first..(first + o.detection_workers).min(plan.frames))
             .map(|i| {
-                let p = prepared(source, plan, o.acquisition.first, i)?;
+                let p = prepared(source, plan, o, i)?;
                 let data = image(&p, plan.shape);
                 Ok((p, data))
             })
@@ -152,7 +164,7 @@ pub(super) fn detect(
             samples.push([
                 s.values[0],
                 s.values[1],
-                (result.angles[f][0] + result.angles[f][1]) / 2.,
+                f64::midpoint(result.angles[f][0], result.angles[f][1]),
                 s.values[2],
             ]);
         }
@@ -184,7 +196,7 @@ pub(super) fn detect(
             f as f64,
             s.values[0],
             s.values[1],
-            (result.angles[f][0] + result.angles[f][1]) / 2.,
+            f64::midpoint(result.angles[f][0], result.angles[f][1]),
         ]);
     }
     result.original_flags = result.flags.clone();

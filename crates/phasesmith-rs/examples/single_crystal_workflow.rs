@@ -142,7 +142,7 @@ impl sc::Observer for Save {
                 f64s(
                     "omega_bounds",
                     vec![p.frames, 2],
-                    p.dacs[0].bounds.iter().flatten().copied(),
+                    self.angles.iter().flatten().copied(),
                 ),
                 f64s(
                     "detection_scales",
@@ -478,17 +478,59 @@ fn poni(path: &Path, pixel1: f64, pixel2: f64, axis: sc::V3) -> Result<Geometry>
 }
 fn main() -> Result<()> {
     let args: Vec<_> = std::env::args().collect();
-    if args.len() != 4 {
+    if args.len() != 4 && args.len() != 5 {
         return Err(
             "usage: single_crystal_workflow INPUT.json NULL_ROTATIONS.json NEW_EXTERNAL_OUTPUT"
                 .into(),
         );
     }
-    let packet: Value = serde_json::from_slice(&fs::read(&args[1])?)?;
+    let mut packet: Value = serde_json::from_slice(&fs::read(&args[1])?)?;
     let rotations: Vec<sc::M3> = serde_json::from_slice(&fs::read(&args[2])?)?;
     let out = PathBuf::from(&args[3]);
     if out.exists() {
         return Err("output directory must be new".into());
+    }
+    if !out.is_absolute() {
+        return Err("output must be an absolute external path".into());
+    }
+    let repository = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(Path::parent)
+        .ok_or("missing repository root")?
+        .canonicalize()?;
+    let parent = out
+        .parent()
+        .ok_or("output parent missing")?
+        .canonicalize()?;
+    if parent.starts_with(repository) {
+        return Err("large output must stay outside the repository".into());
+    }
+    packet["output"] = json!(out);
+    let frozen: Value = serde_json::from_str(include_str!(
+        "../../../validation/enstatite-raw-workflow-v25.json"
+    ))?;
+    for name in [
+        "detection",
+        "linking",
+        "indexing",
+        "selection",
+        "geometry",
+        "prediction",
+        "integration",
+        "profiles",
+        "reduction",
+        "measurement_validity",
+        "search_configuration",
+    ] {
+        if packet["protocol"][name] != frozen[name] {
+            return Err(format!("native orthorhombic-rotation-v1 does not silently override unsupported {name} settings").into());
+        }
+    }
+    if packet["protocol"]["shadow_mask"]["mode"] != "combined"
+        || packet["protocol"]["acquisition"]["gain"] != json!(1.0)
+        || packet["protocol"]["acquisition"]["read_noise"] != json!(0.0)
+    {
+        return Err("native v1 requires combined masks and the declared unit-gain zero-read-noise example model".into());
     }
     let raw = packet["raw_path"].as_str().ok_or("raw_path missing")?;
     let dataset = packet["raw_array"]["dataset"]
@@ -562,6 +604,29 @@ fn main() -> Result<()> {
                 .into(),
         },
         null_rotations: rotations,
+        shadows: sc::ShadowOptions {
+            illumination_block: int(&protocol["shadow_mask"]["illumination"], "block")?,
+            illumination: phasesmith::spots::frame_validity::SeatOptions {
+                threshold: number(&protocol["shadow_mask"]["illumination"], "threshold")?,
+                guard_pixels: int(&protocol["shadow_mask"]["illumination"], "guard_pixels")?,
+                ..phasesmith::spots::frame_validity::SeatOptions::default()
+            },
+            aperture_block: int(&protocol["shadow_mask"]["geometric"], "pixel_block")?,
+            aperture: phasesmith::spots::frame_validity::DacOptions {
+                axis_at_zero: serde_json::from_value(
+                    protocol["shadow_mask"]["geometric"]["axis_at_omega_zero"].clone(),
+                )?,
+                half_opening_degrees: number(
+                    &protocol["shadow_mask"]["geometric"],
+                    "half_opening_degrees",
+                )?,
+            },
+        },
+        mask_workers: int(acquisition, "workers")?,
+        max_in_flight_frame_bytes: int(
+            &protocol["frame_preparation_execution"],
+            "max_in_flight_bytes",
+        )?,
         cancellation: solution::Cancellation::default(),
         detection_workers: int(protocol, "detection_workers")?,
         profile_workers: int(&protocol["reduction"], "shape_fit_workers")?,
@@ -593,6 +658,24 @@ fn main() -> Result<()> {
             .collect(),
     };
     let started = Instant::now();
+    if args.len() == 5 {
+        let rows: Vec<([i32; 3], [f64; 2])> = serde_json::from_slice(&fs::read(&args[4])?)?;
+        let observations: Vec<_> = rows
+            .into_iter()
+            .map(|(h, v)| solution::Observation {
+                hkl: h,
+                intensity: v[0],
+                sigma: v[1],
+            })
+            .collect();
+        let (result, audit) = sc::search_observations(&observations, &options)?;
+        sc::Observer::solution(&mut save, &result, &audit)?;
+        println!(
+            "{}",
+            json!({"diagnostic_search_only":true,"r1":result.candidates.first().map(|c|c.r1),"seconds":started.elapsed().as_secs_f64()})
+        );
+        return Ok(());
+    }
     let mut source = Source(reader);
     match sc::run(&mut source, &options, &mut save) {
         Ok(result) => {
