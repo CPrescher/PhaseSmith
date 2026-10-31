@@ -1,0 +1,1011 @@
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -610,6 +610,7 @@
+  "phasesmith-io",
+  "phasesmith-model",
+  "phasesmith-persistence",
++ "phasesmith-solution",
+  "phasesmith-spots",
+  "phasesmith-workflows",
+ ]
+@@ -694,6 +695,7 @@
+  "phasesmith-model",
+  "phasesmith-persistence",
+  "phasesmith-row-search",
++ "phasesmith-solution",
+  "phasesmith-spots",
+  "phasesmith-validation",
+  "phasesmith-workflows",
+@@ -707,6 +709,17 @@
+ dependencies = [
+  "serde",
+  "serde_json",
++]
++
++[[package]]
++name = "phasesmith-solution"
++version = "0.7.0"
++dependencies = [
++ "criterion",
++ "ndarray",
++ "phasesmith-crystallography",
++ "phasesmith-execution",
++ "rustfft",
+ ]
+
+ [[package]]
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -1,5 +1,6 @@
+ [workspace]
+ members = [
++  "crates/phasesmith-solution",
+   "crates/phasesmith-rs",
+   "crates/phasesmith-spots",
+   "crates/phasesmith-row-search",
+--- a/PROJECT_BRIEF.md
++++ b/PROJECT_BRIEF.md
+@@ -12,6 +12,246 @@
+
+ ## Current implementation status
+
++An opt-in `experimental-solution` module accepts externally integrated,
++corrected HKLF 4 observations, a cell, known symmetry, and full-cell non-H
++composition. A separate Rust crate owns multi-start charge flipping, periodic
++peak extraction, provisional element assignment and analytical polishing;
++independent NumPy references check the numerical equations. Signed source
++observations remain authoritative. Symmetry/Friedel merging and derived
++nonnegative phasing amplitudes are explicit. After full-cell P1 recovery, the
++default experimental path aligns the origin/hand using the candidate alone,
++reconstructs the asymmetric unit and constrains coordinates and positive-definite
++anisotropic displacement tensors to site symmetry. Isotropic and legacy P1 modes
++remain explicit options. Failed alignment retains an honestly labelled P1
++hypothesis and diagnostic. Density retains its original frame with an explicit
++model transformation; exact supplied operations and both CIF frames are exported.
++A fit target is not a correctness certificate. This capability does not require
++detector integration, a GUI, or external solvers. Default powder builds and stable
++APIs are unchanged. Scope and validation are recorded in
++`docs/experimental-structure-solution.md` and `docs/solution-symmetry-adp.md`.
++
++The constrained ADP follow-up improves the thiourea development result from
++10.19% to 4.94% amplitude R1. With the same preselected settings, a blind measured
++BiSeI transfer case recovers all 12 atoms within 0.003 angstrom at 5.23% R1;
++K[BrF4] fails coordinate/symmetry recovery despite 9.12% P1 R1. Both outcomes are
++recorded. This is bounded experimental coverage, not general structure-solution
++validation. Automatic space-group selection, anomalous scattering, hydrogens,
++disorder and twinning remain outside scope.
++
++An additional experimental phasing strategy implements Patterson superposition
++minimum-function starts, hybrid difference-Fourier iteration and Gaussian
++atomicity masks with deterministic periodic random omission, from the published
++Sheldrick (2015) equations. It does not reproduce full SHELXT intrinsic phasing,
++space-group selection or resolution extension. `phasing="dual_space"` selects
++this alternative; `"portfolio"` alternates it with charge flipping inside the
++existing total budgets. Charge flipping remains the default. The input cell,
++symmetry and full-cell composition contract is unchanged. Per-trial method,
++initialization/fallback, Patterson vector, score and fixed controls are exported
++in experimental result schema v3. Independent NumPy complete-cycle and Gaussian
++support/moment checks accompany the native implementation. The original uncompleted development
++cases recover thiourea and BiSeI, but K[BrF4] fails despite a lower P1 R1;
++no increase in demonstrated solve coverage is claimed. Equations, bounded
++implementation choices and measured results live in `docs/solution-dual-space.md`.
++
++A bounded partial-framework completion step now follows failed or insufficient
++atomic candidates. It removes the weakest species, recovers symmetry from the
++stronger atoms, retains up to eight different framework origin/settings and
++searches a signed difference-Fourier map for one missing orbit. Generic affine
++fixed-set projections generate special-position proposals without reference
++coordinates or Wyckoff tables. All complete proposals use fused value/analytic
++coordinate derivatives and the existing constrained ADP refiner. A completion
++must improve the original amplitude objective; exact counts, non-overlap and
++original density-frame transformations remain observable. The explicit
++`completion=False` option preserves the earlier path; historical benchmark
++commands keep completion off unless `--completion` is supplied. Experimental
++JSON schema v4 records typed actual completion effort/outcomes. On reused K[BrF4]
++data, the native dual-space search now recovers all 24 atoms to 0.006 angstrom at
++R1 0.0222664 without external/reference coordinates. This does not implement
++general multi-orbit fragment assembly or automatic space-group selection.
++See `docs/solution-completion.md`. External binary inspection is kept outside the
++repository and has not been used to implement these numerical equations.
++
++A separate bounded element-only benchmark now enumerates sampled symmetry-orbit
++multiplicities and repeated count-constrained solves under a declared volume
++bound. Its inputs contain element types, cell and exact symmetry, with no formula
++or reference coordinates. It saves every count proposal, failed/capped outcomes
++and a descriptive complexity ranking; it does not change the native API to a
++general unknown-composition solver. On reused K[BrF4] data, 45 count hypotheses
++select Br4 K4 F16 at R1 0.0222664 with all 24 atoms within 0.006 angstrom;
++30 hypotheses hit their time caps. Exact I4/mcm and cell remain supplied priors.
++See `docs/solution-element-counts.md`.
++
++The experimental `solve_structure_elements` path now uses a shared native search
++instead of restarting the fixed-composition solver for every count combination.
++One equally weighted element-sharpened charge-flipping map initializes a bounded
++beam of symmetry-compatible strong-site settings. Difference-map orbit proposals
++share their phase sums and analytical coordinate jets across possible elements;
++whole-orbit births, deletions and relabels compete after constrained refinement.
++Counts follow from accepted orbit multiplicities. Required-element coverage,
++periodic non-overlap, explicit budgets and a descriptive complexity penalty govern
++selection. Original density frames and retained partial results remain explicit.
++Experimental schema v5 distinguishes inferred counts from input element types;
++legacy count-constrained schema v4 and stable/default builds remain unchanged.
++The new equations have an independent NumPy reference and derivative tests.
++On three reused measured cases it infers the correct non-H counts and matches
++reference coordinates: K[BrF4] in median 3.167 s (three repeats), BiSeI in 2.298 s
++and thiourea in 27.981 s. K[BrF4] is 36.7 times faster than the recorded 45-count
++sweep; this is not a thread-matched comparison with SHELXT. See
++`docs/solution-shared-search.md` for controls and qualifications.
++
++Shared search now has a staged refinement schedule: short isotropic fits screen
++proposed edits, a conservative per-parent shortlist preserves close scores and
++missing-element birth proposals, and only fully refined requested-mode states
++enter the retained beam. Per-site isotropic tensors and composed coordinate
++frames seed final anisotropic fits exactly. `staged_refinement=False` retains
++the previous full-fit path for controlled comparison. Independent selection and
++tensor-seed references accompany the unchanged value/derivative kernels. The
++paired benchmark pins observation inputs and defers reference-formula/geometry
++checks until every solve has been saved. Three serial alternating pairs per case
++preserve all counts, reference geometry and exported-CIF fits. Full/staged medians
++are 3.250/2.260 s for K[BrF4], 2.314/1.123 s for BiSeI and 28.288/7.572 s
++for thiourea (1.44x, 2.06x and 3.74x). These are reused development cases. See
++`docs/solution-shared-search.md`.
++
++Shared element search also has an integrated-peak-density guide. One unsharpened
++measured-amplitude map per phase start is integrated over Cartesian balls by an
++analytic Fourier kernel. Periodic interpolation returns the integral, three center
++derivatives and a radius derivative in one pass. Relative mass/Z calibration of
++current strong orbits narrows birth/relabel alternatives and the staged shortlist;
++nearby elements, missing types and the leading diffraction proposal retain rescue
++paths. Exact counts and coordinates are never inputs. The prior staged search is
++available with `integrated_peak_density=False`. Independent quadrature, direct
++Fourier, derivative and Gaussian-volume checks cover the new kernel.
++Three serial paired repeats per measured development case preserve all counts,
++reference geometry and R1. Staged/density-guided medians are 2.269/1.696 s for
++K[BrF4], 1.150/0.973 s for BiSeI and 7.546/5.658 s for thiourea (1.34x, 1.18x
++and 1.33x). See `docs/solution-peak-density.md`. Default powder builds remain
++unchanged.
++
++Shared element-only search now also accepts count-free Patterson/dual-space
++phasing. A positive map-RMS peak selector replaces the supplied-N atomicity mask;
++its explicit peak cap is a resource bound, independent of the downstream atom
++bound. Per-cycle requested/effective thresholds and selected/omitted peak counts
++are exported separately from inferred composition. The fixed-count path remains
++explicit, and portfolio starts share the existing total budgets. Independent
++NumPy complete-cycle and projection references, boundary cases and synthetic
++count-recovery tests cover the extension. Three serial paired measured repeats
++recover K[BrF4] and thiourea with unchanged counts, geometry and R1, but cost
++2.547 versus 1.719 s and 6.001 versus 5.583 s. BiSeI fails framework initialization
++with the new phasing while charge flipping solves in 0.993 s. No speed or coverage
++improvement is claimed; charge flipping stays the default. See
++`docs/solution-count-free-dual-space.md` for the frozen comparison and limitations.
++Default powder builds remain unchanged.
++
++The count-free dual-space follow-up fixes a missed-origin failure in nearly
++rational centrosymmetric frameworks. If the existing coarse origin grid fails,
++inversion-related peak pairs provide all half-cell branches analytically before
++the unchanged full-group bijection/tolerance check. The saved BiSeI framework
++matches within 0.049 angstrom and now completes without input counts or reference
++coordinates. Count-free dual-space also hands window-best maps to full shared
++search at 4,16,64,... cycles, accepting only complete requested-mode refinements
++that meet the original R1 target. Failed handoffs resume the same Fourier arrays
++and global cycle budget. Beams and their density frames remain paired across
++checkpoints; actual window selections and acceptance are exported. The explicit
++`dual_checkpoints=False` ablation keeps full-budget phasing. Independent NumPy
++window/seed/cycle references and translated synthetic-orbit regressions cover
++these changes; existing profile/structure-factor derivatives are unchanged.
++Three serial paired repeats now recover all three measured development structures
++with the correct counts, geometry and original-observation fits. Charge-flipping /
++dual-space medians are 1.705/0.667 s for K[BrF4], 0.970/0.435 s for BiSeI and
++5.486/5.761 s for thiourea: 2.56x and 2.23x speedups for the first two, but a 5%
++slowdown for thiourea. The same-build full-budget ablation also recovers all three,
++isolating the origin fix from the checkpoint schedule. An experimental shortcut
++stopping at the first R1-target fit misassigned C/N and was rejected; the final
++path completes the original refinement shortlist and beam round.
++See `docs/solution-dual-space-handoffs.md` for diagnosis, validation and timings.
++Charge flipping remains the default; default powder builds remain unchanged.
++
++Prepared experimental structure refinements now cache fixed reciprocal/image
++geometry in bounded contiguous arrays, rather than recomputing symmetry-rotated
++vectors, coordinate phase derivatives and tensor quadratic forms on each fit
++evaluation. Isotropic fits also share attenuation and its analytical derivative
++across symmetry images of a site/reflection. Values and derivatives remain fused,
++with unchanged candidate shortlists, orbit edits, ranking and full anisotropic
++final fits. An explicit `cached_refinement=False` shared-search ablation retains
++the original direct arithmetic. The 32 MiB per-model cache cap falls back to the
++direct kernel without dropping observations; independent direct NumPy values,
++centered derivatives, deterministic native comparisons and memory-boundary tests
++cover the factorization. Native sampling motivated this change: thiourea has
++156 screening and 34 final fits over 4,068 expanded reflections. A targeted
++external SHELXT inspection and the published pipeline support preparing reusable
++numerical work and keeping cheap screening before expensive final refinement;
++no decompiled code was copied or translated. See
++`docs/solution-refinement-geometry-cache.md` and
++`docs/solution-shelxt-order-review.md` for equations and evidence limits.
++Three serial paired dual-space repeats preserve counts, geometry, original-data
++R1 and both CIF frames for all three development structures. Direct/cached
++medians are 0.732/0.514 s for K[BrF4], 0.487/0.356 s for BiSeI and 6.573/4.451 s
++for thiourea (1.42x, 1.37x and 1.48x). Screening/final fit counts are identical
++between paired modes; no candidate shortlisting or atom-count prior is changed.
++
++The shared element-only solver now has opt-in supplied-symmetry density recycling
++before weak-peak assignment. Each retained framework origin receives ten phase
++symmetry/Friedel averaging and positive-density cycles, with measured amplitudes
++restored and missing coefficients kept as predictions. Recycled peaks and
++integrals seed bounded joint whole-orbit proposals; coordinate-fixed shared
++label sweeps and the original constrained refinement/complete shortlist resolve
++assignments. A batch may meet the target only after a complete ordinary edit
++round finds its preferred complete lineage stable. Counts remain inferred, and
++original density frames and both CIF exports retain their provenance. Independent
++NumPy full cycles cover translated/inverted origins and screw symmetry; existing
++shared structure-factor/derivative references cover the assignment objective.
++Three serial paired dual-space repeats preserve all three development structures,
++counts, geometry and R1. Previous/recycled medians are 0.521/0.767 s for K[BrF4],
++0.356/0.252 s for BiSeI and 4.516/1.499 s for thiourea: 47% slower, 1.41x and 3.01x
++faster respectively. The option `symmetry_recycling=True` remains explicit because
++of the K[BrF4] regression. There is no compound-specific dispatch or input count
++prior. See `docs/solution-symmetry-recycling.md` for equations, safeguards and
++frozen comparisons. Default powder builds and default shared search are unchanged.
++
++The shared element-only dual-space solver additionally supports opt-in
++`tangent_refinement=True`: empirical count-independent normalized magnitudes,
++measured strong-triplet tangent updates, cooling phase perturbations and measured
++weak-cross negative-quartet guards. A bounded immutable phase plan is reused
++across starts; actual relation counts, updates and accepted/declined quartet
++checks are exported. Rust owns the numerical work and fused phase-invariant
++values/derivatives; independent NumPy graph enumeration, dense derivatives and
++complete-step references validate the equations. This is an independent bounded
++variant from published direct-method ideas, not a translation of SHELX code or
++an exact SHELXS annealing probability model. Counts and labels remain inferred.
++Three paired repeats with and without symmetry recycling preserve correct
++counts, coordinates, R1 and both CIF frames for all three development structures.
++Without recycling, baseline/tangent medians are 0.5395/0.5490 s for K[BrF4],
++0.3722/0.4724 s for BiSeI and 4.6447/3.4749 s for thiourea. With recycling they
++are 0.7881/0.8004, 0.2559/0.3212 and 1.5386/6.0270 s. The regression on combined
++thiourea search leaves this option off by default. K[BrF4] supplies no eligible
++negative quartets, reported explicitly. See `docs/solution-tangent-refinement.md`
++for equations, resource bounds, interpretation limits and frozen reports.
++
++A follow-up improves the combined tangent/recycling path by deferring tangent
++updates until a strong-framework origin is known. Each existing recycling cycle
++then restores supplied symmetry, proposes an annealed tangent step and restores
++symmetry again; a second negative-quartet guard checks the actual constrained
++phases before positivity. Exact stored Fo values keep the frozen-set ranking
++stable across equal symmetry-related amplitudes, and an explicit local cost-tie
++convention stabilizes centric cases. Accepted phase-change counts exclude zero
++amplitudes. Independent NumPy complete-cycle references and synthetic cases cover
++all operations and actual guard rejections without loosening global tolerances.
++`tangent_in_recycling=False` retains the original P1 placement for ablation;
++without recycling the original tangent path is unchanged. Per-origin typed
++audits distinguish constrained work from P1 tangent work. The map diagnostic
++traces the thiourea regression to lower symmetry-phase coherence, a one-orbit
++joint proposal instead of four, and 258/46 screening/final fits instead of 50/14.
++The revised combination restores the four-orbit proposal and one edit round for
++seed 0. See `docs/solution-tangent-recycling.md` for equations, timing and an
++eight-seed comparison across all three measured development structures.
++Three paired legacy/improved medians are 0.7817/0.7896 s for K[BrF4],
++0.3083/0.2887 s for BiSeI and 5.7752/1.3347 s for thiourea (4.33x faster).
++Eight predeclared seeds recover all three structures and exact non-H counts
++(24/24 improved solves); all paired geometry, R1 and both-CIF checks pass.
++Thiourea still spans 0.654–7.302 s across seeds: the slow seeds also have long
++searches with recycling alone. Both options remain opt-in, and these reused
++development cases are not a general solve-coverage claim.
+ Experimental grain search now additionally offers **Row search (DAFi-based)**
+ through `find_grains(..., method="rows", row_options=RowSearchOptions(...))`.
+ The selected independent published-algorithm kernel is imported verbatim into
+@@ -1383,6 +1623,8 @@
+
+ ## Architecture
+
++- `crates/phasesmith-solution`: opt-in, file-independent single-crystal phasing
++  and candidate-polishing kernels; RustFFT stays outside `phasesmith-core`.
+ - `crates/phasesmith-core`: dependency-light numerical types and kernels.
+ - Numerical primitives such as CW width laws and FCJ geometry remain separate;
+   explicit composition modules fuse them for production accumulation.
+@@ -2304,7 +2546,563 @@
+ promotion protocol in `docs/profile-transferability-gate.md` still applies to
+ any future in-house or provenance-complete external pair.
+
++## Experimental structure-solution transfer benchmark
++
++The structure-solution numerical implementation remains frozen at `8bc4efc` for
++the first broader transfer screen. A checksum-pinned corpus now registers 100
++measured COD reflection/reference pairs from 100 distinct DOI/formula families,
++covering all seven crystal systems and 27 space-group types. A deterministic
++family-separated split reserves 65 cases as unopened solver holdout outcomes;
++35 development cases were compared serially against user-provided SHELXT 2018/2,
++one thread, element types only, supplied cell/symmetry and a 15-second per-job
++wall ceiling. Both consume identical rounded HKLF4 observations, without reference
++coordinates or composition quantities in numerical workers. Exclusions and failed
++searches remain visible. No production numerical code or dependencies change.
++
++Exact full-cell non-H element counts plus coordinate recovery (maximum 0.05 Å,
++RMS 0.025 Å) succeed in 5/35 PhaseSmith cases and 13/35 SHELXT cases. Total atom
++counts alone agree in 9/35 and 29/35. All-outcome median wall times are 13.220 s
++and 0.889 s on native arm64 PhaseSmith versus x86_64-compatible SHELXT; these are
++not matched successful-solve times. Seven references exceed PhaseSmith's current
++input-derived dense-model capacity and remain in the denominator. This evidence
++shows a substantial generalization gap, despite prior success on three reused
++structures. Count/orbit selection, capacity and element assignment should be
++improved on development cases before opening the holdout.
++
++Registry v5 corrects rounded special-position reference-image multiplicities for
++nine cases, corroborated against registered cell-formula counts across all 100.
++It preserves the v4 collection registry, source bytes, solver inputs, predictions
++and timings. Output syntax/origin/precision corrections are re-audits of each
++program's saved chosen model, never reference-selected alternatives or search
++reruns. Protocol, thresholds, limitations and results are documented in
++`docs/solution-corpus-benchmark.md`; the committed full report is
++`benchmarks/structure-solution-corpus-development-macos.json`.
++
++A subsequent development-only count policy preserves the initial density batch,
++then competes one-/two-orbit residual additions using common isotropic screens
++before a requested-mode fit. Weak-density candidates can use diffraction-based
++labels, poor early maps have bounded handoff budgets, and promising models retain
++the global budget. `adaptive_counts=False` preserves the earlier policy. No
++expected atom counts enter either path. The first complete follow-up screen
++improves exact total counts from 9/35 to 13/35 and full element-labelled coordinate
++recovery from 5/35 to 7/35, preserving all five former successes. Runtime has not
++improved overall. The contemporary same-native ablation recovers 4/35 versus
++7/35 structures and 7/35 versus 13/35 total counts, with median all-outcome times
++13.357 versus 13.390 s; these are serial collections, not paired repeated timings.
++Independent NumPy score checks, synthetic symmetry/count ablations and a realistic
++full-search microbenchmark accompany the existing unchanged analytical kernels.
++See `docs/solution-count-selection.md`. The 65 holdout outcomes remain unopened;
++this solver is still serial, and SHELXT remains pinned to one thread for comparison.
++
++A further opt-in shared-search path fits an isotropic Wilson/shell envelope from
++signed independent-family intensities with symmetry epsilon factors and an
++explicit unit-mean E-squared convention. Mixed E/F amplitudes feed dual-space
++phasing; measured-family CC minus weak calculated E-squared selects complete
++atomic maps before count refinement. Rust values and analytical phase-quality
++derivatives have an independent NumPy reference. This is a published-equation
++implementation with explicit empirical shell/scheduling choices, not a recovered
++SHELXT implementation. Both new options remain off by default: the complete
++35-case development campaign preserves the same seven recovered structures but
++recovers only 12 total counts versus the preceding campaign's 13, with no overall
++speed improvement and slower successful solves. The same-build control recovers
++8/35 structures and 13/35 total counts versus 7/35 and 12/35 with the new options;
++the seven common recoveries slow from median 1.776 to 10.320 seconds. This is a
++regression, with no gained structures and one lost recovery (COD 2243618).
++All original scoring gates and input-derived caps remain fixed; the 65 holdout
++outcomes remain unopened.
++See `docs/solution-phase-quality.md` for the same-build control, timing limitations,
++normalization assumptions and retained complete results.
++
++A subsequent frozen-parent ablation separates observed normalization (8/35
++structures, 14/35 total counts) from the original quality/scheduling option
++(7/35 structures, 12/35 total counts). A renewed external SHELXT data-flow review
++finds an important difference: calculated map amplitudes are independently
++normalized before its weak-reflection statistic. PhaseSmith had reused the
++observed envelope instead. An independent conditional-second-moment shell
++normalization now supplies calculated E-squared and fused analytical derivatives;
++the prior statistic remains an explicit reference mode. A separate checkpoint
++portfolio preserves early amplitude-map fits before offering distinct quality
++alternatives; the previous phase-first schedule remains explicit. These changes
++are tested separately on all 35 development cases, retaining the original input,
++count/geometry and budget controls. No holdout outcomes are opened. Equations,
++source-confidence limits, comparisons and qualifications are recorded in
++`docs/solution-phase-ablation.md`.
++
++The corrected calculated normalization with phase-first scheduling recovers
++9/35 structures versus a same-build old-statistic control's 7/35, gaining COD
++2010705 and 2243618 with no lost recoveries. Both get 11/35 total counts correct.
++Seven common successes take median 8.803 versus 10.932 seconds; all-outcome
++medians remain near the 13-second budget. The checkpoint alternative recovers
++only 7/35, so quality selection keeps phase-first ordering by default. All feature
++switches remain experimental and opt-in. Count accuracy remains limited and
++SHELXT still recovers 13/35 labelled structures and 29/35 total counts. No holdout
++outcomes have been opened.
++
++An additional opt-in `phase_origin_selection` path changes the order of the
++element-only search. A measured phase-equivalence origin/hand search aligns each
++P1 density before atom labels are assigned. Supplied-symmetry density recycling
++then provides complete orbit proposals. Cached orbit Fourier columns and fused
++coordinate jets support cheap whole-orbit count/element edits, followed by short
++isotropic screens; only a small complete-model shortlist receives requested-mode
++refinement on all original observations. Independent NumPy equations check both
++new kernels. This is an implementation from published equations and first
++principles, with explicit bounded heuristics, not translated decompiled SHELX
++code. It searches the supplied group only. The previous solver remains the
++default reference path. Development results, stage costs and limitations are in
++`docs/solution-phase-origin.md`; the 65 holdout outcomes remain unopened.
++The same-build 35-case comparison improves correct labelled structures from
++8 to 12, exact total counts from 14 to 26 and exact per-element counts from
++8 to 13; median all-outcome wall time falls from 13.217 to 4.376 seconds.
++Six recoveries are gained and two lost, so the new path is not a universal
++improvement. Requested-mode fit attempts fall from 712 to 100. SHELXT still
++recovers 13 structures and 29 totals at a 0.877-second median. These are fixed
++single-seed development collections, not repeated timing or holdout evidence.
++
++A further opt-in pair adds motif-based density scale proposals and coupled
++post-isotropic-fit label changes (`chemical_assignment`) and a diagonally scaled
++conjugate-gradient normal solve for large refinements (`iterative_refinement`).
++The normal solver retains the original analytical Jacobian and all resource
++caps, but avoids building its dense normal matrix. The chemistry search keeps
++required types and total topology, tests single changes and paired swaps after
++coordinate/displacement relaxation, and accepts only improved refined screens.
++Both are independently validated and leave prior defaults available. Equations,
++controls and development-only comparisons are in `docs/solution-chemical-refinement.md`.
++In the same-build four-way 35-case development ablation, chemistry improves
++labelled recovery from 12 to 14 and exact element-count sets from 13 to 15,
++with no lost recoveries and unchanged 26 exact total counts. Iterative refinement
++alone keeps the same 12 structures and lowers median all-outcome time from
++4.308 to 3.535 seconds. Combined reaches 14 structures at 3.348 seconds and
++11 strict 0.02-angstrom recoveries versus control's 9. Requested-mode fitting
++time drops from 63.895 to 34.825 seconds across the panel. These are single-seed
++serial development results with unchanged caps; both controls remain opt-in and
++the 65 holdout outcomes remain unopened.
++
++A further opt-in prediction experiment distinguishes the existing free missing
++coefficients inside the measured sphere from bounded, observed-envelope-normalized
++prediction (`missing_reflections`) and added reciprocal support beyond measured
++resolution (`resolution_extension`). New coefficients remain theoretical predictions:
++original observations, origin/weak-reflection tests, peak-mass integrals, final
++fits and atom caps remain measured-only. Both P1 atomicity and supplied-symmetry
++positivity recycling can use the bounded predictions. Local complex values and
++analytical coefficient Jacobians have independent NumPy and finite-difference
++checks, and complete Fourier-cycle parity is tested. The previous combined path
++remains the control. Equations, bounds and 35-case development-only comparisons
++are in `docs/solution-reflection-prediction.md`; the holdout stays closed.
++The same-build four-way development comparison gives 14/35 structures and 26
++correct total counts for the current control, 14/27 for missing-only, 15/26
++for extension-only, and 14/27 for both. Exact per-element counts stay at 15/35
++in all modes. Medians rise from 3.388 seconds to 4.455, 4.244 and 4.268 seconds.
++Extension's one gained structure is also recovered by a larger-grid-only probe
++without extrapolated coefficients; the gain cannot be assigned to prediction.
++The combined path gains that structure but loses another coordinate recovery.
++Both controls therefore remain off, with all outcomes retained and no change to
++correctness gates or input-derived caps. The 65 holdout outcomes remain unopened.
++
++A further opt-in experiment adds adaptive phase-first handoff checkpoints
++(`adaptive_checkpoints`) and measured-harmonic origin FFT seed sampling
++(`independent_origin_sampling`). Stable-map decisions use only P1 phase quality,
++amplitude fit and density agreement; downstream complete-model validation remains
++mandatory. Origin sampling is independent of the density grid, bounded to 128
++per axis, with exact measured-phase loss/derivatives retained for polishing.
++Neither control changes measured constraints, refinement kernels or atom caps.
++Independent NumPy references and synthetic full-model checks accompany the
++separate four-way 35-case development comparison. Equations, scheduling limits
++and results are in `docs/solution-adaptive-sampling.md`. Both controls remain
++experimental and false by default; the 65 holdout outcomes stay closed.
++The initial apparent speed gain used a flawed comparison of stored champion maps
++and traded one recovered structure for another. The corrected policy checks live
++maps and has no stable-map early stops on the 35 development cases. Its fresh
++four-way control/adaptive/sampling/combined comparison recovers 14/14/14/13
++structures, with 26 total counts and 15 element-count sets in every mode. Wall
++medians are 3.393/3.819/3.973/4.558 seconds, but substantial host contention also
++slows unchanged SHELXT and changes the cycles completed before deadlines, so
++these are not isolated algorithmic slowdown estimates. A selected fixed-400-cycle
++probe recovers the lost structure in all four modes, supporting a deadline-sensitive
++failure. No useful end-to-end improvement is established; both controls stay off.
++
++An additional execution-only experiment adds `score_only_evaluation` and
++`reusable_fourier_workspaces`. The scalar scorer caches fixed moments/shell
++populations and reuses scratch while preserving the full fused value/gradient
++control. P1 phasing reuses map/mask/complex storage, prepared Gaussian geometry
++and input vectors; contiguous FFT lines can run in place using the same f64 plan.
++Supplied-symmetry recycling shares that contiguous-axis shortcut. Equations,
++precision, support, ranking, refinement and input-derived caps remain unchanged.
++Bitwise fixed-work trajectories, independent NumPy values, invalid boundaries
++and full synthetic structures/counts accompany a balanced, serial interleaved
++four-way comparison on all 35 development cases. All modes' chosen predictions
++are saved before reference auditing. Both flags remain independently opt-in;
++the 65 holdout outcomes stay unopened. Details and results are in
++`docs/solution-execution-workspaces.md`.
++The completed interleaved four-way development comparison preserves all 14/35
++correct structures, 26 total counts and 15 per-element count sets in every mode.
++All 31 returned models are exactly identical; four cases return no model as
++before. Scalar scoring is 2.51x faster and combined 64-cycle kernel time is 8.5%
++lower, but typical paired whole-solve time is essentially unchanged (1.0012x).
++Overall wall medians are 3.405/3.334/3.336/3.291 seconds. Fixed wall-time slices
++mostly spend the saved work on more phasing cycles (+2.36% combined), with the
++same 95 starts and 104 full refinements. No end-to-end speed claim is made from
++the lower unpaired median alone. The full schedule/audits are retained, and no
++holdout outcome has been opened.
++
++A further opt-in `work_sliced_phasing` policy limits the first half of phase-first
++starts to half the requested cycles (floor 32), retaining full-quota fallback
++starts and the original wall/global safety ceilings. With four starts and 800
++requested cycles the work quotas are 400/400/800/800, independent of atom counts
++or element identities. Existing symmetry/count/chemical/refinement validation
++still decides acceptance; no plateau or fit target becomes a correctness
++certificate. Per-start quota/cycle/time/reason audits and independent integer
++references accompany unchanged phase/refinement equations. A paired serial
++interleaved comparison on all 35 development cases keeps both fast execution
++controls on, with all chosen predictions saved before auditing references.
++Details and results are in `docs/solution-time-slice-scheduling.md`; the 65
++holdout outcomes remain unopened.
++The completed paired comparison recovers 15/35 structures versus 14/35, with no
++lost success and unchanged 26 total-count/15 per-element-count recoveries. Phase
++cycles fall 14.4%, phase time 8.0% and summed solve wall time 3.7%; the typical
++paired wall ratio is only 1.00345x, so a broad latency gain is not established.
++The raw wall medians are 3.297/3.398 seconds. Twenty-nine early starts finish their
++short work quota, while 50 starts still reach the wall backstop. Extra fallback
++starts/refinements partly offset savings; the option stays experimental and
++disabled by default. All 140 predictions precede the two reference barriers,
++and source/native hashes match across panels. The 65 holdout outcomes stay closed.
++
+ ## Quality bar
++
++An experimental `cached_assignment_refinement` option activates the existing
++checked normal-matrix cache in short isotropic assignment fits. It requires
++iterative and isotropic assignment refinement, stays false by default, and keeps
++all competing labels, iteration limits, conservative guards and final anisotropic
++fits. Original-Jacobian checks and original-solver fallbacks remain; screening
++cache counters are separate from final-fit counters. New dense/iterative short-fit
++checks reuse independent equations and finite differences, with full search
++recovery compared on all 35 development cases. Diagnosis and results are in
++`docs/solution-assignment-cache.md`; the 65 holdout outcomes remain unopened.
++The completed matched comparison retains the same 19 structures, 26 total counts,
++19 per-element counts and 15 strict structures, with unchanged recovery case sets
++and inferred count vectors. Screening time falls 14.087 to 12.646 seconds (10.23%),
++and summed solve wall time falls 70.908 to 69.393 seconds (2.14%). The median paired
++wall ratio is only 1.00712x (0.71% less time); a broad typical-latency gain is not
++established. All 675 screening fits and 125 final fits remain. There are 4,640
++accepted cached screening steps and zero fallbacks. Full validation passes 2,209
++Python and 414 Rust tests; all 140 predictions precede both reference barriers,
++with matching native/source hashes. This is single-seed development evidence;
++the option stays opt-in and the holdout remains closed.
++
++An experimental `ambiguous_assignments` option adds displacement-compensated
++single/coupled near-element relabels, bounded count-diverse isotropic competition
++and retention of close requested-mode alternatives. It requires the existing
++isotropic assignment path and is false by default. It keeps original parents,
++observations, resource caps, scoring/correctness gates and final anisotropic
++refinement. The original fixed-U proposal path is the explicit control. A close
++final count competition can earn one corroborating start within the same budget.
++The guarded follow-up fits the original assignment first, requiring agreement
++of final rank and R1 before a challenger displaces it; metric tradeoffs remain
++reported alternatives. Poor fits near the input-only atom cap defer extra label
++exploration. The initial 18-versus-16 experiment with one lost control success
++is preserved separately, rather than replaced by only the improved result.
++Independent NumPy enumeration and complete synthetic checks accompany the
++existing value/derivative equations. Equations and the 35-case comparison live in
++`docs/solution-ambiguous-assignments.md`; the 65 holdout outcomes remain closed.
++The fresh guarded 35-case comparison recovers 19 labelled structures versus 16,
++with three gains and no lost success. Correct per-element counts rise 16 to 19,
++total counts stay 26, and strict structures rise 13 to 15. The typical paired
++wall ratio is 0.97029x (3.06% more time); summed solve wall time rises from
++64.586 to 73.759 seconds. Raw wall medians are 1.349/1.854 seconds. Added bounded
++competition performs 249 extra short fits, with final fits rising 96 to 125.
++Fourteen metric disagreements are recorded; no corroborating starts are needed.
++Full validation passes 2,199 Python and 414 Rust tests. All 140 predictions precede
++two audit barriers with matching source/native hashes. This is single-seed
++development evidence; the flag stays opt-in and holdout outcomes remain closed.
++
++An experimental `multiplicity_weighted_refinement` option evaluates final
++constrained fits on one representative per supplied symmetry/Friedel family,
++using actual row multiplicities to retain the expanded-data objective, scale,
++R1 and profiled derivatives. The original row/Jacobian/atom admissibility limits
++apply before reduction; unequal amplitudes within a family are rejected. P1
++phasing, independent-family isotropic screens and final ADP mode are unchanged.
++The option is false by default and changes floating-point reduction order.
++Independent weighted NumPy values, finite differences, gradient/normal comparisons
++and complete synthetic model/count checks accompany the implementation. Equations,
++benchmarks and the matched 35-case comparison are documented in
++`docs/solution-multiplicity-refinement.md`; the 65 holdout outcomes remain closed.
++The completed matched 35-case experiment retains the same 16 correct labelled
++structures, 26 total counts, 16 per-element counts and 13 strict structures;
++all inferred count vectors are unchanged. The median paired wall ratio is
++1.15807x (13.65% less time; 30 faster cases), with summed solve wall time
++81.998/63.808 seconds and final-refinement time 26.386/8.333 seconds. Both modes
++perform 96 final fits, with treatment row counts reduced from 627,106 supplied
++rows to 182,331 evaluated family rows. Numerical models differ in round-off.
++Full validation passes 2,168 Python and 413 Rust tests. All 140 predictions precede
++two audit barriers, with matching native/source hashes. This is single-seed
++development evidence; the option remains opt-in and holdout outcomes stay closed.
++
++An experimental `fused_phase_workspace` option caches exact Gaussian axis
++geometry and fuses real-density transfers at packed-Fourier boundaries. It
++requires reusable workspaces; packed real FFTs enable the transfer part. The
++same Gaussian support/exponential/accumulation and FFT normalization order are
++retained. A private geometry workspace adds at most 4.5 KiB, without a per-voxel
++cache or additional full-grid buffers. Existing candidates, observations,
++refinement, caps, seeds and scoring gates remain. Bitwise projection, complete
++trajectory, direct-transfer and synthetic model/count checks accompany the
++independent references. The option is false by default. The profile, initial
++geometry-only probe and published SHELXT lessons are recorded separately in
++`docs/solution-phase-workspace.md`; the 65 holdout outcomes remain unopened.
++The completed matched 35-case experiment retains the same 16 labelled
++structures, 26 total atom counts, 16 per-element counts and 13 strict structures.
++All 31 nonempty selected models match. The median paired wall ratio is 1.06094x
++(5.74% less time; 31 faster cases), with wall medians 1.874/1.803 seconds and
++summed wall time 90.347/85.260 seconds. Phase time falls 13.87% while final
++refinement remains around 28 seconds. Fixed-work phasing/small-search kernel
++medians improve 10.0%/2.5%. Full validation passes 2,137 Python and 411 Rust tests;
++all 140 predictions precede two reference barriers, with matching source/native
++hashes. This is one seed and one timing collection; the option stays opt-in.
++
++An experimental `real_fft` option targets the remaining dominant P1 Fourier
++cycles. It packs even/odd real samples into half-length z transforms, runs x/y
++FFTs on a half spectrum, restores the full reciprocal array before constraints,
++and computes the real return map through an explicit Hermitian projection. The
++original normalization, support classes, observations, f64 precision and all
++search/refinement gates remain. It requires batched FFTs, is false by default,
++and leaves initialization/Patterson/symmetry-recycling transforms unchanged.
++The additional array workspace stays below 18 MiB at the existing maximum grid;
++x/y plans are shared. Operation/axis order changes round-off, with independent
++NumPy, short-trajectory, deterministic repeated-run and complete-model checks.
++Fixed-work phasing and small-search benchmarks improve 28.2% and 8.5%; these are
++separate from the matched 35-case experiment. Fresh paired panels retain the
++same 16/35 labelled structures, 26 total counts, 16 per-element counts and 13
++strict structures, including identical recovery case sets. The typical paired
++wall ratio is 1.13421x (30 faster cases; 11.83% less time), and 1.16179x on the
++same 16 successful cases. Summed wall time falls 96.077 to 86.990 seconds, and
++P1 phase time 49.084 to 36.964 seconds (24.69%). Nonlinear trajectories change:
++starts fall 98 to 96, screening fits rise 425 to 433, final fits fall 98 to 96,
++and final-fit time rises 23.955 to 26.636 seconds. All original validation gates
++remain. Actual packed-real transform count is 99,596. The preceding profile and
++small copy-only prototype are retained separately. Details and results are in
++`docs/solution-real-fft.md`; the 65 holdout outcomes remain unopened.
++
++An experimental `cached_normal_refinement` option targets the final-fit linear
++solver after the batched-FFT work. It caches a bounded (at most 8 MiB), f64,
++diagonally preconditioned normal matrix per current Jacobian and checks each
++returned CG step with the original Jacobian operator. It requires iterative
++refinement, affects final requested-mode fits only, and preserves the original
++matrix-free fallback, damping, iteration/residual criteria, observations,
++analytic derivatives, physical constraints, line searches and resource caps.
++Fixed eight-lane reductions change round-off order, with independent normal-
++equation/residual and complete-fit checks. Screening remains unchanged. The
++flag is opt-in. A follow-up extends blocked normal formation to 12–31-parameter
++final models while retaining Cholesky, original damping norms and a checked
++original-calculation fallback. Smaller models retain the old path. The complete
++CG-only experiment/source patch is preserved separately. Fresh final paired
++35-case panels retain the same 16 labelled structures, 26 total counts, 16
++per-element counts and 13 strict structures. Final fitting falls 27.556 to 25.092
++seconds (8.94%), while summed solve wall time falls 101.487 to 99.297 seconds.
++The typical paired wall ratio is only 1.01876x (24 faster cases); among successful
++cases it is 1.00421x. Thus the whole-search gain is modest despite 20.5%/44.5%
++fixed-work small/large fit gains. All 425 screening and 98 final fits remain;
++1,743 checked cache steps return without a successful fallback. Independent
++numerical checks, 2,016 Python and 408 Rust tests pass. Protocol, validation and
++results are in `docs/solution-normal-cache.md`. The 65 holdout outcomes remain
++unopened.
++
++An experimental `batched_fft` execution option applies planned contiguous FFT
++batches after blocked small-slab line packing in P1 phasing and supplied-
++symmetry recycling. It restores each group to XYZ layout and preserves original
++f64 plans, z/y/x order, normalization, support and equations. A reusable eight-
++line buffer adds at most 16 KiB per FFT plan under the unchanged grid limits. The
++flag requires reusable workspaces and defaults to false. Direct FFT/NumPy,
++bitwise phase trajectories and synthetic complete models/counts accompany
++realistic Fourier/full-search benchmarks and a complete paired 35-case
++development experiment. The fresh paired panels retain the same 16/35 labelled
++structures, 26/35 total counts and 16/35 per-element counts (13 strict structures).
++Batching is faster on 30/35 cases: the typical paired wall ratio is 1.07339x,
++with wall medians 2.582/2.362 seconds and summed wall time 106.100/98.776 seconds.
++P1 phase time falls 12.73% while scored cycles rise 7.75%; fixed-work phasing and
++whole-search microbenchmarks fall 26.2% and 11.9%. Direct transforms and fixed-work
++trajectories match bitwise; deadline-limited selected models agree in 28/31
++nonempty cases, with no recovery-set changes. The initial slower whole-grid
++layout is preserved with its benchmark and reproducible patch. The flag stays
++opt-in. Details are in `docs/solution-batched-fft.md`; the 65 holdout outcomes
++remain unopened.
++
++An experimental `filtered_peak_search` path targets the dominant remaining P1
++phase work. It computes the unchanged RMS threshold before local-maxima tests,
++skips voxels that cannot survive any raised threshold, and caches periodic axis
++offsets in O(sum(axis lengths)) memory. All 26 original neighbor values, index-
++stable plateau ties, threshold equality, sub-grid interpolation, Gaussian support
++and fixed-cycle trajectories are preserved. The original scan remains the
++execution control; both paths have independent NumPy and bitwise native checks.
++The flag requires reusable workspaces and defaults to false. A source-hashed
++profile, realistic scan/Fourier/full-search benchmarks and a complete paired
++35-case development comparison are documented in
++`docs/solution-filtered-peak-search.md`. The 65 holdout outcomes stay unopened.
++The completed same-build interleaved comparison preserves the same 16/35 correct
++structures, 26 correct total counts, 16 correct element-count sets and 13 strict
++recoveries. Typical paired wall time now improves 1.18703x (about 15.8% less
++elapsed time), with 34/35 cases faster and all 35 native solver times lower.
++Raw wall medians are 3.418/2.543 seconds; cumulative time falls 15.2% and phase
++time 23.7%, despite 17.4% more scored cycles. Short quota completions rise 26-to-43
++under unchanged limits. The scan is 6.76x faster and fixed 64-cycle phase time is
++41.0% lower in the realistic benchmark. All 38 source hashes/native builds match,
++and all 140 predictions precede reference auditing. Fixed-work trajectories are
++bitwise equal; additional deadline-limited cycles can change chosen maps. The
++flag remains opt-in and the 65 holdout outcomes remain unopened.
++
++An additional experimental `isotropic_assignment_refinement` path gives the best
++two complete label models longer isotropic relaxation on the existing bounded
++independent-family observations,
++then tests two bounded single/swap alternatives, including near ties that can
++improve after geometry/U relaxation. At most four comparable isotropic candidates
++compete before one requested-mode final fit; a close runner-up remains available
++when that fit misses the existing target. Original count proposals, final ADP mode,
++ranking/gates and resource caps remain explicit. The flag requires phase-origin
++selection and chemical assignment and defaults to false. Independent enumeration,
++synthetic counts/geometry/final-mode checks and a complete paired 35-case
++development comparison are specified in `docs/solution-isotropic-assignments.md`.
++All predictions precede reference auditing; the 65 holdout outcomes remain closed.
++The first all-row prototype gains one structure/count set but is typically 11.6%
++slower, so its reports and reproducible patch are retained. The revised common-
++family comparison recovers 16/35 structures versus 15/35, retains every control
++success, and improves per-element counts 15-to-16 with total counts unchanged at
++26. Anisotropic fits fall 106-to-100 and their stage time 29.3%; added isotropic
++work leaves a 5.0% cumulative wall saving. Typical paired whole-solve time remains
++essentially unchanged (0.99591x control/new; raw medians 3.362/3.360 seconds).
++Both panels preserve final anisotropic fits on all original observations, and
++all 140 predictions precede reference auditing. The flag stays opt-in; the 65
++holdout outcomes remain unopened.
++
++An opt-in `specialized_isotropic_refinement` execution path hoists canonical
++isotropic tensor/cache dispatch outside the structure-factor loop and evaluates
++values and derivatives together with unchanged per-reflection reduction order.
++It retains the generic evaluator for anisotropic models, noncanonical tensor
++bases and unavailable or mutated geometry caches. The independent NumPy equations
++and centered derivatives remain authoritative cross-checks. Actual eligible-fit
++counts and requested flags are distinct. Profile evidence, rejected tiled/Gram
++prototypes and a paired complete 35-case development protocol are recorded in
++`docs/solution-isotropic-evaluation.md`. The matched run preserves all 19
++successful cases, all 35 model records and count vectors (26 correct total counts,
++19 per-element counts, 15 strict structures). Screening time falls 6.58%; summed
++wall time changes only 70.044-to-69.438 seconds (0.87% less), with a paired median
++ratio of 1.00961. The small overall gain remains host-sensitive despite 16.5%
++lower isolated evaluation cost. The flag stays opt-in; the holdout remains closed.
++
++An opt-in `streamed_peak_search` path targets P1 adaptive-map statistics with
++fixed eight-lane RMS accumulation and a conservative threshold interval.
++Ambiguous or non-normal thresholds recompute the original scalar statistic;
++streamed local maxima retain all possible scalar survivors and all 26-neighbor
++tie rules. Exact peak/phase decisions, current refinement, grid caps and search
++budgets remain explicit. The option requires filtered peak search and reports
++actual selections and scalar fallbacks. Equations, error bounds, independent
++checks, a set-aside FFT prototype and the complete development protocol are in
++`docs/solution-peak-statistics.md`. The matched run preserves all 19 structures,
++all 35 inferred count vectors/model records, 26 correct total counts, 19 correct
++per-element counts and 15 strict structures. P1 phase time falls 30.978-to-29.634
++seconds (4.34%) and summed wall time 69.511-to-67.610 seconds (2.74%), with a paired
++median ratio of 1.01977. The gain remains modest and host-sensitive. The execution
++flag stays false by default; the holdout remains closed.
++
++An opt-in `reuse_normal_matrices` path retains one checked CG normal linearization
++while rejected/backtracked steps change only damping. Accepting any model clears
++it before changing the evaluation; separate fits and candidates never share it.
++The original matrix-free residual guard, fallback, scaling, line search, input
++caps and stopping rules remain intact. It requires iterative refinement and at
++least one normal-cache control, and reports actual preparations/reuses separately
++from requested execution. The retained bounded matrix can add up to 8 MiB plus
++small vectors during backtracking. Equations, exactness/lifetime tests and the
++complete development protocol are in `docs/solution-normal-reuse.md`. The matched
++run retains all 19 structures, all 35 model records/count vectors, 26 correct
++total counts, 19 per-element counts and 15 strict structures. Reuse avoids 882
++of 6,215 eligible preparations. Final refinement time falls 14.00%, screening
++3.61%, and summed wall time 69.783-to-67.437 seconds (3.36% less). The paired
++median ratio is only 1.00539; typical-case time remains almost unchanged. The
++option stays false by default and the holdout remains closed.
++
++An opt-in `short_phase_starts` experiment targets typical-case P1 work after
++matrix reuse showed no opportunity in 27/35 cases. It requires work-sliced phasing
++and allocates quarter work with a 32-cycle floor to the first half of starts,
++retaining full-length later starts, original wall/resource limits and every
++model-validation gate. Its equations are unchanged; selected maps can change.
++Independent integer references, exact phase-prefix checks, a set-aside FFT
++prototype and the complete development protocol are recorded in
++`docs/solution-short-phase-starts.md`. The paired development comparison retains
++the same 19 successful structures, 26 correct total counts, 19 correct element
++counts and 15 strict structures. Typical paired time falls 9.39%, summed wall
++time 64.248-to-58.278 seconds (9.29%), and P1 time 19.82%, with 32/35 cases faster.
++One failed case changes its incorrect C/N count assignment; no successful count
++or structure case is lost. The option remains false by default and the holdout
++remains closed.
++
++An opt-in `blocked_normal_matrices` experiment forms eligible reused normal
++matrices in 32-by-32 SIMD tiles through pinned, single-threaded ndarray. It keeps
++the original damped equations and original-Jacobian residual guard, retries
++legacy Gram formation on failure, and leaves the powder core unchanged. Safe
++borrowed views avoid a second full matrix; backend packing storage is explicit.
++Independent NumPy equations, partial-tile/guard tests, full physical fits and the
++balanced 35-development-case protocol are documented in
++`docs/solution-blocked-normal-matrices.md`. The complete paired comparison retains
++all 19 structures, every one of the 35 count vectors, 26 correct total counts,
++19 correct element counts and 15 strict structures. Summed wall time falls
++61.649-to-58.625 seconds (4.90% less), typical paired time 2.49%, final refinement
++20.77% and screening 6.43%. No blocked-system fallback is needed in completed
++fits; 29/35 cases are faster. The option remains false by default and the holdout
++remains closed.
++
++Two opt-in stopping controls test high-quality phase plateaus on early starts
++while retaining full-length later starts, and repeated negligible accepted
++improvements in short isotropic assignment screens. Final refinement convergence
++and physical equations remain unchanged. Independent references, exact work
++provenance, solver-only SHELXT listing comparisons and a balanced four-mode
++35-development-case protocol are documented in `docs/solution-search-stopping.md`.
++The complete four-mode comparison retains every previous successful case set
++and all 35 atom-count vectors. Combined stopping reduces summed library solve
++time 52.315-to-49.477 seconds (5.42%), summed wall time 4.76%, and typical paired
++solver time 4.94%. It records 22 plateau handoffs and 367 converged assignment
++screens. All 19 structures, 26 correct total counts, 19 element counts and 15
++strict structures remain. The 34 completed SHELXT pairs list 108 trials and
++12,106 iterations versus 35,621 completed PhaseSmith cycles after this change;
++iteration definitions and refinement endpoints differ. Both controls remain
++false by default and the holdout remains closed. The collector's final round-
++count assertion was corrected after collection with original snapshots retained;
++all 280 predictions and four audit barriers are verified.
++
++Experimental element-only solving now accepts an explicit `workers` budget
++(default one, 1..64 capped to available logical CPUs). One solve-owned reusable
++pool partitions fused reflection value/derivative evaluation; serial reductions,
++seeded phase starts, candidate ordering and stopping stay ordered. Numerical
++state and pools do not escape the call. This reuses `phasesmith-execution` without
++installing a global pool or changing the powder core. Extra tile storage is one
++bounded Jacobian rather than one full model per worker. Independent equations,
++bitwise worker-count checks, lifetime tests and the 1/2/4/8-worker latency and
++cold independent-process throughput protocol are in
++`docs/solution-bounded-workers.md`. Concurrent callers must divide an application
++budget across solves; throughput experiments use one inner worker per outer job.
++The complete 35-development-case 1/2/4/8 comparison retains the exact prior 19
++structures, all 35 inferred count vectors, 26 correct total counts, 19 element
++counts and 15 strict structures in every latency and batch panel. Four internal
++workers reduce summed library solve time 38.269-to-34.412 seconds (10.08% less).
++Eight independent single-worker jobs reduce cold batch elapsed time from 46.546
++to 9.967 seconds (4.670x throughput); SHELXT's corresponding batch takes 17.396
++seconds, including one timeout. SHELXT's multi-threaded single solves scale more
++strongly but recover 13/14/13/10 structures at 1/2/4/8 threads, so timing and
++recovery must be read together. All 560 predictions precede reference grading.
++The worker default remains one and the holdout remains closed.
++
++A further opt-in cycle-effort experiment separates long intermediate-start
++plateaus from agreement between independent complete models. The latter checks
++labelled full-cell geometry, fit/ambiguity gates and actual random-start identity
++instead of confusing origin lineages with independent solutions. It reports a
++separate consensus termination without changing whether the requested R1 target
++was met. The final full-length fallback remains available when acceptance fails.
++Independent geometric references, start-provenance tests and a four-mode
++35-development-case protocol are recorded in `docs/solution-cycle-effort.md`.
++All four development variants retain every prior success set and all 35 atom-
++count vectors. Combined policies reduce completed cycles from 38,120 to 23,242 (39.03%),
++summed solve time from 46.317 to 35.598 seconds (23.14%), and summed wall time by 20.36%.
++The policies fire in 14 cases; typical paired solver time improves only 1.00%.
++Nine consensus stops include three already incorrect interpretations, so the
++new termination is not a correctness certificate and does not mark an unmet R1
++target as met. All 19 structures, 26 correct total counts, 19 element counts and 15
++strict structures remain. Both controls remain false by default and the holdout
++remains closed.
+
+ Public behavior is typed and documented. Invalid shapes, non-finite values,
+ unsorted grids, non-positive widths, and fractions outside `[0, 1]` fail with a
+@@ -2331,3 +3129,74 @@
+ FWHM and is not treated as physical superiority. Residual and parameter-
+ plausibility evidence remain separate. No production numerical behavior or
+ GSAS-II runtime boundary changes.
++
++An opt-in `joint_assignment_refinement` experiment adds bounded post-search
++categorical repair using the fitted Cartesian tensors, bounded scalar-shift
++optimization and neighbor-derived displacement seeds, whole-orbit vacancies and
++up to two difference-map orbit locations. A width-four discrete beam and at most
++three two-fit rounds share a two-second safeguard and the original deadline.
++Physical tensors seed the existing invariant log-SPD refiner; only candidates
++with non-worse final rank/R1 and at least one-percent lower amplitude objective
++can replace the retained original. Counts remain inferred and original atom/data
++caps stay unchanged. Equations, independent references and the development-only
++protocol are documented in `docs/solution-joint-assignment.md`; holdout remains
++closed and this feature remains off by default.
++The complete matched all-35 comparison retains the exact previous 19 structures,
++26 formerly correct total-count cases, 19 per-element-count cases and 15 strict
++structures. Correct total counts increase to 27 through a missing four-atom orbit;
++three incorrect element-count vectors move closer to their references. Exact
++per-element and full labelled-structure recovery remain 19. Across 31 returned
++models, full-cell count-vector L1 error falls 210-to-182. The new stage adds 5.193
++seconds, 18 full fits and five accepted rounds; summed library solve time rises
++41.741-to-46.620 seconds (11.69%), typical paired time 4.25%. All 140 predictions
++precede development grading; seven above-cap references remain in the denominator.
++The option stays experimental/off by default, and the 65 holdout cases stay closed.
++
++An execution-only `cached_repair_evaluation` option reuses bounded immutable
++categorical columns, two scalar reflection fields, line-search buffers and
++coherence-neighbor preparation inside joint assignment repair. Original equations,
++reduction order, proposals, work budgets, physical fits and acceptance remain.
++The column cache caps payload at 4 MiB and falls back to direct multiplication;
++reflection buffers add at most 208 KiB. Caches expire before full physical fits,
++with no global numerical state or additional threads. Independent equations,
++finite differences, bitwise original/fast comparisons and a complete matched
++35-development-case protocol are described in `docs/solution-repair-evaluation.md`.
++The option requires joint assignment repair, remains off by default, and the
++65 holdout cases remain closed.
++The matched all-35 three-mode collection retains the exact 19 structures,
++27 correct total counts, 19 correct per-element vectors and 15 strict structures;
++all 35 count vectors and all logical repair work match the preceding repair.
++Repair stage time falls 4.477-to-3.466 seconds (22.59%); summed library time falls
++39.605-to-38.566 seconds (2.62%) and process time 46.880-to-45.639 seconds (2.65%).
++Median paired solver time improves only 0.26%. Relative to the same-collection
++35.118-second no-repair reference, added solver overhead falls 12.78%-to-9.82%.
++The isolated categorical kernel improves 35.125-to-17.479 ms (2.01 times).
++All 210 predictions precede grading; seven above-cap references and four no-model
++cases stay in the denominator. Experimental defaults and the closed holdout stay
++unchanged. Provenance is in the `structure-solution-repair-evaluation-*` reports.
++
++The user has now authorized a single frozen evaluation on the 65 holdout cases.
++The numerical implementation and release extension remain fixed at `870d61a`;
++the precommitted protocol pins the accepted cached-repair development controls,
++one worker per program, original inputs/caps/thresholds and 13/15-second budgets.
++All 130 predictions precede grading; source/binary hashes are checked throughout.
++Algorithm attribution cites the published Sheldrick (2015, 1990) methods and
++documents independent PhaseSmith choices. SHELXT is solely an external test
++comparator. See `docs/solution-holdout-freeze.md` and the immutable freeze record.
++Once evaluated, these 65 cases are exposed validation evidence and must not be
++described as an untouched test of future tuning.
++
++The frozen holdout evaluation is complete: all 130 predictions preceded grading,
++with zero numerical tuning or search reruns. All 402 pinned source files and the
++release binary remain unchanged. On all 65 cases, PhaseSmith recovers 35 full
++structures, 40 exact total counts, 36 per-element vectors and 34 strict structures;
++the external test comparator recovers 18, 51, 22 and 11 respectively. Median wall
++times are 0.683/0.782 seconds and summed wall times 83.717/93.209 seconds; the
++median paired PhaseSmith/comparator ratio is 0.9721. There are zero/two hard
++timeouts. All 24 above-cap references remain in the primary denominator; among
++the 41 within-cap cases, PhaseSmith recovers 35 structures and 40 total counts.
++There are no audit errors or post-reference model changes. Source/binary/input
++hashes, fixed worker controls and comparator thread logs are verified. Results,
++limitations, attribution to the published papers and immutable provenance are in
++`docs/solution-holdout-results.md`. The 65-case holdout is now exposed validation
++evidence, with no claim that it remains untouched for future algorithm changes.
+--- a/THIRD_PARTY_NOTICES.md
++++ b/THIRD_PARTY_NOTICES.md
+@@ -116,3 +116,30 @@
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
++
++## RustFFT 6.4.1 (experimental structure solution)
++
++The opt-in `phasesmith-solution` crate uses RustFFT 6.4.1, licensed under
++`MIT OR Apache-2.0`; PhaseSmith uses the MIT option. Its FFT implementation
++is a dependency, separate from the independently implemented crystallographic
++phasing equations. Upstream: https://github.com/ejmahler/RustFFT
++
++Copyright (c) 2015 The RustFFT Developers
++
++Permission is hereby granted, free of charge, to any person obtaining a copy
++of this software and associated documentation files (the "Software"), to deal
++in the Software without restriction, including without limitation the rights
++to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++copies of the Software, and to permit persons to whom the Software is
++furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in all
++copies or substantial portions of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++SOFTWARE.
+--- a/crates/phasesmith-py/Cargo.toml
++++ b/crates/phasesmith-py/Cargo.toml
+@@ -16,6 +16,7 @@
+ crate-type = ["cdylib"]
+
+ [dependencies]
++phasesmith-solution = { version = "0.7.0", path = "../phasesmith-solution", optional = true }
+ phasesmith-spots = { version = "0.7.0", path = "../phasesmith-spots", optional = true }
+ phasesmith-row-search = { version = "0.7.0", path = "../phasesmith-row-search", optional = true }
+ serde_json = { version = "1", optional = true }
+@@ -34,4 +35,5 @@
+ workspace = true
+
+ [features]
++experimental-solution = ["dep:phasesmith-solution"]
+ experimental-spots = ["dep:phasesmith-spots", "dep:phasesmith-row-search", "dep:serde_json"]
+--- a/crates/phasesmith-py/src/lib.rs
++++ b/crates/phasesmith-py/src/lib.rs
+@@ -75,6 +75,8 @@
+ mod rows;
+ #[cfg(feature = "experimental-spots")]
+ mod scan_scaling;
++#[cfg(feature = "experimental-solution")]
++mod solution;
+ #[cfg(feature = "experimental-spots")]
+ mod spots;
+ mod tof_lebail;
+@@ -4275,6 +4277,8 @@
+ #[pymodule]
+ #[allow(clippy::too_many_lines)] // Explicit registration of the extension's independent modules.
+ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
++    #[cfg(feature = "experimental-solution")]
++    solution::register(module)?;
+     #[cfg(feature = "experimental-spots")]
+     spots::register(module)?;
+     #[cfg(feature = "experimental-spots")]
