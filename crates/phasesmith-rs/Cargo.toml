@@ -31,8 +31,16 @@ workspace = true
 
 [features]
 default = ["single-crystal"]
-single-crystal = ["spots", "solution", "row-search"]
+single-crystal = ["spots", "solution", "row-search", "phasesmith-workflows/single-crystal"]
 hdf5 = ["dep:phasesmith-hdf5"]
 spots = ["dep:phasesmith-spots"]
 solution = ["dep:phasesmith-solution"]
 row-search = ["dep:phasesmith-row-search"]
+
+[dev-dependencies]
+serde_json = "1"
+sha2 = "0.10"
+
+[[example]]
+name = "single_crystal_workflow"
+required-features = ["single-crystal", "hdf5"]

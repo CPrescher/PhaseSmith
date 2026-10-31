@@ -17,7 +17,13 @@ The single-crystal endpoint is **structure search and candidate assessment**.
 Positional detector/crystal fitting and internal coordinate/ADP polishing are
 separate operations; no standalone single-crystal structure-refinement workflow
 is promised. Full original-frame orchestration and some design calculations
-still use Python/NumPy. A complete Rust-only workflow driver remains future work.
+still use Python/NumPy. A typed original-frame coordinator is being implemented in
+`phasesmith-workflows::single_crystal`, behind its optional `single-crystal`
+feature and included by the facade single-crystal capability. It owns stage
+coordination, independent family splits and native design construction; file I/O
+stays in the HDF5/persistence adapters. The first native example uses the frozen
+primitive-orthorhombic rotation protocol. Its v26 replay must quantify matrix
+roundoff against the existing Python workflow before equivalence is claimed.
 
 ## Ownership and dependency direction
 
