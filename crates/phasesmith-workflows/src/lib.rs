@@ -253,3 +253,7 @@ pub use tof_pawley::{
     TofPawleyProjectState, TofPawleyResult, evaluate_tof_pawley, refine_tof_pawley,
     refine_tof_pawley_with_runtime, tof_pawley_parameters,
 };
+
+/// Typed original-frame to single-crystal search coordination.
+#[cfg(feature = "single-crystal")]
+pub mod single_crystal;

@@ -835,6 +835,8 @@ dependencies = [
  "phasesmith-solution",
  "phasesmith-spots",
  "phasesmith-workflows",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]
@@ -995,6 +997,9 @@ dependencies = [
  "phasesmith-execution",
  "phasesmith-io",
  "phasesmith-model",
+ "phasesmith-solution",
+ "phasesmith-spots",
+ "sha2",
 ]
 
 [[package]]
