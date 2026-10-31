@@ -12,6 +12,21 @@ not part of the numerical library.
 
 ## Current implementation status
 
+The 31 October single-crystal promotion audit proposes a supported
+`phasesmith.single_crystal` namespace and an external-data MgSiO3 enstatite
+workflow ending in PhaseSmith structure search and candidate assessment.
+Standalone single-crystal structure refinement is not implemented; internal
+candidate polishing and optional external SHELXL diagnostics remain distinct.
+The eight source files total 470,052,794 bytes and stay outside Git behind a
+checksum manifest and local verifier. Current search capacity is a concrete
+blocker: 10,694 expanded measured rows limit the existing dense search to 36
+full-cell atoms, while the reference contains 80. Source HKL instructions must
+also be separated explicitly from its reflection block. Public API/build
+promotion and the complete raw-to-search gate remain pending; production
+equations, defaults, schemas and feature gates are unchanged. See
+`docs/single-crystal-promotion.md`, `docs/single-crystal-api-proposal.md` and
+`docs/enstatite-workflow.md`.
+
 An opt-in `experimental-solution` module accepts externally integrated,
 corrected HKLF 4 observations, a cell, known symmetry, and full-cell non-H
 composition. A separate Rust crate owns multi-start charge flipping, periodic

@@ -1,0 +1,141 @@
+{
+  "schema": "phasesmith.local-single-crystal-data.v1",
+  "dataset_id": "enstatite-mgsio3-id11-2024",
+  "title": "MgSiO3 enstatite calibration crystal in a diamond-anvil cell",
+  "purpose": "exposed development and regression data; complete workflow validation pending",
+  "redistribution": {
+    "status": "not_established",
+    "network_urls": [],
+    "policy": "Keep raw frames, source/reference files and derived observations external; no automatic download or upload."
+  },
+  "files": [
+    {
+      "path": "CeO2_20240620_1849.edf",
+      "role": "calibrant_image",
+      "size_bytes": 17884576,
+      "sha256": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393"
+    },
+    {
+      "path": "CeO2_20240620_1849_dioptas.poni",
+      "role": "initial_geometry",
+      "size_bytes": 319,
+      "sha256": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a"
+    },
+    {
+      "path": "dom1_v9.cif",
+      "role": "reference_structure",
+      "size_bytes": 190103,
+      "sha256": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9"
+    },
+    {
+      "path": "dom1_v9.hkl",
+      "role": "external_integrated_observations",
+      "size_bytes": 162125,
+      "sha256": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce"
+    },
+    {
+      "path": "eiger_0000.h5",
+      "role": "raw_frames",
+      "size_bytes": 450571787,
+      "sha256": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c"
+    },
+    {
+      "path": "frame.par",
+      "role": "vendor_geometry_reference",
+      "size_bytes": 14980,
+      "sha256": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e"
+    },
+    {
+      "path": "info.txt",
+      "role": "acquisition_notes",
+      "size_bytes": 318,
+      "sha256": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc"
+    },
+    {
+      "path": "peak_search_before_DAFi.tabbin",
+      "role": "external_peak_search_reference",
+      "size_bytes": 1228586,
+      "sha256": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+    }
+  ],
+  "total_size_bytes": 470052794,
+  "raw_array": {
+    "dataset": "/entry_0000/ESRF-ID11/eiger/data",
+    "shape": [
+      144,
+      2162,
+      2068
+    ],
+    "dtype": "uint32",
+    "historical_used_frame_indices_inclusive": [
+      2,
+      143
+    ],
+    "historical_orientation": "vertical flip; preserve explicit coordinate convention"
+  },
+  "search_inputs": {
+    "cell_angstrom_degrees": [
+      8.8101,
+      5.1824,
+      18.2288,
+      90,
+      90,
+      90
+    ],
+    "space_group_number": 61,
+    "space_group_symbol": "P b c a",
+    "wavelength_angstrom": 0.2846,
+    "elements": [
+      "Mg",
+      "Si",
+      "O"
+    ],
+    "provenance": "Cell, symmetry and wavelength transcribed from supplied source CIF; elements from declared sample. These are supplied priors, not blind indexing results. Coordinates, ADPs and atom counts are forbidden search inputs."
+  },
+  "source_hkl_conversion": {
+    "policy": "Use reflection block through the first exact zero-index terminator; reject malformed/nonzero terminator intensity or sigma; archive trailer separately without parsing it as solver input.",
+    "reason": "The supplied HKL appends SHELX instructions, including atomic model information, after the terminator. The strict public reader correctly rejects the unsplit file."
+  },
+  "derived_observations": {
+    "name": "ours-own-sigma-observations.npz",
+    "sha256": "f65f9d8c647a07a31b8d148b699413a6c97d6496f03435ac1ab9e172e1a7cac8",
+    "size_bytes": 138789,
+    "origin": "2026-10-29 enstatite-from-raw-sensor-refit; previously calibrated and assigned raw-count rerun",
+    "array_fields": [
+      "hkl",
+      "intensity",
+      "sigma"
+    ],
+    "qualification": "An existing PhaseSmith reduction under fixed historical geometry/assignments; not a fresh end-to-end run."
+  },
+  "historical_evidence": [
+    {
+      "path": "analysis-2026-10-29/enstatite-from-raw-sensor-refit/protocol.json",
+      "sha256": "3b3ac63f3373ba43866b5e41b296821bef3dbc1e0b62ac14b2d366a66acf589d"
+    },
+    {
+      "path": "analysis-2026-10-29/enstatite-from-raw-sensor-refit/prepare.json",
+      "sha256": "84a97a82c686d94806b24834f93b07e25e25101e1abd8a21a7361cd060769839"
+    },
+    {
+      "path": "analysis-2026-10-29/enstatite-from-raw-sensor-refit/comparison.json",
+      "sha256": "7c97fc22abc9dca14f26d3d87c4cb543f2fa14bbb1dc6f43a09003402a53895d"
+    },
+    {
+      "path": "analysis-2026-10-29/enstatite-from-raw-sensor-refit/validation-summary.json",
+      "sha256": "fc18c53a569adf331f4ba89f036c07fd4a54de06439a84e17a307ac23a7aaf0d"
+    }
+  ],
+  "assessment": {
+    "full_raw_to_search_workflow": "not_yet_run",
+    "standalone_single_crystal_refinement": "not_implemented",
+    "reference_full_cell_non_h_atoms": 80,
+    "reference_atom_count_use": "post-search grading only; never used to set maximum_atoms",
+    "capacity_preflight": {
+      "allowed_symmetry_expanded_measured_rows": 10694,
+      "existing_dense_element_limit": 2000000,
+      "input_only_maximum_atoms": 36,
+      "scope": "Both source reflection block and archived PhaseSmith-reduced observations; unchanged corpus resource_atom_cap policy."
+    }
+  }
+}

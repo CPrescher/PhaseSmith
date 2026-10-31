@@ -1,0 +1,1664 @@
+{
+  "schema": "phasesmith.single-crystal-promotion-audit.v1",
+  "audit_date": "2026-10-31",
+  "baseline_commit": "54784c57b07364521bb734cc02389589853cc8a5",
+  "baseline_branch": "codex/hkl-structure-solution",
+  "artifact_branch": "codex/single-crystal-promotion-audit",
+  "scope": "Promotion review and external-data search probe; no production numerical/API/default changes",
+  "modules": [
+    {
+      "path": "python/phasesmith/experimental/cell_comparison.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "CellComparisonOptions",
+          "kind": "class"
+        },
+        {
+          "name": "PrimitiveHypothesis",
+          "kind": "class"
+        },
+        {
+          "name": "SettingFit",
+          "kind": "class"
+        },
+        {
+          "name": "CellRank",
+          "kind": "class"
+        },
+        {
+          "name": "CellComparison",
+          "kind": "class"
+        },
+        {
+          "name": "reciprocal_hnfs",
+          "kind": "function"
+        },
+        {
+          "name": "compare_cells",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/cell_metrics.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "ReducedCell",
+          "kind": "class"
+        },
+        {
+          "name": "reduce_cell",
+          "kind": "function"
+        },
+        {
+          "name": "metric_directions",
+          "kind": "function"
+        },
+        {
+          "name": "project_metric",
+          "kind": "function"
+        },
+        {
+          "name": "metric_chain",
+          "kind": "function"
+        },
+        {
+          "name": "metric_step",
+          "kind": "function"
+        },
+        {
+          "name": "integer_det",
+          "kind": "function"
+        },
+        {
+          "name": "centring",
+          "kind": "function"
+        },
+        {
+          "name": "BravaisSetting",
+          "kind": "class"
+        },
+        {
+          "name": "find_bravais_settings",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/cell_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "selling_reference",
+          "kind": "function"
+        },
+        {
+          "name": "metric_basis_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/discovery_cache.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "scope",
+          "kind": "function"
+        },
+        {
+          "name": "fourier",
+          "kind": "function"
+        },
+        {
+          "name": "statistics",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/empirical_scaling.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "ScalingDesign",
+          "kind": "class"
+        },
+        {
+          "name": "family_center",
+          "kind": "function"
+        },
+        {
+          "name": "ScalingOptions",
+          "kind": "class"
+        },
+        {
+          "name": "ScalingResult",
+          "kind": "class"
+        },
+        {
+          "name": "paired_mask",
+          "kind": "function"
+        },
+        {
+          "name": "fit_empirical_scale",
+          "kind": "function"
+        },
+        {
+          "name": "panel_mesh",
+          "kind": "function"
+        },
+        {
+          "name": "ray_harmonics",
+          "kind": "function"
+        },
+        {
+          "name": "score_equivalents",
+          "kind": "function"
+        },
+        {
+          "name": "select_common_strength",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/fitting_tasks.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "active",
+          "kind": "function"
+        },
+        {
+          "name": "batches",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/geometry_refinement.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "rotation",
+          "kind": "function"
+        },
+        {
+          "name": "reference_basis",
+          "kind": "function"
+        },
+        {
+          "name": "predict_with_detector",
+          "kind": "function"
+        },
+        {
+          "name": "GeometryOptions",
+          "kind": "class"
+        },
+        {
+          "name": "GeometryCalibration",
+          "kind": "class"
+        },
+        {
+          "name": "parameter_state",
+          "kind": "function"
+        },
+        {
+          "name": "refine_geometry",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/geometry_refinement_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "detector_partials",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/grains.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "GrainSearchOptions",
+          "kind": "class"
+        },
+        {
+          "name": "integer_lattice_basis",
+          "kind": "function"
+        },
+        {
+          "name": "find_grains",
+          "kind": "function"
+        },
+        {
+          "name": "ensemble_search_options",
+          "kind": "function"
+        },
+        {
+          "name": "GrainConditioningOptions",
+          "kind": "class"
+        },
+        {
+          "name": "GrainAliasOptions",
+          "kind": "class"
+        },
+        {
+          "name": "prime_congruence_bases",
+          "kind": "function"
+        },
+        {
+          "name": "GrainStabilityOptions",
+          "kind": "class"
+        },
+        {
+          "name": "GrainProposalRefinementOptions",
+          "kind": "class"
+        },
+        {
+          "name": "find_grains_ensemble",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/grains_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "fourier_newton",
+          "kind": "function"
+        },
+        {
+          "name": "fourier_field",
+          "kind": "function"
+        },
+        {
+          "name": "assign",
+          "kind": "function"
+        },
+        {
+          "name": "ensemble_evidence",
+          "kind": "function"
+        },
+        {
+          "name": "modular_kernel_residues",
+          "kind": "function"
+        },
+        {
+          "name": "observation_normal",
+          "kind": "function"
+        },
+        {
+          "name": "candidate_counts",
+          "kind": "function"
+        },
+        {
+          "name": "phase_triplets",
+          "kind": "function"
+        },
+        {
+          "name": "physical_fields",
+          "kind": "function"
+        },
+        {
+          "name": "fitting_selection",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/indexing.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "IndexingOptions",
+          "kind": "class"
+        },
+        {
+          "name": "LatticeCandidate",
+          "kind": "class"
+        },
+        {
+          "name": "IndexingResult",
+          "kind": "class"
+        },
+        {
+          "name": "cell_parameters",
+          "kind": "function"
+        },
+        {
+          "name": "reduce_basis",
+          "kind": "function"
+        },
+        {
+          "name": "find_lattices",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/integration.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "IntegrationFlag",
+          "kind": "class"
+        },
+        {
+          "name": "IntegrationOptions",
+          "kind": "class"
+        },
+        {
+          "name": "ReflectionTable",
+          "kind": "class"
+        },
+        {
+          "name": "integrate_series",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/integration_quality.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "QualityIssue",
+          "kind": "class"
+        },
+        {
+          "name": "issue_actions",
+          "kind": "function"
+        },
+        {
+          "name": "QualityOptions",
+          "kind": "class"
+        },
+        {
+          "name": "IntegrationQuality",
+          "kind": "class"
+        },
+        {
+          "name": "assess_integration",
+          "kind": "function"
+        },
+        {
+          "name": "SupportAssessment",
+          "kind": "class"
+        },
+        {
+          "name": "assess_support",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/integration_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "measure_frame",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/intensity_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "slab_response",
+          "kind": "function"
+        },
+        {
+          "name": "empirical_model",
+          "kind": "function"
+        },
+        {
+          "name": "family_center",
+          "kind": "function"
+        },
+        {
+          "name": "profile_precision",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/intensity_response.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "SlabResponse",
+          "kind": "class"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/intensity_uncertainty.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "EquivalentError",
+          "kind": "class"
+        },
+        {
+          "name": "estimate_equivalent_error",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/local_background_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "measure",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/omega_background.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "ArPLSParameters",
+          "kind": "class"
+        },
+        {
+          "name": "available",
+          "kind": "function"
+        },
+        {
+          "name": "native_solver_available",
+          "kind": "function"
+        },
+        {
+          "name": "arpls_rows",
+          "kind": "function"
+        },
+        {
+          "name": "arpls_masked_rows",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/omega_background_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "scipy_baselines",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/orthorhombic.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "OrthorhombicSetting",
+          "kind": "class"
+        },
+        {
+          "name": "find_orthorhombic_settings",
+          "kind": "function"
+        },
+        {
+          "name": "project_orthorhombic",
+          "kind": "function"
+        },
+        {
+          "name": "orthorhombic_chain",
+          "kind": "function"
+        },
+        {
+          "name": "orthorhombic_step",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/ownership.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "GrainOwnershipOptions",
+          "kind": "class"
+        },
+        {
+          "name": "reciprocal_with_jacobian",
+          "kind": "function"
+        },
+        {
+          "name": "observation_charts",
+          "kind": "function"
+        },
+        {
+          "name": "assign_observed",
+          "kind": "function"
+        },
+        {
+          "name": "refine_ownership_pool",
+          "kind": "function"
+        },
+        {
+          "name": "polish_ownership_aliases",
+          "kind": "function"
+        },
+        {
+          "name": "select_and_refine_ownership",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/prediction.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "Predictions",
+          "kind": "class"
+        },
+        {
+          "name": "map_predictions",
+          "kind": "function"
+        },
+        {
+          "name": "predict_spots",
+          "kind": "function"
+        },
+        {
+          "name": "RefinementOptions",
+          "kind": "class"
+        },
+        {
+          "name": "CrystalRefinement",
+          "kind": "class"
+        },
+        {
+          "name": "orientation_matrix",
+          "kind": "function"
+        },
+        {
+          "name": "refine_crystal",
+          "kind": "function"
+        },
+        {
+          "name": "CrystalProposalFit",
+          "kind": "class"
+        },
+        {
+          "name": "fit_crystal_proposal",
+          "kind": "function"
+        },
+        {
+          "name": "ScanPredictions",
+          "kind": "class"
+        },
+        {
+          "name": "predict_scan",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/prediction_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "predict",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/profile_refinement.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "ShapeFitOptions",
+          "kind": "class"
+        },
+        {
+          "name": "profile_centroid_offsets",
+          "kind": "function"
+        },
+        {
+          "name": "RefinedProfiles",
+          "kind": "class"
+        },
+        {
+          "name": "refine_profiles",
+          "kind": "function"
+        },
+        {
+          "name": "calibrate_sensor_offsets",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/profiles.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "ProfileFlag",
+          "kind": "class"
+        },
+        {
+          "name": "ProfileOptions",
+          "kind": "class"
+        },
+        {
+          "name": "ProfileObservations",
+          "kind": "class"
+        },
+        {
+          "name": "prepare_profiles",
+          "kind": "function"
+        },
+        {
+          "name": "ProfileModel",
+          "kind": "class"
+        },
+        {
+          "name": "learn_profiles",
+          "kind": "function"
+        },
+        {
+          "name": "ProfileIntegration",
+          "kind": "class"
+        },
+        {
+          "name": "fit_profiles",
+          "kind": "function"
+        },
+        {
+          "name": "evaluate_profile",
+          "kind": "function"
+        },
+        {
+          "name": "evaluate_profile_shape",
+          "kind": "function"
+        },
+        {
+          "name": "rotation_factors",
+          "kind": "function"
+        },
+        {
+          "name": "scattering_transforms",
+          "kind": "function"
+        },
+        {
+          "name": "LearnedProfileVariations",
+          "kind": "class"
+        },
+        {
+          "name": "learn_profile_variations",
+          "kind": "function"
+        },
+        {
+          "name": "fit_learned_profiles",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/profiles_affine_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "cross",
+          "kind": "function"
+        },
+        {
+          "name": "intersection_area",
+          "kind": "function"
+        },
+        {
+          "name": "evaluate",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/profiles_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "evaluate",
+          "kind": "function"
+        },
+        {
+          "name": "sample_bounds",
+          "kind": "function"
+        },
+        {
+          "name": "fit",
+          "kind": "function"
+        },
+        {
+          "name": "learn_one",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/profiles_variation_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "fit",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/reciprocal.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "triples",
+          "kind": "function"
+        },
+        {
+          "name": "PixelCoordinateMap",
+          "kind": "class"
+        },
+        {
+          "name": "mapped_xy",
+          "kind": "function"
+        },
+        {
+          "name": "PanelGeometry",
+          "kind": "class"
+        },
+        {
+          "name": "reciprocal_vectors",
+          "kind": "function"
+        },
+        {
+          "name": "ReciprocalPositions",
+          "kind": "class"
+        },
+        {
+          "name": "correct_positions",
+          "kind": "function"
+        },
+        {
+          "name": "lattice_fourier",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/reciprocal_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "reciprocal_vectors",
+          "kind": "function"
+        },
+        {
+          "name": "lattice_fourier",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/recovery.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "GrainRecoveryOptions",
+          "kind": "class"
+        },
+        {
+          "name": "paired_proposals",
+          "kind": "function"
+        },
+        {
+          "name": "coherent_proposals",
+          "kind": "function"
+        },
+        {
+          "name": "fit_training_proposals",
+          "kind": "function"
+        },
+        {
+          "name": "finish_training_pool",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/reduction.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "ReductionConfig",
+          "kind": "class"
+        },
+        {
+          "name": "implementation_identity",
+          "kind": "function"
+        },
+        {
+          "name": "profile_geometry",
+          "kind": "function"
+        },
+        {
+          "name": "physical_factors",
+          "kind": "function"
+        },
+        {
+          "name": "ReductionResult",
+          "kind": "class"
+        },
+        {
+          "name": "reduce_observations",
+          "kind": "function"
+        },
+        {
+          "name": "empirical_design",
+          "kind": "function"
+        },
+        {
+          "name": "main",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/reduction_cache.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "cache_key",
+          "kind": "function"
+        },
+        {
+          "name": "ReductionCache",
+          "kind": "class"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/reduction_io.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "save_case",
+          "kind": "function"
+        },
+        {
+          "name": "load_case",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/retention.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "GrainPoolMergeOptions",
+          "kind": "class"
+        },
+        {
+          "name": "TrainingPoolMerge",
+          "kind": "class"
+        },
+        {
+          "name": "merge_fitted_training_pools",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/rotation.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "RotationOptions",
+          "kind": "class"
+        },
+        {
+          "name": "angle_segments",
+          "kind": "function"
+        },
+        {
+          "name": "link_spots",
+          "kind": "function"
+        },
+        {
+          "name": "PositionTable",
+          "kind": "class"
+        },
+        {
+          "name": "locate_series",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/rotation_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "link_spots",
+          "kind": "function"
+        },
+        {
+          "name": "summarize",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/row_grains.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "discover_rows",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/rows.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "RowSearchOptions",
+          "kind": "class"
+        },
+        {
+          "name": "RowSearchResult",
+          "kind": "class"
+        },
+        {
+          "name": "group_rows",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/rows_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "key",
+          "kind": "function"
+        },
+        {
+          "name": "decode",
+          "kind": "function"
+        },
+        {
+          "name": "interval_support",
+          "kind": "function"
+        },
+        {
+          "name": "phase_subset",
+          "kind": "function"
+        },
+        {
+          "name": "projected_grids",
+          "kind": "function"
+        },
+        {
+          "name": "direction_details",
+          "kind": "function"
+        },
+        {
+          "name": "direction_group",
+          "kind": "function"
+        },
+        {
+          "name": "extend_direction",
+          "kind": "function"
+        },
+        {
+          "name": "run",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/scan_scaling.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "ScanScaleOptions",
+          "kind": "class"
+        },
+        {
+          "name": "ScanScaleModel",
+          "kind": "class"
+        },
+        {
+          "name": "fit_scan_scale",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/scan_scaling_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "fit",
+          "kind": "function"
+        },
+        {
+          "name": "apply",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/search_execution.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "conditioned_views",
+          "kind": "function"
+        },
+        {
+          "name": "active",
+          "kind": "function"
+        },
+        {
+          "name": "parallel_searches",
+          "kind": "function"
+        },
+        {
+          "name": "ensemble",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/sensor_offsets.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "SensorLayout",
+          "kind": "class"
+        },
+        {
+          "name": "SensorOffsets",
+          "kind": "class"
+        },
+        {
+          "name": "fit_sensor_offsets",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "SolutionCancellation",
+          "kind": "class"
+        },
+        {
+          "name": "SolutionOptions",
+          "kind": "class"
+        },
+        {
+          "name": "CompletionAttempt",
+          "kind": "class"
+        },
+        {
+          "name": "SolutionCandidate",
+          "kind": "class"
+        },
+        {
+          "name": "AdaptivePeakHistory",
+          "kind": "class"
+        },
+        {
+          "name": "DualSpaceCheckpoint",
+          "kind": "class"
+        },
+        {
+          "name": "PhasingTrial",
+          "kind": "class"
+        },
+        {
+          "name": "SharedMove",
+          "kind": "class"
+        },
+        {
+          "name": "DensityCalibration",
+          "kind": "class"
+        },
+        {
+          "name": "RecyclingAudit",
+          "kind": "class"
+        },
+        {
+          "name": "TangentAudit",
+          "kind": "class"
+        },
+        {
+          "name": "WilsonShell",
+          "kind": "class"
+        },
+        {
+          "name": "WilsonNormalizationAudit",
+          "kind": "class"
+        },
+        {
+          "name": "PhaseQualityAudit",
+          "kind": "class"
+        },
+        {
+          "name": "PhaseSettingAudit",
+          "kind": "class"
+        },
+        {
+          "name": "PhaseSliceAudit",
+          "kind": "class"
+        },
+        {
+          "name": "PhaseCheckpointAudit",
+          "kind": "class"
+        },
+        {
+          "name": "PhaseOriginAudit",
+          "kind": "class"
+        },
+        {
+          "name": "ReflectionPredictionAudit",
+          "kind": "class"
+        },
+        {
+          "name": "SharedSearchAudit",
+          "kind": "class"
+        },
+        {
+          "name": "SolutionResult",
+          "kind": "class"
+        },
+        {
+          "name": "solve_structure",
+          "kind": "function"
+        },
+        {
+          "name": "solve_structure_elements",
+          "kind": "function"
+        },
+        {
+          "name": "write_solution",
+          "kind": "function"
+        },
+        {
+          "name": "main",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_assignment_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "assignment_neighbors_reference",
+          "kind": "function"
+        },
+        {
+          "name": "ambiguous_assignments_reference",
+          "kind": "function"
+        },
+        {
+          "name": "joint_assignment_beam_reference",
+          "kind": "function"
+        },
+        {
+          "name": "coherent_assignment_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_checkpoint_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "checkpoint_reference",
+          "kind": "function"
+        },
+        {
+          "name": "origin_sampling_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_completion_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "orbit_reference",
+          "kind": "function"
+        },
+        {
+          "name": "difference_reference",
+          "kind": "function"
+        },
+        {
+          "name": "project_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_consensus_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "model_agreement_distance",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_count_free_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "adaptive_peaks_reference",
+          "kind": "function"
+        },
+        {
+          "name": "adaptive_projection_reference",
+          "kind": "function"
+        },
+        {
+          "name": "count_free_dual_space_reference",
+          "kind": "function"
+        },
+        {
+          "name": "checkpoint_window_reference",
+          "kind": "function"
+        },
+        {
+          "name": "inversion_origin_seeds_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_count_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "count_ranking_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_dual_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "peaks_reference",
+          "kind": "function"
+        },
+        {
+          "name": "hash64",
+          "kind": "function"
+        },
+        {
+          "name": "atomic_projection_reference",
+          "kind": "function"
+        },
+        {
+          "name": "patterson_reference",
+          "kind": "function"
+        },
+        {
+          "name": "dual_space_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_fft_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "transform_3d_reference",
+          "kind": "function"
+        },
+        {
+          "name": "real_density_transform_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_origin_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "peak_completion_reference",
+          "kind": "function"
+        },
+        {
+          "name": "phase_origin_reference",
+          "kind": "function"
+        },
+        {
+          "name": "iterative_normal_reference",
+          "kind": "function"
+        },
+        {
+          "name": "preconditioned_normal_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_peak_density_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "ball_reference",
+          "kind": "function"
+        },
+        {
+          "name": "integrated_reference",
+          "kind": "function"
+        },
+        {
+          "name": "label_mask_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_prediction_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "coefficient_reference",
+          "kind": "function"
+        },
+        {
+          "name": "statistics_reference",
+          "kind": "function"
+        },
+        {
+          "name": "prediction_update_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_quality_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "reciprocal_s_squared",
+          "kind": "function"
+        },
+        {
+          "name": "wilson_reference",
+          "kind": "function"
+        },
+        {
+          "name": "phase_quality_reference",
+          "kind": "function"
+        },
+        {
+          "name": "checkpoint_candidates_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_recycling_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "recycle_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "charge_flip_reference",
+          "kind": "function"
+        },
+        {
+          "name": "amplitude_model_reference",
+          "kind": "function"
+        },
+        {
+          "name": "symmetric_model_reference",
+          "kind": "function"
+        },
+        {
+          "name": "image_geometry_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_schedule_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "phase_cycle_quotas",
+          "kind": "function"
+        },
+        {
+          "name": "phase_plateau_ready",
+          "kind": "function"
+        },
+        {
+          "name": "late_phase_plateau_ready",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_shared_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "shared_orbit_reference",
+          "kind": "function"
+        },
+        {
+          "name": "screening_shortlist_reference",
+          "kind": "function"
+        },
+        {
+          "name": "isotropic_site_seed_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_symmetry.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "SymmetryRefinement",
+          "kind": "class"
+        },
+        {
+          "name": "symmetry_records",
+          "kind": "function"
+        },
+        {
+          "name": "candidate_cif",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/solution_tangent_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "normalize_reference",
+          "kind": "function"
+        },
+        {
+          "name": "small_relations_reference",
+          "kind": "function"
+        },
+        {
+          "name": "incidence_reference",
+          "kind": "function"
+        },
+        {
+          "name": "invariant_reference",
+          "kind": "function"
+        },
+        {
+          "name": "uniform_reference",
+          "kind": "function"
+        },
+        {
+          "name": "step_reference",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/spots.py",
+      "reference_module": false,
+      "top_level_definitions": [
+        {
+          "name": "SpotFlag",
+          "kind": "class"
+        },
+        {
+          "name": "SpotOptions",
+          "kind": "class"
+        },
+        {
+          "name": "SpotTable",
+          "kind": "class"
+        },
+        {
+          "name": "available",
+          "kind": "function"
+        },
+        {
+          "name": "detect_spots",
+          "kind": "function"
+        },
+        {
+          "name": "extract_spots",
+          "kind": "function"
+        }
+      ]
+    },
+    {
+      "path": "python/phasesmith/experimental/spots_reference.py",
+      "reference_module": true,
+      "top_level_definitions": [
+        {
+          "name": "detect_spots",
+          "kind": "function"
+        },
+        {
+          "name": "extract_spots",
+          "kind": "function"
+        }
+      ]
+    }
+  ],
+  "definition_inventory_scope": "AST top-level non-underscore definitions only, not a stable export or signature snapshot",
+  "experimental_source_checkout": {
+    "head": "297d157c159635e81ea38b90349ffc9e5a10cf52",
+    "branch": "codex/experimental-spots",
+    "tracked_changes": [
+      "ROJECT_BRIEF.md",
+      "crates/phasesmith-spots/src/lib.rs",
+      "docs/experimental-3d-profiles.md",
+      "docs/experimental-spots.md",
+      "docs/single-crystal-integration-methods.md",
+      "python/phasesmith/experimental/prediction.py",
+      "tests/test_experimental_spots.py"
+    ],
+    "untracked_count": 37,
+    "inclusion_status": "preserved; excluded from this baseline"
+  },
+  "evidence_hashes": {
+    "docs/integration/structure-search-merge.md": "8ce3352cff27fb1855e15e9c6fa22d01fc390439fa4a31340fcefcc09f4efd7c",
+    "docs/integration/structure-search-merge-validation.json": "868216743c2c86ce7701368f776ebc112c459110bcd57e45bab250acaa38fce4",
+    "docs/solution-holdout-results.md": "d5a3e66f5a6fa0a48233b40bef33dd5181a6053aac2235e2d4ea8285a5902742",
+    "validation/solution-holdout-freeze-v1.json": "06f30ca34cc1ca42b37d6bb2895a2fa980618c093f148f8711a4d29969aac7e4"
+  },
+  "promotion_gates": {
+    "source_scope": "combined committed baseline identified; unfinished work inclusion unresolved",
+    "api": "proposal only",
+    "default_build": "experimental features still excluded",
+    "search_configuration": "explicit frozen configuration identified; public default mapping pending",
+    "search_capacity": "blocked for enstatite: 36 permitted full-cell atoms versus 80 reference atoms",
+    "raw_to_phasesmith_search": "not_executed",
+    "standalone_structure_refinement": "not_implemented",
+    "cross_platform_default_wheel_validation": "pending",
+    "public_data_redistribution": "not_established"
+  },
+  "historical_baseline_checks": {
+    "python_passed": 3158,
+    "rust_passed": 485,
+    "source": "docs/integration/structure-search-merge.md",
+    "rerun_by_this_audit": false
+  },
+  "preparation_checks": {
+    "focused_python_tests": {
+      "passed": 24,
+      "command": "PYTHONPATH=<combined-baseline>/python <combined-baseline>/.venv/bin/python -m pytest tests/test_single_crystal_data_tools.py tests/test_solution_corpus.py -q"
+    },
+    "new_python_ruff": "passed",
+    "new_python_format": "passed",
+    "external_inputs": {
+      "verified_files": 8,
+      "verified_bytes": 470052794,
+      "method": "streamed size and SHA-256; no copy, download or upload"
+    },
+    "phase_search_probe": "benchmarks/enstatite-promotion-search-macos.json",
+    "strict_documentation": {
+      "status": "failed",
+      "inherited_warning_count": 19,
+      "files": [
+        "docs/solution-corpus-benchmark.md",
+        "docs/solution-count-selection.md",
+        "docs/solution-phase-ablation.md",
+        "docs/solution-phase-quality.md"
+      ],
+      "reason": "Links to ../benchmarks/*.json outside documentation files; no new-page warnings"
+    },
+    "full_numerical_suite_rerun": false,
+    "reason_no_full_numerical_rerun": "No production numerical equations, kernels, API, defaults or schemas changed."
+  }
+}
