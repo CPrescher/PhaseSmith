@@ -138,3 +138,106 @@ def test_nonconvergence_cannot_be_accepted():
         options=GeometryOptions(max_evaluations=1),
     )
     assert not fit.converged and not fit.acceptable
+
+
+@pytest.mark.parametrize("seed", [643, 231, 112])
+@pytest.mark.parametrize("vary", [False, True])
+def test_native_parameter_equations_and_independent_fit(seed, vary):
+    pytest.importorskip("scipy")  # Only the independent control optimizer.
+    from phasesmith.experimental.geometry_refinement_reference import (
+        parameter_state_reference,
+        prediction_partials_reference,
+        refine_reference,
+    )
+
+    g, b, h, hint = sample(seed)
+    h, hint = h[:90], hint[:90]
+    pivot = g.vectors[0] + 1023.5 * (g.vectors[1] + g.vectors[2])
+    truth = np.array(
+        [
+            0.0002,
+            -0.0001,
+            0.0003,
+            0.03,
+            -0.04,
+            0.02,
+            0.0008,
+            -0.0006,
+            0.0004,
+            0.0005,
+            -0.0003,
+            0.0002,
+        ]
+    )[: 12 if vary else 9]
+    rb, rg, rjb, rjg = parameter_state_reference(truth, b, g, pivot, vary)
+    nb, ng, njb, njg = parameter_state(truth, b, g, pivot, vary)
+    for actual, expected in ((nb, rb), (ng.vectors, rg.vectors), (njb, rjb), (njg, rjg)):
+        np.testing.assert_allclose(actual, expected, rtol=2e-14, atol=2e-16)
+    v, j, d = prediction_partials_reference(h, rb, rg, hint)
+    nv, nj, nd, flags = predict_with_detector(h, nb, ng, hint)
+    assert not flags.any()
+    np.testing.assert_allclose(nv, v, rtol=2e-12, atol=2e-9)
+    np.testing.assert_allclose(nj, j, rtol=2e-10, atol=2e-6)
+    np.testing.assert_allclose(nd, d, rtol=2e-10, atol=2e-5)
+    observed = v + np.random.default_rng(seed + 5).normal(size=v.shape) * [0.01, 0.01, 0.002]
+    observed[3, 0] += 0.5  # Deterministic robust-loss control, not an export cut.
+    training = np.arange(len(h)) % 4 != 0
+    native = refine_geometry(
+        observed, h, b, g, (2048, 2048), training=training, refine_lengths=vary
+    )
+    reference = refine_reference(
+        observed, h, b, g, (2048, 2048), training=training, refine_lengths=vary
+    )
+    assert native.converged and reference.fit.success
+    np.testing.assert_allclose(
+        native.predictions.values, reference.predictions, rtol=1e-10, atol=1e-5
+    )
+    np.testing.assert_allclose(native.parameters, reference.parameters, rtol=2e-4, atol=2e-6)
+    assert np.linalg.eigvalsh(native.covariance).min() > -1e-12
+    assert native.objective_history[-1] <= reference.fit.cost + 1e-9
+    assert native.backend == "phasesmith-spots Rust"
+
+
+def test_geometry_fitting_does_not_import_scipy_and_reports_native_progress(monkeypatch):
+    import builtins
+
+    g, b, h, hint = sample()
+    values = predict_spots(h, b, g, hint).values.copy()
+    values[:, 0] += 0.1
+    original = builtins.__import__
+
+    def no_scipy(name, *args, **kwargs):
+        if name.split(".")[0] == "scipy":
+            raise AssertionError("production geometry fitting must be native")
+        return original(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", no_scipy)
+    events = []
+    fit = refine_geometry(
+        values,
+        h,
+        b,
+        g,
+        (2048, 2048),
+        training=np.arange(len(h)) % 5 != 0,
+        progress=lambda done, total: events.append((done, total)),
+    )
+    assert fit.converged and len(events) == fit.evaluations
+    assert [done for done, _ in events] == list(range(fit.evaluations))
+
+
+def test_application_owned_pixel_map_is_preserved_by_optional_binding():
+    from dataclasses import replace
+
+    from test_experimental_pixel_map import ScaledMap
+
+    g, b, h, hint = sample()
+    g = replace(g, pixel_map=ScaledMap())
+    pivot = g.vectors[0] + 1023.5 * (g.vectors[1] + g.vectors[2])
+    truth = np.array([0.0002, -0.0001, 0.0003, 0.03, -0.04, 0.02, 0.0008, -0.0006, 0.0004])
+    bt, gt, _, _ = parameter_state(truth, b, g, pivot, False)
+    observed = predict_spots(h, bt, gt, hint).values
+    fit = refine_geometry(observed, h, b, g, (2048, 2048), training=np.arange(len(h)) % 5 != 0)
+    assert fit.converged and fit.geometry.pixel_map is g.pixel_map
+    np.testing.assert_allclose(fit.parameters, truth, atol=1e-7, rtol=1e-6)
+    np.testing.assert_allclose(fit.predictions.values, observed, atol=2e-7)

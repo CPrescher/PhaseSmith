@@ -58,7 +58,8 @@ types and functions only. Algorithm/cache/worker helpers remain private.
 
 All promoted production operations must be usable through typed Rust entry
 points, with Python as an optional frontend. The current experimental
-shape/geometry/scaling optimizers still need native ports; their existing SciPy
+shape/scaling optimizers still need native ports; geometry fitting is now native,
+including robust optimization and fit diagnostics; their existing SciPy
 requirement must not become the final production architecture. Detection,
 summation, masking and structure search already have native kernels. HDF5
 input now belongs to the separate optional `phasesmith-hdf5` adapter with bundled

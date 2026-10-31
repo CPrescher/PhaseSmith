@@ -48,11 +48,51 @@ d(pixel_i)/d(fast)   = -x*Ki
 d(pixel_i)/d(slow)   = -y*Ki
 ```
 
-Omega detector partials vanish. Python applies analytical Euler/length/translation
-chains and orchestrates optional SciPy bounded soft-L1 minimization. Rust owns
-per-reflection projection and fused partial accumulation; there are no new
-per-reflection Python production loops. The original predictor does not evaluate
-the extra derivatives and retains byte-identical values and B partials.
+Omega detector partials vanish. Rust now applies all Euler/length/translation
+chains, evaluates the robust objective/gradient/normal, optimizes the bounded
+parameters and computes eligibility, covariance/condition and withheld diagnostics.
+Python is an optional validated NumPy boundary/result adapter; production geometry
+fitting does not import SciPy. The original predictor retains its existing values,
+flags and B derivatives. The independent NumPy/SciPy reference calls no Rust.
+
+For each coordinate residual `r=(prediction-observation)/scale`, the unchanged
+soft-L1 objective is `F=f² sum(sqrt(1+(r/f)²)-1)`. We evaluate the equivalent
+`sum(r²/(sqrt(1+(r/f)²)+1))` to avoid cancellation near an exact solution.
+With physical-parameter Jacobian J, the gradient is
+`J.T @ (r/sqrt(1+(r/f)²))`. The robust Gauss--Newton normal is
+`J.T @ diag((1+(r/f)²)^(-3/2)) @ J`. Values and exact first partials use the
+same predicted reflection; no finite differences enter the native optimizer.
+
+The native solver uses deterministic damped normal steps in scaled coordinates:
+0.001 rad for all angles, 0.1 mm for translations and 0.001 for log lengths.
+The closed bounds and loss scales are unchanged. Variables at a bound with an
+outward descent direction are fixed for that step; other steps are clipped to
+the bounds. Initial damping is 1e-3, added to `max(abs(diagonal),1)` of the
+scaled normal. Accepted steps strictly decrease F. Actual/predicted reduction
+ratios above .75 divide damping by three; ratios below .25 multiply it by four.
+Rejected/invalid trials multiply damping by ten; damping above 1e24 stops without
+convergence. Cholesky failures increase damping without evaluating another model.
+The declared budget includes initial and rejected/invalid objective evaluations.
+
+Convergence uses scaled projected-gradient infinity norm <1e-9, scaled step norm
+<=1e-11*(1e-11+scaled-parameter-norm), or relative cost reduction <=1e-11 with
+reduction ratio >.25. These differ algorithmically from the former SciPy bounded
+trust-region iterations; equivalent scientific outputs, not bitwise fit vectors,
+are required. Accepted costs and evaluation count are observable. The scaled
+normal eigensystem gives the Jacobian condition; the unscaled robust normal's
+Moore--Penrose inverse uses a local 1e-15 relative eigenvalue cutoff. This is
+conditional curvature, not a calibrated observational uncertainty. A parameter
+within `1e-11*max(1,abs(bound))` of a bound prevents advisory acceptance.
+
+Native Rust callers use `phasesmith::spots::geometry_refinement::{Input, Options,
+fit}`; `fit_with_map` accepts a caller-owned Rust `PixelMap` implementation.
+The ordinary affine panel takes the identity path without mapping callbacks.
+The optional Python binding retains application-owned `pixel_map` protocols by
+bridging their batch inverse coordinates/Jacobians; those callbacks are supplied
+by the application and are not required for the native solver or MgSiO3 example.
+Progress callbacks likewise report native evaluation boundaries and may cancel
+by returning an error. Python-held masks, options, observations and returned
+arrays remain snapshotted; no host numerical optimizer is called.
 
 Residuals use explicit x/y and omega loss scales, not calibrated uncertainty
 estimates. At least 30 training and 10 withheld indexed positions spanning 3D
@@ -94,3 +134,32 @@ entry took 1.76 ms. These are local workload measurements, not universal speed
 claims. GSAS-II's powder oracle does not cover this experiment; independent
 geometry equations, known-pose recovery and external reduction comparisons
 supply the controls.
+
+## Native fitting validation
+
+Standalone Rust tests recover known detector pose, crystal orientation and
+optional reciprocal-row log lengths, including an independently supplied native
+nonlinear coordinate map. They check the soft-L1 objective gradient by centered
+finite differences, closed bounds, evaluation budgets, cancellation and withheld
+independence. Independent NumPy implicit projection solves compare both analytical
+Jacobians and parameter chains on deterministic random cases; a SciPy control
+checks noisy/outlier fits. A blocked-SciPy-import test exercises the production
+fitter. No profile term, intensity normalization or integrated moment changes,
+and GSAS-II's powder oracle does not cover this position-only calibration.
+
+The complete-fit benchmark now covers the same 10,888-spot/2048-square detector
+workload with three deterministic repeats and an optional earlier SciPy runtime
+control. Frozen MgSiO3 v9 changes only the geometry backend, with explicit
+comparison tolerances in `validation/enstatite-raw-workflow-v9.json` and all
+v8 science settings retained. Full original data/products remain external.
+
+On the current macOS workload with OMP/OpenBLAS/Accelerate thread limits all one,
+the complete native fit takes 22.96 ms median versus 34.53 ms for the earlier
+Python/SciPy fitter (three repeats; all timings retained). Native repeats are
+bitwise deterministic; predicted coordinates agree with the earlier fitter
+within 1.82e-12 pixels and 5.69e-14 degrees. The unchanged predictor value/B
+Jacobian fingerprint also matches the earlier native binary exactly. This is a
+synthetic many-reflection benchmark, not a measured-data accuracy certificate.
+See `benchmarks/geometry-refinement-rust-macos.json`. Workspace verification
+passes 505 Rust tests (34 ignored), 3,225 Python tests (11 skipped, 34 deselected),
+formatting and strict all-target/all-feature Clippy.
