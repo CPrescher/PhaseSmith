@@ -3,16 +3,16 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution_prediction_reference import (
+from phasesmith.scattering_reference import xray_non_resonant
+from phasesmith.single_crystal.reference.solution_prediction_reference import (
     coefficient_reference,
     prediction_update_reference,
     statistics_reference,
 )
-from phasesmith.experimental.solution_quality_reference import (
+from phasesmith.single_crystal.reference.solution_quality_reference import (
     reciprocal_s_squared,
     wilson_reference,
 )
-from phasesmith.scattering_reference import xray_non_resonant
 from test_solution_phase_quality import case
 
 pytestmark = pytest.mark.skipif(
@@ -133,8 +133,8 @@ def test_update_preserves_measurements_zeros_dc_and_hermitian_pairs(missing, ext
 
 
 def test_complete_prediction_cycles_against_independent_numpy():
-    from phasesmith.experimental.solution_dual_reference import dual_space_reference
     from phasesmith.io.space_groups import space_group_by_symbol
+    from phasesmith.single_crystal.reference.solution_dual_reference import dual_space_reference
     from test_solution_dual_space import inputs
 
     shape, cell, h, amplitudes, phases, _ = inputs()
@@ -181,7 +181,7 @@ def test_complete_prediction_cycles_against_independent_numpy():
 def test_full_search_preserves_observations_and_recovers_synthetic_counts(
     symbol, missing, extension
 ):
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, xyz, species = synthetic(symbol)

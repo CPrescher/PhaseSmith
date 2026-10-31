@@ -15,13 +15,13 @@ import gemmi
 import numpy as np
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution import (
+from phasesmith.io.hkl import read_hkl
+from phasesmith.io.space_groups import space_group_by_symbol
+from phasesmith.single_crystal.solution import (
     SolutionOptions,
     solve_structure_elements,
     write_solution,
 )
-from phasesmith.io.hkl import read_hkl
-from phasesmith.io.space_groups import space_group_by_symbol
 from solution_adp_transfer import reflection_data
 from structure_solution import _reference_error
 
@@ -69,9 +69,9 @@ def main():
             ROOT / name
             for name in (
                 "Cargo.lock",
-                "python/phasesmith/experimental/solution.py",
-                "python/phasesmith/experimental/solution_shared_reference.py",
-                "python/phasesmith/experimental/solution_peak_density_reference.py",
+                "python/phasesmith/single_crystal/solution.py",
+                "python/phasesmith/single_crystal/reference/solution_shared_reference.py",
+                "python/phasesmith/single_crystal/reference/solution_peak_density_reference.py",
                 "benchmarks/solution_shared_search.py",
                 "benchmarks/solution_adp_transfer.py",
                 "benchmarks/structure_solution.py",

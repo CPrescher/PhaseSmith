@@ -5,15 +5,15 @@ import json
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution import (
+from phasesmith.single_crystal.reference.solution_count_free_reference import (
+    adaptive_projection_reference,
+    count_free_dual_space_reference,
+)
+from phasesmith.single_crystal.solution import (
     SolutionCancellation,
     SolutionOptions,
     solve_structure_elements,
     write_solution,
-)
-from phasesmith.experimental.solution_count_free_reference import (
-    adaptive_projection_reference,
-    count_free_dual_space_reference,
 )
 from test_solution_dual_space import inputs
 from test_solution_shared_search import synthetic
@@ -244,7 +244,9 @@ def test_cancelled_and_expired_count_free_search():
 
 
 def test_declined_checkpoints_continue_identical_fourier_trajectory():
-    from phasesmith.experimental.solution_count_free_reference import checkpoint_window_reference
+    from phasesmith.single_crystal.reference.solution_count_free_reference import (
+        checkpoint_window_reference,
+    )
 
     cell, group, data, _, _ = synthetic("P-1")
     settings = dict(

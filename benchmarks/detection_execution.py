@@ -15,9 +15,13 @@ from pathlib import Path
 
 import numpy as np
 from enstatite_raw_workflow import RawFrames, poni_geometry
-from phasesmith.experimental import rotation
-from phasesmith.experimental.frame_validity import CombinedValidity, DacApertureMask, FrameValidity
-from phasesmith.experimental.spots import SpotOptions
+from phasesmith.single_crystal import rotation
+from phasesmith.single_crystal.frame_validity import (
+    CombinedValidity,
+    DacApertureMask,
+    FrameValidity,
+)
+from phasesmith.single_crystal.spots import SpotOptions
 
 
 def main():

@@ -94,9 +94,7 @@ def predict_spots(hkl, reciprocal_basis, geometry, omega_hint, *, other=False):
     if not np.isfinite(hints).all() or (abs(hints) > 1e8).any():
         raise ValueError("omega hints must be finite within +/-1e8 degrees")
     if not hasattr(_core, "experimental_predict_spots"):
-        raise RuntimeError(
-            "build PhaseSmith with --features spots (legacy experimental-spots) for prediction"
-        )
+        raise RuntimeError("build PhaseSmith with --features spots  for prediction")
     values, jacobian, flags = _core.experimental_predict_spots(
         h, b, hints, geometry.vectors, geometry.wavelength, bool(other)
     )

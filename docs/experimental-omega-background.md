@@ -1,4 +1,4 @@
-# Experimental omega background fitting
+# omega background fitting
 
 **Supported namespace:** this method is included in the 0.8 single-crystal
 capability. Use `phasesmith.single_crystal`; ordinary builds include the native
@@ -9,7 +9,7 @@ finite support and the specific limitations below remain unchanged.
 
 `phasesmith.single_crystal.omega_background` owns the reusable CPU arPLS engine
 for detector-pixel intensity traces along uniformly spaced omega exposures.
-It is opt-in with the existing `experimental-spots` native feature. It has no
+It is included with the ordinary `spots` native capability. It has no
 Dioptas, detector-file, calibration, GUI, mask-estimator or GPU dependency.
 Dioptas owns those application concerns and signed frame export.
 
@@ -118,7 +118,7 @@ GSAS-II is not an oracle for this detector/omega preprocessing convention.
 and uses SciPy/LAPACK and NumPy statistics. It is selected with `backend="scipy"`
 and requires SciPy, available through the existing `refinement` extra. The Rust
 engine requires only the package's normal NumPy Python dependency. `auto` uses
-Rust when available and otherwise the SciPy reference. An explicit `native`
+Rust and reports missing native capability instead of silently falling back. An explicit `native`
 request fails clearly if the experimental kernel is absent.
 
 Migration preserves lambda, tolerances, iteration limits, normalization,

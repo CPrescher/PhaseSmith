@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from phasesmith.experimental import spots, spots_reference
-from phasesmith.experimental.spots import SpotFlag, SpotOptions, detect_spots, extract_spots
+from phasesmith.single_crystal import spots
+from phasesmith.single_crystal.reference import spots_reference
+from phasesmith.single_crystal.spots import SpotFlag, SpotOptions, detect_spots, extract_spots
 
 native = pytest.mark.skipif(not spots.available(), reason="experimental-spots feature not built")
 
@@ -26,7 +27,7 @@ def test_feature_is_explicit_and_not_a_root_export():
 
 def test_unavailable_feature_gives_actionable_error(monkeypatch):
     monkeypatch.setattr(spots, "available", lambda: False)
-    with pytest.raises(RuntimeError, match="experimental-spots"):
+    with pytest.raises(RuntimeError, match="--features spots"):
         detect_spots(scene())
 
 

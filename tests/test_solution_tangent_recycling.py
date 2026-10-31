@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
-from phasesmith.experimental.solution_recycling_reference import recycle_reference
+from phasesmith.single_crystal.reference.solution_recycling_reference import recycle_reference
+from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
 from test_solution_recycling import inputs
 
 pytestmark = pytest.mark.skipif(

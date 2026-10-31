@@ -1,4 +1,4 @@
-# Experimental primitive and Bravais comparison
+# primitive and Bravais comparison
 
 **Supported namespace:** this method is included in the 0.8 single-crystal
 capability. Use `phasesmith.single_crystal`; ordinary builds include the native
@@ -13,7 +13,7 @@ inferred, training-derived** direct basis, not a supplied material cell, and
 unindexed Cartesian reciprocal positions (NumPy N×3, inverse Å, no 2π). Optional
 measured `(x,y,omega)` centroids and a fixed `PanelGeometry` enable detector-space
 fits. Intensity, chemical identity, space group and reference HKLs are absent.
-This is opt-in under `experimental-spots`; no standard release or powder API changes.
+Cell comparison ships with the ordinary 0.8 `spots` capability.
 
 ```python
 from phasesmith.single_crystal.cell_comparison import compare_cells, CellComparisonOptions

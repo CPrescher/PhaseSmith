@@ -3,13 +3,13 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.integration import (
+from phasesmith.single_crystal.integration import (
     IntegrationFlag,
     IntegrationOptions,
     integrate_series,
 )
-from phasesmith.experimental.integration_reference import measure_frame
-from phasesmith.experimental.prediction import ScanPredictions
+from phasesmith.single_crystal.prediction import ScanPredictions
+from phasesmith.single_crystal.reference.integration_reference import measure_frame
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "experimental_integrate_reduce"), reason="experimental build"

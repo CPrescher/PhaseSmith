@@ -5,8 +5,8 @@ from dataclasses import replace
 from time import perf_counter
 
 import numpy as np
-from phasesmith.experimental.prediction import predict_spots
-from phasesmith.experimental.reciprocal import PanelGeometry, reciprocal_vectors
+from phasesmith.single_crystal.prediction import predict_spots
+from phasesmith.single_crystal.reciprocal import PanelGeometry, reciprocal_vectors
 
 
 class ShiftScale:

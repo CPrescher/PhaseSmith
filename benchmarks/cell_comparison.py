@@ -8,7 +8,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental.cell_comparison import CellComparisonOptions, compare_cells
+from phasesmith.single_crystal.cell_comparison import CellComparisonOptions, compare_cells
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--output", required=True)

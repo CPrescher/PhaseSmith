@@ -18,7 +18,7 @@ from time import perf_counter
 
 import numpy as np
 from phasesmith import _core
-from phasesmith.experimental import grains as G
+from phasesmith.single_crystal import grains as G
 
 
 def legacy(root):

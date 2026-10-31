@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental import grains_reference as ref
-from phasesmith.experimental.grains import GrainSearchOptions, _triplet_keys, _triplets
-from phasesmith.experimental.reciprocal import lattice_fourier
+from phasesmith.single_crystal.grains import GrainSearchOptions, _triplet_keys, _triplets
+from phasesmith.single_crystal.reciprocal import lattice_fourier
+from phasesmith.single_crystal.reference import grains_reference as ref
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "ExperimentalLatticeEngine"), reason="experimental-spots not built"
@@ -117,7 +117,7 @@ def test_native_newton_constant_cloud_exact_cache_and_invalid_inputs():
 
 
 def test_batched_first_support_matches_scalar_rounding_zero_exclusion_and_strict_gate():
-    from phasesmith.experimental.grains import _refine, _refine_many
+    from phasesmith.single_crystal.grains import _refine, _refine_many
 
     rng = np.random.default_rng(82021)
     bases = np.array([np.eye(3), [[4, 1, 0], [0, 5, 1], [1, 0, 6]]], dtype=float)
@@ -180,7 +180,7 @@ def test_two_lane_fused_moments_keep_scalar_bits_and_bulk_dispatch_for_odd_tails
 def test_fourier_reuse_is_scoped_copies_outputs_and_keeps_every_semantic_key():
     from dataclasses import replace
 
-    from phasesmith.experimental import discovery_cache as cache
+    from phasesmith.single_crystal import discovery_cache as cache
 
     calls = []
 

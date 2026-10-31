@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
-from phasesmith.experimental.solution_count_reference import count_ranking_reference
+from phasesmith.single_crystal.reference.solution_count_reference import count_ranking_reference
+from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
 
 
 def test_count_score_rejects_a_small_fit_gain_from_a_large_model():

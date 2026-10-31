@@ -1,4 +1,4 @@
-# Experimental symmetry-based scan scaling
+# symmetry-based scan scaling
 
 **Supported namespace:** this method is included in the 0.8 single-crystal
 capability. Use `phasesmith.single_crystal`; ordinary builds include the native
@@ -7,7 +7,7 @@ kernels. The historical filename is retained for existing links. See the
 finite support and the specific limitations below remain unchanged.
 
 
-The opt-in `experimental-spots` build provides a deliberately small relative
+The ordinary 0.8 `spots` capability provides a deliberately small relative
 scale model. It operates on intensities already corrected for the single-crystal
 rotation Lorentz and polarization factors. Supply confirmed equivalent-family
 labels within the same crystal; the API does not infer symmetry from a cell metric,

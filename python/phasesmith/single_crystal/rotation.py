@@ -87,10 +87,7 @@ _DEFAULT_SPOTS = SpotOptions()
 def link_spots(tables: Sequence[SpotTable], omega_bounds, *, options=_DEFAULT_ROTATION):
     """Return contiguous track labels in frame/spot order; no gaps are bridged."""
     if not available() or not hasattr(_core, "experimental_rotation_link"):
-        raise RuntimeError(
-            "build PhaseSmith with --features spots "
-            "(legacy experimental-spots) for rotation support"
-        )
+        raise RuntimeError("build PhaseSmith with --features spots  for rotation support")
     if not isinstance(options, RotationOptions):
         raise TypeError("options must be RotationOptions")
     bounds, segments = angle_segments(omega_bounds)
@@ -282,10 +279,7 @@ def locate_series(
     ):
         raise TypeError("expected SpotOptions and RotationOptions")
     if not available() or not hasattr(_core, "experimental_rotation_link"):
-        raise RuntimeError(
-            "build PhaseSmith with --features spots "
-            "(legacy experimental-spots) for rotation support"
-        )
+        raise RuntimeError("build PhaseSmith with --features spots  for rotation support")
     if isinstance(workers, (bool, np.bool_)) or not isinstance(workers, (int, np.integer)):
         raise TypeError("workers must be an integer from 1 to 32")
     if not 1 <= workers <= 32:

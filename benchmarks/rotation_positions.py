@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental.rotation import locate_series
+from phasesmith.single_crystal.rotation import locate_series
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--output", required=True)

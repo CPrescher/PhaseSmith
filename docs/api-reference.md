@@ -145,9 +145,9 @@ ownership in more detail. Source links in the page header lead to the exact
 implementation for the selected documentation version.
 
 Release review does not rely on documentation pages alone. The versioned
-machine-readable snapshot in `api/python-public-api-v0.7.0.json` covers the
-explicit top-level, I/O, refinement, integration, oracle, and validation
-exports. Run `python scripts/public_api_snapshot.py --check` to compare it with
+machine-readable snapshot in `api/python-public-api-v0.8.0.json` covers the
+explicit top-level, I/O, refinement, integration, oracle, validation and
+single-crystal submodule exports. Run `python scripts/public_api_snapshot.py --check` to compare it with
 the installed package; any name, target, kind, or callable-signature change is
 reported as a unified diff.
 

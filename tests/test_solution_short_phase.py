@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution_schedule_reference import phase_cycle_quotas
+from phasesmith.single_crystal.reference.solution_schedule_reference import phase_cycle_quotas
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_phase_cycle_quota"), reason="experimental-solution"
@@ -31,7 +31,7 @@ def test_invalid_native_controls_are_unchanged(cycles, trials, trial):
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
 def test_full_search_keeps_models_counts_and_identical_cycle_prefixes(symbol):
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, _, species = synthetic(symbol)

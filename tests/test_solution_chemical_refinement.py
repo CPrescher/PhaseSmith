@@ -5,11 +5,11 @@ import itertools
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution_origin_reference import (
+from phasesmith.io.space_groups import space_group_by_symbol
+from phasesmith.single_crystal.reference.solution_origin_reference import (
     iterative_normal_reference,
     peak_completion_reference,
 )
-from phasesmith.io.space_groups import space_group_by_symbol
 from test_solution_peak_completion import make_plan, setup
 
 pytestmark = pytest.mark.skipif(

@@ -2,9 +2,13 @@ import hashlib
 
 import numpy as np
 import pytest
-from phasesmith.experimental.frame_input import preparation_plan
-from phasesmith.experimental.frame_validity import CombinedValidity, DacApertureMask, FrameValidity
-from phasesmith.experimental.reciprocal import PanelGeometry
+from phasesmith.single_crystal.frame_input import preparation_plan
+from phasesmith.single_crystal.frame_validity import (
+    CombinedValidity,
+    DacApertureMask,
+    FrameValidity,
+)
+from phasesmith.single_crystal.reciprocal import PanelGeometry
 
 
 @pytest.mark.parametrize("flip", [False, True])

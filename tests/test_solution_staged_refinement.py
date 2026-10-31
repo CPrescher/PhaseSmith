@@ -3,11 +3,11 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
-from phasesmith.experimental.solution_shared_reference import (
+from phasesmith.single_crystal.reference.solution_shared_reference import (
     isotropic_site_seed_reference,
     screening_shortlist_reference,
 )
+from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
 from test_solution_shared_search import synthetic
 from test_solution_symmetry_adp import CASES, model_case
 

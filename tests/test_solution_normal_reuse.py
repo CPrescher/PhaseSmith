@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution_reference import symmetric_model_reference
+from phasesmith.single_crystal.reference.solution_reference import symmetric_model_reference
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_SymmetricSolutionModel"), reason="experimental-solution"
@@ -80,7 +80,7 @@ def test_small_or_disabled_cache_preserves_original_execution(iterative, cached)
 
 
 def test_stops_and_invalid_initial_parameters_remain_explicit():
-    from phasesmith.experimental.solution import SolutionCancellation
+    from phasesmith.single_crystal.solution import SolutionCancellation
     from test_solution_symmetry_adp import model_case
 
     sites = [("Si", p) for p in np.random.default_rng(719).uniform(0.05, 0.95, (10, 3))]
@@ -98,7 +98,7 @@ def test_stops_and_invalid_initial_parameters_remain_explicit():
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
 def test_search_preserves_counts_and_exact_final_model(symbol):
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, _, species = synthetic(symbol)

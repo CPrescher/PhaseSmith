@@ -14,9 +14,9 @@ from pathlib import Path
 
 import numpy as np
 from phasesmith import _core
-from phasesmith.experimental.integration import IntegrationOptions
-from phasesmith.experimental.prediction import ScanPredictions, predict_scan
-from phasesmith.experimental.profiles import (
+from phasesmith.single_crystal.integration import IntegrationOptions
+from phasesmith.single_crystal.prediction import ScanPredictions, predict_scan
+from phasesmith.single_crystal.profiles import (
     SCATTERING_VARIATIONS,
     ProfileOptions,
     fit_profiles,
@@ -25,7 +25,7 @@ from phasesmith.experimental.profiles import (
     rotation_factors,
     scattering_transforms,
 )
-from phasesmith.experimental.reciprocal import PanelGeometry, reciprocal_vectors
+from phasesmith.single_crystal.reciprocal import PanelGeometry, reciprocal_vectors
 from PIL import Image
 
 
@@ -143,7 +143,7 @@ def prepare(case, output, coordinates="detector", variations=False, pixel_radius
     for pattern in (
         "crates/phasesmith-spots/src/*.rs",
         "crates/phasesmith-py/src/*.rs",
-        "python/phasesmith/experimental/*.py",
+        "python/phasesmith/single_crystal/*.py",
         "benchmarks/compare_3d_profiles.py",
         "benchmarks/benchmark_3d_profiles.py",
     ):

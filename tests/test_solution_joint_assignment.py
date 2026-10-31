@@ -6,9 +6,11 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution_assignment_reference import joint_assignment_beam_reference
 from phasesmith.io.space_groups import space_group_by_symbol
 from phasesmith.scattering_reference import xray_non_resonant
+from phasesmith.single_crystal.reference.solution_assignment_reference import (
+    joint_assignment_beam_reference,
+)
 
 pytestmark = pytest.mark.skipif(
     not hasattr(getattr(_core, "_PeakCompletionPlan", object), "joint"),
@@ -251,7 +253,7 @@ def test_full_search_preserves_clean_solution_and_rejects_invalid_feature_contro
     import sys
     from pathlib import Path
 
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "benchmarks"))
@@ -330,7 +332,9 @@ def test_diagonal_shift_derivative_matches_independent_finite_differences(seed):
 
 @pytest.mark.parametrize("seed", range(6))
 def test_coherent_displacement_proposals_match_independent_sweeps(seed):
-    from phasesmith.experimental.solution_assignment_reference import coherent_assignment_reference
+    from phasesmith.single_crystal.reference.solution_assignment_reference import (
+        coherent_assignment_reference,
+    )
     from test_solution_ambiguity import setup
 
     plan, phase, factors, obs, labels, u, s2, m = setup(seed, "Pm")

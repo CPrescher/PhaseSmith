@@ -12,8 +12,8 @@ import time
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental.reduction import ReductionConfig, reduce_observations
-from phasesmith.experimental.reduction_io import load_case
+from phasesmith.single_crystal.reduction import ReductionConfig, reduce_observations
+from phasesmith.single_crystal.reduction_io import load_case
 
 
 def replay(recipe_path, output):

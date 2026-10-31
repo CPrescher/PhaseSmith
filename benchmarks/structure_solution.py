@@ -20,9 +20,9 @@ from pathlib import Path
 
 import numpy as np
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution import SolutionOptions, solve_structure, write_solution
 from phasesmith.io.hkl import read_hkl
 from phasesmith.io.space_groups import space_group_by_symbol
+from phasesmith.single_crystal.solution import SolutionOptions, solve_structure, write_solution
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "validation/structure-solution-thiourea.json"
@@ -264,11 +264,11 @@ def main():
         "crates/phasesmith-py/src/solution_symmetry.rs",
         "crates/phasesmith-py/src/solution_dual.rs",
         "crates/phasesmith-py/src/solution_completion.rs",
-        "python/phasesmith/experimental/solution_completion_reference.py",
-        "python/phasesmith/experimental/solution_dual_reference.py",
-        "python/phasesmith/experimental/solution_symmetry.py",
-        "python/phasesmith/experimental/solution_reference.py",
-        "python/phasesmith/experimental/solution.py",
+        "python/phasesmith/single_crystal/reference/solution_completion_reference.py",
+        "python/phasesmith/single_crystal/reference/solution_dual_reference.py",
+        "python/phasesmith/single_crystal/solution_symmetry.py",
+        "python/phasesmith/single_crystal/reference/solution_reference.py",
+        "python/phasesmith/single_crystal/solution.py",
         "python/phasesmith/io/hkl.py",
         "crates/phasesmith-crystallography/src/p1.rs",
         "crates/phasesmith-crystallography/src/scattering.rs",

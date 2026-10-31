@@ -103,9 +103,9 @@ or serialized implementation details public.
 
 The first machine-readable snapshot was checked in as
 `api/python-public-api-v0.4.1.json`. The cleanup baseline is
-`api/python-public-api-v0.6.0.json`, and the reconciled candidate is
-`api/python-public-api-v0.7.0.json`. Each record contains every name in
-`__all__` for the six explicitly exported namespaces, their
+`api/python-public-api-v0.6.0.json`, the reconciled 0.7 record is `api/python-public-api-v0.7.0.json`, and the current
+0.8 record is `api/python-public-api-v0.8.0.json`. The 0.8 record includes
+explicit single-crystal submodules. Each record contains names in `__all__`, their
 domain/adapter/validation tier,
 implementation target, and callable signature when introspection supports one.
 `scripts/public_api_snapshot.py --check` regenerates the record without
@@ -128,3 +128,10 @@ validation converters. Explicit 0.5 spellings resolve with
 pre-1.0 compatibility window is documented in [Migrating to
 0.6](migration-0.6.md); it does not restore those aliases to `__all__` or the
 new public snapshot.
+
+The pre-release single-crystal experimental import paths and Cargo feature names
+are removed in 0.8 after updating their Dioptas consumer. This deliberate pre-1.0
+decision does not remove the published powder compatibility aliases described
+above. Independent numerical references now live under
+`phasesmith.single_crystal.reference`; they are validation support. Legacy
+saved-data schemas keep explicit readers/migrations.

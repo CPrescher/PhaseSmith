@@ -300,9 +300,7 @@ def integrate_series(
     Bounds may run forwards or backwards; overlapping exposures are rejected.
     """
     if not hasattr(_core, "experimental_integrate_reduce"):
-        raise RuntimeError(
-            "build PhaseSmith with --features spots (legacy experimental-spots) for integration"
-        )
+        raise RuntimeError("build PhaseSmith with --features spots  for integration")
     if not isinstance(predictions, ScanPredictions):
         raise TypeError("predictions must be ScanPredictions")
     options = options or IntegrationOptions()

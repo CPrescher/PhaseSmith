@@ -12,7 +12,7 @@ The feature builds pinned native sources through `hdf5-metno` 0.15.1,
 `hdf5-metno-src` 0.10.4 and `hdf5-bitshuffle` 1.0.0. HDF5, zlib, LZF and
 Bitshuffle/LZ4 are linked into the artifact; a separately installed HDF5,
 `h5py`, `hdf5plugin`, Python interpreter or plugin directory is not needed by
-the Rust reader. Building needs Rust >=1.85.1, a C compiler, CMake >=3.26 and Git
+the Rust reader. Building needs Rust >=1.89.0, a C compiler, CMake >=3.26 and Git
 (the upstream Bitshuffle package applies its published patch during the build).
 Initial Cargo dependency downloads need network/cache as usual. Licenses and
 copyrights are included in `licenses/hdf5/` and wheel license metadata.

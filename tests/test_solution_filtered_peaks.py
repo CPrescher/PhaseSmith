@@ -3,7 +3,9 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution_count_free_reference import adaptive_peaks_reference
+from phasesmith.single_crystal.reference.solution_count_free_reference import (
+    adaptive_peaks_reference,
+)
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_solution_filtered_peaks"), reason="experimental-solution"
@@ -114,7 +116,7 @@ def test_entire_count_free_phase_trajectory_is_bitwise_equal(rank, omit):
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
 def test_shared_search_retains_models_counts_and_phase_history(symbol):
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, _, species = synthetic(symbol)

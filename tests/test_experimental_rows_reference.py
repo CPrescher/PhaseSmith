@@ -1,7 +1,7 @@
 """Independent NumPy checks of declared boundaries and projection geometry."""
 
 import numpy as np
-from phasesmith.experimental import rows_reference as r
+from phasesmith.single_crystal.reference import rows_reference as r
 
 OPTIONS = dict(
     min_row=4,

@@ -36,6 +36,3 @@ hdf5 = ["dep:phasesmith-hdf5"]
 spots = ["dep:phasesmith-spots"]
 solution = ["dep:phasesmith-solution"]
 row-search = ["dep:phasesmith-row-search"]
-# Pre-0.8 build commands remain valid; use capability names in new consumers.
-experimental-spots = ["spots", "row-search"]
-experimental-solution = ["solution"]

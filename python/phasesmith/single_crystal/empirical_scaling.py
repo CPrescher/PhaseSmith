@@ -164,7 +164,7 @@ def fit_empirical_scale(
     mask = paired_mask(groups, reference_mask)
     b = np.zeros(design.parameters) if start is None else _real(start, "start", 1)
     if not hasattr(_core, "experimental_empirical_fit"):
-        raise RuntimeError("rebuild PhaseSmith with experimental-spots native scaling optimization")
+        raise RuntimeError("rebuild PhaseSmith with spots native scaling optimization")
     result = _core.experimental_empirical_fit(
         design.frames,
         design.detector,

@@ -5,7 +5,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.grains import (
+from phasesmith.single_crystal.grains import (
     GrainConditioningOptions,
     GrainOwnershipOptions,
     GrainProposalRefinementOptions,
@@ -15,10 +15,10 @@ from phasesmith.experimental.grains import (
     _polish_proposals,
     find_grains_ensemble,
 )
-from phasesmith.experimental.ownership import _select, observation_charts
-from phasesmith.experimental.prediction import fit_crystal_proposal, refine_crystal
-from phasesmith.experimental.reciprocal import reciprocal_vectors
-from phasesmith.experimental.recovery import finish_training_pool
+from phasesmith.single_crystal.ownership import _select, observation_charts
+from phasesmith.single_crystal.prediction import fit_crystal_proposal, refine_crystal
+from phasesmith.single_crystal.reciprocal import reciprocal_vectors
+from phasesmith.single_crystal.recovery import finish_training_pool
 from test_experimental_grains import positional_cloud
 
 
@@ -179,7 +179,7 @@ def test_recovery_detector_uniform_null():
 
 
 def test_supported_subcell_is_a_cell_alternative_not_an_extra_component():
-    from phasesmith.experimental.recovery import _subcell_alternatives
+    from phasesmith.single_crystal.recovery import _subcell_alternatives
 
     rng = np.random.default_rng(621)
     parent = np.diag([10.5, 5.3, 7.7])

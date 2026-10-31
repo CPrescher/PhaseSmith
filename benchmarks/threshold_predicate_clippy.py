@@ -16,7 +16,7 @@ def worker(site, supplied):
     sys.path.insert(0, str(site))
     import numpy as np
     from phasesmith import _core
-    from phasesmith.experimental.spots import SpotOptions, detect_spots
+    from phasesmith.single_crystal.spots import SpotOptions, detect_spots
 
     assert Path(_core.__file__).resolve().is_relative_to(site.resolve())
     rng = np.random.default_rng(20261031)

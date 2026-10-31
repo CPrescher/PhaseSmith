@@ -53,7 +53,7 @@ class SolutionCancellation:
 
     def __init__(self) -> None:
         if not hasattr(_core, "_SolutionCancellation"):
-            raise ImportError("cancellation requires the experimental-solution native feature")
+            raise ImportError("cancellation requires the solution capability")
         self._native = _core._SolutionCancellation()
 
     def cancel(self) -> bool:
@@ -849,7 +849,7 @@ def estimate_solution_memory(
     if not isinstance(group, SpaceGroup):
         raise TypeError("space_group must be SpaceGroup")
     if not hasattr(_core, "_solution_memory_estimate"):
-        raise ImportError("memory preflight requires the updated experimental-solution feature")
+        raise ImportError("memory preflight requires the updated solution capability")
     return SolutionMemoryEstimate(
         **_core._solution_memory_estimate(
             observations.hkl.reshape(-1),
@@ -879,9 +879,9 @@ def solve_structure(
     """
     if not hasattr(_core, "_solve_structure"):
         raise ImportError(
-            "structure solution requires the experimental-solution native feature; "
+            "structure solution requires the solution capability; "
             "build with maturin develop --release --features solution "
-            "(legacy experimental-solution)"
+            ""
         )
     if not isinstance(observations, HklData) or not isinstance(cell, UnitCell):
         raise TypeError("observations and cell must be HklData and UnitCell")
@@ -1097,7 +1097,7 @@ def solve_structure_elements(
     if type(workers) is not int or not 1 <= workers <= 64:
         raise ValueError("workers must be an integer in [1,64]")
     if not hasattr(_core, "_SharedOrbitPool"):
-        raise ImportError("shared element search requires experimental-solution native feature")
+        raise ImportError("shared element search requires solution capability")
     if not isinstance(observations, HklData) or not isinstance(cell, UnitCell):
         raise TypeError("observations and cell must be HklData and UnitCell")
     if isinstance(elements, str):

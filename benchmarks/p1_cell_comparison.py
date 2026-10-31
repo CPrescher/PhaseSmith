@@ -10,9 +10,9 @@ from io import BytesIO
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental.cell_comparison import CellComparisonOptions, compare_cells
-from phasesmith.experimental.cell_metrics import BRAVAIS
-from phasesmith.experimental.reciprocal import PanelGeometry, reciprocal_vectors
+from phasesmith.single_crystal.cell_comparison import CellComparisonOptions, compare_cells
+from phasesmith.single_crystal.cell_metrics import BRAVAIS
+from phasesmith.single_crystal.reciprocal import PanelGeometry, reciprocal_vectors
 
 ROOT = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)

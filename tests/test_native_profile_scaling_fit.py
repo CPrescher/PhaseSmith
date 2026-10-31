@@ -5,17 +5,17 @@ from dataclasses import replace
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.empirical_scaling import (
+from phasesmith.single_crystal.empirical_scaling import (
     ScalingDesign,
     ScalingOptions,
     fit_empirical_scale,
 )
-from phasesmith.experimental.intensity_reference import (
+from phasesmith.single_crystal.profile_refinement import ShapeFitOptions, _Spot, refine_profiles
+from phasesmith.single_crystal.reference.intensity_reference import (
     empirical_model,
     fit_empirical_scale_reference,
 )
-from phasesmith.experimental.profile_fit_reference import ReferenceSpot
-from phasesmith.experimental.profile_refinement import ShapeFitOptions, _Spot, refine_profiles
+from phasesmith.single_crystal.reference.profile_fit_reference import ReferenceSpot
 from test_experimental_profiles import fixed_model, observations
 
 pytestmark = pytest.mark.skipif(

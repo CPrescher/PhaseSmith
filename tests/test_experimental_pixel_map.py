@@ -4,12 +4,14 @@ from dataclasses import replace
 
 import numpy as np
 import pytest
-from phasesmith.experimental.geometry_refinement import parameter_state, predict_with_detector
-from phasesmith.experimental.geometry_refinement_reference import detector_partials
-from phasesmith.experimental.prediction import predict_spots
-from phasesmith.experimental.prediction_reference import predict as reference_prediction
-from phasesmith.experimental.reciprocal import reciprocal_vectors
-from phasesmith.experimental.reciprocal_reference import reciprocal_vectors as reference_q
+from phasesmith.single_crystal.geometry_refinement import parameter_state, predict_with_detector
+from phasesmith.single_crystal.prediction import predict_spots
+from phasesmith.single_crystal.reciprocal import reciprocal_vectors
+from phasesmith.single_crystal.reference.geometry_refinement_reference import detector_partials
+from phasesmith.single_crystal.reference.prediction_reference import predict as reference_prediction
+from phasesmith.single_crystal.reference.reciprocal_reference import (
+    reciprocal_vectors as reference_q,
+)
 from test_experimental_prediction import setup
 
 

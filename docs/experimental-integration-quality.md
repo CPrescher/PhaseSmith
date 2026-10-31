@@ -1,4 +1,4 @@
-# Experimental image-by-image integration quality
+# image-by-image integration quality
 
 **Supported namespace:** this method is included in the 0.8 single-crystal
 capability. Use `phasesmith.single_crystal`; ordinary builds include the native

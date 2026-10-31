@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.integration import IntegrationOptions, integrate_series
-from phasesmith.experimental.local_background_reference import measure
-from phasesmith.experimental.prediction import ScanPredictions
+from phasesmith.single_crystal.integration import IntegrationOptions, integrate_series
+from phasesmith.single_crystal.prediction import ScanPredictions
+from phasesmith.single_crystal.reference.local_background_reference import measure
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "experimental_local_background"), reason="experimental plane build"

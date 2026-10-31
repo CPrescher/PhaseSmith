@@ -1,5 +1,6 @@
 """Supported namespace, installed capabilities and pre-0.8 migration contracts."""
 
+import importlib
 import inspect
 import json
 import subprocess
@@ -35,38 +36,19 @@ def test_supported_native_features_are_present_in_ordinary_builds():
         assert hasattr(_core, name), name
 
 
-def test_legacy_imports_share_module_type_and_function_identity():
-    code = """
-import importlib
-import pickle
-import warnings
-for name in NAMES:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        old = importlib.import_module("phasesmith.experimental." + name)
-    new = importlib.import_module("phasesmith.single_crystal." + name)
-    assert old is new
-    assert new.__name__ == "phasesmith.single_crystal." + name
-    assert len(caught) == 1 and caught[0].category is DeprecationWarning
-    assert "removed in 1.0" in str(caught[0].message)
-from phasesmith.single_crystal.spots import SpotOptions
-assert pickle.loads(pickle.dumps(SpotOptions())) == SpotOptions()
-legacy = pickle.dumps(SpotOptions(), protocol=0).replace(
-    b"phasesmith.single_crystal.spots", b"phasesmith.experimental.spots")
-assert isinstance(pickle.loads(legacy), SpotOptions)
-"""
-    names = sorted(
-        p.stem
-        for p in (ROOT / "python/phasesmith/experimental").glob("*.py")
-        if p.stem != "__init__" and "reference" not in p.stem
-    )
-    subprocess.run([sys.executable, "-c", "NAMES = " + repr(names) + "\n" + code], check=True)
+def test_retired_experimental_imports_are_absent():
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module("phasesmith.experimental.spots")
+    import pickle
+
+    from phasesmith.single_crystal.spots import SpotOptions
+
+    assert isinstance(pickle.loads(pickle.dumps(SpotOptions())), SpotOptions)
 
 
-@pytest.mark.parametrize("path", ["single_crystal", "experimental"])
-def test_both_solution_cli_paths_delegate(path):
+def test_supported_solution_cli():
     completed = subprocess.run(
-        [sys.executable, "-m", f"phasesmith.{path}.solution", "--help"],
+        [sys.executable, "-m", "phasesmith.single_crystal.solution", "--help"],
         capture_output=True,
         text=True,
         check=True,
@@ -188,3 +170,31 @@ def test_solution_summary_migration_is_copy_only_and_preserves_candidates(versio
     assert source["candidates"][0]["r1"] == 0.1
     with pytest.raises(ValueError, match="unsupported"):
         upgrade_solution_record(dict(source, schema="unknown"))
+
+
+def test_named_configuration_is_independent_of_future_solver_defaults(monkeypatch):
+    from phasesmith.single_crystal import search
+
+    original = search.ElementSearchConfig.validated_v1().to_record()
+    signature = inspect.signature(search.solve_structure_elements)
+    changed = signature.replace(
+        parameters=[
+            p.replace(default=999) if p.name == "beam_width" else p
+            for p in signature.parameters.values()
+        ]
+    )
+
+    def future_solver(*args, **kwargs):
+        raise AssertionError("this test only constructs configuration metadata")
+
+    future_solver.__signature__ = changed
+    monkeypatch.setattr(search, "solve_structure_elements", future_solver)
+    assert search.ElementSearchConfig.validated_v1().to_record() == original
+
+
+@pytest.mark.parametrize("key,value", [("workers", True), ("cached_refinement", 1)])
+def test_named_configuration_rejects_equal_but_wrong_scalar_types(key, value):
+    config = ElementSearchConfig.validated_v1()
+    controls = tuple((k, value if k == key else v) for k, v in config.controls)
+    with pytest.raises(ValueError, match="frozen expansion"):
+        ElementSearchConfig(config.name, config.options, controls)

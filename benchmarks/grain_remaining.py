@@ -17,12 +17,12 @@ from pathlib import Path
 
 import numpy as np
 from phasesmith import _core
-from phasesmith.experimental import grains as G
-from phasesmith.experimental.reciprocal import lattice_fourier
+from phasesmith.single_crystal import grains as G
+from phasesmith.single_crystal.reciprocal import lattice_fourier
 
 
 def legacy(root):
-    path = root / "source-before/python/phasesmith/experimental/grains.py"
+    path = root / "source-before/python/phasesmith/single_crystal/grains.py"
     nodes = [
         n
         for n in ast.parse(path.read_text()).body
@@ -44,8 +44,8 @@ def legacy(root):
 
 
 def control():
-    from phasesmith.experimental.prediction import predict_spots
-    from phasesmith.experimental.reciprocal import PanelGeometry, reciprocal_vectors
+    from phasesmith.single_crystal.prediction import predict_spots
+    from phasesmith.single_crystal.reciprocal import PanelGeometry, reciprocal_vectors
 
     rng = np.random.default_rng(643)
     geometry = PanelGeometry.from_poni(

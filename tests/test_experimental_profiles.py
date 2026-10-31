@@ -5,9 +5,8 @@ from dataclasses import replace
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental import profiles_reference as reference
-from phasesmith.experimental.integration import IntegrationOptions, ReflectionTable
-from phasesmith.experimental.profiles import (
+from phasesmith.single_crystal.integration import IntegrationOptions, ReflectionTable
+from phasesmith.single_crystal.profiles import (
     ProfileModel,
     ProfileObservations,
     ProfileOptions,
@@ -15,6 +14,7 @@ from phasesmith.experimental.profiles import (
     fit_profiles,
     learn_profiles,
 )
+from phasesmith.single_crystal.reference import profiles_reference as reference
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "experimental_profile_fit"), reason="experimental profiles build"
@@ -400,8 +400,8 @@ def test_scaled_signed_gls_matches_independent_equations():
 
 
 def test_rotation_factor_signed_geometry():
-    from phasesmith.experimental.profiles import rotation_factors
-    from phasesmith.experimental.reciprocal import PanelGeometry
+    from phasesmith.single_crystal.profiles import rotation_factors
+    from phasesmith.single_crystal.reciprocal import PanelGeometry
 
     geometry = PanelGeometry(
         np.array([[0, 0, 10], [1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 0.0]]), 0.31
@@ -412,8 +412,8 @@ def test_rotation_factor_signed_geometry():
 
 
 def test_prepare_streamed_known_counts_and_widths():
-    from phasesmith.experimental.prediction import ScanPredictions
-    from phasesmith.experimental.profiles import prepare_profiles
+    from phasesmith.single_crystal.prediction import ScanPredictions
+    from phasesmith.single_crystal.profiles import prepare_profiles
 
     centre = np.array([[30.17, 30.28, 0.19]])
     bounds = np.column_stack([np.arange(9) - 4.5, np.arange(9) - 3.5])
@@ -552,7 +552,7 @@ def test_exact_finite_support_boundaries():
     ],
 )
 def test_affine_pixel_intersections_and_partials(planar):
-    from phasesmith.experimental.profiles_affine_reference import evaluate
+    from phasesmith.single_crystal.reference.profiles_affine_reference import evaluate
 
     p = truth()
     rng = np.random.default_rng(436)
@@ -611,8 +611,8 @@ def test_affine_identity_and_shifted_native_fit():
 
 
 def test_variation_gls_covariance_and_signed_counts():
-    from phasesmith.experimental.profiles import SCATTERING_VARIATIONS
-    from phasesmith.experimental.profiles_variation_reference import fit
+    from phasesmith.single_crystal.profiles import SCATTERING_VARIATIONS
+    from phasesmith.single_crystal.reference.profiles_variation_reference import fit
 
     o = observations((1.0, 1.0), covariance=True)
     options = replace(fixed_model(o).options, cutoff=0)
@@ -647,7 +647,7 @@ def test_variation_gls_covariance_and_signed_counts():
 
 
 def test_variation_objective_derivatives_and_rank_failure():
-    from phasesmith.experimental.profiles import SCATTERING_VARIATIONS
+    from phasesmith.single_crystal.profiles import SCATTERING_VARIATIONS
 
     o = observations((150.0,), covariance=True)
     m = replace(fixed_model(o), options=replace(fixed_model(o).options, cutoff=0))
@@ -690,7 +690,7 @@ def test_variation_objective_derivatives_and_rank_failure():
 
 
 def test_frozen_strong_shapes_and_heldout_isolation():
-    from phasesmith.experimental.profiles import fit_learned_profiles, learn_profile_variations
+    from phasesmith.single_crystal.profiles import fit_learned_profiles, learn_profile_variations
 
     o = observations()
     m = replace(fixed_model(o), options=replace(fixed_model(o).options, cutoff=0))
@@ -717,7 +717,7 @@ def test_frozen_strong_shapes_and_heldout_isolation():
 
 
 def test_frozen_shape_nulls_stay_signed_and_calibrated():
-    from phasesmith.experimental.profiles import SCATTERING_VARIATIONS
+    from phasesmith.single_crystal.profiles import SCATTERING_VARIATIONS
 
     o = observations(np.zeros(240))
     m = replace(fixed_model(o), options=replace(fixed_model(o).options, cutoff=0))
@@ -740,8 +740,8 @@ def test_frozen_shape_nulls_stay_signed_and_calibrated():
 
 
 def test_fixed_mixed_profile_matches_dense_reference():
-    from phasesmith.experimental.profiles import SCATTERING_VARIATIONS
-    from phasesmith.experimental.profiles_variation_reference import fit
+    from phasesmith.single_crystal.profiles import SCATTERING_VARIATIONS
+    from phasesmith.single_crystal.reference.profiles_variation_reference import fit
 
     o = observations((1.0, 1.0), covariance=True)
     m = replace(fixed_model(o), options=replace(fixed_model(o).options, cutoff=0))

@@ -22,9 +22,9 @@ from pathlib import Path
 import numpy as np
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution import SolutionOptions, solve_structure, write_solution
 from phasesmith.io.space_groups import space_group_by_symbol
 from phasesmith.scattering import xray_species_metadata
+from phasesmith.single_crystal.solution import SolutionOptions, solve_structure, write_solution
 from solution_adp_transfer import reflection_data
 
 
@@ -168,8 +168,8 @@ def main():
             for name in (
                 "benchmarks/solution_adp_transfer.py",
                 "benchmarks/structure_solution.py",
-                "python/phasesmith/experimental/solution.py",
-                "python/phasesmith/experimental/solution_symmetry.py",
+                "python/phasesmith/single_crystal/solution.py",
+                "python/phasesmith/single_crystal/solution_symmetry.py",
                 "Cargo.lock",
             )
         },

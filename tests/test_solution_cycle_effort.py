@@ -4,8 +4,10 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution_consensus_reference import model_agreement_distance
-from phasesmith.experimental.solution_schedule_reference import late_phase_plateau_ready
+from phasesmith.single_crystal.reference.solution_consensus_reference import (
+    model_agreement_distance,
+)
+from phasesmith.single_crystal.reference.solution_schedule_reference import late_phase_plateau_ready
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_solution_model_agreement"), reason="experimental-solution"
@@ -74,7 +76,7 @@ def test_late_plateau_matches_reference_and_waits_through_genuine_progress(seed,
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
 def test_full_search_keeps_models_counts_and_identical_cycle_prefixes(symbol):
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, _, species = synthetic(symbol)
@@ -153,8 +155,8 @@ def test_full_search_keeps_models_counts_and_identical_cycle_prefixes(symbol):
 
 
 def test_noisy_independent_models_can_stop_without_claiming_requested_r1_target():
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
     from phasesmith.io.hkl import HklData
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, _, species = synthetic("P1")

@@ -5,8 +5,8 @@ import itertools
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution_recycling_reference import recycle_reference
 from phasesmith.io.space_groups import space_group_by_symbol
+from phasesmith.single_crystal.reference.solution_recycling_reference import recycle_reference
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_solution_recycle_density"), reason="requires experimental-solution"
@@ -184,7 +184,7 @@ def test_translated_inversion_fallback_respects_phase_line():
 
 
 def test_frame_composition_and_cooperative_stop():
-    from phasesmith.experimental.solution import SolutionCancellation
+    from phasesmith.single_crystal.solution import SolutionCancellation
 
     args = inputs("P 21 m a")
     shape, group, rho, h, amplitude, support = args

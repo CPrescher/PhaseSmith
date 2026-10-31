@@ -3,16 +3,16 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.geometry_refinement import (
+from phasesmith.single_crystal.geometry_refinement import (
     GeometryOptions,
     parameter_state,
     predict_with_detector,
     reference_basis,
     refine_geometry,
 )
-from phasesmith.experimental.geometry_refinement_reference import detector_partials
-from phasesmith.experimental.prediction import predict_spots
-from phasesmith.experimental.reciprocal import PanelGeometry
+from phasesmith.single_crystal.prediction import predict_spots
+from phasesmith.single_crystal.reciprocal import PanelGeometry
+from phasesmith.single_crystal.reference.geometry_refinement_reference import detector_partials
 from test_experimental_prediction import setup
 
 pytestmark = pytest.mark.skipif(
@@ -105,7 +105,7 @@ def test_reference_metric_and_invalid_boundaries():
     g, b, h, hint = sample()
     cell = np.array([5.0, 7.0, 9.0, 80.0, 95.0, 105.0])
     ref = reference_basis(b, cell)
-    from phasesmith.experimental.indexing import cell_parameters
+    from phasesmith.single_crystal.indexing import cell_parameters
 
     np.testing.assert_allclose(cell_parameters(np.linalg.inv(ref).T), cell, atol=1e-12)
     for bad in ([0, 7, 9, 90, 90, 90], [5, 7, 9, 5, 5, 175], [5, 7, np.nan, 90, 90, 90]):
@@ -144,7 +144,7 @@ def test_nonconvergence_cannot_be_accepted():
 @pytest.mark.parametrize("vary", [False, True])
 def test_native_parameter_equations_and_independent_fit(seed, vary):
     pytest.importorskip("scipy")  # Only the independent control optimizer.
-    from phasesmith.experimental.geometry_refinement_reference import (
+    from phasesmith.single_crystal.reference.geometry_refinement_reference import (
         parameter_state_reference,
         prediction_partials_reference,
         refine_reference,

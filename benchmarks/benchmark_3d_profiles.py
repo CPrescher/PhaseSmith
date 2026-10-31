@@ -8,8 +8,8 @@ from pathlib import Path
 
 import numpy as np
 from phasesmith import _core
-from phasesmith.experimental.integration import IntegrationOptions, ReflectionTable
-from phasesmith.experimental.profiles import (
+from phasesmith.single_crystal.integration import IntegrationOptions, ReflectionTable
+from phasesmith.single_crystal.profiles import (
     ProfileModel,
     ProfileObservations,
     ProfileOptions,

@@ -11,9 +11,9 @@ from time import perf_counter
 
 import numpy as np
 from phasesmith import _core
-from phasesmith.experimental import grains_reference as reference
-from phasesmith.experimental.grains import GrainSearchOptions, _fourier_peaks, _triplets
-from phasesmith.experimental.reciprocal import lattice_fourier
+from phasesmith.single_crystal.grains import GrainSearchOptions, _fourier_peaks, _triplets
+from phasesmith.single_crystal.reciprocal import lattice_fourier
+from phasesmith.single_crystal.reference import grains_reference as reference
 
 
 def uncached_serial(q, options):

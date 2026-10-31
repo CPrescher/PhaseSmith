@@ -6,14 +6,14 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
-from phasesmith.experimental.solution_tangent_reference import (
+from phasesmith.io.space_groups import space_group_by_symbol
+from phasesmith.single_crystal.reference.solution_tangent_reference import (
     invariant_reference,
     normalize_reference,
     small_relations_reference,
     step_reference,
 )
-from phasesmith.io.space_groups import space_group_by_symbol
+from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_PreparedTangent"), reason="requires experimental-solution"
@@ -315,7 +315,7 @@ def test_coincident_shell_centers_merge_instead_of_arbitrary_steps():
 
 
 def test_tangent_request_keeps_truthful_budget_and_cancellation_results():
-    from phasesmith.experimental.solution import SolutionCancellation
+    from phasesmith.single_crystal.solution import SolutionCancellation
     from test_solution_shared_search import synthetic
 
     cell, group, data, _, _ = synthetic()

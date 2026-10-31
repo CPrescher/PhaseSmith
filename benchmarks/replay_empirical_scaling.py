@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental.empirical_scaling import (
+from phasesmith.single_crystal.empirical_scaling import (
     ScalingDesign,
     ScalingOptions,
     fit_empirical_scale,

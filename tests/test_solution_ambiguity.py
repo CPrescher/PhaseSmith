@@ -6,9 +6,11 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution_assignment_reference import ambiguous_assignments_reference
 from phasesmith.io.space_groups import space_group_by_symbol
 from phasesmith.scattering_reference import xray_non_resonant
+from phasesmith.single_crystal.reference.solution_assignment_reference import (
+    ambiguous_assignments_reference,
+)
 
 pytestmark = pytest.mark.skipif(
     not hasattr(getattr(_core, "_PeakCompletionPlan", object), "ambiguous"),
@@ -109,7 +111,7 @@ def test_invalid_or_double_applied_displacement_controls(invalid):
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
 def test_complete_search_preserves_counts_and_final_anisotropic_mode(symbol):
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, _xyz, species = synthetic(symbol)

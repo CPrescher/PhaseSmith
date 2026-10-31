@@ -795,7 +795,7 @@ def find_grains(
     if len(fit) < o.min_indexed or np.count_nonzero(~train) < 6:
         raise ValueError("insufficient training or held-out positions")
     if not hasattr(_core, "ExperimentalLatticeEngine"):
-        raise RuntimeError("FFT grain search requires a PhaseSmith experimental-spots build")
+        raise RuntimeError("FFT grain search requires a PhaseSmith spots build")
     if method == "rows":
         from .row_grains import discover_rows
 
@@ -1748,7 +1748,7 @@ def find_grains_ensemble(
     if sum(s.max_grains for s in searches) > 256:
         raise ValueError("ensemble proposal budget exceeds 256 models")
     if not hasattr(_core, "ExperimentalLatticeEngine"):
-        raise RuntimeError("FFT grain ensemble requires an experimental-spots build")
+        raise RuntimeError("FFT grain ensemble requires an spots build")
     if session is not None:
         searches = tuple(replace(search, workers=1) for search in searches)
     engine = _core.ExperimentalLatticeEngine(o.workers)

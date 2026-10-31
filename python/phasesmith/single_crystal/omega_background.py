@@ -80,9 +80,10 @@ def _inputs(rows, parameters, workers, backend, solver):
         raise ValueError("Backend must be auto, native or scipy")
     if not isinstance(solver, str) or solver not in SOLVERS:
         raise ValueError("Solver must be cholesky or ldlt")
-    if backend == "native" and not available():
+    if backend in ("auto", "native") and not available():
         raise RuntimeError(
-            "Build PhaseSmith with --features spots (legacy experimental-spots) for omega arPLS"
+            "Native omega arPLS requires the spots capability; "
+            "the independent scipy reference requires explicit backend='scipy'"
         )
     return np.ascontiguousarray(rows, dtype=np.float64), p
 
@@ -103,7 +104,7 @@ def arpls_rows(rows, parameters=None, *, workers=1, backend="auto", solver="chol
         return _engine(workers, solver).baselines(
             data, None, p.smoothness, p.tolerance, p.max_iterations, 3
         )
-    from ..experimental.omega_background_reference import scipy_baselines
+    from .reference.omega_background_reference import scipy_baselines
 
     return scipy_baselines(data, p)
 
@@ -143,7 +144,7 @@ def arpls_masked_rows(
             p.max_iterations,
             minimum_frames,
         )
-    from ..experimental.omega_background_reference import scipy_baselines
+    from .reference.omega_background_reference import scipy_baselines
 
     result = np.full(data.shape, np.nan)
     counts = np.zeros(len(data), np.int32)

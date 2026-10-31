@@ -48,7 +48,7 @@ GitHub/PyPI/crates.io process is documented in
 
 ## Development
 
-Requires Rust 1.85.1 or newer, Python 3.11 or newer, `uv`, and `maturin`.
+Requires Rust 1.89.0 or newer, Python 3.11 or newer, `uv`, and `maturin`.
 
 ```shell
 uv venv

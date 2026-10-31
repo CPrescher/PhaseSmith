@@ -7,7 +7,6 @@ limits remain caller choices and supplied symmetry remains a prior.
 
 from __future__ import annotations
 
-import inspect
 import json
 from dataclasses import asdict, dataclass, replace
 
@@ -15,70 +14,60 @@ from .solution import SolutionOptions, solve_structure_elements
 
 __all__ = ["ElementSearchConfig", "search_structure_elements"]
 
-# Reviewed frozen combination, excluding corpus paths, external programs and
-# scheduler controls. Tests compare this expansion to the retained protocol.
-_VALIDATED = dict.fromkeys(
-    [
-        "wilson_normalization",
-        "phase_quality_selection",
-        "phase_origin_selection",
-        "chemical_assignment",
-        "iterative_refinement",
-        "isotropic_assignment_refinement",
-        "filtered_peak_search",
-        "batched_fft",
-        "real_fft",
-        "fused_phase_workspace",
-        "cached_normal_refinement",
-        "multiplicity_weighted_refinement",
-        "ambiguous_assignments",
-        "cached_assignment_refinement",
-        "specialized_isotropic_refinement",
-        "streamed_peak_search",
-        "reuse_normal_matrices",
-        "short_phase_starts",
-        "blocked_normal_matrices",
-        "phase_plateau_stopping",
-        "assignment_convergence_stopping",
-        "late_phase_plateau_stopping",
-        "model_consensus_stopping",
-        "joint_assignment_refinement",
-        "cached_repair_evaluation",
-        "work_sliced_phasing",
-        "phase_first_selection",
-        "score_only_evaluation",
-        "reusable_fourier_workspaces",
-        "symmetry_recycling",
-        "tangent_refinement",
-    ],
-    True,
+# Fully expanded v1 values: changing low-level defaults cannot change this profile.
+_VALIDATED_CONTROLS = (
+    ("adaptive_checkpoints", False),
+    ("adaptive_counts", True),
+    ("ambiguous_assignments", True),
+    ("assignment_convergence_stopping", True),
+    ("batched_fft", True),
+    ("beam_width", 4),
+    ("blocked_normal_matrices", True),
+    ("cached_assignment_refinement", True),
+    ("cached_normal_refinement", True),
+    ("cached_refinement", True),
+    ("cached_repair_evaluation", True),
+    ("calculated_shell_normalization", True),
+    ("chemical_assignment", True),
+    ("dual_checkpoints", True),
+    ("dual_peak_cap", 128),
+    ("dual_peak_sigma", 2.0),
+    ("filtered_peak_search", True),
+    ("fused_phase_workspace", True),
+    ("independent_origin_sampling", False),
+    ("integrated_peak_density", True),
+    ("isotropic_assignment_refinement", True),
+    ("iterative_refinement", True),
+    ("joint_assignment_refinement", True),
+    ("late_phase_plateau_stopping", True),
+    ("missing_reflections", False),
+    ("model_consensus_stopping", True),
+    ("multiplicity_weighted_refinement", True),
+    ("peak_density_radius_angstrom", 0.7),
+    ("phase_first_selection", True),
+    ("phase_origin_selection", True),
+    ("phase_plateau_stopping", True),
+    ("phase_quality_selection", True),
+    ("real_fft", True),
+    ("recycling_cycles", 10),
+    ("refinement_shortlist", 3),
+    ("resolution_extension", 1.0),
+    ("reusable_fourier_workspaces", True),
+    ("reuse_normal_matrices", True),
+    ("score_only_evaluation", True),
+    ("screening_iterations", 8),
+    ("search_rounds", 8),
+    ("short_phase_starts", True),
+    ("specialized_isotropic_refinement", True),
+    ("staged_refinement", True),
+    ("streamed_peak_search", True),
+    ("symmetry_recycling", True),
+    ("tangent_in_recycling", True),
+    ("tangent_refinement", True),
+    ("wilson_normalization", True),
+    ("work_sliced_phasing", True),
+    ("workers", 1),
 )
-_VALIDATED.update(
-    missing_reflections=False,
-    resolution_extension=1.0,
-    adaptive_checkpoints=False,
-    independent_origin_sampling=False,
-    workers=1,
-)
-_INPUTS = {
-    "observations",
-    "cell",
-    "elements",
-    "space_group",
-    "options",
-    "maximum_atoms",
-    "cancellation",
-}
-
-
-def _expanded(controls):
-    result = {
-        name: p.default
-        for name, p in inspect.signature(solve_structure_elements).parameters.items()
-        if name not in _INPUTS
-    }
-    result.update(controls)
-    return tuple(sorted(result.items()))
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,7 +81,16 @@ class ElementSearchConfig:
     def __post_init__(self):
         if self.name != "validated-v1" or not isinstance(self.options, SolutionOptions):
             raise ValueError("expected validated-v1 and SolutionOptions")
-        if not isinstance(self.controls, tuple) or self.controls != _expanded(_VALIDATED):
+        if (
+            not isinstance(self.controls, tuple)
+            or self.controls != _VALIDATED_CONTROLS
+            or any(
+                type(value) is not type(expected)
+                for (_, value), (_, expected) in zip(
+                    self.controls, _VALIDATED_CONTROLS, strict=True
+                )
+            )
+        ):
             raise ValueError("validated-v1 controls must match their complete frozen expansion")
 
     @classmethod
@@ -104,7 +102,7 @@ class ElementSearchConfig:
         """
         if options is None:
             options = SolutionOptions(phasing="dual_space", completion=False)
-        return cls("validated-v1", options, _expanded(_VALIDATED))
+        return cls("validated-v1", options, _VALIDATED_CONTROLS)
 
     def to_record(self):
         """JSON-safe complete expansion; no corpus paths or source answers."""

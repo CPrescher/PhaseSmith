@@ -20,7 +20,7 @@ def test_cached_beam_keeps_every_candidate_float_bit_and_logical_score(seed, sym
     bounds = np.column_stack([1e-5 - u, 0.2 - u])
     old = plan.joint(labels, bounds, 4)
     new = plan.joint(labels, bounds, 4, cached=True)
-    from phasesmith.experimental.solution_assignment_reference import (
+    from phasesmith.single_crystal.reference.solution_assignment_reference import (
         joint_assignment_beam_reference,
     )
 
@@ -65,7 +65,7 @@ def test_full_search_keeps_solutions_and_validates_cache_request(symbol):
     import sys
     from pathlib import Path
 
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "benchmarks"))

@@ -1,4 +1,4 @@
-# Experimental detector spots: first milestone
+# detector spots: first milestone
 
 **Supported namespace:** this method is included in the 0.8 single-crystal
 capability. Use `phasesmith.single_crystal`; ordinary builds include the native
@@ -127,8 +127,8 @@ alone does not establish a passing run on those platforms.
 
 Later milestones can add learned profiles, frame linking, unknown-cell
 indexing and multi-grain scaling separately after this observable contract is
-validated. Experimental code remains on its branch and behind explicit build
-and UI switches; it must not be merged into a standard release by accident.
+validated. The supported 0.8 detector is included in ordinary PhaseSmith builds. Application
+UI enablement remains a separate host decision.
 
 ## Initial checks and measured-data scope
 

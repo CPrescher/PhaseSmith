@@ -26,7 +26,7 @@ __all__ = ["GeometryCalibration", "GeometryOptions", "refine_geometry"]
 
 def _native():
     if not hasattr(_core, "experimental_geometry_fit"):
-        raise RuntimeError("rebuild PhaseSmith with experimental-spots native geometry fitting")
+        raise RuntimeError("rebuild PhaseSmith with spots native geometry fitting")
     return _core
 
 

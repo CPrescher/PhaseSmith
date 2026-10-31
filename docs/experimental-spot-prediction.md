@@ -1,4 +1,4 @@
-# Experimental rotation prediction and positional refinement
+# rotation prediction and positional refinement
 
 **Supported namespace:** this method is included in the 0.8 single-crystal
 capability. Use `phasesmith.single_crystal`; ordinary builds include the native

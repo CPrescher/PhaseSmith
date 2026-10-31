@@ -5,8 +5,8 @@ from dataclasses import replace
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental import grains as G
-from phasesmith.experimental import search_execution as execution
+from phasesmith.single_crystal import grains as G
+from phasesmith.single_crystal import search_execution as execution
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "ExperimentalLatticeEngine"), reason="experimental-spots not built"
@@ -95,7 +95,7 @@ def test_parallel_geometric_conditioned_and_stability_proposals_keep_all_bits(mo
 
 
 def test_paired_recovery_merge_is_independent_of_process_completion_order(monkeypatch):
-    from phasesmith.experimental.recovery import paired_proposals
+    from phasesmith.single_crystal.recovery import paired_proposals
 
     limits(monkeypatch)
     q = fixture()
@@ -164,8 +164,8 @@ def assert_fits_equal(first, second):
 
 
 def test_parallel_training_fits_trims_and_overlapping_alias_entries_are_exact(monkeypatch):
-    from phasesmith.experimental import ownership as W
-    from phasesmith.experimental import recovery as R
+    from phasesmith.single_crystal import ownership as W
+    from phasesmith.single_crystal import recovery as R
     from test_experimental_grains import positional_cloud
 
     limits(monkeypatch)
@@ -211,8 +211,8 @@ def test_parallel_training_fits_trims_and_overlapping_alias_entries_are_exact(mo
 
 
 def test_parallel_ownership_branch_and_coherent_rng_keep_original_order(monkeypatch):
-    from phasesmith.experimental import ownership as W
-    from phasesmith.experimental import recovery as R
+    from phasesmith.single_crystal import ownership as W
+    from phasesmith.single_crystal import recovery as R
     from test_experimental_grains import positional_cloud
 
     limits(monkeypatch)
@@ -241,7 +241,7 @@ def test_parallel_ownership_branch_and_coherent_rng_keep_original_order(monkeypa
 
 
 def test_speculative_failure_is_deferred_until_original_coordinator_consumes_case():
-    from phasesmith.experimental.fitting_tasks import _Cases
+    from phasesmith.single_crystal.fitting_tasks import _Cases
 
     class Ticket:
         calls = 0
@@ -260,7 +260,7 @@ def test_speculative_failure_is_deferred_until_original_coordinator_consumes_cas
 
 
 def test_fit_tasks_can_be_disabled_without_disabling_parallel_searches(monkeypatch):
-    from phasesmith.experimental import fitting_tasks
+    from phasesmith.single_crystal import fitting_tasks
 
     limits(monkeypatch)
     with execution.parallel_searches(2, fit_tasks=False) as session:

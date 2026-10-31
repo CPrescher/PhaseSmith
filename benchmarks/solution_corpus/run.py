@@ -33,13 +33,13 @@ INPUT_KEYS = {
 
 def worker(args):
     from phasesmith.crystallography import UnitCell
-    from phasesmith.experimental.solution import (
+    from phasesmith.io.hkl import read_hkl
+    from phasesmith.io.space_groups import space_group_by_number
+    from phasesmith.single_crystal.solution import (
         SolutionOptions,
         solve_structure_elements,
         write_solution,
     )
-    from phasesmith.io.hkl import read_hkl
-    from phasesmith.io.space_groups import space_group_by_number
 
     packet = json.loads(args.input.read_text())
     if set(packet) != INPUT_KEYS:
@@ -333,7 +333,7 @@ def collect_jobs(args):
         for name, expected in previous["implementation_sha256"].items():
             if (
                 name.startswith(
-                    ("crates/phasesmith-solution/src/", "python/phasesmith/experimental/")
+                    ("crates/phasesmith-solution/src/", "python/phasesmith/single_crystal/")
                 )
                 and sha(ROOT / name) != expected
             ):
@@ -351,7 +351,7 @@ def collect_jobs(args):
         + sorted((ROOT / "crates/phasesmith-py/src").glob("solution*.rs"))
         + [
             SCRIPT,
-            ROOT / "python/phasesmith/experimental/solution.py",
+            ROOT / "python/phasesmith/single_crystal/solution.py",
             ROOT / "Cargo.toml",
             ROOT / "Cargo.lock",
             ROOT / "crates/phasesmith-solution/Cargo.toml",

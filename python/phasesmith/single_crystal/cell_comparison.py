@@ -407,9 +407,7 @@ def compare_cells(
         if observed.shape != points.shape or not isinstance(geometry, PanelGeometry):
             raise ValueError("observed must match points and geometry must be PanelGeometry")
     if not hasattr(_core, "ExperimentalLatticeEngine"):
-        raise RuntimeError(
-            "build PhaseSmith with --features spots (legacy experimental-spots) for cell comparison"
-        )
+        raise RuntimeError("build PhaseSmith with --features spots  for cell comparison")
     # Assign in a reduced basis, then convert indices back exactly. Direct
     # rounding in a heavily sheared input basis is unstable even at small noise.
     reduced = reduce_cell(a)

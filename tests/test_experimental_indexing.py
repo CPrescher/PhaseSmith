@@ -5,19 +5,19 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental import reciprocal_reference as ref
-from phasesmith.experimental.indexing import (
+from phasesmith.single_crystal.indexing import (
     IndexingOptions,
     cell_parameters,
     find_lattices,
     reduce_basis,
 )
-from phasesmith.experimental.reciprocal import (
+from phasesmith.single_crystal.reciprocal import (
     PanelGeometry,
     correct_positions,
     lattice_fourier,
     reciprocal_vectors,
 )
+from phasesmith.single_crystal.reference import reciprocal_reference as ref
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "experimental_reciprocal"), reason="experimental-spots feature not built"

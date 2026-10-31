@@ -12,8 +12,8 @@ from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental.integration import IntegrationOptions, ReflectionTable
-from phasesmith.experimental.integration_quality import assess_integration
+from phasesmith.single_crystal.integration import IntegrationOptions, ReflectionTable
+from phasesmith.single_crystal.integration_quality import assess_integration
 
 
 def synthetic():

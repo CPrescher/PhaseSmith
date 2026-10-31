@@ -3,15 +3,15 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.prediction import (
+from phasesmith.single_crystal.prediction import (
     RefinementOptions,
     orientation_matrix,
     predict_scan,
     predict_spots,
     refine_crystal,
 )
-from phasesmith.experimental.prediction_reference import predict as reference
-from phasesmith.experimental.reciprocal import PanelGeometry, reciprocal_vectors
+from phasesmith.single_crystal.reciprocal import PanelGeometry, reciprocal_vectors
+from phasesmith.single_crystal.reference.prediction_reference import predict as reference
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "experimental_predict_spots"), reason="experimental-spots feature not built"

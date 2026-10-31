@@ -15,9 +15,9 @@ from pathlib import Path
 
 import numpy as np
 from phasesmith import _core
-from phasesmith.experimental.integration import IntegrationOptions, integrate_series
-from phasesmith.experimental.prediction import ScanPredictions, predict_scan, refine_crystal
-from phasesmith.experimental.reciprocal import PanelGeometry, reciprocal_vectors
+from phasesmith.single_crystal.integration import IntegrationOptions, integrate_series
+from phasesmith.single_crystal.prediction import ScanPredictions, predict_scan, refine_crystal
+from phasesmith.single_crystal.reciprocal import PanelGeometry, reciprocal_vectors
 
 
 def save_table(path, t):

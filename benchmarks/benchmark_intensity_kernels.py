@@ -6,8 +6,8 @@ import time
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental.empirical_scaling import ScalingDesign
-from phasesmith.experimental.profiles import evaluate_profile, evaluate_profile_shape
+from phasesmith.single_crystal.empirical_scaling import ScalingDesign
+from phasesmith.single_crystal.profiles import evaluate_profile, evaluate_profile_shape
 
 
 def run(repeats=3):

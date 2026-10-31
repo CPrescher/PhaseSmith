@@ -5,8 +5,8 @@ from dataclasses import replace
 
 import numpy as np
 import pytest
-from phasesmith.experimental.integration import IntegrationOptions, ReflectionTable
-from phasesmith.experimental.integration_quality import (
+from phasesmith.single_crystal.integration import IntegrationOptions, ReflectionTable
+from phasesmith.single_crystal.integration_quality import (
     QualityIssue,
     QualityOptions,
     assess_integration,
@@ -125,7 +125,7 @@ def test_spatial_and_background_model_actions_remain_visible():
 
 
 def test_support_assessment_retains_failed_checks_and_originals():
-    from phasesmith.experimental.integration_quality import assess_support
+    from phasesmith.single_crystal.integration_quality import assess_support
 
     t = make_table([[0, 0, 0], [200, 200, 1], [0, 0, 0]])
     a = replace(t, values=t.values * [1.01, 1, 1, 1, 1, 1])

@@ -6,8 +6,8 @@ import time
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental import scan_scaling_reference as reference
-from phasesmith.experimental.scan_scaling import fit_scan_scale
+from phasesmith.single_crystal.reference import scan_scaling_reference as reference
+from phasesmith.single_crystal.scan_scaling import fit_scan_scale
 
 
 def main(output):

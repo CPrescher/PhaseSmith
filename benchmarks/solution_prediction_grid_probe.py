@@ -33,9 +33,9 @@ def main():
         os.environ[name] = "1"
     from phasesmith import _core
     from phasesmith.crystallography import UnitCell
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
     from phasesmith.io.hkl import read_hkl
     from phasesmith.io.space_groups import space_group_by_number
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from solution_corpus.audit import audit_case
 
     manifest_path = ROOT / "validation/solution-corpus-v5.json"

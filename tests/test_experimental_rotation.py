@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental import rotation as r
-from phasesmith.experimental import rotation_reference as reference
-from phasesmith.experimental.spots import detect_spots
+from phasesmith.single_crystal import rotation as r
+from phasesmith.single_crystal.reference import rotation_reference as reference
+from phasesmith.single_crystal.spots import detect_spots
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "experimental_rotation_link"), reason="experimental rotation build needed"

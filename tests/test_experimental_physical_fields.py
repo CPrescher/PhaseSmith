@@ -5,9 +5,9 @@ from dataclasses import replace
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental import grains_reference as ref
-from phasesmith.experimental.grains import GrainSearchOptions
-from phasesmith.experimental.ownership import GrainOwnershipOptions, _physical_fields
+from phasesmith.single_crystal.grains import GrainSearchOptions
+from phasesmith.single_crystal.ownership import GrainOwnershipOptions, _physical_fields
+from phasesmith.single_crystal.reference import grains_reference as ref
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "ExperimentalLatticeEngine"), reason="experimental-spots not built"

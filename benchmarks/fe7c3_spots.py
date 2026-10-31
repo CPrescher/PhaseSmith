@@ -16,8 +16,8 @@ from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental import spots_reference
-from phasesmith.experimental.spots import SpotOptions, detect_spots
+from phasesmith.single_crystal.reference import spots_reference
+from phasesmith.single_crystal.spots import SpotOptions, detect_spots
 
 
 def sha(path):

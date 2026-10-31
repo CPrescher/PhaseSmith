@@ -140,7 +140,7 @@ def group_rows(points, *, options=None):
     if len(q) > 100000 or np.max(abs(q), initial=0) > 1000:
         raise ValueError("bounded search requires <=100000 positions and |q|<=1000")
     if not hasattr(_core, "experimental_row_search"):
-        raise RuntimeError("Row search requires a PhaseSmith experimental-spots build")
+        raise RuntimeError("Row search requires a PhaseSmith spots build")
     result = json.loads(
         _core.experimental_row_search(q, json.dumps(options._native_options(), allow_nan=False))
     )

@@ -346,9 +346,7 @@ class SeatShadowUnavailable(ValueError):
 
 def _native():
     if not hasattr(_core, "experimental_shadow_coarse"):
-        raise RuntimeError(
-            "build PhaseSmith with --features spots (legacy experimental-spots) for native masking"
-        )
+        raise RuntimeError("build PhaseSmith with --features spots  for native masking")
     return _core
 
 

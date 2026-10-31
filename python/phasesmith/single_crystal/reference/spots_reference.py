@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .spots import _DEFAULT_OPTIONS, SpotFlag, SpotTable, _boxes, _inputs
+from ..spots import _DEFAULT_OPTIONS, SpotFlag, SpotTable, _boxes, _inputs
 
 
 def _prepared(image, mask, variance, gain, read_noise, saturation):

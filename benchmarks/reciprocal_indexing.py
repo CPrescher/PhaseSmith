@@ -7,8 +7,8 @@ import time
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental.indexing import IndexingOptions, find_lattices
-from phasesmith.experimental.reciprocal import PanelGeometry, lattice_fourier, reciprocal_vectors
+from phasesmith.single_crystal.indexing import IndexingOptions, find_lattices
+from phasesmith.single_crystal.reciprocal import PanelGeometry, lattice_fourier, reciprocal_vectors
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--output", required=True)

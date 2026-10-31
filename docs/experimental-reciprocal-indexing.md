@@ -1,4 +1,4 @@
-# Experimental geometry correction and blind cell proposals
+# geometry correction and blind cell proposals
 
 **Supported namespace:** this method is included in the 0.8 single-crystal
 capability. Use `phasesmith.single_crystal`; ordinary builds include the native

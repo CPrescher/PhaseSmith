@@ -5,7 +5,7 @@ import json
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.frame_validity import (
+from phasesmith.single_crystal.frame_validity import (
     CombinedValidity,
     DacApertureMask,
     FrameValidity,
@@ -15,7 +15,7 @@ from phasesmith.experimental.frame_validity import (
     estimate_seat_shadows,
     flag_invalid_tracks,
 )
-from phasesmith.experimental.reciprocal import PanelGeometry
+from phasesmith.single_crystal.reciprocal import PanelGeometry
 
 native_mask = pytest.mark.skipif(
     not hasattr(_core, "experimental_shadow_coarse"), reason="native masking build"
@@ -328,7 +328,7 @@ def test_mask_composition_and_exposure_identity():
 
 
 def test_track_neighbor_mask_is_flagged_without_deleting_counts_or_crossing_scan_gaps():
-    from phasesmith.experimental.rotation import PositionTable
+    from phasesmith.single_crystal.rotation import PositionTable
 
     bounds = np.array([[0.0, 1.0], [1.0, 2.0], [2.0, 3.0], [5.0, 6.0]])
     table = PositionTable(
@@ -352,7 +352,7 @@ def test_track_neighbor_mask_is_flagged_without_deleting_counts_or_crossing_scan
 
 @pytest.mark.skipif(not hasattr(_core, "ExperimentalArPLSEngine"), reason="native omega build")
 def test_shared_pixel_tiles_exclude_shadow_samples_from_temporal_background_fits():
-    from phasesmith.experimental.omega_background import arpls_masked_rows
+    from phasesmith.single_crystal.omega_background import arpls_masked_rows
 
     moving = np.zeros((36, 2, 3), bool)
     moving[12:20, 0, 1] = True
@@ -373,9 +373,9 @@ def test_shared_pixel_tiles_exclude_shadow_samples_from_temporal_background_fits
     not hasattr(_core, "experimental_profile_fit"), reason="experimental profiles build"
 )
 def test_masked_rocking_tail_is_not_a_valid_zero_or_a_profile_teacher():
-    from phasesmith.experimental.integration import IntegrationOptions
-    from phasesmith.experimental.prediction import ScanPredictions
-    from phasesmith.experimental.profiles import (
+    from phasesmith.single_crystal.integration import IntegrationOptions
+    from phasesmith.single_crystal.prediction import ScanPredictions
+    from phasesmith.single_crystal.profiles import (
         ProfileOptions,
         fit_profiles,
         learn_profiles,
@@ -442,8 +442,8 @@ def test_masked_rocking_tail_is_not_a_valid_zero_or_a_profile_teacher():
 @pytest.mark.parametrize("shape", [(48, 64), (49, 65)])
 def test_native_filters_and_reference_selection_match_independent_scipy(shape):
     pytest.importorskip("scipy")
-    from phasesmith.experimental.frame_validity import _coarse_frame
-    from phasesmith.experimental.frame_validity_reference import (
+    from phasesmith.single_crystal.frame_validity import _coarse_frame
+    from phasesmith.single_crystal.reference.frame_validity_reference import (
         coarse_reference,
         estimate_reference,
     )

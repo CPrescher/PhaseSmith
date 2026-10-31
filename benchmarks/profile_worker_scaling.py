@@ -12,9 +12,9 @@ import time
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental.profile_refinement import ShapeFitOptions, refine_profiles
-from phasesmith.experimental.profiles import ProfileExecution
-from phasesmith.experimental.reduction_io import load_case
+from phasesmith.single_crystal.profile_refinement import ShapeFitOptions, refine_profiles
+from phasesmith.single_crystal.profiles import ProfileExecution
+from phasesmith.single_crystal.reduction_io import load_case
 
 
 def main():

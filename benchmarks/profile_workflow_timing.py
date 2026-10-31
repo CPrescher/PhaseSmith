@@ -10,9 +10,9 @@ import numpy as np
 import phasesmith
 from benchmark_3d_profiles import load_case
 from phasesmith import _core
-from phasesmith.experimental.integration import integrate_series
-from phasesmith.experimental.prediction import ScanPredictions
-from phasesmith.experimental.profiles import (
+from phasesmith.single_crystal.integration import integrate_series
+from phasesmith.single_crystal.prediction import ScanPredictions
+from phasesmith.single_crystal.profiles import (
     fit_learned_profiles,
     learn_profile_variations,
     learn_profiles,
