@@ -12,7 +12,7 @@ not part of the numerical library.
 
 ## Current implementation status
 
-Profile execution optimization is proceeding in separately measured stages.
+Profile execution optimization is complete through three separately measured stages.
 Stage 1 caches exact immutable teacher pixel/voxel intersections in source
 order with an explicit additional-memory cap (default 64 MiB) and streaming
 fallback; all learning equations, iteration counts and support conventions stay
@@ -24,8 +24,15 @@ admitted under the same cache cap, with serial fallback. Stage 3 adds resource-c
 derivative contributions are cached under a per-pool cap and replayed without
 changing arithmetic; independent reflections run in a private pool, and
 integer overlap bookkeeping retains only one exposure at a time. Legacy
-streaming integration remains available for controls/fallback comparisons. Every stage has fresh measured runs
-and numerical-identity reports. See `docs/profile-execution-optimization.md`.
+streaming integration remains available for controls/fallback comparisons.
+Every stage has fresh measured runs and numerical-identity reports. Final v16
+learning/integration medians are 2.493/2.185 s versus 38.780/17.792 s; the fresh
+full numerical worker takes 37.86 s versus 87.77 s and CLI 38.95 s versus 88.80 s.
+Every numerical array, candidate and phasing history is bitwise identical to
+v11. Rust/Python validation passes 510/3,245 tests, plus strict Clippy and
+formatting. The example explicitly admits 256 MiB extra cache per phase;
+the generic default remains 64 MiB with streaming fallback. See
+`docs/profile-execution-optimization.md` for individual trials and timing limits.
 
 Rust-only production is an explicit user requirement (31 October 2026). The
 initial NumPy/SciPy shadow prototype has been replaced by native kernels in

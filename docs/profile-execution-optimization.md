@@ -124,3 +124,36 @@ Fresh raw-to-search worker time is 44.75 s and full CLI time 52.89 s, versus
 history is bitwise identical to v11. The largest live reflection cache is
 1,583,672 bytes under the explicit 256 MiB cap; process memory is reported
 separately. Report: `benchmarks/enstatite-profile-execution-stage3a-macos.json`.
+
+Stage 3b (v16) measures four native integration workers with the same cache cap.
+The integration median is 2.185 s: 3.65x versus the serial cache and 8.14x versus
+the original. The fresh numerical worker takes 37.86 s versus the original
+87.77 s (2.32x); full CLI takes 38.95 s versus 88.80 s (2.28x). All numerical
+arrays, full candidate records and phasing histories are bitwise identical;
+R1 remains .04085182070733226. The derivative-cache concurrent capacity bound
+is 6,334,688 bytes, versus a 256 MiB declared cap. The learning cache is
+181,907,500 bytes, admitted separately during learning. Full worker peak RSS
+is 3,246,407,680 bytes; the cache cap is not a cap on the entire process.
+Native workspace tests pass 510 cases; Python passes 3,245, with 11 external-data
+skips and 34 slow-test deselections, plus strict Clippy and formatting.
+Report: `benchmarks/enstatite-profile-execution-stage3b-macos.json`.
+
+## Measured progression
+
+| Configuration | Learning median (s) | Baseline integration median (s) | Full worker (s) | Full CLI (s) |
+|---|---:|---:|---:|---:|
+| Original v11 | 38.780 | 17.792 | 87.77 | 88.80 |
+| 1: learning geometry cache, v13 | 2.543 | unchanged path | 54.89 | 63.39 |
+| 2: four-worker learning, v14 | 2.493 | unchanged path | 53.97 | 61.82 |
+| 3a: serial integration cache, v15 | unchanged path | 7.971 | 44.75 | 52.89 |
+| 3b: four-worker integration, v16 | unchanged path | 2.185 | 37.86 | 38.95 |
+
+Component benchmarks are medians of three isolated sequential repeats using the
+same saved real shoeboxes; full runs independently reread raw frames and have
+one measurement each. Full runs include strong shape optimization in addition
+to baseline integration. Parent cold-start overhead is larger in v13–v15; the
+CLI change from v15 to v16 should not be attributed entirely to parallelism.
+The modest 2% learning gain in stage 2 is retained honestly. The initial 64 MiB
+cache rejection and measurement are preserved, as are all earlier trials.
+The cumulative machine-readable report is
+`benchmarks/enstatite-profile-execution-macos.json`.

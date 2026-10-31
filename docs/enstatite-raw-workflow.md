@@ -358,3 +358,51 @@ also shows that old and new binaries give identical answers for identical
 inputs. The remaining candidate variation is a phasing/convergence-path issue;
 existing ADP-bound stagnation should be improved before claiming a fully
 converged structural refinement.
+
+## Profile execution optimizations (v13–v16)
+
+The current default protocol is `validation/enstatite-raw-workflow-v16.json`.
+It enables a bounded Rust learning-geometry cache, deterministic independent-bank
+learning, a fixed-derivative integration cache and four native integration workers.
+Every intermediate stage has its own measured benchmark and fresh raw-to-search
+run in the [optimization report](profile-execution-optimization.md). Large inputs,
+archives and run products remain outside Git.
+
+The final full run takes **38.95 s**, versus **88.80 s** for the earlier v11
+timing audit (2.28x). The numerical worker takes **37.86 s** versus **87.77 s**
+(2.32x). These full-run times are single measurements; isolated component
+benchmarks use three repeats. Learning falls from 38.780 s to 2.493 s (15.56x),
+and baseline integration from 17.792 s to 2.185 s (8.14x). Learning parallelism
+alone adds only about 2%; the report preserves that modest result.
+
+| Part | Final full-run wall seconds |
+|---|---:|
+| Shadow masks, including frame I/O | 3.29 |
+| Detection and linking, including frame I/O | 6.62 |
+| Grain indexing and geometry fitting | 0.24 |
+| Pixel collection, integration and background | 8.96 |
+| Profile learning | 2.53 |
+| Profile amplitudes and strong shape fits | 8.77 |
+| Corrections, scaling and error model | 0.27 |
+| Compressed output archives | 5.07 |
+| Structure search, including child launch | 0.75 |
+| Other setup, prediction, verification and assessment | 2.47 |
+| **Total** | **38.95** |
+
+The profile-fitting row includes all target amplitudes and the same 146 strong
+shape fits. The component medians above measure baseline integration separately.
+All archived numerical arrays, full candidate records and search histories match
+v11 bit for bit. Mg16 Si16 O48 recovery and R1 .04085182070733226 are unchanged.
+The existing convergence qualifications in the previous audit still apply.
+
+The example requests a 256 MiB additional cache cap independently for each phase;
+actual learning capacity is 173.5 MiB and the concurrent derivative-cache bound
+is 6.04 MiB. Total worker peak RSS is about 3.02 GiB, including inputs, outputs
+and ordinary workspace. The generic 64 MiB default can fall back to streaming;
+the cap controls cached geometry, not the entire process. Source files remain
+unchanged, and reduction/search workers load no SciPy, h5py or hdf5plugin.
+
+The cumulative machine-readable report is
+`benchmarks/enstatite-profile-execution-macos.json`; per-stage reports include
+resource diagnostics, all three benchmark repeats, full timing events and exact
+identity gates.
