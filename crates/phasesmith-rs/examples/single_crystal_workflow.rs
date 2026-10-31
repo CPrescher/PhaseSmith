@@ -110,6 +110,7 @@ struct Save {
     cell: [f64; 6],
     priors: Value,
     angles: Vec<[f64; 2]>,
+    aperture: Vec<[f64; 6]>,
     hard_search_seconds: f64,
     search_deadline: Option<Deadline>,
 }
@@ -233,6 +234,7 @@ impl sc::Observer for Save {
     }
     #[allow(clippy::too_many_lines)] // One explicit lossless archive schema; no numerical algorithm.
     fn profiles(&mut self, m: &sc::Measurements) -> sc::Result<()> {
+        self.aperture.clone_from(&m.aperture);
         let d = &m.data;
         let n = m.hkl.len();
         self.archive(
@@ -375,6 +377,11 @@ impl sc::Observer for Save {
     }
     fn reduced(&mut self, r: &sc::Reduced) -> sc::Result<()> {
         let n = r.hkl.len();
+        if self.aperture.len() != n {
+            return Err(sc::Error(
+                "reduced and original aperture row counts differ".into(),
+            ));
+        }
         self.archive(
             "reduced-observations.npz",
             &[
@@ -389,6 +396,21 @@ impl sc::Observer for Save {
                     "statistical_sigma",
                     vec![n],
                     r.statistical_sigma.iter().copied(),
+                ),
+                f64s(
+                    "aperture",
+                    vec![n, 6],
+                    self.aperture.iter().flatten().copied(),
+                ),
+                f64s(
+                    "dac_entry_degrees",
+                    vec![n],
+                    std::iter::repeat_n(f64::NAN, n),
+                ),
+                f64s(
+                    "dac_exit_degrees",
+                    vec![n],
+                    std::iter::repeat_n(f64::NAN, n),
                 ),
                 flags("flags", &r.flags),
                 booleans("use", vec![n], &r.use_mask),
@@ -580,6 +602,7 @@ fn main() -> Result<()> {
         shape: [shape[1], shape[2]],
         cell,
         priors: packet["priors"].clone(),
+        aperture: vec![],
         hard_search_seconds: number(&protocol["search"], "hard_seconds")?,
         search_deadline: None,
         angles: (options.acquisition.first..=options.acquisition.last)
