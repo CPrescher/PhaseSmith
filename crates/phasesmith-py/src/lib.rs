@@ -61,12 +61,20 @@ use pyo3::types::{PyDict, PyList, PyTuple};
 #[cfg(feature = "experimental-spots")]
 mod fft;
 mod fit_diagnostics;
+#[cfg(feature = "experimental-spots")]
+mod intensity_model;
+#[cfg(feature = "experimental-spots")]
+mod omega_background;
 mod pawley;
 mod profile_estimation;
+#[cfg(feature = "experimental-spots")]
+mod profiles;
 mod project_bundle;
 mod rietveld;
 #[cfg(feature = "experimental-solution")]
 mod solution;
+#[cfg(feature = "experimental-spots")]
+mod scan_scaling;
 #[cfg(feature = "experimental-spots")]
 mod spots;
 mod tof_lebail;
@@ -4271,6 +4279,14 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     solution::register(module)?;
     #[cfg(feature = "experimental-spots")]
     spots::register(module)?;
+    #[cfg(feature = "experimental-spots")]
+    profiles::register(module)?;
+    #[cfg(feature = "experimental-spots")]
+    intensity_model::register(module)?;
+    #[cfg(feature = "experimental-spots")]
+    scan_scaling::register(module)?;
+    #[cfg(feature = "experimental-spots")]
+    omega_background::register(module)?;
     #[cfg(feature = "experimental-spots")]
     fft::register(module)?;
     module.add_class::<NativeExecutionPolicy>()?;

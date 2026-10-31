@@ -37,7 +37,7 @@ fn options(p: Parameters) -> Options {
         max_spots: p.9,
     }
 }
-fn arrays(py: Python<'_>, result: Detection) -> PyResult<Arrays<'_>> {
+pub(super) fn arrays(py: Python<'_>, result: Detection) -> PyResult<Arrays<'_>> {
     let n = result.spots.len();
     let mut boxes = Vec::with_capacity(4 * n);
     let mut values = Vec::with_capacity(11 * n);
@@ -140,11 +140,96 @@ fn experimental_spots<'py>(
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(experimental_reduce_lattice, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_spots, module)?)?;
+    module.add_function(wrap_pyfunction!(experimental_integrate_reduce, module)?)?;
+    module.add_function(wrap_pyfunction!(experimental_local_background, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_rotation_link, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_rotation_centroid, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_reciprocal, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_predict_spots, module)?)?;
+    module.add_function(wrap_pyfunction!(
+        experimental_predict_spots_with_detector,
+        module
+    )?)?;
     module.add_function(wrap_pyfunction!(experimental_lattice_fourier, module)?)
+}
+
+#[pyfunction]
+#[pyo3(signature = (data, height, width, mask, boxes, gap, margin, minimum, clip, gain, read_noise, saturation=None, variance=None))]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
+fn experimental_local_background<'py>(
+    py: Python<'py>,
+    data: PyReadonlyArray1<'py, f64>,
+    height: usize,
+    width: usize,
+    mask: PyReadonlyArray1<'py, bool>,
+    boxes: PyReadonlyArray2<'py, i64>,
+    gap: usize,
+    margin: usize,
+    minimum: usize,
+    clip: f64,
+    gain: f64,
+    read_noise: f64,
+    saturation: Option<f64>,
+    variance: Option<PyReadonlyArray1<'py, f64>>,
+) -> PyResult<(
+    Bound<'py, PyArray2<i64>>,
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray1<u32>>,
+    Bound<'py, PyArray2<f64>>,
+)> {
+    let data = data.as_slice()?.to_vec();
+    let mask = mask.as_slice()?.to_vec();
+    let variance = variance
+        .map(|v| v.as_slice().map(<[f64]>::to_vec))
+        .transpose()?;
+    if boxes.as_array().ncols() != 4 {
+        return Err(PyValueError::new_err("boxes must have shape (n,4)"));
+    }
+    let boxes: Vec<Bounds> = boxes
+        .as_array()
+        .rows()
+        .into_iter()
+        .map(|r| {
+            let mut v = [0; 4];
+            for (out, &input) in v.iter_mut().zip(r) {
+                *out = usize::try_from(input)
+                    .map_err(|_| PyValueError::new_err("negative box bound"))?;
+            }
+            Ok(Bounds {
+                x0: v[0],
+                y0: v[1],
+                x1: v[2],
+                y1: v[3],
+            })
+        })
+        .collect::<PyResult<_>>()?;
+    let (spots, diagnostics) = py
+        .detach(move || {
+            let image = Image {
+                values: &data,
+                height,
+                width,
+                mask: &mask,
+                variance: variance.as_deref(),
+                gain,
+                read_noise,
+                saturation,
+            };
+            phasesmith_spots::local_background::extract(&image, &boxes, gap, margin, minimum, clip)
+        })
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let n = spots.len();
+    let (bounds, values, flags, _) = arrays(
+        py,
+        Detection {
+            spots,
+            rejected_small: 0,
+        },
+    )?;
+    let diagnostics = Array2::from_shape_vec((n, 12), diagnostics.into_iter().flatten().collect())
+        .unwrap()
+        .into_pyarray(py);
+    Ok((bounds, values, flags, diagnostics))
 }
 
 #[pyfunction]
@@ -206,6 +291,83 @@ fn experimental_predict_spots<'py>(
             .unwrap()
             .into_pyarray(py),
         Array2::from_shape_vec((n, 27), jacobian)
+            .unwrap()
+            .into_pyarray(py),
+        flags.into_pyarray(py),
+    ))
+}
+
+#[pyfunction]
+#[allow(clippy::type_complexity)] // Flat owned numerical snapshots.
+fn experimental_predict_spots_with_detector<'py>(
+    py: Python<'py>,
+    hkl: PyReadonlyArray2<'py, i64>,
+    basis: PyReadonlyArray2<'py, f64>,
+    hints: PyReadonlyArray1<'py, f64>,
+    parameters: PyReadonlyArray2<'py, f64>,
+    wavelength: f64,
+    other: bool,
+) -> PyResult<(
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray1<u32>>,
+)> {
+    if hkl.as_array().ncols() != 3 {
+        return Err(PyValueError::new_err("hkl must be (n,3)"));
+    }
+    let hkl: Vec<[i64; 3]> = hkl
+        .as_array()
+        .rows()
+        .into_iter()
+        .map(|r| [r[0], r[1], r[2]])
+        .collect();
+    let hints = hints.as_slice()?.to_vec();
+    let b = triples(basis)?;
+    let p = triples(parameters)?;
+    if b.len() != 3 || p.len() != 5 {
+        return Err(PyValueError::new_err(
+            "basis (3,3), geometry (5,3) required",
+        ));
+    }
+    let geometry = phasesmith_spots::reciprocal::Geometry {
+        origin: p[0],
+        fast: p[1],
+        slow: p[2],
+        beam: p[3],
+        axis: p[4],
+        wavelength,
+    };
+    let result = py
+        .detach(move || {
+            phasesmith_spots::prediction::predict_with_detector(
+                geometry,
+                [b[0], b[1], b[2]],
+                &hkl,
+                &hints,
+                other,
+            )
+        })
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let n = result.len();
+    let mut values = Vec::with_capacity(n * 3);
+    let mut jacobian = Vec::with_capacity(n * 27);
+    let mut flags = Vec::with_capacity(n);
+    let mut detector = Vec::with_capacity(n * 27);
+    for r in result {
+        values.extend(r.prediction.values);
+        jacobian.extend(r.prediction.jacobian);
+        detector.extend(r.detector_jacobian);
+        flags.push(r.prediction.flags);
+    }
+    Ok((
+        Array2::from_shape_vec((n, 3), values)
+            .unwrap()
+            .into_pyarray(py),
+        Array2::from_shape_vec((n, 27), jacobian)
+            .unwrap()
+            .into_pyarray(py),
+        Array2::from_shape_vec((n, 27), detector)
             .unwrap()
             .into_pyarray(py),
         flags.into_pyarray(py),
@@ -343,5 +505,40 @@ fn experimental_reduce_lattice<'py>(
             .unwrap()
             .into_pyarray(py),
         result.iterations,
+    ))
+}
+
+#[pyfunction]
+#[allow(clippy::type_complexity)] // Plain output arrays: six summaries and quality flags.
+fn experimental_integrate_reduce<'py>(
+    py: Python<'py>,
+    count: usize,
+    ids: PyReadonlyArray1<'py, i64>,
+    values: PyReadonlyArray2<'py, f64>,
+    flags: PyReadonlyArray1<'py, u32>,
+) -> PyResult<(Bound<'py, PyArray2<f64>>, Bound<'py, PyArray1<u32>>)> {
+    if values.as_array().ncols() != 11 {
+        return Err(PyValueError::new_err("frame values must have shape (n,11)"));
+    }
+    let ids = ids
+        .as_slice()?
+        .iter()
+        .map(|&v| usize::try_from(v).map_err(|_| PyValueError::new_err("negative reflection ID")))
+        .collect::<PyResult<Vec<_>>>()?;
+    let values: Vec<[f64; 11]> = values
+        .as_array()
+        .rows()
+        .into_iter()
+        .map(|r| std::array::from_fn(|i| r[i]))
+        .collect();
+    let flags = flags.as_slice()?.to_vec();
+    let (out, quality) = py
+        .detach(move || phasesmith_spots::integration::accumulate(count, &ids, &values, &flags))
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    Ok((
+        Array2::from_shape_vec((count, 6), out.into_iter().flatten().collect())
+            .unwrap()
+            .into_pyarray(py),
+        quality.into_pyarray(py),
     ))
 }

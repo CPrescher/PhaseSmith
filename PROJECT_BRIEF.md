@@ -252,6 +252,150 @@ Eight predeclared seeds recover all three structures and exact non-H counts
 Thiourea still spans 0.654–7.302 s across seeds: the slow seeds also have long
 searches with recycling alone. Both options remain opt-in, and these reused
 development cases are not a general solve-coverage claim.
+The opt-in rotation package now has a portable intensity-reduction coordinator.
+Rust owns exact profile masses with fused centre/width derivatives, conditional
+GLS/fixed weak filters, slab response, and empirical value/Jacobian passes.
+Typed Python orchestration separates explicit detector/polarization assumptions,
+strong shape choices, declared sensor centroid maps, equivalent-family scaling
+and optional observation-error floors. Canonical snapshots and immutable
+provenance-keyed caches replace data-specific imports for the reusable path.
+Dioptas owns image orientation, masks, recipe persistence, UI and distinct
+aperture/profile exports; external SHELXL is an optional local validator.
+Strong covariance near sharp finite-grid boundaries remains conditional and
+can differ from historical finite-difference estimates. Models and correction
+choices are experimental; no atomic/U target selects them. See
+`docs/experimental-intensity-reduction.md` for equations, contracts and replay.
+
+The experimental panel adapter now accepts an optional application-owned batch
+pixel coordinate map. Measured coordinates are mapped before native reciprocal
+conversion; predicted plane coordinates and both fused analytical Jacobians are
+chained back to image coordinates. The affine path and Rust kernels are unchanged.
+Detector-pose refinement retains the fixed map. Dioptas owns the explicit CrysAlis
+response, serialization and nonunique boundary inverse policy; no camera model
+enters phasesmith-core. Equations, derivatives and validation are documented in
+`docs/experimental-pixel-coordinate-map.md`.
+
+The opt-in rotation workflow now supports indexed-position detector calibration.
+A rigid detector pose and crystal orientation are refined with a declared fixed
+reference cell or candidate cell lengths (angles fixed). Rust evaluates Ewald
+positions and both analytical Jacobians in one pass; optional SciPy orchestration
+applies exact physical parameter chains. Independent NumPy equations, finite
+differences, known-pose recovery and complete-family holdouts validate the path.
+Dioptas owns reference-cell import/axis mapping, review, original-calibration
+preservation, PONI export and downstream lattice rechecks. Intensity references
+and atomic models do not enter geometry fitting. Detector roll remains relative
+to the fixed spindle gauge. See `docs/experimental-crystal-geometry.md`.
+
+The opt-in rotation workflow now includes a structure-independent relative scan
+scale fitted from explicit equivalent-family labels. A deterministic Rust Huber
+log-linear fit eliminates family intensities; a fused signed application returns
+analytical scale/angle partials and separate correlated model uncertainty. Python
+orchestrates symmetry labels and held-out masks; an independent NumPy reference,
+known-scale recovery, finite differences and a many-family benchmark validate the
+numerics. No atomic model or external intensity reference enters scale fitting.
+The enstatite study improves R1 with local profiles and scan scaling but still
+shows a non-positive displacement tensor in a conditional training-only structural
+check; this is experimental and is not an automatic validated intensity correction.
+See `docs/experimental-scan-scaling.md` for the gauge, angular support, covariance
+limits and the distinction from a complete absorption/scaling pipeline.
+
+The opt-in profile follow-up adds local scattering-plane pixel Jacobians with
+exact parallelogram/voxel intersections and fused analytical centre partials.
+Strong references can teach nonnegative mixtures of finite, normalised spatial
+and rocking-width variants. Target shapes are then frozen before fitting signed
+intensities; fitting shape parameters separately to weak observations is guarded
+as a training diagnostic because known-count trials demonstrate positive bias.
+The default fixed-profile API remains available alongside signed summation.
+Independent NumPy equations and known-count/null controls pass. A new
+reflection-family holdout across two TIFF scans gives median differences from
+DIALS of -5.9% and +5.5%, but P1 still fails the declared per-reflection agreement
+gate (90th-percentile absolute difference 39.0%); P2 passes at 15.0%. This changed
+holdout protocol is not a direct before/after comparison with the original 40
+pairs. DIALS is an external comparator, not intensity truth. A limited archived
+structure check is encouraging but reaches a displacement-parameter bound and
+does not establish structure solution or reliable absolute intensities. All
+methods remain experimental. See `docs/fe7c3-profile-bias-investigation.md` for
+controls, the corrected CCD adapter, performance and the remaining work.
+
+The preceding opt-in increment implemented local empirical 3D reflection
+profiles in detector x/y and a signed geometry-scaled rocking coordinate. Strong
+training observations learn
+finite, normalised voxel masses; exact box overlaps conserve pixel/exposure
+mass and supply analytical position derivatives in the same pass. Profile and
+signed summed counts remain distinct, with coverage/model-quality flags and
+conditional shared-background covariance. Independent NumPy equations and
+known-count fixtures precede a frozen-geometry, held-out Fe7C3 TIFF comparison
+against isolated DIALS. The measured comparison currently fails the intensity
+agreement gate (40 reserved strong pairs, median relative difference -43.8%);
+that result is preserved as historical evidence. This detector-coordinate model is not labelled equivalent
+to DIALS's reciprocal-space model; no DIALS runtime dependency is introduced.
+
+Opt-in reflection summation additionally offers a guarded, robust local background
+plane. Rust owns clipping, least squares, conditional covariance propagation and
+signal-boundary diagnostics; an independent NumPy reference checks known-count
+injections and pixel derivatives. Signal supports remain fixed for weak/negative
+measurements: no per-pixel significance threshold defines their integrated counts.
+Background coefficients, rejection and boundary diagnostics remain inspectable.
+The original flat-background estimator and default library results are preserved.
+This is detector-count extraction, not crystallographic intensity correction.
+The TIFF support study does not justify a universal aperture radius. A source
+comparison with DIALS, XDS, MOSFLM and public CrysAlisPro documentation identifies
+locally learned 3D reflection profiles as the next experimental milestone; it is
+implemented experimentally in the separate profile increment described above. A separate external DIALS probe
+now produces actual summed/profile intensities on the TIFF data without entering
+the production dependency graph. See `docs/single-crystal-integration-methods.md`.
+
+The experimental integration-quality report now adds image-by-image measurement
+counts, mask/background/overlap diagnostics, positional offsets and explicit
+angular-endpoint/alternate-window sensitivity. It preserves raw measurements and
+provides advisory actions without fitting scales or assuming intensity symmetry.
+The Dioptas consumer links flagged images to their individual measurements. See
+`docs/experimental-integration-quality.md`; no powder numerical behavior changes.
+
+The opt-in single-crystal workflow now adds prediction-driven rotation-reflection
+integration through a reusable PhaseSmith API. Rust aperture evaluation and
+ordered frame reduction return signed finite-support counts, conditional errors,
+per-frame rocking records and explicit coverage/overlap flags. Dioptas supplies
+loading, masks, selected cells and inspection. No profile extrapolation, partiality
+or crystallographic intensity correction is implied. See
+`docs/experimental-reflection-integration.md`; powder/release scope is unchanged.
+
+The opt-in experimental omega background engine now lives in PhaseSmith Rust,
+with an independent SciPy equation reference and a pixel-major NumPy API under
+`phasesmith.experimental.omega_background`. A reusable private pool fits all
+contiguous valid intervals in one tile call, preserving per-pixel reduction
+order across worker counts. Dioptas owns angular interpretation, seat-mask
+preparation/cache, fixed masks, temporary staging, progress/cancellation and signed
+exports. Its normal calculation retains a session correction with the original
+files/settings; TIFF export is a separate explicit action that reuses the cache.
+Memory-limited sessions may retain a temporary work file rather than image exports.
+This replaces its former local C kernel; default powder APIs and
+standard native builds remain unchanged. No peak-model derivative API is added
+for this preprocessing operation. See `docs/experimental-omega-background.md`
+for equations, validation, migration differences and measured performance.
+The same arPLS equations additionally support a reciprocal banded LDLᵀ solve,
+removing factorization square roots and most divisions. The library retains
+Cholesky as its default and exposes LDLᵀ explicitly; Dioptas selects LDLᵀ in
+its experimental background workflow. Cross-solver rounding differences and
+performance are validated and reported rather than claimed bit-identical.
+
+The opt-in rotation adapter accepts an optional per-frame variance loader for
+background-subtracted detector arrays. It forwards supplied variances to the
+existing native spot detector, snapshots reused loader buffers for parallel
+work, and includes variances in frame hashes. Native equations, raw-count
+defaults, linking and centroid accumulation are unchanged. Correlated uncertainty
+from a fitted background remains outside this independent-pixel model.
+
+The opt-in rotation position hunt now supports bounded parallel frame detection
+while retaining serial loaders, ordered callbacks/budgets and unchanged linking
+and centroid arithmetic. Default library execution remains serial; Dioptas uses
+an adaptive number of native detector workers with frame-indexed previews. A preceding
+single-thread threshold-loop optimization hoists clipped supports and avoids
+unused variance reads without changing equations or floating-point operation
+order. Complete per-frame and linked records are compared byte-for-byte with an
+explicitly preserved baseline on synthetic and three measured Fe7C3 scans.
+See `docs/rotation-processing-performance.md`; default/powder behavior and release
+boundaries are unchanged.
 
 An opt-in primitive/Bravais comparison now follows position-only lattice discovery.
 Native Selling-Delaunay reduction retains exact integer basis transformations;
