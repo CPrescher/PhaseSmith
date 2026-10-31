@@ -1,0 +1,41 @@
+{
+  "schema": "phasesmith.enstatite-raw-attempts.v1",
+  "attempts": [
+    {
+      "protocol": "validation/enstatite-raw-workflow-v1.json",
+      "implementation_commit": "341e9a0",
+      "outcome": "stopped before intensity integration and structure search",
+      "reason": "provisional competing-cell full enumeration needs 310005 HKLs, exceeding the 250000 default predictor cap",
+      "positions": {
+        "selected_frames": 142,
+        "linked_tracks": 3308,
+        "frame_detections": 4483,
+        "unflagged": 2994
+      },
+      "geometry": {
+        "initial_cell": [
+          8.813074591322263,
+          5.181797161997784,
+          18.236696039776163,
+          90.0134134978561,
+          89.99224657271233,
+          90.05728311856758
+        ],
+        "training": 1421,
+        "withheld": 782,
+        "withheld_xy_rms_pixels": 0.33419541057149627,
+        "withheld_omega_rms_degrees": 0.16394521628968337,
+        "gates": {
+          "minimum_training": true,
+          "minimum_withheld": true,
+          "withheld_xy": true,
+          "withheld_omega": true,
+          "optimizer_converged": true,
+          "not_at_bounds": true
+        }
+      },
+      "reference_assessment": "not_executed",
+      "policy": "Retained unchanged; no raw intensity or atomic comparison selected the follow-up."
+    }
+  ]
+}

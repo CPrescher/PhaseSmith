@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v1.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v2.json"
 
 
 def digest(path):
@@ -367,6 +367,7 @@ def stage_indexing(positions, geometry, packet, out, protocol):
             np.sqrt(np.mean(np.sum((candidate.hkl[test] @ b - updated_q[test]) ** 2, axis=1)))
         )
         if rms <= result.options.reciprocal_tolerance:
+            observed_only = own & ~eligible
             competitors.append(
                 dict(
                     basis=b.tolist(),
@@ -374,6 +375,9 @@ def stage_indexing(positions, geometry, packet, out, protocol):
                     withheld=int(test.sum()),
                     withheld_q_rms=rms,
                     discovery_candidate=index,
+                    track_ids=ids[observed_only].tolist(),
+                    observed_hkl=candidate.hkl[observed_only].tolist(),
+                    observed_crossings=observed[observed_only].tolist(),
                 )
             )
     competitors.sort(key=lambda row: -row["training"])
@@ -429,12 +433,19 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes):
         parts = [p]
         grain_ids = [np.zeros(target_count, np.int64)]
         for index, competing in enumerate(competitors, start=1):
-            other = predict_scan(
-                np.array(competing["basis"]),
-                fitted.geometry,
-                frames.bounds,
-                shape,
-                qmax=protocol["prediction"]["qmax_inverse_angstrom"],
+            # Provisional competing cells do not establish a complete reflection
+            # lattice. Only their independently measured spot tracks exclude
+            # background; no speculative dense supercell reflection list is made.
+            crossings = np.asarray(competing["observed_crossings"], float).reshape(-1, 3)
+            if not len(crossings):
+                continue
+            other = ScanPredictions(
+                np.asarray(competing["observed_hkl"], np.int64),
+                crossings,
+                np.clip(
+                    np.searchsorted(frames.bounds[:, 1], crossings[:, 2]), 0, len(frames.bounds) - 1
+                ),
+                p.qmax,
             )
             _, _, other_zeta = profile_geometry(other.values[:, :2], fitted.geometry)
             other_keep = abs(other_zeta) >= protocol["prediction"]["minimum_abs_zeta"]
@@ -741,28 +752,34 @@ def main():
         os.environ, OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1", VECLIB_MAXIMUM_THREADS="1"
     )
     with (out / "worker.log").open("x") as log_stream:
-        result = subprocess.run(
-            [
-                sys.executable,
-                str(Path(__file__).resolve()),
-                "--worker",
-                str(out / "worker-input.json"),
-            ],
-            env=env,
-            stdout=log_stream,
-            stderr=subprocess.STDOUT,
-            timeout=1800,
-            check=False,
-        )
+        try:
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(Path(__file__).resolve()),
+                    "--worker",
+                    str(out / "worker-input.json"),
+                ],
+                env=env,
+                stdout=log_stream,
+                stderr=subprocess.STDOUT,
+                timeout=1800,
+                check=False,
+            )
+            returncode = result.returncode
+        except subprocess.TimeoutExpired:
+            returncode = 124
+    verify_dataset(manifest, args.data_root)
     report = dict(
         schema="phasesmith.enstatite-raw-workflow-result.v1",
-        execution_returncode=result.returncode,
+        execution_returncode=returncode,
+        source_files_unchanged=True,
         through=args.through,
         raw_to_structure_search_passed=False,
         reference_assessment="not_executed",
         standalone_structure_refinement="not_implemented",
     )
-    if result.returncode == 0 and args.through == "search":
+    if returncode == 0 and args.through == "search":
         import gemmi
         from solution_corpus.audit import match_geometry
         from solution_corpus.data import atom_block, expanded_sites
@@ -782,7 +799,7 @@ def main():
             report["reference_assessment"] = dict(correct=False, reason="no candidate")
     save_json(out / "report.json", report)
     print(json.dumps(report, indent=2))
-    return 0 if result.returncode == 0 else 2
+    return 0 if returncode == 0 else 2
 
 
 if __name__ == "__main__":
