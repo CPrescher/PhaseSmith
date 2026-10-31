@@ -194,5 +194,6 @@
       "working Python environments",
       "shared caches and other worktrees"
     ]
-  }
+  },
+  "dioptas_documentation_followup_commit": "b5cf72b5"
 }
