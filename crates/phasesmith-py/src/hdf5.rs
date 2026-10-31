@@ -1,6 +1,6 @@
 //! Optional array-boundary adapter for bundled native HDF5 frame I/O.
 use npy::{IntoPyArray, PyArray2, ndarray::Array2};
-use phasesmith_hdf5::{Limits, PixelType, Reader};
+use phasesmith_hdf5::{Limits, PixelType, cache::CachedReader};
 use pyo3::{exceptions::PyValueError, prelude::*};
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -11,11 +11,11 @@ fn error(value: impl std::fmt::Display) -> PyErr {
 
 #[pyclass(name = "NativeHdf5Frames", module = "phasesmith._core")]
 struct NativeHdf5Frames {
-    reader: Mutex<Option<Reader>>,
+    reader: Mutex<Option<CachedReader>>,
 }
 
 impl NativeHdf5Frames {
-    fn with<T>(&self, f: impl FnOnce(&Reader) -> PyResult<T>) -> PyResult<T> {
+    fn with<T>(&self, f: impl FnOnce(&CachedReader) -> PyResult<T>) -> PyResult<T> {
         let reader = self.reader.lock().map_err(error)?;
         f(reader
             .as_ref()
@@ -26,7 +26,7 @@ impl NativeHdf5Frames {
 #[pymethods]
 impl NativeHdf5Frames {
     #[new]
-    #[pyo3(signature=(path, dataset, max_frames=1_000_000, max_frame_pixels=100_000_000, max_chunk_bytes=268_435_456))]
+    #[pyo3(signature=(path, dataset, max_frames=1_000_000, max_frame_pixels=100_000_000, max_chunk_bytes=268_435_456, cache_bytes=0))]
     fn new(
         py: Python<'_>,
         path: PathBuf,
@@ -34,10 +34,11 @@ impl NativeHdf5Frames {
         max_frames: usize,
         max_frame_pixels: usize,
         max_chunk_bytes: usize,
+        cache_bytes: usize,
     ) -> PyResult<Self> {
         let reader = py
             .detach(move || {
-                Reader::open(
+                CachedReader::open(
                     path,
                     &dataset,
                     Limits {
@@ -45,6 +46,7 @@ impl NativeHdf5Frames {
                         frame_pixels: max_frame_pixels,
                         chunk_bytes: max_chunk_bytes,
                     },
+                    cache_bytes,
                 )
             })
             .map_err(error)?;
@@ -72,6 +74,21 @@ impl NativeHdf5Frames {
                 .iter()
                 .map(|f| (f.id, f.decode_enabled, f.parameters.clone()))
                 .collect())
+        })
+    }
+    #[getter]
+    fn cache_stats(&self) -> PyResult<std::collections::BTreeMap<String, usize>> {
+        self.with(|r| {
+            let s = r.stats().map_err(error)?;
+            Ok(std::collections::BTreeMap::from([
+                ("budget_bytes".into(), s.budget_bytes),
+                ("payload_bytes".into(), s.payload_bytes),
+                ("frames".into(), s.frames),
+                ("requests".into(), s.requests),
+                ("hits".into(), s.hits),
+                ("decodes".into(), s.decodes),
+                ("invalidations".into(), s.invalidations),
+            ]))
         })
     }
     fn read_frame<'py>(

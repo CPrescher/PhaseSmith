@@ -27,7 +27,13 @@ def main():
     p.add_argument("--workers", nargs="+", type=int, default=[4, 6, 8, 10])
     p.add_argument("--repeats", type=int, default=3)
     p.add_argument("--reuse-verified-digest", action="store_true")
+    p.add_argument("--input-execution", type=Path)
     args = p.parse_args()
+    execution = (
+        json.loads(args.input_execution.read_text())
+        if args.input_execution
+        else {"reuse_verified_digest": args.reuse_verified_digest}
+    )
     packet = json.loads((args.run / "worker-input.json").read_text())
     protocol = packet["protocol"]
     frames = RawFrames(packet["raw_path"], protocol["acquisition"], packet["raw_array"])
@@ -85,7 +91,7 @@ def main():
                 protocol["acquisition"],
                 packet["raw_array"],
                 validity,
-                execution={"reuse_verified_digest": args.reuse_verified_digest},
+                execution=execution,
             )
             start = time.perf_counter()
             try:
@@ -144,6 +150,7 @@ def main():
     assert len(set(hashes)) == 1
     output = dict(
         schema="phasesmith.detection-execution.v1",
+        input_execution=execution,
         records=records,
         maximum_resident_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
         interpretation=(

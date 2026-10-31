@@ -27,7 +27,9 @@ def main():
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--workers", type=int, nargs="+", default=[1, 4, 6, 8, 10])
     p.add_argument("--repeats", type=int, default=3)
+    p.add_argument("--input-execution", type=Path)
     a = p.parse_args()
+    execution = json.loads(a.input_execution.read_text()) if a.input_execution else None
     packet = json.loads((a.run / "worker-input.json").read_text())
     protocol = packet["protocol"]
     obs, _ = load_case(a.run / "raw-observations-and-bank.npz")
@@ -59,7 +61,11 @@ def main():
         seconds = []
         for _ in range(a.repeats):
             frames = RawFrames(
-                packet["raw_path"], protocol["acquisition"], packet["raw_array"], validity
+                packet["raw_path"],
+                protocol["acquisition"],
+                packet["raw_array"],
+                validity,
+                execution=execution,
             )
             start = time.perf_counter()
             try:
@@ -103,6 +109,7 @@ def main():
         json.dump(
             dict(
                 schema="phasesmith.frame-preparation-execution.v1",
+                input_execution=execution,
                 records=records,
                 cohort="7277 frozen target predictions; no competing-domain exclusions",
                 all_outputs_bitwise_identical=True,

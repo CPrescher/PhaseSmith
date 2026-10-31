@@ -12,6 +12,26 @@ not part of the numerical library.
 
 ## Current implementation status
 
+Frame preparation now has a native original-u32 batch API: in-place declared
+orientation, one native-endian SHA256, verification against every inferred
+provider, reserved-count mask, block/fixed-mask OR and the unchanged DAC kernel.
+Independent frames use a private bounded Rust pool; per-frame errors retain source
+order. Source snapshots/owned counts/masks/scratch have an explicit payload cap;
+plan metadata and downstream workspaces are separate. Defaults keep streaming.
+The initial software-SHA/per-pixel-mask trial is retained as a slowdown. AArch64
+uses the upstream sha2 hardware feature with CPU fallback, and block masks expand
+by row runs. Batch sizes 1/2/4 are measured before resource selection. No hashing
+or mask check is removed; no unchecked current-frame digest enters the API.
+
+The separate optional HDF5 decoded cache stores only immutable original uint32
+counts, bound to one open canonical source/dataset and file identity. It has
+0–4 GiB payload admission, deterministic prefix retention, owned caller copies,
+change detection with fail-closed cache clearing, and source/decode/hit counters.
+One fresh reader can span the three raw-frame passes and is closed before search;
+no cross-run or archived-array cache is used. Full cached/uncached comparisons
+will use identical native binaries and strict bitwise gates. See the measured
+stages in `docs/frame-input-optimization.md`.
+
 The next frame-input pass starts with verified-digest reuse: every mask provider
 still checks current original counts and layout; verify_frame now returns its
 fresh digest when provenance is present, and the example can reuse that value
