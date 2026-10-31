@@ -249,7 +249,7 @@ def test_finished_frame_observer_is_ordered_and_does_not_change_results():
     assert calls == [0]
 
 
-@pytest.mark.parametrize("workers", [1, 2, 4, 32])
+@pytest.mark.parametrize("workers", [1, 2, 4, 6, 8, 10, 32])
 def test_parallel_complete_records_and_loader_reuse_are_byte_identical(workers):
     from threading import get_ident
 

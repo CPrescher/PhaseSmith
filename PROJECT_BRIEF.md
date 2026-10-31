@@ -12,6 +12,15 @@ not part of the numerical library.
 
 ## Current implementation status
 
+The detection/linking worker study measures the unchanged detector at 4/6/8/10
+workers: median 6.568/5.041/5.003/5.048 s on all 142 original MgSiO3 frames.
+All positions and source fingerprints match bitwise. Eight workers are selected
+by measured wall time only; the six/eight/ten differences are small and serial
+loading limits further scaling. A separate example `detection_workers` control
+keeps the four-worker shadow/acquisition policy unchanged. Production numerical
+kernels, thresholds, support and linking are unchanged. Fresh v20 validation and
+a complete timing/remaining-bottleneck report follow the committed protocol.
+
 The follow-up execution optimization is complete. Explicit profile worker
 limits are 1–32; continuous native independent-fit scheduling replaces batch
 barriers while retaining source-order result/progress assembly and cancellation.

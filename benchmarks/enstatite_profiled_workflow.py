@@ -14,6 +14,7 @@ import resource
 import subprocess
 import sys
 import time
+from contextlib import nullcontext
 from pathlib import Path
 
 import enstatite_raw_workflow as workflow
@@ -134,9 +135,17 @@ def main():
         )
 
     subprocess.run = run
+    from detection_timing import observe_detection
+
+    detection_stats = None
     try:
-        return timer.wrap("process_main", workflow.main)()
+        with observe_detection(workflow) if worker else nullcontext() as detection_stats:
+            return timer.wrap("process_main", workflow.main)()
     finally:
+        if detection_stats is not None:
+            with (output / "timings-detection.json").open("x") as stream:
+                json.dump(detection_stats, stream, indent=2, allow_nan=False)
+                stream.write("\n")
         with (
             output
             / (
