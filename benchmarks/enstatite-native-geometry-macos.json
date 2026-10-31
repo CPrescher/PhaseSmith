@@ -1,0 +1,313 @@
+{
+  "schema": "phasesmith.enstatite-native-geometry-comparison.v1",
+  "baseline": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v8",
+  "output": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v9",
+  "targets": {
+    "baseline_output": "enstatite-raw-workflow-20261031-v8",
+    "source_and_position_arrays": "bitwise identical",
+    "exported_hkl_and_use_mask": "identical",
+    "maximum_prediction_xy_difference_pixels": 0.0001,
+    "maximum_prediction_omega_difference_degrees": 1e-06,
+    "intensity_relative_l2_difference": 0.0001,
+    "sigma_relative_l2_difference": 0.0001,
+    "maximum_intensity_difference_in_baseline_sigma": 0.1,
+    "percentile95_intensity_difference_in_baseline_sigma": 0.01,
+    "maximum_amplitude_r1_difference": 0.0001,
+    "maximum_candidate_coordinate_difference_angstrom": 0.001,
+    "counts": "identical",
+    "note": "Equivalence targets, separate from existing scientific recovery gates; numerical changes are reported rather than claimed bitwise identical. No threshold or solver selection by structure-reference score."
+  },
+  "passed": true,
+  "gates": {
+    "baseline_structure_recovery": true,
+    "primary_structure_recovery": true,
+    "source_files_unchanged": true,
+    "same_source_manifest": true,
+    "frozen_positions_partitions_and_edges": true,
+    "prediction_xy": true,
+    "prediction_omega": true,
+    "exported_hkl_and_use_mask": true,
+    "intensity_relative_l2": true,
+    "sigma_relative_l2": true,
+    "maximum_intensity_difference_in_baseline_sigma": true,
+    "percentile95_intensity_difference_in_baseline_sigma": true,
+    "r1_target": true,
+    "amplitude_r1_difference": true,
+    "composition": true,
+    "candidate_coordinates": true,
+    "worker_isolation": true
+  },
+  "frozen_array_identity": {
+    "positions.npz": {
+      "original_flags": true,
+      "boxes": true,
+      "frame_ranges": true,
+      "values": true,
+      "flags": true,
+      "observations": true,
+      "omega_bounds": true
+    },
+    "indexed-positions.npz": {
+      "hkl": true,
+      "observed": true,
+      "training": true,
+      "eligible": true,
+      "track_ids": true
+    },
+    "edge-exclusions.npz": {
+      "hkl": true,
+      "flags": true
+    }
+  },
+  "geometry": {
+    "rows": 2012,
+    "maximum_xy_pixels": 2.125927636588552e-07,
+    "maximum_omega_degrees": 6.1717214450141e-08,
+    "native_metadata": {
+      "chosen_candidate": 0,
+      "initial_cell": [
+        8.813137094981082,
+        5.182626554991265,
+        18.236483760291843,
+        90.0089793719541,
+        89.99322844218115,
+        90.05782098737714
+      ],
+      "reciprocal_basis": [
+        [
+          -0.10639073945902107,
+          0.03831860101617036,
+          -0.009814670152226498
+        ],
+        [
+          -0.014426996957183637,
+          0.009173082738848167,
+          0.1922019326933897
+        ],
+        [
+          0.018672300946120386,
+          0.05157178765512811,
+          -0.0010597554528363438
+        ]
+      ],
+      "geometry_vectors": [
+        [
+          -0.07886852512701127,
+          -0.07895465251925689,
+          0.15189971434537525
+        ],
+        [
+          1.3599822753104974e-07,
+          7.499961670541047e-05,
+          1.9748043857978737e-07
+        ],
+        [
+          7.499975344150797e-05,
+          -1.356395091103191e-07,
+          -1.363291479423853e-07
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          -1.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "wavelength_angstrom": 0.28457,
+      "priors": {
+        "cell_angstrom_degrees": [
+          8.8101,
+          5.1824,
+          18.2288,
+          90,
+          90,
+          90
+        ],
+        "space_group_number": 61,
+        "space_group_symbol": "P b c a",
+        "wavelength_angstrom": 0.2846,
+        "elements": [
+          "Mg",
+          "Si",
+          "O"
+        ],
+        "provenance": "Cell, symmetry and wavelength transcribed from supplied source CIF; elements from declared sample. These are supplied priors, not blind indexing results. Coordinates, ADPs and atom counts are forbidden search inputs."
+      },
+      "training": 1299,
+      "withheld": 713,
+      "withheld_xy_rms_pixels": 0.33310992493459823,
+      "withheld_omega_rms_degrees": 0.1658931358776097,
+      "parameters": [
+        0.00023264893924995476,
+        0.0006959461931123847,
+        -0.0017409033578537376,
+        0.005704741794678652,
+        0.0028672573398896193,
+        -0.059802046299420285,
+        -0.000635920392313348,
+        -0.00206042624229081,
+        -0.0018060645694232705
+      ],
+      "condition": 17.64957668902138,
+      "fitting_backend": "phasesmith-spots Rust",
+      "fitting_evaluations": 7,
+      "fitting_objective_history": [
+        2367.0551193641118,
+        1306.7512751061806,
+        714.9216122785964,
+        678.6914660231191,
+        678.6293754198854,
+        678.629374479125,
+        678.6293744791019
+      ],
+      "gates": {
+        "minimum_training": true,
+        "minimum_withheld": true,
+        "withheld_xy": true,
+        "withheld_omega": true,
+        "optimizer_converged": true,
+        "not_at_bounds": true
+      },
+      "reference_coordinates_used": false
+    }
+  },
+  "reduction": {
+    "observations": 4125,
+    "negative_observations": 220,
+    "identity": {
+      "hkl": true,
+      "use": true,
+      "flags": true
+    },
+    "intensity_relative_l2": 9.209502405450187e-06,
+    "sigma_relative_l2": 6.706584725679956e-06,
+    "maximum_intensity_difference_in_baseline_sigma": 0.00949449713572892,
+    "percentile95_intensity_difference_in_baseline_sigma": 5.783217554135018e-07
+  },
+  "search": {
+    "termination": "r1_target",
+    "target_met": true,
+    "amplitude_r1": 0.04105220115416806,
+    "seconds": 0.6851312919752672,
+    "model_saved_before_reference": true,
+    "resource": {
+      "expanded_reflection_count": 9320,
+      "volume_atom_cap": 105,
+      "memory_atom_cap": 128,
+      "maximum_atoms": 105,
+      "dense_memory_budget_bytes": 134217728
+    },
+    "observation_count": 4125,
+    "rejected_trials": []
+  },
+  "amplitude_r1_difference": 6.36876767955985e-05,
+  "composition": {
+    "Mg": 16,
+    "O": 48,
+    "Si": 16
+  },
+  "candidate_coordinate_difference": {
+    "counts_match": true,
+    "rms_error_angstrom": 0.0002411271579475336,
+    "maximum_error_angstrom": 0.0005351329817302983,
+    "hand": 1,
+    "shift": [
+      0.4984437260082444,
+      0.3727745597991021,
+      0.7464994992614506
+    ],
+    "correct": true,
+    "strict_002_angstrom": true
+  },
+  "reference_assessment": {
+    "counts_match": true,
+    "rms_error_angstrom": 0.004657427792126868,
+    "maximum_error_angstrom": 0.006900558477851928,
+    "hand": -1,
+    "shift": [
+      0.3363237599103024,
+      0.1796731535579239,
+      0.525653291597694
+    ],
+    "correct": true,
+    "strict_002_angstrom": true,
+    "reference_read_after_worker_stopped": true
+  },
+  "completion": {
+    "stage": "search",
+    "seconds": 94.52764174999902,
+    "reference_model_read": false,
+    "source_hkls_read": false,
+    "archived_arrays_read": false
+  },
+  "protocol_provenance": {
+    "protocol_sha256": "41588b6a24d0962caa218df1bf516c1b222e39ca3ac9535e2de8701235f5b070",
+    "source_hashes": {
+      "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+      "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+      "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+      "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+      "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+      "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+      "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+      "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+    },
+    "native_sha256": "d38ecd0c0aee92c13f88753f9926e0ba078be166c66f57490f17d21b9a55f1bb",
+    "implementation_sha256": "dd015c5a0ea8111ae6de20662c6babb2bb323330fcbd59297bb53c488b491db9",
+    "git_commit": "46d6e1db00f1e5fbd2ef141587ad5e8be245f94a"
+  },
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "protocol": "validation/enstatite-raw-workflow-v9.json",
+  "protocol_sha256": "41588b6a24d0962caa218df1bf516c1b222e39ca3ac9535e2de8701235f5b070",
+  "wheel_smoke": {
+    "scipy_installed": false,
+    "h5py_installed": false,
+    "hdf5plugin_installed": false,
+    "native_geometry_fit_passed": true,
+    "backend": "phasesmith-spots Rust",
+    "evaluations": 8,
+    "maximum_parameter_error": 2.0643209364124004e-14,
+    "wheel_sha256": "06c3bbdfbc3996f4f0d208b84b61165c0fceac5097540c921fda4a288ee3d298",
+    "core_sha256": "d38ecd0c0aee92c13f88753f9926e0ba078be166c66f57490f17d21b9a55f1bb"
+  },
+  "validation": {
+    "rust_passed": 505,
+    "rust_ignored": 34,
+    "python_passed": 3225,
+    "python_skipped": 11,
+    "python_deselected": 34,
+    "formatting": true,
+    "strict_workspace_clippy": true
+  },
+  "interpretation": "All predeclared equivalence and scientific recovery gates pass. Geometry fitting is native; tiny changed fit coordinates propagate through existing profile/scaling/search numerics. Intensity arrays and final atomic coordinates are numerically equivalent, not bitwise identical. Profile/scaling optimizers and raw orchestration remain Python.",
+  "external_products": {
+    "geometry.json": {
+      "bytes": 2425,
+      "sha256": "716c8724de5e4ad68594563200c09a15b93d503a5f3b61d4b1ecc4fcfba23bb4"
+    },
+    "reduced-observations.npz": {
+      "bytes": 586891,
+      "sha256": "1b8b1a06a38f458f031a2a6794d5b603eb21c64d15b5935634887b34a2013beb"
+    },
+    "search.json": {
+      "bytes": 406,
+      "sha256": "cfd60ecc598aa430d909e385371a891964916ca201c6d84dbe63265dfdd3db94"
+    },
+    "report.json": {
+      "bytes": 621,
+      "sha256": "dce1e84dda2e63f12e7e2d9b66b86e67817722ebc9ac5f9a8adf17d0e62f21c4"
+    },
+    "candidate/result.json": {
+      "bytes": 110483,
+      "sha256": "0d3e12214f8eff560e438ebe5ec1b30a68f2d66285d93ee70e13f49035a4f131"
+    },
+    "candidate/candidate.cif": {
+      "bytes": 2491,
+      "sha256": "acaec463177f4af43b1fe65038edb4642270b6327f98b233559c5aa3db1251bd"
+    }
+  }
+}
