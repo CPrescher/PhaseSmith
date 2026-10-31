@@ -42,10 +42,14 @@ def test_windowed_snapshot_and_boundaries_reject_invalid_inputs():
     engine = _core.ExperimentalLatticeEngine(1)
     q = np.array([[0.1, 0.2, -0.3]])
     for n, step, lo, hi, limit in [
-        (15, 0.1, 1.0, 3.0, 80), (258, 0.1, 1.0, 3.0, 80),
-        (32, 0.0, 1.0, 3.0, 80), (32, 0.001, 1.0, 3.0, 80),
-        (32, 0.1, 0.0, 3.0, 80), (32, 0.1, 3.0, 1.0, 80),
-        (32, 0.1, 1.0, np.inf, 80), (32, 0.1, 1.0, 3.0, 0),
+        (15, 0.1, 1.0, 3.0, 80),
+        (258, 0.1, 1.0, 3.0, 80),
+        (32, 0.0, 1.0, 3.0, 80),
+        (32, 0.001, 1.0, 3.0, 80),
+        (32, 0.1, 0.0, 3.0, 80),
+        (32, 0.1, 3.0, 1.0, 80),
+        (32, 0.1, 1.0, np.inf, 80),
+        (32, 0.1, 1.0, 3.0, 0),
         (32, 0.1, 1.0, 3.0, 1001),
     ]:
         with pytest.raises(ValueError):
@@ -55,8 +59,6 @@ def test_windowed_snapshot_and_boundaries_reject_invalid_inputs():
             engine.windowed_maxima(bad, 32, 0.1, 1.0, 3.0, 80)
     with pytest.raises(ValueError, match="direct-grid"):
         engine.windowed_maxima(np.zeros((1, 3)), 32, np.nextafter(0.0, 1.0), 1.0, 3.0, 80)
-
-
 
 
 def test_prepared_cloud_is_an_owned_snapshot_with_exact_fused_moments_and_derivatives():
@@ -80,11 +82,15 @@ def test_prepared_cloud_is_an_owned_snapshot_with_exact_fused_moments_and_deriva
                 plus, minus = cloud.evaluate(vectors + step), cloud.evaluate(vectors - step)
                 np.testing.assert_allclose(
                     (plus[:, 0] - minus[:, 0]) / 4e-6,
-                    actual[:, 1 + j], atol=2e-9, rtol=1e-7,
+                    actual[:, 1 + j],
+                    atol=2e-9,
+                    rtol=1e-7,
                 )
                 np.testing.assert_allclose(
                     (plus[:, 1:4] - minus[:, 1:4]) / 4e-6,
-                    actual[:, 4:].reshape(-1, 3, 3)[:, :, j], atol=1e-8, rtol=1e-6,
+                    actual[:, 4:].reshape(-1, 3, 3)[:, :, j],
+                    atol=1e-8,
+                    rtol=1e-6,
                 )
             for bad in (np.full((2, 3), np.nan), np.zeros((2, 2))):
                 with pytest.raises(ValueError):
@@ -137,9 +143,11 @@ def test_sparse_columns_plan_reuse_and_spherical_skips_are_bit_exact(n):
     engine = _core.ExperimentalLatticeEngine(4)
     # Include empty X slabs, duplicate accumulation, exact grid planes, and
     # non-power-of-two transforms; repeat a plan after another grid size.
-    clouds = [rng.uniform(-0.3, 0.3, (37, 3)),
-              rng.uniform(-1.1, 1.1, (3001, 3)),
-              np.repeat([[0.0, -0.0, 0.25], [0.5, 0.0, -0.5]], 201, axis=0)]
+    clouds = [
+        rng.uniform(-0.3, 0.3, (37, 3)),
+        rng.uniform(-1.1, 1.1, (3001, 3)),
+        np.repeat([[0.0, -0.0, 0.25], [0.5, 0.0, -0.5]], 201, axis=0),
+    ]
     for edge in [n, 16, n]:
         step = 2.21 / (edge - 4)
         spacing = 1 / (edge * step)

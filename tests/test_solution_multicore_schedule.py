@@ -2,8 +2,8 @@
 
 import importlib.util
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 
 def test_all_560_predictions_precede_reference_audits(tmp_path, monkeypatch):
@@ -22,8 +22,7 @@ def test_all_560_predictions_precede_reference_audits(tmp_path, monkeypatch):
         args.output.mkdir()
         rows = [{"id": str(i), "method": m} for i in range(35) for m in ["phasesmith", "shelxt"]]
         (args.output / "before-reference-audit.json").write_text(json.dumps({"runs": rows}))
-        for row in rows:
-            yield row
+        yield from rows
         yield {"reference_audit_barrier": True}
         assert batches == [1, 2, 4, 8]
         assert (out / "all-predictions-before-reference.json").exists()
@@ -54,9 +53,8 @@ def test_all_560_predictions_precede_reference_audits(tmp_path, monkeypatch):
 
 
 def test_batch_has_one_inner_worker_and_bounded_outer_jobs(tmp_path, monkeypatch):
-    from concurrent.futures import ThreadPoolExecutor
-    from threading import Lock
     import time
+    from threading import Lock
 
     benches = Path(__file__).resolve().parents[1] / "benchmarks"
     monkeypatch.syspath_prepend(str(benches))

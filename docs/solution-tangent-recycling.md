@@ -84,9 +84,13 @@ disabled, the old projection arithmetic remains available unchanged.
 
 ```python
 result = solve_structure_elements(
-    observations, cell=cell, space_group=space_group, elements=element_types,
+    observations,
+    cell=cell,
+    space_group=space_group,
+    elements=element_types,
     options=SolutionOptions(phasing="dual_space", trials=1, cycles=800),
-    symmetry_recycling=True, tangent_refinement=True,
+    symmetry_recycling=True,
+    tangent_refinement=True,
 )
 ```
 

@@ -82,9 +82,10 @@ def test_zero_rhs_and_repeated_cached_steps_are_deterministic():
 def test_complete_anisotropic_fits_preserve_original_objective_and_derivatives(symbol):
     from test_solution_symmetry_adp import model_case
 
-    sites = [("Si" if i < 2 else "O", p) for i, p in enumerate(
-        np.random.default_rng(131).uniform(0.05, 0.95, (8, 3))
-    )]
+    sites = [
+        ("Si" if i < 2 else "O", p)
+        for i, p in enumerate(np.random.default_rng(131).uniform(0.05, 0.95, (8, 3)))
+    ]
     model, _, _, _, _ = model_case(symbol, UnitCell(6, 7, 8, 90, 100, 90), sites)
     p = model.initial_parameters(0.015)
     old = model.refine(p, 8, 60.0, None, iterative=True)
@@ -131,8 +132,12 @@ def test_public_control_validates_dependency_and_records_final_fit_execution():
         filtered_peak_search=True,
         batched_fft=True,
         options=SolutionOptions(
-            phasing="dual_space", trials=4, cycles=800,
-            max_seconds=60, r1_target=0.005, completion=False,
+            phasing="dual_space",
+            trials=4,
+            cycles=800,
+            max_seconds=60,
+            r1_target=0.005,
+            completion=False,
         ),
     )
     old = solve_structure_elements(data, **common)

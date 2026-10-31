@@ -239,13 +239,15 @@ def fitting_selection(points, rows, reciprocal, tolerance):
     invoking a native scorer, BLAS dot, or any production selection helper.
     """
     q = np.asarray(points)
-    h = np.column_stack([
-        np.rint(q[:, 0] * row[0] + q[:, 1] * row[1] + q[:, 2] * row[2]) for row in rows
-    ])
-    predicted = np.column_stack([
-        h[:, 0] * reciprocal[0, j] + h[:, 1] * reciprocal[1, j]
-        + h[:, 2] * reciprocal[2, j] for j in range(3)
-    ])
+    h = np.column_stack(
+        [np.rint(q[:, 0] * row[0] + q[:, 1] * row[1] + q[:, 2] * row[2]) for row in rows]
+    )
+    predicted = np.column_stack(
+        [
+            h[:, 0] * reciprocal[0, j] + h[:, 1] * reciprocal[1, j] + h[:, 2] * reciprocal[2, j]
+            for j in range(3)
+        ]
+    )
     delta = q - predicted
     error = np.sqrt(delta[:, 0] ** 2 + delta[:, 1] ** 2 + delta[:, 2] ** 2)
     ids = np.flatnonzero((error < tolerance) & np.any(h != 0, axis=1))

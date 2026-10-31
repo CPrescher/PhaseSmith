@@ -27,9 +27,7 @@ def main(args):
         bases.append(a)
         if i < 3:
             h = rng.integers(-5, 6, (100, 3))
-            q[i * 100 : (i + 1) * 100] = h @ np.linalg.inv(a).T + rng.normal(
-                0, 0.0004, (100, 3)
-            )
+            q[i * 100 : (i + 1) * 100] = h @ np.linalg.inv(a).T + rng.normal(0, 0.0004, (100, 3))
     bases = np.array(bases)
     charts = np.broadcast_to(np.diag([1000.0, 1000.0, 100.0]), (len(q), 3, 3)).copy()
     valid = rng.uniform(size=len(q)) > 0.05
@@ -41,7 +39,12 @@ def main(args):
         for mode in ("numpy-orchestration", "native-fields"):
             start = perf_counter()
             fields = _physical_fields(
-                engine, q, bases, charts, valid, search,
+                engine,
+                q,
+                bases,
+                charts,
+                valid,
+                search,
                 replace(own, native_fields=mode == "native-fields"),
             )
             elapsed = perf_counter() - start
@@ -53,9 +56,16 @@ def main(args):
                 np.testing.assert_array_equal(fields[2], reference[2])
             times.append(dict(repeat=repeat, mode=mode, seconds=elapsed))
     result = dict(
-        seed=842076, points=len(q), models=len(bases), pairs=len(q) * len(bases),
-        workers=search.workers, platform=platform.platform(), runs=times,
-        equation_rtol=3e-12, equation_atol=3e-12, masks_exact=True,
+        seed=842076,
+        points=len(q),
+        models=len(bases),
+        pairs=len(q) * len(bases),
+        workers=search.workers,
+        platform=platform.platform(),
+        runs=times,
+        equation_rtol=3e-12,
+        equation_atol=3e-12,
+        masks_exact=True,
         scope="Ownership fields only. Excludes discovery, fits, merge, validation and imports.",
     )
     Path(args.output).write_text(json.dumps(result, indent=2) + "\n")

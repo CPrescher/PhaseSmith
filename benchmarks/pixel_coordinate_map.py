@@ -1,4 +1,5 @@
 """Deterministic batch geometry adapter benchmark; no scalar-only timing."""
+
 import json
 from dataclasses import replace
 from time import perf_counter
@@ -22,8 +23,13 @@ class ShiftScale:
 def main():
     rng = np.random.default_rng(193742)
     geometry = PanelGeometry.from_poni(
-        distance=0.15, poni1=0.08, poni2=0.08, pixel1=75e-6,
-        pixel2=75e-6, wavelength=0.2846, axis=[-1, 0, 0],
+        distance=0.15,
+        poni1=0.08,
+        poni2=0.08,
+        pixel1=75e-6,
+        pixel2=75e-6,
+        wavelength=0.2846,
+        axis=[-1, 0, 0],
     )
     mapped = replace(geometry, pixel_map=ShiftScale())
     observations = np.c_[rng.uniform(0, 2100, (32000, 2)), rng.uniform(-35, 35, 32000)]
@@ -34,8 +40,10 @@ def main():
         results[name] = {}
         for operation, function in [
             ("reciprocal", lambda panel=panel: reciprocal_vectors(observations, panel)),
-            ("prediction",
-             lambda panel=panel: predict_spots(hkl, basis, panel, observations[:, 2])),
+            (
+                "prediction",
+                lambda panel=panel: predict_spots(hkl, basis, panel, observations[:, 2]),
+            ),
         ]:
             function()
             elapsed = []
@@ -44,9 +52,11 @@ def main():
                 function()
                 elapsed.append(perf_counter() - start)
             results[name][operation + "_seconds_median"] = float(np.median(elapsed))
-    print(json.dumps(
-        dict(reflections=len(hkl), measurements=len(observations), results=results), indent=2
-    ))
+    print(
+        json.dumps(
+            dict(reflections=len(hkl), measurements=len(observations), results=results), indent=2
+        )
+    )
 
 
 if __name__ == "__main__":

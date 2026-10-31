@@ -36,8 +36,11 @@ R1 .04085182070733226, CLI 19.06/19.39 s. Source and installed-wheel suites pass
 ordinary/minimal/legacy-feature builds pass. A NumPy-only wheel and independent
 source-archive reconstruction pass native-capability/HDF5 smoke. Thirteen public
 crates package with no-verify; remote CI/manual release gates are not yet run.
-Whole-repository Ruff retains 191 diagnostics exclusively in unchanged files;
-changed Python files pass. Do not claim that release lint gate passed. See
+The historical promotion receipt records 191 inherited Ruff diagnostics.
+Subsequent repository maintenance clears them: Ruff lint and formatting both pass,
+and 3,277 Python tests pass after cleanup. Golden JSON/freeze registries remain
+unchanged; original source-byte proofs still use their recorded Git commits. See
+`validation/results/ruff-maintenance-0.8.json`. See
 `benchmarks/single-crystal-promotion-0.8-macos.json`. Authorized cleanup removes
 regenerable targets and 12 superseded environments after verifying retained
 wheel recovery, increasing free space by about 13.8 GB. Raw data/unique scientific

@@ -268,8 +268,10 @@ def collect_jobs(args):
     if args.resume:
         previous = json.loads((args.output / "before-reference-audit.json").read_text())
         if (
-            previous.get("cached_repair_evaluation", False) != getattr(args, "cached_repair_evaluation", False)
-            or previous.get("joint_assignment_refinement", False) != getattr(args, "joint_assignment_refinement", False)
+            previous.get("cached_repair_evaluation", False)
+            != getattr(args, "cached_repair_evaluation", False)
+            or previous.get("joint_assignment_refinement", False)
+            != getattr(args, "joint_assignment_refinement", False)
             or previous.get("workers", 1) != getattr(args, "workers", 1)
             or previous.get("shelxt_threads", 1) != getattr(args, "shelxt_threads", 1)
             or previous["manifest_sha256"] != sha(args.manifest)
@@ -299,9 +301,11 @@ def collect_jobs(args):
             or previous.get("ambiguous_assignments", False) != args.ambiguous_assignments
             or previous.get("short_phase_starts", False) != args.short_phase_starts
             or previous.get("blocked_normal_matrices", False) != args.blocked_normal_matrices
-            or previous.get("assignment_convergence_stopping", False) != args.assignment_convergence_stopping
+            or previous.get("assignment_convergence_stopping", False)
+            != args.assignment_convergence_stopping
             or previous.get("model_consensus_stopping", False) != args.model_consensus_stopping
-            or previous.get("late_phase_plateau_stopping", False) != args.late_phase_plateau_stopping
+            or previous.get("late_phase_plateau_stopping", False)
+            != args.late_phase_plateau_stopping
             or previous.get("phase_plateau_stopping", False) != args.phase_plateau_stopping
             or previous.get("reuse_normal_matrices", False) != args.reuse_normal_matrices
             or previous.get("streamed_peak_search", False) != args.streamed_peak_search
@@ -420,8 +424,10 @@ def collect_jobs(args):
         "cached_repair_evaluation": getattr(args, "cached_repair_evaluation", False),
         "workers": getattr(args, "workers", 1),
         "shelxt_threads": getattr(args, "shelxt_threads", 1),
-        "thread_policy": (f"serial jobs; PhaseSmith call-owned pool <= {getattr(args, 'workers', 1)}; "
-                          f"other numerical libraries=1; SHELXT -t{getattr(args, 'shelxt_threads', 1)}"),
+        "thread_policy": (
+            f"serial jobs; PhaseSmith call-owned pool <= {getattr(args, 'workers', 1)}; "
+            f"other numerical libraries=1; SHELXT -t{getattr(args, 'shelxt_threads', 1)}"
+        ),
         "score_policy": {
             "counts": "exact non-H full cell",
             "maximum_error_angstrom": 0.05,
@@ -518,8 +524,16 @@ def collect_jobs(args):
                     str(work / "solution"),
                     "--seconds",
                     str(args.seconds),
-                    *(["--cached-repair-evaluation"] if getattr(args, "cached_repair_evaluation", False) else []),
-                    *(["--joint-assignment-refinement"] if getattr(args, "joint_assignment_refinement", False) else []),
+                    *(
+                        ["--cached-repair-evaluation"]
+                        if getattr(args, "cached_repair_evaluation", False)
+                        else []
+                    ),
+                    *(
+                        ["--joint-assignment-refinement"]
+                        if getattr(args, "joint_assignment_refinement", False)
+                        else []
+                    ),
                     "--workers",
                     str(getattr(args, "workers", 1)),
                     "--maximum-atoms",
@@ -543,9 +557,17 @@ def collect_jobs(args):
                     *(["--reuse-normal-matrices"] if args.reuse_normal_matrices else []),
                     *(["--short-phase-starts"] if args.short_phase_starts else []),
                     *(["--blocked-normal-matrices"] if args.blocked_normal_matrices else []),
-                    *(["--assignment-convergence-stopping"] if args.assignment_convergence_stopping else []),
+                    *(
+                        ["--assignment-convergence-stopping"]
+                        if args.assignment_convergence_stopping
+                        else []
+                    ),
                     *(["--model-consensus-stopping"] if args.model_consensus_stopping else []),
-                    *(["--late-phase-plateau-stopping"] if args.late_phase_plateau_stopping else []),
+                    *(
+                        ["--late-phase-plateau-stopping"]
+                        if args.late_phase_plateau_stopping
+                        else []
+                    ),
                     *(["--phase-plateau-stopping"] if args.phase_plateau_stopping else []),
                     *(
                         ["--specialized-isotropic-refinement"]
@@ -608,7 +630,12 @@ def collect_jobs(args):
                 "expanded_measured_rows_for_resource_cap": expanded_rows,
                 "adapter_preparation_seconds_outside_timing": prep_seconds,
                 "host_load_average_before_job": list(os.getloadavg()),
-                **launch(command, work, args.seconds, getattr(args, "shelxt_threads", 1) if method == "shelxt" else 1),
+                **launch(
+                    command,
+                    work,
+                    args.seconds,
+                    getattr(args, "shelxt_threads", 1) if method == "shelxt" else 1,
+                ),
             }
             try:
                 if method == "phasesmith":

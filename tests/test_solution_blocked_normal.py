@@ -4,12 +4,11 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution_reference import symmetric_model_reference
-from phasesmith.crystallography import UnitCell
 from phasesmith.experimental.solution_origin_reference import (
     iterative_normal_reference,
     preconditioned_normal_reference,
 )
+from phasesmith.experimental.solution_reference import symmetric_model_reference
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_SharedOrbitPool"), reason="experimental-solution"
@@ -80,8 +79,6 @@ def test_zero_rhs_and_repeated_cached_steps_are_deterministic():
     assert a["iterations"] == b["iterations"]
 
 
-
-
 @pytest.mark.parametrize("symbol", ["P 1", "P -1", "P m"])
 @pytest.mark.parametrize("mode,count", [("isotropic", 10), ("anisotropic", 8)])
 def test_rejected_damping_trials_reuse_but_accepted_models_invalidate(symbol, mode, count):
@@ -144,7 +141,16 @@ def test_small_or_disabled_cache_preserves_original_execution(iterative, cached)
     model, *_ = model_case(symbol, cell, sites, mode="isotropic")
     p = model.initial_parameters(0.015)
     a = model.refine(p, 8, 60.0, None, iterative=iterative, cached_normal=cached)
-    b = model.refine(p, 8, 60.0, None, iterative=iterative, cached_normal=cached, reuse_normal=True, blocked_normal=True)
+    b = model.refine(
+        p,
+        8,
+        60.0,
+        None,
+        iterative=iterative,
+        cached_normal=cached,
+        reuse_normal=True,
+        blocked_normal=True,
+    )
     np.testing.assert_array_equal(a["parameters"].view(np.uint64), b["parameters"].view(np.uint64))
     assert b["normal_matrix_builds"] == b["normal_matrix_reuses"] == 0
 

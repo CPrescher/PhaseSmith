@@ -77,14 +77,21 @@ from phasesmith.single_crystal.scan_scaling import fit_scan_scale
 # Fold complete families together; do not randomly split individual equivalents.
 training = family_ids % 5 != 0
 model = fit_scan_scale(
-    lp_corrected_intensity, lp_corrected_sigma, omega, family_ids,
-    omega_range=(-35.0, 36.0), training=training, eligible=quality_flags == 0,
+    lp_corrected_intensity,
+    lp_corrected_sigma,
+    omega,
+    family_ids,
+    omega_range=(-35.0, 36.0),
+    training=training,
+    eligible=quality_flags == 0,
 )
 if not model.converged:
     raise RuntimeError("Relative scan scale did not converge")
 valid = np.isfinite(lp_corrected_intensity) & np.isfinite(lp_corrected_sigma)
 corrected = model.apply(
-    lp_corrected_intensity[valid], lp_corrected_sigma[valid], omega[valid],
+    lp_corrected_intensity[valid],
+    lp_corrected_sigma[valid],
+    omega[valid],
 )
 # Columns: factor, signed I, counting sigma, dI/dbeta, dI/domega, model sigma.
 ```

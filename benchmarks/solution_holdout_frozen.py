@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import json
-from pathlib import Path
 import subprocess
+from datetime import UTC, datetime
+from pathlib import Path
 from types import SimpleNamespace
 
 from phasesmith import _core
@@ -59,15 +59,11 @@ def main():
         parser.error("--open-holdout explicitly records the authorized holdout opening")
     if args.output.exists():
         parser.error("output must be new; no reruns or overwritten predictions")
-    if subprocess.check_output(
-        ["git", "status", "--porcelain"], cwd=ROOT, text=True
-    ).strip():
+    if subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip():
         parser.error("commit the freeze protocol and all changes before opening the holdout")
     freeze = load(FREEZE)
     verify_freeze(freeze)
-    commit = subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
-    ).strip()
+    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     controls = dict(freeze["controls"])
     controls.update(
         manifest=ROOT / controls["manifest"],
@@ -76,13 +72,11 @@ def main():
     )
     events = []
     barrier = None
-    started = datetime.now(timezone.utc).isoformat()
+    started = datetime.now(UTC).isoformat()
     for event in collect_jobs(SimpleNamespace(**controls)):
         verify_freeze(freeze)
         events.append(event)
-        (args.output / "holdout-schedule.json").write_text(
-            json.dumps(events, indent=2) + "\n"
-        )
+        (args.output / "holdout-schedule.json").write_text(json.dumps(events, indent=2) + "\n")
         if event.get("reference_audit_barrier"):
             if len(events) != 131:
                 raise ValueError("unexpected prediction/reference barrier order")
@@ -91,10 +85,8 @@ def main():
                 stream.write((args.output / "before-reference-audit.json").read_bytes())
             barrier = {
                 "predictions": 130,
-                "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-                "prediction_sha256": validate_prediction_barrier(
-                    snapshot, freeze["holdout_ids"]
-                ),
+                "timestamp_utc": datetime.now(UTC).isoformat(),
+                "prediction_sha256": validate_prediction_barrier(snapshot, freeze["holdout_ids"]),
                 "freeze_sha256": sha(FREEZE),
                 "commit": commit,
                 "source_and_binary_unchanged": True,
@@ -108,7 +100,7 @@ def main():
     provenance = {
         "schema": "phasesmith.frozen-holdout-run.v1",
         "started_utc": started,
-        "finished_utc": datetime.now(timezone.utc).isoformat(),
+        "finished_utc": datetime.now(UTC).isoformat(),
         "solver_commit": freeze["solver_commit"],
         "protocol_commit": commit,
         "freeze_sha256": sha(FREEZE),

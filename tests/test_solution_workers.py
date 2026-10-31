@@ -1,13 +1,14 @@
 """Bounded reflection execution preserves fused equations and ordered fits."""
 
-from concurrent.futures import ThreadPoolExecutor
 import itertools
+from concurrent.futures import ThreadPoolExecutor
+
 import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.io.space_groups import space_group_by_symbol
 from phasesmith.experimental.solution_reference import symmetric_model_reference
+from phasesmith.io.space_groups import space_group_by_symbol
 from phasesmith.scattering_reference import xray_non_resonant
 
 pytestmark = pytest.mark.skipif(

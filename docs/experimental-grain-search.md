@@ -191,7 +191,8 @@ No GSAS-II oracle covers positional multigrain discovery.
 from phasesmith.single_crystal.grains import GrainSearchOptions, find_grains_ensemble
 
 result = find_grains_ensemble(
-    q, training=training,
+    q,
+    training=training,
     options=GrainSearchOptions(grid_size=256, max_grains=8),
 )
 ```
@@ -311,11 +312,14 @@ profile value/Jacobian or GSAS-II oracle boundary is involved.
 
 ```python
 from phasesmith.single_crystal.grains import (
-    GrainConditioningOptions, GrainSearchOptions, find_grains_ensemble,
+    GrainConditioningOptions,
+    GrainSearchOptions,
+    find_grains_ensemble,
 )
 
 result = find_grains_ensemble(
-    q, training=training,
+    q,
+    training=training,
     options=GrainSearchOptions(grid_size=256, max_grains=40, workers=2),
     conditioning=GrainConditioningOptions(),
 )

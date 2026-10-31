@@ -36,7 +36,8 @@ def model_agreement_distance(cell_basis, a_species, a_xyz, b_species, b_xyz):
     anchor_species = min(counts, key=lambda s: (counts[s], s))
     anchor = a_species.index(anchor_species)
     bijections = [
-        p for p in permutations(range(len(b)))
+        p
+        for p in permutations(range(len(b)))
         if all(a_species[i] == b_species[p[i]] for i in range(len(a)))
     ]
     for hand in (1.0, -1.0):

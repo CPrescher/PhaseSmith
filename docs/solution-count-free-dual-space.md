@@ -132,9 +132,13 @@ Enable the strategy through the existing experimental API:
 
 ```python
 result = solve_structure_elements(
-    observations, cell=cell, space_group=group, elements=elements,
+    observations,
+    cell=cell,
+    space_group=group,
+    elements=elements,
     options=SolutionOptions(phasing="dual_space", trials=4),
-    dual_peak_sigma=2.0, dual_peak_cap=128,
+    dual_peak_sigma=2.0,
+    dual_peak_cap=128,
 )
 ```
 

@@ -77,7 +77,9 @@ def main():
             legacy_quality_normalization=False,
             score_only_evaluation=True,
             reusable_fourier_workspaces=True,
-            collection_schedule="balanced serial case-interleaved tensor-informed assignment repair",
+            collection_schedule=(
+                "balanced serial case-interleaved tensor-informed assignment repair"
+            ),
             collection_scheduler_source="benchmarks/solution_joint_interleaved.py",
         )
         streams[mode] = collect_jobs(controls)

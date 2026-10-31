@@ -31,8 +31,16 @@ Research strategies remain opt-in and carry their documented qualifications.
 
 ```python
 from phasesmith.single_crystal import (
-    frame_validity, geometry_refinement, grains, integration,
-    prediction, profiles, reduction, rotation, solution, spots,
+    frame_validity,
+    geometry_refinement,
+    grains,
+    integration,
+    prediction,
+    profiles,
+    reduction,
+    rotation,
+    solution,
+    spots,
 )
 from phasesmith.single_crystal.reciprocal import PanelGeometry
 from phasesmith.io.hdf5 import Hdf5Frames
@@ -75,15 +83,22 @@ from phasesmith.io.space_groups import space_group_by_symbol
 from phasesmith.single_crystal.search import ElementSearchConfig, search_structure_elements
 from phasesmith.single_crystal.solution import SolutionOptions, write_solution
 
-config = ElementSearchConfig.validated_v1(options=SolutionOptions(
-    phasing="dual_space", completion=False, trials=4, cycles=800,
-    max_seconds=60, dense_memory_budget_bytes=128 * 1024**2,
-))
+config = ElementSearchConfig.validated_v1(
+    options=SolutionOptions(
+        phasing="dual_space",
+        completion=False,
+        trials=4,
+        cycles=800,
+        max_seconds=60,
+        dense_memory_budget_bytes=128 * 1024**2,
+    )
+)
 result = search_structure_elements(
     read_hkl("/external/data/reflections.hkl"),
     cell=UnitCell(18.2, 8.8, 5.2, 90, 90, 90),
     space_group=space_group_by_symbol("Pbca").space_group,
-    elements=["Mg", "Si", "O"], configuration=config,
+    elements=["Mg", "Si", "O"],
+    configuration=config,
 )
 write_solution(result, "/external/results/new-search")
 print(result.termination, result.target_met, result.to_record()["search_configuration"])

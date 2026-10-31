@@ -240,8 +240,9 @@ of learned shapes, sensor maps, geometry or scale coefficients.
 from phasesmith.single_crystal.reduction import ReductionConfig, reduce_observations
 
 config = ReductionConfig()  # fixed profiles, no physical/empirical correction
-result = reduce_observations(obs, detector_shape=(height, width), config=config,
-                             model=bank, cache="disposable-profile-cache")
+result = reduce_observations(
+    obs, detector_shape=(height, width), config=config, model=bank, cache="disposable-profile-cache"
+)
 # result.aperture: unchanged counting baseline
 # result.profile: raw signed profile amplitudes and flags
 # result.intensity_sigma: explicitly corrected intensities and reported sigma

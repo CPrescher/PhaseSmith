@@ -15,7 +15,8 @@ def transform(values, to_density=False):
     out = _core._solution_real_fft_transform(
         np.ascontiguousarray(values.real).ravel(),
         np.ascontiguousarray(values.imag).ravel(),
-        values.shape, to_density,
+        values.shape,
+        to_density,
     )
     return (out["real"] + 1j * out["imaginary"]).reshape(values.shape)
 
@@ -49,7 +50,9 @@ def test_real_operations_match_independent_numpy_at_extreme_finite_scales(shape,
         else:
             back = transform(got, True) / sample.size
             np.testing.assert_allclose(back, sample, rtol=2e-12, atol=8e-12 * scale)
-            assert got[0, 0, 0].real == pytest.approx(sample.real.sum(), rel=2e-12, abs=8e-12*scale)
+            assert got[0, 0, 0].real == pytest.approx(
+                sample.real.sum(), rel=2e-12, abs=8e-12 * scale
+            )
 
 
 @pytest.mark.parametrize("invalid", ["nan", "inf", "length", "odd", "small", "large", "complex"])
@@ -80,8 +83,20 @@ def test_short_phase_trajectory_agrees_and_repeats_deterministically(cycles, ran
 
     shape, cell, h, amplitude, phases, support = inputs()
     args = (
-        shape, list(cell.as_tuple()), h.ravel(), amplitude, phases, support.ravel(),
-        cycles, 1.5, 64, 0.25, 3.0, 0.1, 1034, rank,
+        shape,
+        list(cell.as_tuple()),
+        h.ravel(),
+        amplitude,
+        phases,
+        support.ravel(),
+        cycles,
+        1.5,
+        64,
+        0.25,
+        3.0,
+        0.1,
+        1034,
+        rank,
     )
     common = dict(reusable_workspaces=True, filtered_peak_search=True, batched_fft=True)
     old = _core._solution_count_free_dual_space(*args, **common)
@@ -100,23 +115,41 @@ def test_complete_element_only_search_preserves_counts_and_final_anisotropic_mod
 
     cell, group, data, _, species = synthetic(symbol)
     common = dict(
-        cell=cell, space_group=group, elements=["Fe", "O"], maximum_atoms=12,
-        symmetry_recycling=True, tangent_refinement=True, wilson_normalization=True,
-        phase_quality_selection=True, phase_origin_selection=True, chemical_assignment=True,
-        iterative_refinement=True, score_only_evaluation=True, reusable_fourier_workspaces=True,
-        work_sliced_phasing=True, isotropic_assignment_refinement=True, filtered_peak_search=True,
-        batched_fft=True, cached_normal_refinement=True,
+        cell=cell,
+        space_group=group,
+        elements=["Fe", "O"],
+        maximum_atoms=12,
+        symmetry_recycling=True,
+        tangent_refinement=True,
+        wilson_normalization=True,
+        phase_quality_selection=True,
+        phase_origin_selection=True,
+        chemical_assignment=True,
+        iterative_refinement=True,
+        score_only_evaluation=True,
+        reusable_fourier_workspaces=True,
+        work_sliced_phasing=True,
+        isotropic_assignment_refinement=True,
+        filtered_peak_search=True,
+        batched_fft=True,
+        cached_normal_refinement=True,
         options=SolutionOptions(
-            phasing="dual_space", trials=4, cycles=800, max_seconds=60,
-            r1_target=0.005, completion=False,
+            phasing="dual_space",
+            trials=4,
+            cycles=800,
+            max_seconds=60,
+            r1_target=0.005,
+            completion=False,
         ),
     )
     old = solve_structure_elements(data, **common)
     new = solve_structure_elements(data, **common, real_fft=True)
     assert old.target_met and new.target_met
-    assert dict(old.composition) == dict(new.composition) == {
-        e: int(np.count_nonzero(species == e)) for e in set(species)
-    }
+    assert (
+        dict(old.composition)
+        == dict(new.composition)
+        == {e: int(np.count_nonzero(species == e)) for e in set(species)}
+    )
     assert new.best.refinement.mode == old.best.refinement.mode == "anisotropic"
     assert new.shared_search.real_fft and new.shared_search.real_phase_transforms > 0
     assert old.shared_search.real_phase_transforms == 0
@@ -134,8 +167,20 @@ def test_long_packed_phase_runs_are_deterministic(rank):
 
     shape, cell, h, amplitude, phases, support = inputs()
     args = (
-        shape, list(cell.as_tuple()), h.ravel(), amplitude, phases, support.ravel(),
-        256, 1.5, 64, 0.25, 3.0, 0.1, 1034, rank,
+        shape,
+        list(cell.as_tuple()),
+        h.ravel(),
+        amplitude,
+        phases,
+        support.ravel(),
+        256,
+        1.5,
+        64,
+        0.25,
+        3.0,
+        0.1,
+        1034,
+        rank,
     )
     common = dict(
         reusable_workspaces=True, filtered_peak_search=True, batched_fft=True, real_fft=True

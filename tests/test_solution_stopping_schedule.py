@@ -3,8 +3,9 @@
 import importlib.util
 import json
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 @pytest.mark.parametrize(

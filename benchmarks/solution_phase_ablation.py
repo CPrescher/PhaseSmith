@@ -155,11 +155,17 @@ def compare(paths, manifest, pairs=()):
                     "r1": r["model"]["reported_r1"] if r.get("model") else None,
                     "phasing_starts": r["effort"]["phasing_starts"],
                     "termination": r.get("termination"),
-                    "late_phase_plateau_stops": sum(a["stop_reason"] == "late_phase_plateau" for a in r["effort"].get("phase_slices", [])),
+                    "late_phase_plateau_stops": sum(
+                        a["stop_reason"] == "late_phase_plateau"
+                        for a in r["effort"].get("phase_slices", [])
+                    ),
                     "phase_search_seconds": sum(
                         a["seconds"] for a in r["effort"].get("phase_slices", [])
                     ),
-                    "phase_plateau_stops": sum(a["stop_reason"] == "phase_plateau" for a in r["effort"].get("phase_slices", [])),
+                    "phase_plateau_stops": sum(
+                        a["stop_reason"] == "phase_plateau"
+                        for a in r["effort"].get("phase_slices", [])
+                    ),
                     "short_phase_slices": sum(
                         a["cycle_quota"] < r["options"]["cycles"]
                         for a in r["effort"].get("phase_slices", [])
@@ -184,7 +190,9 @@ def compare(paths, manifest, pairs=()):
                     "normal_matrix_reuses": r["effort"].get("normal_matrix_reuses", 0),
                     "blocked_normal_builds": r["effort"].get("blocked_normal_builds", 0),
                     "blocked_normal_fallbacks": r["effort"].get("blocked_normal_fallbacks", 0),
-                    "assignment_convergence_stops": r["effort"].get("assignment_convergence_stops", 0),
+                    "assignment_convergence_stops": r["effort"].get(
+                        "assignment_convergence_stops", 0
+                    ),
                     "model_consensus_stops": r["effort"].get("model_consensus_stops", 0),
                     "model_consensus_checks": r["effort"].get("model_consensus_checks", 0),
                     "specialized_isotropic_fits": r["effort"].get("specialized_isotropic_fits", 0),

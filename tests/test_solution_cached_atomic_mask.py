@@ -17,18 +17,23 @@ pytestmark = pytest.mark.skipif(
 def test_cached_projection_is_bitwise_equal_at_periodic_edges_and_matches_numpy(shape, cell, cycle):
     density = np.random.default_rng(901).normal(0, 0.1, shape)
     density[0, 0, 0] = 6
-    density[-1, 0, shape[2]//2] = 7
+    density[-1, 0, shape[2] // 2] = 7
     for scale in [1e-200, 1.0, 1e200]:
-        values = np.ascontiguousarray(density*scale).ravel()
+        values = np.ascontiguousarray(density * scale).ravel()
         args = (values, shape, list(cell.as_tuple()), 3, 0.25, 0.2, 123, cycle)
         old = _core._solution_atomic_projection(*args)
         new = _core._solution_atomic_projection(*args, cached=True)
         np.testing.assert_array_equal(new.view(np.uint64), old.view(np.uint64))
-        np.testing.assert_array_equal(values.reshape(shape), density*scale)
+        np.testing.assert_array_equal(values.reshape(shape), density * scale)
         if scale == 1:
             ref = atomic_projection_reference(
-                density, cell.geometry().direct_basis, 3, 0.25,
-                cycle=cycle, seed=123, omit_fraction=0.2,
+                density,
+                cell.geometry().direct_basis,
+                3,
+                0.25,
+                cycle=cycle,
+                seed=123,
+                omit_fraction=0.2,
             )
             np.testing.assert_allclose(new.reshape(shape), ref, rtol=2e-12, atol=2e-13)
 
@@ -76,8 +81,20 @@ def test_complete_current_trajectories_remain_bitwise_equal(rank, omit, real):
 
     shape, cell, h, amplitude, phases, support = inputs()
     args = (
-        shape, list(cell.as_tuple()), h.ravel(), amplitude, phases, support.ravel(),
-        128, 1.5, 64, 0.25, 3.0, omit, 1034, rank,
+        shape,
+        list(cell.as_tuple()),
+        h.ravel(),
+        amplitude,
+        phases,
+        support.ravel(),
+        128,
+        1.5,
+        64,
+        0.25,
+        3.0,
+        omit,
+        1034,
+        rank,
     )
     common = dict(
         reusable_workspaces=True, filtered_peak_search=True, batched_fft=True, real_fft=real
@@ -97,23 +114,42 @@ def test_complete_structure_and_counts_are_unchanged(symbol):
 
     cell, group, data, _, species = synthetic(symbol)
     common = dict(
-        cell=cell, space_group=group, elements=["Fe", "O"], maximum_atoms=12,
-        symmetry_recycling=True, tangent_refinement=True, wilson_normalization=True,
-        phase_quality_selection=True, phase_origin_selection=True, chemical_assignment=True,
-        iterative_refinement=True, score_only_evaluation=True, reusable_fourier_workspaces=True,
-        work_sliced_phasing=True, isotropic_assignment_refinement=True, filtered_peak_search=True,
-        batched_fft=True, real_fft=True, cached_normal_refinement=True,
+        cell=cell,
+        space_group=group,
+        elements=["Fe", "O"],
+        maximum_atoms=12,
+        symmetry_recycling=True,
+        tangent_refinement=True,
+        wilson_normalization=True,
+        phase_quality_selection=True,
+        phase_origin_selection=True,
+        chemical_assignment=True,
+        iterative_refinement=True,
+        score_only_evaluation=True,
+        reusable_fourier_workspaces=True,
+        work_sliced_phasing=True,
+        isotropic_assignment_refinement=True,
+        filtered_peak_search=True,
+        batched_fft=True,
+        real_fft=True,
+        cached_normal_refinement=True,
         options=SolutionOptions(
-            phasing="dual_space", trials=4, cycles=800, max_seconds=60,
-            r1_target=0.005, completion=False,
+            phasing="dual_space",
+            trials=4,
+            cycles=800,
+            max_seconds=60,
+            r1_target=0.005,
+            completion=False,
         ),
     )
     old = solve_structure_elements(data, **common)
     new = solve_structure_elements(data, **common, fused_phase_workspace=True)
     assert old.target_met and new.target_met
-    assert dict(old.composition) == dict(new.composition) == {
-        e: int(np.count_nonzero(species == e)) for e in set(species)
-    }
+    assert (
+        dict(old.composition)
+        == dict(new.composition)
+        == {e: int(np.count_nonzero(species == e)) for e in set(species)}
+    )
     assert new.best.refinement.mode == old.best.refinement.mode == "anisotropic"
     np.testing.assert_array_equal(
         new.best.fractional_xyz.view(np.uint64), old.best.fractional_xyz.view(np.uint64)

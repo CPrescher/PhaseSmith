@@ -39,7 +39,9 @@ independent reference preserves the declared equations and finite supports.
 ```python
 import numpy as np
 from phasesmith.experimental.frame_validity import (
-    SeatShadowOptions, estimate_seat_shadows, flag_invalid_tracks,
+    SeatShadowOptions,
+    estimate_seat_shadows,
+    flag_invalid_tracks,
 )
 from phasesmith.experimental.rotation import locate_series
 from phasesmith.experimental.profiles import prepare_profiles
@@ -48,26 +50,37 @@ from phasesmith.experimental.profiles import prepare_profiles
 # Supply ordered identities and actual exposure bounds; the library reads no files.
 ids = tuple(f"frame-{i}" for i in range(len(omega_bounds)))
 validity = estimate_seat_shadows(
-    load_original_counts, len(ids), frame_ids=ids, omega_bounds=omega_bounds,
-    mask_loader=load_detector_exclusions, fixed_mask=manual_mask,
-    options=SeatShadowOptions(reference_first=20, reference_last=40), workers=4,
+    load_original_counts,
+    len(ids),
+    frame_ids=ids,
+    omega_bounds=omega_bounds,
+    mask_loader=load_detector_exclusions,
+    fixed_mask=manual_mask,
+    options=SeatShadowOptions(reference_first=20, reference_last=40),
+    workers=4,
 )
 validity.save("/external/run/frame-validity.npz")  # exclusive, pickle-free archive
+
 
 def load_checked(i):
     image = load_original_counts(i)
     validity.verify_frame(i, image)
     return image
 
+
 def mask(i):
     # Dynamic source exclusions, e.g. EIGER reserved values, still belong to
     # the reader. Static/manual masks are already captured in validity.
     return validity.mask(i) | load_detector_exclusions(i)
 
+
 positions = locate_series(load_checked, omega_bounds, mask_loader=mask)
 positions = flag_invalid_tracks(positions, validity)
 observations = prepare_profiles(
-    load_checked, omega_bounds, predictions, mask_loader=mask,
+    load_checked,
+    omega_bounds,
+    predictions,
+    mask_loader=mask,
 )
 ```
 
@@ -144,9 +157,12 @@ actual loaded frames; the library does not stat or reopen application files.
 from phasesmith.experimental.frame_validity import DacApertureMask, CombinedValidity
 
 aperture = DacApertureMask(
-    geometry, omega_bounds, detector_shape, frame_ids=ids,
-    axis_at_omega_zero=np.array([0., 0., 1.]),
-    half_opening_degrees=35.,  # explicit measured/assumed hardware parameter
+    geometry,
+    omega_bounds,
+    detector_shape,
+    frame_ids=ids,
+    axis_at_omega_zero=np.array([0.0, 0.0, 1.0]),
+    half_opening_degrees=35.0,  # explicit measured/assumed hardware parameter
 )
 combined = CombinedValidity((validity, aperture))
 # Pass combined.mask as the common mask_loader in every stage.
