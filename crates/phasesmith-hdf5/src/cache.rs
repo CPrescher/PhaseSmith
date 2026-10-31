@@ -69,6 +69,7 @@ struct State {
 /// Each instance is independent and is never persisted or shared across runs.
 pub struct CachedReader {
     reader: Reader,
+    budget: usize,
     path: PathBuf,
     stamp: Stamp,
     state: Mutex<State>,
@@ -100,6 +101,7 @@ impl CachedReader {
         }
         Ok(Self {
             reader,
+            budget,
             path,
             stamp: identity,
             state: Mutex::new(State {
@@ -145,7 +147,14 @@ impl CachedReader {
     /// # Errors
     /// Changed source, invalid index, failed decode or poisoned state lock.
     pub fn read_frame(&self, index: usize) -> Result<Frame, Error> {
-        let budget = self.stats()?.budget_bytes;
+        let budget = self.budget;
+        if budget == 0 {
+            let frame = self.reader.read_frame(index)?;
+            let mut state = self.state.lock().map_err(|e| Error(e.to_string()))?;
+            state.stats.requests += 1;
+            state.stats.decodes += 1;
+            return Ok(frame);
+        }
         if budget > 0 && stamp(&self.path).map_or(true, |current| current != self.stamp) {
             let mut state = self.state.lock().map_err(|e| Error(e.to_string()))?;
             state.frames.clear();

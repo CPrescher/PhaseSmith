@@ -74,3 +74,11 @@ The choice is a memory/payload control, never an atomic-reference or R1 choice.
 Exact cache hit/decode/admission counters and observed performance are recorded
 separately from native preparation. All physics, support, geometry and independent
 reference/oracle fixtures remain unchanged.
+
+The matching final binary exposed an uncached-reader regression (4.241/4.270 s
+detection medians) even though native preparation itself stayed near .87 s
+summed batch wall time. The read adapter now transfers HDF5's owned C-order
+buffer directly, with a logical-order fallback for nonstandard layouts, instead
+of traversing/copying it through a generic array iterator. The measured final
+uncached native median is **3.562 s**, retaining every position/fingerprint byte.
+All older trials, including the initial slowdown, remain in the stage report.

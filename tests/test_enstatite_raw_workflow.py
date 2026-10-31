@@ -50,6 +50,7 @@ def test_raw_loader_preserves_zero_high_counts_reserved_mask_and_orientation():
 
 def test_verified_digest_reuse_preserves_orientation_and_rejects_changed_sources():
     import hashlib
+
     from phasesmith.experimental.frame_validity import CombinedValidity, FrameValidity
 
     path = ROOT / "crates/phasesmith-hdf5/tests/data/counts-bitshuffle-lz4.h5"
