@@ -1,5 +1,12 @@
 # Experimental symmetry-based scan scaling
 
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
 The opt-in `experimental-spots` build provides a deliberately small relative
 scale model. It operates on intensities already corrected for the single-crystal
 rotation Lorentz and polarization factors. Supply confirmed equivalent-family
@@ -64,7 +71,7 @@ tails are reconstructed by this scale term.
 
 ```python
 import numpy as np
-from phasesmith.experimental.scan_scaling import fit_scan_scale
+from phasesmith.single_crystal.scan_scaling import fit_scan_scale
 
 # family_ids: explicit confirmed equivalent-family integer labels, same crystal.
 # Fold complete families together; do not randomly split individual equivalents.

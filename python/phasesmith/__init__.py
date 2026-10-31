@@ -16,6 +16,7 @@ from . import (
     persistence,
     profile_estimation,
     refinement,
+    single_crystal,
 )
 from ._api import (
     PARAMETER_ORDER,
@@ -461,6 +462,7 @@ __all__ = [
     "reciprocal_angle_geometry",
     "refinement",
     "simulate_fundamental_peaks",
+    "single_crystal",
     "smooth_bruckner",
     "species_from_structure",
     "starting_profile_from_fwhm",

@@ -1,5 +1,10 @@
 # PhaseSmith documentation
 
+Single-crystal workflows use the supported `phasesmith.single_crystal`
+namespace from the 0.8 development release. See the
+[single-crystal guide](single-crystal.md) for modules, migration, Rust features
+and the raw-frame-to-structure-search boundary.
+
 PhaseSmith provides validated powder-diffraction calculations and refinement
 through a native Rust library and a typed Python/NumPy scripting interface.
 Python users install the same Rust numerical core that native applications can

@@ -1,6 +1,13 @@
 # Predicted rotation-reflection integration
 
-Opt-in `experimental-spots` only. `phasesmith.experimental.integration` is a
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
+Opt-in `experimental-spots` only. `phasesmith.single_crystal.integration` is a
 script-first workflow; Dioptas supplies file loading, masks and inspection.
 No material, composition or structure is required. Supply the selected indexed
 cell/orientation through `predict_scan`, or an equivalent `ScanPredictions`
@@ -77,8 +84,8 @@ measured workflow/sensitivity example, not absolute-intensity truth.
 ## Python example
 
 ```python
-from phasesmith.experimental.prediction import predict_scan
-from phasesmith.experimental.integration import IntegrationOptions, integrate_series
+from phasesmith.single_crystal.prediction import predict_scan
+from phasesmith.single_crystal.integration import IntegrationOptions, integrate_series
 
 predictions = predict_scan(reciprocal_basis, geometry, omega_bounds,
                            image_shape, qmax=qmax)

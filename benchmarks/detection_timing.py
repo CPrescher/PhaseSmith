@@ -8,8 +8,8 @@ from contextlib import contextmanager
 
 @contextmanager
 def observe_detection(workflow):
-    from phasesmith.experimental import frame_validity, rotation
     from phasesmith.io.hdf5 import Hdf5Frames
+    from phasesmith.single_crystal import frame_validity, rotation
 
     stats = dict(
         schema="phasesmith.detection-wall-timings.v1",

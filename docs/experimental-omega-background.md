@@ -1,13 +1,20 @@
 # Experimental omega background fitting
 
-`phasesmith.experimental.omega_background` owns the reusable CPU arPLS engine
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
+`phasesmith.single_crystal.omega_background` owns the reusable CPU arPLS engine
 for detector-pixel intensity traces along uniformly spaced omega exposures.
 It is opt-in with the existing `experimental-spots` native feature. It has no
 Dioptas, detector-file, calibration, GUI, mask-estimator or GPU dependency.
 Dioptas owns those application concerns and signed frame export.
 
 ```python
-from phasesmith.experimental.omega_background import (
+from phasesmith.single_crystal.omega_background import (
     ArPLSParameters, arpls_masked_rows,
 )
 
@@ -132,7 +139,7 @@ validation. The existing detector and rotation tests retain original-count
 variance-loader behavior for background-subtracted images.
 
 ```sh
-maturin build --release --features experimental-spots
+maturin build --release --features spots
 python benchmarks/omega_background.py --pixels 262144 --frames 76 \
   --workers 1,4,8 --repeats 3 --output omega-benchmark.json
 ```

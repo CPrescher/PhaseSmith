@@ -146,10 +146,10 @@ hardware-normalized ranking.
 
 Committed records:
 
-- [Complete adaptive campaign](../benchmarks/structure-solution-count-adaptive-macos.json).
-- [Complete same-build legacy campaign](../benchmarks/structure-solution-count-legacy-macos.json).
-- [Same-build per-case comparison](../benchmarks/structure-solution-count-policy-macos.json).
-- [Comparison with original frozen screen](../benchmarks/structure-solution-count-historical-macos.json).
+- [Complete adaptive campaign](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-count-adaptive-macos.json).
+- [Complete same-build legacy campaign](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-count-legacy-macos.json).
+- [Same-build per-case comparison](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-count-policy-macos.json).
+- [Comparison with original frozen screen](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-count-historical-macos.json).
 
 Each complete report retains all 70 program jobs, models/failures, actual
 collection source hashes and source snapshots. Final validation adds a guard
@@ -217,16 +217,16 @@ Twelve new count-policy/reference tests cover both settings, independent score
 agreement, three symmetry types, invalid flags and disabled density guidance.
 
 The final-build replay recovers all seven previously successful development
-structures ([record](../benchmarks/structure-solution-count-final-replay-macos.json)).
+structures ([record](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-count-final-replay-macos.json)).
 An additional seed-0 regression on the previously exposed K[BrF4], BiSeI and
 thiourea examples recovers all three, with and without tangent refinement, correct
 counts/coordinates and both CIF-frame fit checks
-([record](../benchmarks/structure-solution-count-original-three-macos.json)). These
+([record](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-count-original-three-macos.json)). These
 six solves are regression checks, not additions to the 35-case panel.
 
 The realistic full-search benchmark uses eight atoms and 2,108 reflection rows.
 Ten Criterion samples give 2.002 s for legacy and 1.763 s for adaptive search
-([estimates](../benchmarks/structure-solution-count-hotloop-macos.json)). Legacy
+([estimates](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-count-hotloop-macos.json)). Legacy
 hits the two-second search ceiling, so this is a bounded synthetic workload
 measurement, not a successful-structure speedup claim. Experimental timing
 conclusions use the complete development campaigns above.

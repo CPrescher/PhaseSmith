@@ -1,5 +1,10 @@
 # Getting started
 
+Single-crystal workflows use the supported `phasesmith.single_crystal`
+namespace from the 0.8 development release. See the
+[single-crystal guide](single-crystal.md) for modules, migration, Rust features
+and the raw-frame-to-structure-search boundary.
+
 PhaseSmith provides a compiled Python package for Python 3.11 and newer. The
 numerical implementation is native Rust; using the Python package does not
 require a separate Rust installation.

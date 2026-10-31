@@ -1,46 +1,16 @@
-"""Optional array frontend for bounded native original-count preparation."""
+"""Compatibility import; use phasesmith.single_crystal.frame_input."""
 
-from phasesmith import _core
+import importlib as _importlib
+import sys as _sys
+import warnings as _warnings
 
-from .frame_validity import CombinedValidity, DacApertureMask, FrameValidity
+_TARGET = "phasesmith.single_crystal.frame_input"
+if __name__ == "__main__":
+    raise SystemExit(_importlib.import_module(_TARGET).main())
 
-
-def preparation_plan(shape, frames, vertical_flip, reserved_minimum, validity=None):
-    """Snapshot known immutable validity providers into a native preparation plan.
-
-    Expected hashes come from the validity snapshot and are checked on every
-    prepared frame. The native implementation computes a fresh digest; this
-    adapter never accepts a caller's unchecked current-frame digest.
-    """
-    hashes, blocks, dacs = [], [], []
-
-    def add(provider):
-        if tuple(provider.shape) != tuple(shape) or len(provider.frame_ids) != frames:
-            raise ValueError("validity frame count or detector shape differs")
-        if type(provider) is CombinedValidity:
-            for child in provider.providers:
-                add(child)
-        elif type(provider) is FrameValidity:
-            expected = provider.provenance.get("image_sha256")
-            if expected is not None:
-                hashes.append(expected)
-            blocks.append((provider.block, provider.excluded, provider.fixed_mask))
-        elif type(provider) is DacApertureMask:
-            dacs.append(
-                (
-                    provider.geometry.vectors,
-                    provider.omega_bounds,
-                    provider.pixel_block,
-                    tuple(provider.axis_at_omega_zero),
-                    provider.half_opening_degrees,
-                    provider.fixed_mask,
-                )
-            )
-        else:
-            raise TypeError("native frame preparation requires standard validity providers")
-
-    if validity is not None:
-        add(validity)
-    return _core.NativeFramePreparation(
-        shape, frames, vertical_flip, reserved_minimum, hashes, blocks, dacs
-    )
+_warnings.warn(
+    f"{__name__} moved to {_TARGET}; the compatibility import will be removed in 1.0",
+    DeprecationWarning,
+    stacklevel=2,
+)
+_sys.modules[__name__] = _importlib.import_module(_TARGET)

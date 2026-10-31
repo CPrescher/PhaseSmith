@@ -22,7 +22,7 @@ copyrights are included in `licenses/hdf5/` and wheel license metadata.
 cargo run --release -p phasesmith-hdf5 --example inspect_frames -- \
   /external/data/eiger_0000.h5 /entry_0000/ESRF-ID11/eiger/data 2 72 143
 # Optional Python frontend:
-maturin develop --release --features experimental-spots,experimental-solution,hdf5
+maturin develop --release
 ```
 
 Bitshuffle is registered through its safe upstream Rust API under the upstream

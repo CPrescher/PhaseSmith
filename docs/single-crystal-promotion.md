@@ -1,5 +1,11 @@
 # Single-crystal promotion audit
 
+**Historical preparation record.** The 0.8 implementation now follows the
+[supported single-crystal guide](single-crystal.md). The evidence, blockers and
+proposals below describe their recorded baseline; current implementation and
+validation are tracked in the [0.8 release candidate](release-candidate-0.8.md).
+
+
 Audit date: 31 October 2026. Reviewed baseline: `54784c5` on
 `codex/hkl-structure-solution`, incorporating integration `63bb354` and the
 committed spot/intensity, FFT and Row search work through `297d157`.

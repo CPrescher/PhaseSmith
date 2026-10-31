@@ -166,7 +166,7 @@ remain available locally; the committed result is the final v5 reference audit.
 
 ## Development results
 
-[Machine-readable results](../benchmarks/structure-solution-corpus-development-macos.json)
+[Machine-readable results](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-corpus-development-macos.json)
 retain all 70 timed jobs, per-case models, failures, limits, source hashes and
 collection/audit implementation hashes. None of the 65 held-out outcomes was run.
 

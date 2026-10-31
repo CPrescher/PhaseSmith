@@ -1,12 +1,19 @@
 # Experimental profile intensity reduction
 
-The experimental rotation package has a portable reduction coordinator for learned
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
+The single-crystal package has a portable reduction coordinator for learned
 3D profiles, strong-only shape refinement, fixed weak estimators, explicit detector
 response, declared sensor centroid maps, equivalent-based scaling and optional
 observation-error floors. Image loading and application state belong to Dioptas;
 structural refinement is a separate optional validation step.
 
-This is an experimental workflow. R1 agreement does not establish absolute
+R1 agreement does not establish absolute
 intensity accuracy, identify detector hardware, or validate a crystal structure.
 
 ## Code ownership
@@ -15,23 +22,23 @@ intensity accuracy, identify detector hardware, or validate a crystal structure.
 |---|---|
 | `crates/phasesmith-spots/src/profiles_affine.rs` | Exact voxel/parallelogram/exposure masses and fused position/width derivatives |
 | `crates/phasesmith-spots/src/intensity_model.rs` | Slab response, conditional GLS accumulation, frozen linear estimators, empirical values/Jacobians and family centering |
-| `experimental/profiles.py` | Typed immutable raw shoeboxes, profile learning and fixed-profile fitting |
-| `experimental/profile_refinement.py` | SciPy orchestration of declared strong shape fits; fixed weak extraction; centroid-map training adapter |
-| `experimental/sensor_offsets.py` | Explicit sections, translations, optional in-plane rotations and three shared symmetric-gradient terms |
-| `experimental/intensity_response.py` | Explicit homogeneous-slab assumptions and response provenance |
-| `experimental/empirical_scaling.py` | Declared designs, robust within-family fitting, held-out scoring and shared regularization selection |
-| `experimental/intensity_uncertainty.py` | Optional family-balanced equivalent-pair observation-error model |
-| `experimental/reduction.py` | Configuration, orchestration, separated outputs and CLI |
-| `experimental/reduction_io.py` | Pickle-free portable observation/profile-bank snapshots |
-| `experimental/reduction_cache.py` | Immutable, atomic, content-addressed numerical artifacts |
+| `single_crystal/profiles.py` | Typed immutable raw shoeboxes, profile learning and fixed-profile fitting |
+| `single_crystal/profile_refinement.py` | Rust-backed declared strong shape fits; fixed weak extraction; centroid-map training adapter |
+| `single_crystal/sensor_offsets.py` | Explicit sections, translations, optional in-plane rotations and three shared symmetric-gradient terms |
+| `single_crystal/intensity_response.py` | Explicit homogeneous-slab assumptions and response provenance |
+| `single_crystal/empirical_scaling.py` | Declared designs, robust within-family fitting, held-out scoring and shared regularization selection |
+| `single_crystal/intensity_uncertainty.py` | Optional family-balanced equivalent-pair observation-error model |
+| `single_crystal/reduction.py` | Configuration, orchestration, separated outputs and CLI |
+| `single_crystal/reduction_io.py` | Pickle-free portable observation/profile-bank snapshots |
+| `single_crystal/reduction_cache.py` | Immutable, atomic, content-addressed numerical artifacts |
 | `experimental/intensity_reference.py` | Independent readable NumPy equations and dense small GLS reference |
 
-Python experimental paths in this table are relative to
+Python module paths in this table are relative to
 `python/phasesmith/`. None imports a research dataset or another experiment's
 script. SciPy is optional orchestration; it is needed for shape/scaling fits.
 The normal package requires no external integration or structure-refinement
 program. Build native experimental functionality with
-`maturin build --release --features experimental-spots` and install that wheel
+`maturin build --release --features spots` and install that wheel
 into the consuming Python environment.
 
 ## Array and coordinate contracts
@@ -230,7 +237,7 @@ of learned shapes, sensor maps, geometry or scale coefficients.
 ## Reuse and safe replay
 
 ```python
-from phasesmith.experimental.reduction import ReductionConfig, reduce_observations
+from phasesmith.single_crystal.reduction import ReductionConfig, reduce_observations
 
 config = ReductionConfig()  # fixed profiles, no physical/empirical correction
 result = reduce_observations(obs, detector_shape=(height, width), config=config,
@@ -256,7 +263,7 @@ A safe fixed-profile CLI accepts a canonical case and JSON containing
 `detector_shape` and `reduction`:
 
 ```sh
-python -m phasesmith.experimental.reduction case.npz --config recipe.json --output fresh-output
+python -m phasesmith.single_crystal.reduction case.npz --config recipe.json --output fresh-output
 ```
 
 The output directory must be new. Optional geometry vectors/wavelength belong

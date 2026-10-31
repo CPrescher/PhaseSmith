@@ -1,6 +1,13 @@
 # Experimental image-by-image integration quality
 
-`phasesmith.experimental.integration_quality.assess_integration` is a pure,
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
+`phasesmith.single_crystal.integration_quality.assess_integration` is a pure,
 non-mutating report over `ReflectionTable`. It does not change peak equations,
 intensities, uncertainties, masks, supports, reflection selection or scale.
 Numerical profile evaluation and fused measurement remain in Rust. NumPy

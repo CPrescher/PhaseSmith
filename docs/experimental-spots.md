@@ -1,10 +1,15 @@
 # Experimental detector spots: first milestone
 
-This branch adds an opt-in `experimental-spots` native feature and the unstable
-`phasesmith.experimental.spots` Python module. Default extension and Rust facade
-builds omit the engine. There is no standard release, tag, GUI dependency, new
-runtime dependency, or change to powder behavior. The numerical crate is
-unpublished. No cell, elements, atom model, hkl, detector calibration or simulator
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
+The native detector and public `phasesmith.single_crystal.spots` module are
+included in ordinary extension and Rust facade builds. No GUI, cell, element or
+atomic-model dependency is introduced. No cell, elements, atom model, hkl, detector calibration or simulator
 truth is accepted by this milestone.
 
 ## Build and use
@@ -12,12 +17,12 @@ truth is accepted by this milestone.
 ```sh
 uv venv
 uv pip install maturin numpy pytest
-uv run maturin develop --release --features experimental-spots
+uv run maturin develop --release --features spots
 uv run pytest tests/test_experimental_spots.py
 ```
 
 ```python
-from phasesmith.experimental.spots import SpotOptions, detect_spots, extract_spots
+from phasesmith.single_crystal.spots import SpotOptions, detect_spots, extract_spots
 
 result = detect_spots(image, mask=mask, options=SpotOptions(threshold_sigma=5.0))
 signed = extract_spots(image, boxes, variance=independent_pixel_variance)

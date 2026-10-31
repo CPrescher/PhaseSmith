@@ -62,8 +62,9 @@ jobs:
       - name: Test native wheel
         if: matrix.target == 'x86_64'
         run: |
-          python -m pip install numpy pytest jsonschema 'gemmi>=0.7.5,<0.8' 'mpmath>=1.3,<2'
+          python -m pip install numpy pytest jsonschema scipy 'gemmi>=0.7.5,<0.8' 'mpmath>=1.3,<2'
           python -m pip install --no-deps --no-index --find-links dist phasesmith
+          python scripts/smoke_single_crystal.py --hdf5-fixture crates/phasesmith-hdf5/tests/data/counts-bitshuffle-lz4.h5
           python -m pytest -q
       - uses: actions/upload-artifact@v7.0.0
         with:
@@ -95,8 +96,9 @@ jobs:
           args: --release --locked --features hdf5 --out dist
       - name: Test native wheel
         run: |
-          python -m pip install numpy pytest jsonschema 'gemmi>=0.7.5,<0.8' 'mpmath>=1.3,<2'
+          python -m pip install numpy pytest jsonschema scipy 'gemmi>=0.7.5,<0.8' 'mpmath>=1.3,<2'
           python -m pip install --no-deps --no-index --find-links dist phasesmith
+          python scripts/smoke_single_crystal.py --hdf5-fixture crates/phasesmith-hdf5/tests/data/counts-bitshuffle-lz4.h5
           python -m pytest -q
       - uses: actions/upload-artifact@v7.0.0
         with:
@@ -122,8 +124,9 @@ jobs:
       - name: Test native wheel
         shell: pwsh
         run: |
-          python -m pip install numpy pytest jsonschema 'gemmi>=0.7.5,<0.8' 'mpmath>=1.3,<2'
+          python -m pip install numpy pytest jsonschema scipy 'gemmi>=0.7.5,<0.8' 'mpmath>=1.3,<2'
           python -m pip install --no-deps --no-index --find-links dist phasesmith
+          python scripts/smoke_single_crystal.py --hdf5-fixture crates/phasesmith-hdf5/tests/data/counts-bitshuffle-lz4.h5
           python -m pytest -q
       - uses: actions/upload-artifact@v7.0.0
         with:
@@ -148,7 +151,8 @@ jobs:
       - name: Test source distribution
         working-directory: ${{ runner.temp }}
         run: |
-          python -m pip install pytest jsonschema 'gemmi>=0.7.5,<0.8' 'mpmath>=1.3,<2' "$GITHUB_WORKSPACE"/dist/*.tar.gz
+          python -m pip install pytest jsonschema scipy "cmake>=3.26" 'gemmi>=0.7.5,<0.8' 'mpmath>=1.3,<2' "$GITHUB_WORKSPACE"/dist/*.tar.gz
+          python "$GITHUB_WORKSPACE/scripts/smoke_single_crystal.py" --hdf5-fixture "$GITHUB_WORKSPACE/crates/phasesmith-hdf5/tests/data/counts-bitshuffle-lz4.h5"
           python -m pytest -q -c "$GITHUB_WORKSPACE/pyproject.toml" "$GITHUB_WORKSPACE/tests"
       - uses: actions/upload-artifact@v7.0.0
         with:

@@ -1,5 +1,12 @@
 # Learned three dimensional reflection profiles
 
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
 Opt-in `experimental-spots`. This increment learns nonnegative empirical voxel
 masses in detector x/y and a scaled rocking coordinate from isolated, strong training
 reflections. Detector-region/rotation-region profiles can fall back to a global
@@ -58,7 +65,7 @@ covariance is an unconstrained GLS approximation, not selection uncertainty.
 The extension is explicit and leaves the original fixed-profile default intact:
 
 ```python
-from phasesmith.experimental.profiles import (
+from phasesmith.single_crystal.profiles import (
     scattering_transforms, ProfileOptions, prepare_profiles, learn_profiles,
     learn_profile_variations, fit_learned_profiles,
 )
@@ -166,8 +173,8 @@ known counts, mass/moment checks and a black-box DIALS comparison supply evidenc
 
 ```python
 import numpy as np
-from phasesmith.experimental.integration import IntegrationOptions
-from phasesmith.experimental.profiles import (
+from phasesmith.single_crystal.integration import IntegrationOptions
+from phasesmith.single_crystal.profiles import (
     ProfileOptions, rotation_factors, prepare_profiles, learn_profiles, fit_profiles,
 )
 

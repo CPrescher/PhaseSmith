@@ -285,7 +285,7 @@ def test_blind_quartz_recovery_and_outputs(tmp_path):
     assert len(result.best.as_structure(cell).sites) == 2
     path = write_solution(result, tmp_path / "solution")
     record = json.loads((path / "result.json").read_text())
-    assert record["output_space_group"] == "supplied operations" and record["experimental"]
+    assert record["output_space_group"] == "supplied operations" and not record["experimental"]
     with np.load(path / "density-and-observations.npz") as stored:
         np.testing.assert_array_equal(stored["input_intensity"], data.intensity)
     import gemmi

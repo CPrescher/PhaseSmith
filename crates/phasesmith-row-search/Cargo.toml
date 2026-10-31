@@ -5,7 +5,10 @@ version.workspace = true
 edition = "2021"
 rust-version.workspace = true
 license.workspace = true
-publish = false
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+readme.workspace = true
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

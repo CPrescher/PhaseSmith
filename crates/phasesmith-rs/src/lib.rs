@@ -17,11 +17,11 @@ pub use phasesmith_io as io;
 pub use phasesmith_model as model;
 /// Canonical native project persistence and reporting.
 pub use phasesmith_persistence as persistence;
-/// Experimental structure solution from corrected single-crystal intensities.
-#[cfg(feature = "experimental-solution")]
+/// Structure search from corrected single-crystal intensities.
+#[cfg(feature = "solution")]
 pub use phasesmith_solution as solution;
-/// Experimental detector spot measurements; absent from default builds.
-#[cfg(feature = "experimental-spots")]
+/// Single-crystal detector measurements, masks, geometry and profile kernels.
+#[cfg(feature = "spots")]
 pub use phasesmith_spots as spots;
 /// Le Bail, Rietveld, quantitative, residual, and validation workflows.
 pub use phasesmith_workflows as workflows;
@@ -29,3 +29,7 @@ pub use phasesmith_workflows as workflows;
 /// Optional bundled native HDF5 detector-frame input.
 #[cfg(feature = "hdf5")]
 pub use phasesmith_hdf5 as hdf5;
+
+/// Independent equidistant-row grouping for lattice discovery.
+#[cfg(feature = "row-search")]
+pub use phasesmith_row_search as row_search;

@@ -1,0 +1,12 @@
+{
+  "crate": "lbfgsb-rs-pure",
+  "version": "0.1.2",
+  "license": "BSD-3-Clause",
+  "repository": "https://github.com/nholle/lbfgsb-rs",
+  "crate_checksum": "9e2e81dcd1a01bdb505e79243e5472839357d97338e6f2da50447f4cc1d34435",
+  "upstream_file": "src/linesearch.rs",
+  "upstream_file_sha256": "81078ea9b74ddf09f0bb0fc48174c649f951073d3fcff3cd54d6c9d43706fcba",
+  "included_symbol": "dcstep",
+  "included_body_sha256": "e3b201257458317638a0e0ef09b5dc7a0f53e67643cd9e279928d876ca445bfa",
+  "reason": "Only portable interpolation helper is included: upstream driver has a newer Rust syntax requirement; PhaseSmith retains its own optimizer and 1.85.1 minimum. No upstream numerical code modified. cargo fmt may change whitespace."
+}

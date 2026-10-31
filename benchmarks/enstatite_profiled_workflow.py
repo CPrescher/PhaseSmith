@@ -109,7 +109,7 @@ def main():
         ]
         for module, attribute, name in targets:
             timer.patch(
-                importlib.import_module("phasesmith.experimental." + module), attribute, name
+                importlib.import_module("phasesmith.single_crystal." + module), attribute, name
             )
         import numpy as np
 

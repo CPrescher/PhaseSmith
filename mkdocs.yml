@@ -1,6 +1,6 @@
 site_name: PhaseSmith
 site_url: https://phasesmith.readthedocs.io/
-site_description: Validated powder-diffraction calculation and refinement in Rust and Python
+site_description: Powder and single-crystal diffraction in Rust and Python
 repo_url: https://github.com/CPrescher/PhaseSmith
 repo_name: CPrescher/PhaseSmith
 edit_uri: edit/main/docs/
@@ -57,6 +57,8 @@ nav:
   - Home: index.md
   - Getting started: getting-started.md
   - Workflows:
+      - Single-crystal diffraction: single-crystal.md
+      - MgSiO3 raw-frame example: enstatite-raw-workflow.md
       - Import powder data and CIFs: cif-import.md
       - Background subtraction: background-subtraction.md
       - Le Bail extraction: lebail.md

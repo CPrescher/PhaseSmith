@@ -1,5 +1,12 @@
 # Guarded signal summation and local background planes
 
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
 This opt-in detector-count estimator improves separation of spatial signal and
 local background. It does not fit a peak profile or extrapolate missing signal.
 The original `background_model="mean"` API remains byte-compatible. Select
