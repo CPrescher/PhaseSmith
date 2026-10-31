@@ -111,7 +111,7 @@ def test_selected_shoeboxes_preserve_original_joint_background_and_signed_counts
     from phasesmith.experimental.profiles import select_observations
     from test_experimental_profiles import observations
 
-    original = observations()
+    original = observations(covariance=True)
     from dataclasses import replace
 
     signed = original.summation.values.copy()
@@ -121,11 +121,21 @@ def test_selected_shoeboxes_preserve_original_joint_background_and_signed_counts
     subset = select_observations(original, ids)
     np.testing.assert_array_equal(subset.summation.values, original.summation.values[ids])
     assert subset.summation.values[-1, 0] < 0
+    kept_groups = np.flatnonzero(np.isin(original.summation.observation_ids, ids))
+    np.testing.assert_array_equal(subset.covariance, original.covariance[kept_groups])
+    np.testing.assert_array_equal(
+        subset.summation.frame_values, original.summation.frame_values[kept_groups]
+    )
     for name in ("centres", "scales", "planar_transforms"):
         np.testing.assert_array_equal(getattr(subset, name), getattr(original, name)[ids])
     for bad in ([1, 1], [5, 1], [-1], [len(original.centres)], []):
         with pytest.raises(ValueError):
             select_observations(original, np.array(bad, dtype=np.int64))
+    for bad in (np.array([1.0]), np.array([True]), np.array([[1]])):
+        with pytest.raises(ValueError):
+            select_observations(original, bad)
+    with pytest.raises(TypeError):
+        select_observations(None, ids)
 
 
 def test_joint_profile_collection_retains_explicit_domain_ids_without_changing_counts():

@@ -4,8 +4,8 @@ This explicit example coordinates PhaseSmith's existing detector, reciprocal,
 indexing, position-refinement, integration, profile, scaling and structure-search
 APIs. It reads original HDF5 counts and generates new measurements throughout.
 The first protocol is `validation/enstatite-raw-workflow-v1.json`, committed
-before executing the measured workflow. Version 2 retains that run and uses
-measured competing tracks for background exclusion, as described below. This is exposed development/regression
+before executing the measured workflow. The current default is version 4;
+earlier versions and failures are retained as described below. This is exposed development/regression
 data with declared cell and symmetry priors, not a new blind holdout.
 
 ## Run and storage
@@ -35,8 +35,10 @@ coordinates and counts are read only after a candidate is saved and that worker
 has stopped. Failures and original stage outputs are retained, never replaced.
 
 `--through geometry` supports an explicitly partial positional check. It does not
-pass or represent the complete workflow. A completed search process and its
-numerical R1 target are separate from complete labelled coordinate recovery.
+pass or represent the complete workflow. A completed search process returns
+exit status 0 even when no candidate is found. Inspect `report.json` for the separate `raw_to_structure_search_passed`
+gate; execution success and numerical R1 are separate from labelled coordinate
+recovery. Process errors/timeouts return status 2.
 
 ## Fixed acquisition assumptions
 
@@ -94,7 +96,7 @@ numerical R1 target are separate from complete labelled coordinate recovery.
 9. Export >=1,000 finite, positive-sigma, quality-controlled signed observations.
    Exclusions are by explicit flags/support, not intensity significance. Run
    PhaseSmith element-only search with seed 0, four starts, 800 cycles, 128 MiB
-   dense-buffer budget and a 13-second native safeguard/20-second process cap.
+   dense-buffer budget and (version 4) a 60-second native safeguard/75-second process cap.
    Input-only preflight sets atom capacity; reference counts do not set it.
 10. Save the chosen candidate before reference grading. The established independent
     periodic element-preserving auditor requires exact counts, maximum coordinate
@@ -152,3 +154,28 @@ per-start phase allowance at 396/398 of 800 cycles. Version 4 is one predeclared
 longer-time diagnostic: 60-second native safeguard/75-second process cap, with
 the same seed, four starts, 800 cycles, signed data and scientific gates. It
 reruns the full original-frame workflow in a new external directory.
+
+## Recorded complete run
+
+Version 4 completed all stages in 103.44 seconds on the recorded macOS machine.
+It read original frames twice with matching hashes, retained 7,277 target rows
+after the nine flagged edge-center exclusions and exported 5,708 quality-valid
+observations, including 1,233 negative intensities. It inferred an admissible
+105-atom cap from input volume/coverage and the explicit dense budget.
+The complete reduced arrays are bitwise identical to version 3.
+
+The search took 5.27 seconds. Its scheduled 200/200/800/800 cycles all finished;
+each start failed the existing phase-origin `alpha <= 0.3` check. No atomic
+model was produced, so neither the atomic reference nor its counts was read.
+The output reports process success and **failed structure recovery** separately.
+The longer allowance rules out the earlier per-start time truncation for this
+recorded run; it does not identify extraction or phasing as the cause.
+
+The small machine-readable report is
+`benchmarks/enstatite-raw-workflow-macos.json`. Original files, large shoeboxes,
+profiles, maps and logs remain outside Git at the local path recorded there.
+No scientific gate, phase-origin threshold or intensity selection was relaxed.
+The next scientific investigation is the fresh reduction/phasing discrepancy
+relative to the previously successful archived-intensity search, using saved
+measurements and equivalent-family diagnostics before changing the recipe.
+This run does not pass the promotion gate.

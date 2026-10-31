@@ -1,0 +1,44 @@
+{
+  "schema": "phasesmith.enstatite-raw-workflow-validation.v1",
+  "scope": "Existing native equations unchanged; orchestration and array adapters only.",
+  "python": {
+    "command": ".venv/bin/pytest -q",
+    "passed": 3182,
+    "skipped": 11,
+    "deselected": 34,
+    "failed": 0
+  },
+  "rust": {
+    "command": "cargo test --workspace --all-features",
+    "passed": 489,
+    "ignored": 34,
+    "failed": 0
+  },
+  "format": {
+    "command": "cargo fmt --all -- --check",
+    "passed": true
+  },
+  "clippy": {
+    "command": "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+    "passed": true
+  },
+  "python_style": {
+    "commands": [
+      "ruff check benchmarks/enstatite_raw_workflow.py tests/test_enstatite_raw_workflow.py python/phasesmith/experimental/profiles.py",
+      "ruff format --check benchmarks/enstatite_raw_workflow.py tests/test_enstatite_raw_workflow.py python/phasesmith/experimental/profiles.py"
+    ],
+    "passed": true
+  },
+  "modified_doc_local_links": {
+    "missing": [],
+    "passed": true,
+    "mkdocs_build": "not_run: mkdocs is not installed in this environment"
+  },
+  "new_or_changed_repository_files_above_one_megabyte": [],
+  "real_workflow": "benchmarks/enstatite-raw-workflow-macos.json",
+  "first_outcomes": "benchmarks/enstatite-raw-workflow-attempts-macos.json",
+  "real_recovery_passed": false,
+  "native_hot_loop_benchmark": "Not applicable: no native hot loop, equation, derivative or support changes.",
+  "oracle": "No new oracle fixture: existing native algorithms unchanged; all workspace reference/oracle-fixture tests retained.",
+  "frozen_corpus": "Not rerun, regenerated or claimed as unseen data."
+}

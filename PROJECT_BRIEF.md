@@ -12,16 +12,25 @@ not part of the numerical library.
 
 ## Current implementation status
 
-A script-first MgSiO3 raw-frame example is prepared in
-`benchmarks/enstatite_raw_workflow.py`, with the pre-execution protocol
-`validation/enstatite-raw-workflow-v1.json`. It streams original frames through
-new detection/indexing, prior-assisted positional calibration, joint-domain
-integration, training-family profile/scaling fits and PhaseSmith structure search.
+The script-first MgSiO3 workflow is implemented and has run from original HDF5
+frames through PhaseSmith structure search in
+`benchmarks/enstatite_raw_workflow.py`. Version 4's complete external-data run
+processes 142 frames, passes prior-assisted positional gates (0.3342 pixel /
+0.16395-degree withheld RMS), learns 278 profiles and exports 5,708 signed
+quality-controlled observations. All four phase starts fail the existing origin
+check; no atomic candidate or reference assessment is produced. A longer-time
+run completes every scheduled cycle and preserves bitwise-identical reduction
+arrays. This is complete pipeline execution, not passed structure recovery or
+public API promotion. Small results and all prior outcomes are retained in
+`benchmarks/enstatite-raw-workflow-macos.json` and
+`benchmarks/enstatite-raw-workflow-attempts-macos.json`.
+
 The numerical worker receives no atomic model, source HKLs/peak table or archived
 reduction arrays. Large products require an external output directory; references
 are graded only after a candidate is saved. New optional grain IDs and selected
 shoebox adapters preserve existing integration/background behavior. No Rust
-equation/support change is included. See `docs/enstatite-raw-workflow.md`.
+equation, finite support or hot loop changed. See
+`docs/enstatite-raw-workflow.md` for the frozen protocols, command and assumptions.
 
 Structure search now has an explicit per-dense-reflection-buffer memory policy.
 `SolutionOptions.dense_memory_budget_bytes` defaults to the historical
@@ -40,7 +49,8 @@ existing intensity source recovers Mg=16, Si=16, O=48. Independent post-search
 reference matching gives maximum/RMS errors 0.00920/0.00536 A for the archived
 PhaseSmith reduction and 0.01200/0.00682 A for the source integration. Native
 amplitude R1 is 0.0428393/0.0481402. Reference coordinates/counts do not enter
-search. No full raw-frame rerun or standalone structural refinement is claimed.
+search. These two successes use existing reduced intensities; the fresh raw-run
+outcome is recorded above. No standalone structural refinement is claimed.
 The change passes 489 Rust and 3,174 Python tests plus formatting/strict Clippy;
 kernel fingerprints match the preserved baseline exactly. Reports are in
 `benchmarks/enstatite-memory-budget-search-macos.json` and
