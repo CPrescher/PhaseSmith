@@ -97,6 +97,16 @@ def test_worker_rejects_reference_fields_before_loading_data():
         workflow.validate_worker_input(dict(reference_counts={"Mg": 16}))
 
 
+def test_flagged_half_pixel_edge_centres_are_explicitly_excluded_from_mesh():
+    centres = np.array([[-0.2, 2], [0.0, 2], [9.0, 2], [9.4, 2]])
+    flags = np.array([1, 0, 0, 1], np.uint32)
+    np.testing.assert_array_equal(
+        workflow.interior_target_rows(centres, flags, (8, 10)), [False, True, True, False]
+    )
+    with pytest.raises(ValueError, match="unflagged reflection center"):
+        workflow.interior_target_rows(centres, np.zeros(4, np.uint32), (8, 10))
+
+
 def test_selected_shoeboxes_preserve_original_joint_background_and_signed_counts():
     from phasesmith.experimental.profiles import select_observations
     from test_experimental_profiles import observations
