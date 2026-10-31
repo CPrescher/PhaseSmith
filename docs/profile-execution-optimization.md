@@ -296,7 +296,19 @@ external.
 
 The subsequent v20 detection worker study measures 4/6/8/10 workers and retains
 eight as nominally fastest, with a serial-loading plateau above six. Full fresh
-runs are 23.46/23.76 s and remain bitwise identical. The complete current timing
+runs are 23.46/23.76 s and remain bitwise identical. The complete v20 timing
 partition and next bottlenecks are in
 [detection execution optimization](detection-execution-optimization.md).
 The record is `benchmarks/enstatite-detection-execution-macos.json`.
+
+## Native frame-input follow-up
+
+Verified digest reuse, bounded native mask preparation and direct owned HDF5
+buffers reduce the uncached warm full run to 19.17 s. An optional 1 GiB original
+decoded-count cache reaches 18.65/18.56 s versus v20 23.46/23.76 s, with every
+v11 numerical array, candidate and history unchanged. The cache adds about
+1 GiB RSS for only .52–.61 s overall; its generic default remains off.
+Profile learning/fitting are now 2.516/2.719 s in the final repeat. See
+[frame input optimization](frame-input-optimization.md) for the current complete
+wall partition, retained slower trials and remaining opportunities, and
+`benchmarks/enstatite-frame-input-macos.json` for the measured stage summary.

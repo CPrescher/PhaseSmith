@@ -90,7 +90,9 @@ def observe_detection(workflow):
         "Ordered detection, linking and track assembly partition total wall time. Image load "
         "includes HDF5 decode, orientation, source verification, reserved masks and raw hashing. "
         "Decode and verification are nested in image load. Image/mask loading overlaps native "
-        "worker tasks; summed measurement thread seconds must not be added to wall categories."
+        "worker tasks; summed measurement thread seconds must not be added to wall categories. "
+        "With native count preparation, hash/verification/composed-mask work occurs inside "
+        "image load; the Python verification timer can be zero while all checks still run."
     )
     try:
         yield stats

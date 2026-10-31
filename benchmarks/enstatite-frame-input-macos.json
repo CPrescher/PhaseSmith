@@ -1,0 +1,122 @@
+{
+  "schema": "phasesmith.frame-input-progress.v1",
+  "baseline": {
+    "protocol": "validation/enstatite-raw-workflow-v20.json",
+    "cli_wall_seconds": [
+      23.46,
+      23.76
+    ],
+    "worker_seconds": [
+      22.400487541977782,
+      22.659457792004105
+    ],
+    "detection_median_seconds": 5.003338541951962
+  },
+  "stages": [
+    {
+      "stage": 1,
+      "report": "benchmarks/enstatite-frame-input-stage1-macos.json",
+      "cli_wall_seconds": [
+        32.34,
+        23.48
+      ],
+      "detection_median_seconds": 4.138260709005408
+    },
+    {
+      "stage": 2,
+      "report": "benchmarks/enstatite-frame-input-stage2-macos.json",
+      "cli_wall_seconds": [
+        27.52,
+        19.17
+      ],
+      "detection_median_seconds": 3.5619378330302425
+    },
+    {
+      "stage": 3,
+      "report": "benchmarks/enstatite-frame-input-stage3-macos.json",
+      "cli_wall_seconds": [
+        18.65,
+        18.56
+      ],
+      "decoded_cache_bytes": 1073741824
+    }
+  ],
+  "final": {
+    "protocol": "validation/enstatite-raw-workflow-v23.json",
+    "cli_wall_seconds": [
+      18.65,
+      18.56
+    ],
+    "worker_seconds": [
+      17.62175983400084,
+      17.573050416947808
+    ],
+    "mean_cli_fractional_time_reduction_over_v20": 0.21198644642100817,
+    "r1": 0.04085182070733226,
+    "all_results_bitwise_identical": true,
+    "cache": {
+      "budget_bytes": 1073741824,
+      "decodes": 306,
+      "frames": 60,
+      "hits": 120,
+      "invalidations": 0,
+      "payload_bytes": 1073043840,
+      "requests": 426
+    },
+    "worker_peak_resident_bytes": [
+      4327161856,
+      4325588992
+    ]
+  },
+  "final_repeat_cli_wall_partition_seconds": {
+    "shadow_estimation": 2.729598125035409,
+    "detection_and_linking": 3.321227959007956,
+    "pixel_collection_and_background": 2.6687277919845656,
+    "profile_learning": 2.5155096250236966,
+    "profile_fitting": 2.7190702499938197,
+    "compressed_archives": 0.9733430420747027,
+    "corrections_scaling_and_errors": 0.26590208400739357,
+    "indexing_and_geometry": 0.24265729205217212,
+    "search_process": 0.7576296250335872,
+    "other_worker_assembly_and_bookkeeping": 1.3808025807957165,
+    "launch_parent_verification_assessment_and_uninstrumented_time": 0.9855316249909798
+  },
+  "next_opportunities": [
+    "Profile fitting and learning still total 5.235 s; measure repeated objective allocations/fixed-coordinate work and global-bank learning. Preserve scalar operation order and finite support.",
+    "Detection is now 3.321 s and summed measurement thread time 21.602 s across eight workers; inspect detector allocation/buffer reuse and array/native copies, then remeasure two-preparation/eight-detection balance within ten workers. Linking is only 0.000351 s.",
+    "Shadow estimation and pixel collection remain 2.730/2.669 s. Profile filter/normalization allocations and sample preparation; bounded cached originals already cover 60 frames. Larger caches need separate memory/time evidence.",
+    "Other worker assembly/bookkeeping is 1.381 s (integration orchestration 1.091 s); profile before moving more Python orchestration. Release decoded cache immediately after final original-frame read as a future memory experiment."
+  ],
+  "validation": {
+    "rust_passed": 515,
+    "rust_ignored": 34,
+    "formatting": "cargo fmt --all -- --check",
+    "clippy": "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+    "numerical_changes": "None; original-u32 hashing, mask assembly and source-scoped lossless caching only. Independent numerical references/oracles unchanged.",
+    "python_passed": 3267,
+    "python_skipped": 11,
+    "python_deselected": 34,
+    "clippy_passed": true,
+    "formatting_passed": true
+  },
+  "conventions": {
+    "machine": "Apple M4 Pro, macOS arm64",
+    "full_runs": "Fresh workers and empty caches, original external raw frames, immutable final-v4 release wheel for both v22 and v23. Parent launch/setup/indexing vary; first-use runs retained.",
+    "isolated_detection": "Three sequential original-count repeats per trial; frozen mask provenance is only reused for this isolated component benchmark. Same positions/fingerprints required exactly.",
+    "isolated_cache": "Three fresh readers per budget, three complete 142-frame passes per reader; timed native read/owned array return only, independent original byte digest checks outside timer.",
+    "correctness": "Strict comparison to v11 of every retained numerical array/dtype/shape/byte, complete candidates and search histories. Metadata-only resource fields excluded. No tolerance changes.",
+    "resource_selection": "Runtime and memory only; no source HKLs/reference/R1 used to select execution controls. Generic decoded cache default remains zero; example explicitly requests 1 GiB.",
+    "thread_limits": "Two native count-preparation plus eight detector workers; learning four and profile fitting ten in separate phases. Numeric-library limits remain one. Four existing sample/background workers during pixel collection.",
+    "timing": "Exclusive main-thread stage wall times partition observed worker; I/O and parallel work are included in owning stages. Nested detection load/native preparation measurements overlap detector tasks and cannot be added to stage wall times.",
+    "scientific_scope": "Equations, finite support, thresholds, mask geometry, deterministic accumulation order and reference/oracle fixtures unchanged. Python orchestration remains optional; this example driver still uses it."
+  },
+  "large_data_policy": "Original HDF5, full NPZ/JSON products, wheels and trial logs remain outside Git under /Users/clemens/ChatGPT/PhaseSmith",
+  "build_and_validation_provenance": {
+    "wheel": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/final-wheels-v4/phasesmith-0.7.0-cp311-abi3-macosx_11_0_arm64.whl",
+    "wheel_sha256": "919c5c3b4e600d8803293000babffbfedacaf78767e6759d17d62f62a908d185",
+    "final_runtime": "/tmp/phasesmith-frame-input-final-v4/bin/python",
+    "protocol_code_commit": "caf7c4f",
+    "native_owned_buffer_code_commit": "2adcf11",
+    "validation_logs": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/validation-final"
+  }
+}

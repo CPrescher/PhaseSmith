@@ -128,3 +128,25 @@ this change selects an existing execution capability and adds observational
 timing. Raw files, full arrays, outputs and every trial remain outside Git.
 The complete repeat data, exact-equivalence reports and full timing events are
 in `benchmarks/enstatite-detection-execution-macos.json`.
+
+## Completed original-frame follow-up
+
+The loading/validation/mask and decoded-original-frame proposals above are now
+implemented and measured separately. Digest reuse reduces the isolated median
+5.003→4.138 s; bounded native preparation and direct owned HDF5 buffers reach
+3.562 s without a decoded cache. The final v23 adds an optional 1 GiB source-bound
+decoded-count cache: complete runs take 18.65/18.56 s and match v11 bitwise.
+The cache contributes only .52–.61 s over warm uncached execution and raises
+peak RSS from 3.02 to about 4.03 GiB. It stays opt-in in the library.
+
+Native preparation now performs verification and mask composition inside image
+load. A zero Python verification timer therefore means the work moved into Rust;
+all source checks still run. Detection takes 3.321 s in the final repeat, with
+21.602 summed measurement thread seconds overlapping across eight workers,
+.000351 s linking and .0433 s track assembly. The next detector candidates are
+workspace/buffer reuse and array/native copy reduction, measured within the
+two-preparation/eight-detection worker balance. Profile learning/fitting still
+consume 5.23 s and are also useful targets. The current complete wall partition,
+all slower trials and memory tradeoffs are in
+[frame input optimization](frame-input-optimization.md) and
+`benchmarks/enstatite-frame-input-macos.json`.
