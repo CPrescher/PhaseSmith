@@ -47,6 +47,29 @@
       "flagged_edge_centres": 9,
       "frame_hashes_equal": true,
       "reference_assessment": "not_executed"
+    },
+    {
+      "protocol": "validation/enstatite-raw-workflow-v3.json",
+      "implementation_commit": "358e991",
+      "outcome": "complete raw-frame-to-search process; no atomic candidate",
+      "target_predictions": 7286,
+      "reduction_predictions": 7277,
+      "flagged_edge_centres_excluded": 9,
+      "profile_teachers": 278,
+      "used": 5708,
+      "negative_used": 1233,
+      "frame_hashes_equal": true,
+      "search_seconds": 3.3011722909868695,
+      "search_native_seconds": 13,
+      "phase_cycles": [
+        200,
+        200,
+        396,
+        398
+      ],
+      "origin_diagnostic": "no phase origin passed alpha <= 0.3 in all four starts",
+      "reference_assessment": "not_executed: no candidate",
+      "passed": false
     }
   ]
 }
