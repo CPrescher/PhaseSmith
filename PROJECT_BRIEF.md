@@ -43,6 +43,21 @@ Python tests, strict Clippy and formatting. See
 64-profile benchmark is 1.07x faster and the 4,096-row/173-parameter scaling
 benchmark 4.32x faster; a NumPy-only wheel passes both with no SciPy present.
 See `benchmarks/profile-scaling-fit-rust-macos.json`.
+A subsequent common-input audit replays both old/new binaries bitwise: search
+code is unchanged. Candidate/path differences account for about 99.45% of the
+reported R1 change; the native-run candidate fits both datasets better. Both
+polishers hit the 80-iteration cap. Further native iterations stagnate at the
+1e-5 A^2 ADP eigenvalue lower bound despite a nonzero feasible coordinate
+gradient; a coordinate-only control improves the objective. This existing
+boundary-handling limitation needs a constrained-step fix before calling
+candidate polishing converged; no production solver change was made in the
+audit. See `benchmarks/enstatite-search-convergence-macos.json`.
+An isolated, numerically identical raw run takes 88.80 s end to end on an
+Apple M4 Pro: profile learning 38.01 s, amplitudes/strong shape fits 24.01 s,
+pixel collection/background 8.71 s, detection/linking 6.46 s, compressed
+archives 4.81 s, masks 3.18 s, indexing/geometry .23 s and solver .552 s.
+The observer partitions wall times without adding nested calls. See
+`benchmarks/enstatite-workflow-timing-macos.json`.
 Do not claim the complete raw workflow is Rust-only until orchestration and
 remaining design/convenience calculations also have Rust entry points. Do not
 introduce further production SciPy algorithms. HDF5 I/O now lives in the separate optional `phasesmith-hdf5` adapter.

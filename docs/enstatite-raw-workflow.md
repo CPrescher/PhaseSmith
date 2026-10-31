@@ -307,3 +307,54 @@ and Huber IRLS. Python still orchestrates the example and constructs designs;
 a standalone Rust raw-to-structure executable and standalone structural
 refinement remain outside this change. Methods and independent validation are
 in [native profile/scaling fitting](native-profile-scaling-fitting.md).
+
+## Measured complete-example runtime
+
+An isolated follow-up on this Apple M4 Pro processes the same 142 original
+frames in **88.80 s end to end**, including original-file verification, archives,
+search-process startup and post-worker assessment. The numerical worker takes
+87.77 s. This is one measured run; the earlier v11 worker took 95.24 s under
+different machine load. Both produce identical reduced arrays, candidate
+records and phasing history. It is not a benchmark claim of a further speedup.
+
+| Part | Wall seconds | Share |
+|---|---:|---:|
+| Shadow masks, including frame I/O | 3.18 | 3.6% |
+| Detection and linking, including frame I/O | 6.46 | 7.3% |
+| Grain indexing and geometry fitting | 0.23 | 0.3% |
+| Pixel collection, integration and background | 8.71 | 9.8% |
+| Profile learning | 38.01 | 42.8% |
+| Profile amplitudes and strong shape fits | 24.01 | 27.0% |
+| Physical corrections, empirical design/scaling and error model | 0.28 | 0.3% |
+| Compressed output archives | 4.81 | 5.4% |
+| Structure search, including child launch | 0.74 | 0.8% |
+| Other setup, prediction, verification and grading | 2.37 | 2.7% |
+| **Total** | **88.80** | **100%** |
+
+The structure solver itself takes **0.552 s**, included in the search row.
+Within the small corrections row, empirical scaling takes .215 s and design
+construction .032 s. Profile fitting includes fixed-profile amplitudes for all
+7,277 target observations and the 146 explicitly selected strong shape fits.
+The separate 64-reflection optimizer benchmark does not measure that whole
+baseline integration. Acquisition/index/profile workers are four where the
+protocol requests them; search and numerical-library thread limits are one.
+
+The main remaining speed opportunity is profile learning plus profile
+integration/fitting: together about **70%** of end-to-end time. Making the small
+scaling optimizer several times faster has little effect on the full runtime.
+Original-count decoding and masking are included in their owning stages.
+Nested inclusive times are not added; the table partitions exclusive wall time
+and includes a residual setup/verification/assessment category.
+
+Run `benchmarks/enstatite_profiled_workflow.py` with the ordinary raw-workflow
+arguments to reproduce the observational timing. The observer forwards
+unchanged numerical arguments and runs each child in a fresh process. Its
+protocol is `validation/enstatite-timing-audit-v1.json`; full measured timing
+records and numerical-identity checks are summarized in
+`benchmarks/enstatite-workflow-timing-macos.json`. Large products remain external.
+
+The independent follow-up [search/convergence audit](native-profile-scaling-fitting.md)
+also shows that old and new binaries give identical answers for identical
+inputs. The remaining candidate variation is a phasing/convergence-path issue;
+existing ADP-bound stagnation should be improved before claiming a fully
+converged structural refinement.

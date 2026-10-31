@@ -129,3 +129,48 @@ See `benchmarks/profile-scaling-fit-rust-macos.json` for versions, binary/wheel
 hashes, measured repeats and the exact benchmark shapes. Full validation passes
 509 Rust tests (34 ignored) and 3,235 Python tests (11 skipped, 34 deselected),
 plus strict all-target/all-feature Clippy and formatting.
+
+## Follow-up: why the final search differs
+
+The post-search audit uses only the two saved experimental reductions and their
+PhaseSmith candidates. It never reads an atomic reference. The solution,
+crystallography and search-binding sources are unchanged by the profile/scaling
+migration. Four replay combinations (previous/current binary on previous/current
+input) reproduce the input-specific candidate and phasing history **bitwise**.
+The phasing paths differ between inputs: 113 cycles for v9 versus 58 for v11.
+Small numerical changes therefore select different finite-budget trajectories;
+there is no evidence here of a changed search equation in the migrated binary.
+
+Cross-scoring makes the R1 comparison meaningful. On the **same v9 data**, the
+v9 candidate has R1 .0410522012 and objective .00146386555; the v11 candidate
+has R1 .0408529208 and objective .00145909347. The new candidate fits that
+common dataset better by both measures. Changing only the observations moves
+R1 by about 1.1e-6; candidate/optimization-path differences explain about 99.45%
+of the originally reported R1 difference. Lower R1 is encouraging evidence of
+a better amplitude fit, but alone neither proves physical accuracy nor complete
+optimizer convergence. The actual polisher minimizes squared amplitude
+residuals, not R1.
+
+Both original final refinements report `max_iterations`: 80 attempts and 54
+accepted steps. Continuing each candidate on each input for up to 200 native
+iterations improves the objective but then reports `stagnated` at the ADP
+eigenvalue lower bound, 1e-5 A^2. Dense Cholesky and cached/iterative steps
+produce almost identical stopped results, ruling out the normal-cache backend
+as the explanation. This is an existing candidate-polisher convergence limitation,
+not a newly introduced profile/scaling equation error.
+
+The stopped coordinate gradients remain about .0012–.0018, confirmed by
+centered finite differences. Holding the feasible tensors fixed, an independent
+SciPy coordinate-only optimizer lowers the objective further in 5–9 evaluations
+and reduces the coordinate gradient to approximately 1e-11 (one case 1e-9).
+Those are feasible improvements, so the joint polisher is not merely satisfying
+a constrained optimum. Its ADP-bound handling can block valid coordinate
+updates. It needs boundary-aware constrained steps before candidate polishing
+should be called fully converged; simply raising the iteration cap is insufficient.
+No production solver, ADP bound or frozen acceptance threshold was changed by
+this investigation. The SciPy control shares the native objective and is an
+independent *optimizer* check, not an independent physics implementation.
+
+The reproducible tool is `tools/audit_enstatite_search_convergence.py`; detailed
+cross scores, residual gradients, continuation stop reasons, hashes and binary
+replays are in `benchmarks/enstatite-search-convergence-macos.json`.
