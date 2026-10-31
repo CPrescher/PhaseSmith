@@ -4,7 +4,7 @@ This explicit example coordinates PhaseSmith's existing detector, reciprocal,
 indexing, position-refinement, integration, profile, scaling and structure-search
 APIs. It reads original HDF5 counts and generates new measurements throughout.
 The first protocol is `validation/enstatite-raw-workflow-v1.json`, committed
-before executing the measured workflow. The current default is version 4;
+before executing the measured workflow. The current default is version 5;
 earlier versions and failures are retained as described below. This is exposed development/regression
 data with declared cell and symmetry priors, not a new blind holdout.
 
@@ -179,3 +179,34 @@ The next scientific investigation is the fresh reduction/phasing discrepancy
 relative to the previously successful archived-intensity search, using saved
 measurements and equivalent-family diagnostics before changing the recipe.
 This run does not pass the promotion gate.
+
+## Measurement-validity repair (version 5)
+
+The retained v4 failure comes from two interacting observation-selection errors.
+First, `flags == 0` excludes positive, high-signal profile fits solely because
+the residual model is imperfect: MISMATCH is set for I > 5 sigma and reduced
+chi-square >4. This discards 711 rows containing 71.3% of the positive intensity
+in otherwise usable rows, while accepting background-like counterparts.
+Second, detector coverage does not guarantee visibility through the DAC: strong
+equivalent measurements collapse above an exit angle of approximately 35 degrees
+in the sample frame. Those occulted crossings were exported as measured zeros.
+
+Version 5 declares MISMATCH as a retained warning; every other flag still excludes.
+All signed values, sigmas and original flags remain in the saved NPZ. It also
+declares a conservative symmetric cone of 35 degrees, with its axis along the
+incident beam at omega zero. For unit ray s and spindle axis a, Rodrigues rotation
+R(a,-omega) places incident and outgoing rays in that sample frame. A centre is
+visible when both |R(a,-omega)s dot n| >= cos(35 degrees), where n is the declared
+DAC axis. The boundary is closed, allowing eight float64 epsilons in cosine.
+The mask uses geometry only and is applied to export after unchanged reduction.
+Blocked measurements and their entry/exit angles remain available in diagnostics.
+This is not an absorption or finite-rocking partiality correction.
+
+The aperture is an exposed-data, raw-equivalent diagnostic assumption, consistent
+with acquisition notes that remove seat/body frames. It was declared before the
+diagnostic model searches and was not selected by structural R1 or coordinates.
+It needs independent calibration/validation on other acquisitions. A source-HKL
+membership control was used only to isolate the cause; neither vendor row
+membership nor vendor intensities enter the v5 numerical worker. Existing
+profile/scaling reference selection, search settings and coordinate gates remain
+unchanged. Original v1--v4 outcomes remain frozen.

@@ -107,6 +107,44 @@ def test_flagged_half_pixel_edge_centres_are_explicitly_excluded_from_mesh():
         workflow.interior_target_rows(centres, np.zeros(4, np.uint32), (8, 10))
 
 
+def test_dac_cone_masks_incident_and_exit_rays_in_sample_frame_with_closed_boundary():
+    from phasesmith.experimental.reciprocal import PanelGeometry
+
+    geometry = PanelGeometry([[0, 0, 1], [0.001, 0, 0], [0, 0.001, 0], [0, 0, 1], [0, 1, 0]], 1.0)
+    recipe = dict(axis_at_omega_zero=[0, 0, 2], half_opening_degrees=35.0)
+    centres = np.array([[1, 0, 0], [1, 0, 35], [1, 0, 35.001], [1, 0, -35]])
+    visible, entry, exit_ = workflow.dac_aperture_visibility(centres, geometry, recipe)
+    np.testing.assert_array_equal(visible, [True, True, False, False])
+    np.testing.assert_allclose(entry, [0, 35, 35.001, 35], atol=2e-13)
+    delta = np.rad2deg(np.arctan(0.001))
+    np.testing.assert_allclose(exit_, [delta, 35 - delta, 35.001 - delta, 35 + delta], atol=1e-11)
+    boundary = np.array([[1000.0, 0, 0], [1000.01, 0, 0]])
+    recipe["half_opening_degrees"] = 45.0
+    np.testing.assert_array_equal(
+        workflow.dac_aperture_visibility(boundary, geometry, recipe)[0], [True, False]
+    )
+    with pytest.raises(ValueError, match="invalid declared DAC"):
+        workflow.dac_aperture_visibility(
+            centres, geometry, dict(recipe, axis_at_omega_zero=[0, 0, 0])
+        )
+
+
+def test_search_retains_signed_warning_rows_but_preserves_other_flags_and_visibility():
+    flags = np.array([0, 131072, 2, 131074, 16384, 0, 0], np.uint32)
+    before = flags.copy()
+    values = np.array([[-2, 1], [100, 3], [20, 2], [80, 2], [0, 1], [10, 1], [0, 0]])
+    visible = np.array([True, True, True, True, True, False, True])
+    np.testing.assert_array_equal(
+        workflow.search_observation_mask(flags, values, visible, ["MISMATCH"]),
+        [True, True, False, False, False, False, False],
+    )
+    np.testing.assert_array_equal(flags, before)
+    with pytest.raises(ValueError, match="warning policy"):
+        workflow.search_observation_mask(flags, values, visible, ["MASKED"])
+    with pytest.raises(ValueError, match="measurement arrays"):
+        workflow.search_observation_mask(flags, values, np.ones(7), ["MISMATCH"])
+
+
 def test_selected_shoeboxes_preserve_original_joint_background_and_signed_counts():
     from phasesmith.experimental.profiles import select_observations
     from test_experimental_profiles import observations

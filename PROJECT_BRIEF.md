@@ -32,6 +32,16 @@ shoebox adapters preserve existing integration/background behavior. No Rust
 equation, finite support or hot loop changed. See
 `docs/enstatite-raw-workflow.md` for the frozen protocols, command and assumptions.
 
+The v5 follow-up adds explicit example-level measurement validity: a declared
+35-degree symmetric DAC cone excludes shadowed predicted centre rays, and the
+positive-signal-dependent profile MISMATCH bit remains a visible warning rather
+than an unconditional export veto. Every measurement, sigma and flag is retained.
+A two-factor saved-intensity diagnostic identifies both failures: neither repair
+alone solves, while both yield correct full recovery without source-HKL selection
+(PhaseSmith R1 0.04132, maximum/RMS error 0.00783/0.00501 A). This is exposed-data
+calibration, not independent transfer validation. The full v5 raw rerun is pending;
+old protocols/outcomes and native equations remain unchanged.
+
 Structure search now has an explicit per-dense-reflection-buffer memory policy.
 `SolutionOptions.dense_memory_budget_bytes` defaults to the historical
 16,000,000 bytes; callers can request up to 1 GiB. Native input-only preflight
