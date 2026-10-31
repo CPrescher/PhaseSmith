@@ -1,12 +1,15 @@
 //! Cached, coordinate-fixed whole-orbit count/label proposals before refinement.
 use crate::math3::{dot, mv};
 use crate::{Cancellation, SolutionError, error};
-use phasesmith_crystallography::{PreparedXrayScattering, SpaceGroup, UnitCell};
+use phasesmith_crystallography::{CellGeometry, PreparedXrayScattering, SpaceGroup, UnitCell};
 use rustfft::num_complex::Complex;
 use std::time::Instant;
 
 #[path = "assignment_ambiguity.rs"]
 pub(crate) mod ambiguity;
+#[path = "joint_assignment.rs"]
+mod joint;
+pub use joint::{JointAssignment, JointAssignments};
 #[path = "chemical_labels.rs"]
 mod chemical;
 pub use ambiguity::{AssignmentAlternative, AssignmentAlternatives};
@@ -29,6 +32,9 @@ pub struct PreparedPeakCompletion {
     maximum_atoms: usize,
     s_squared: Vec<f64>,
     displacement_applied: bool,
+    hkl: Vec<[i32; 3]>,
+    group: SpaceGroup,
+    geometry: CellGeometry,
 }
 /// Cheap complete-model proposal, with every required type represented.
 #[derive(Clone, Debug)]
@@ -209,6 +215,9 @@ impl PreparedPeakCompletion {
             maximum_atoms,
             s_squared: s2,
             displacement_applied: false,
+            hkl: hkl.to_vec(),
+            group: group.clone(),
+            geometry,
         })
     }
     fn sum(&self, labels: &[Option<usize>]) -> Vec<Complex<f64>> {

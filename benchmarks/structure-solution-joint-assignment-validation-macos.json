@@ -1,0 +1,45 @@
+{
+  "schema": "phasesmith.joint-assignment-validation.v1",
+  "timestamp_utc": "2026-10-31T05:37:56.204554+00:00",
+  "holdout_opened": false,
+  "native_sha256": "f02e749f23e832d4359fb9f6e00efcb31711956bb8bcaeeb079cb545a3fa0996",
+  "retention_sha256": "bded711fd2d1079ebc618711f2c196f34f05a40e1242893e1e3a4c732b7a34b2",
+  "adapter_lock_sha256": "ee017f810dad566bad13b7f5e52c5e9932df9406111fe85a60dff3c74500a526",
+  "independent_reference_sha256": "e56b2c5fb53e0d649a244668dbd8cc4feb304638851d8af014d03be046d80c4c",
+  "checks": [
+    {
+      "command": "cargo fmt --check",
+      "exit_code": 0
+    },
+    {
+      "command": "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+      "exit_code": 0,
+      "log_sha256": "1989fba0161abb95123794ee99a0d06d00241e41adead976f81cad0f9fd18c36"
+    },
+    {
+      "command": "cargo test --workspace --all-features",
+      "exit_code": 0,
+      "passed": 428,
+      "failed": 0,
+      "ignored": 34,
+      "log_sha256": "17035216366b34e33b6d507470f86057c20a34fe59eca8be91fa0b0582303cd0"
+    },
+    {
+      "command": ".venv/bin/pytest -q",
+      "exit_code": 0,
+      "passed": 2720,
+      "skipped": 11,
+      "deselected": 34,
+      "log_sha256": "9a8541097ee00895dcc2784ccf2c11725d4cff78984d1b164657d5d7fc972887"
+    }
+  ],
+  "numerical_evidence": [
+    "Direct independent Fourier orbit/tensor values and coordinate finite differences",
+    "Independent vectorized categorical beam and displacement-coherent sweeps",
+    "Scalar isotropic-shift derivatives against centered finite differences",
+    "Invalid tensor/symmetry/shape controls and cancelled/expired work",
+    "Synthetic whole-orbit births, deletion, exchange and complete blind structure/count recovery",
+    "Header/worker flag mismatches rejected; all 140 predictions precede both reference barriers"
+  ],
+  "qualification": "Full workspace checks completed before timed kernels and corpus collection. No task-owned tests/builds/kernel jobs overlap timed corpus jobs. All source snapshots, workers, original controls, caps, inputs and exact previous success sets verified. Seven above-cap references and all four no-model cases remain in primary denominators."
+}

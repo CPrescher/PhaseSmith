@@ -23,6 +23,8 @@ pub struct SharedSearchOptions {
     pub maximum_atoms: usize,
     /// Bounded worker budget for independent numerical work, in [1,64].
     pub workers: usize,
+    /// Repair coordinated labels/counts using final anisotropic orbit columns.
+    pub joint_assignment_refinement: bool,
     /// Maximum live states and initial settings, in [1,8].
     pub beam_width: usize,
     /// Maximum edit rounds per phasing start, in [1,16].
@@ -125,6 +127,7 @@ impl Default for SharedSearchOptions {
         Self {
             maximum_atoms: 128,
             workers: 1,
+            joint_assignment_refinement: false,
             beam_width: 4,
             rounds: 8,
             staged_refinement: true,
@@ -268,6 +271,18 @@ pub struct SharedSearchSummary {
     pub parallel_tasks: usize,
     /// Peak distinct pool workers active at once.
     pub max_active_workers: usize,
+    /// Requested bounded post-search categorical repair.
+    pub joint_assignment_refinement: bool,
+    /// Actual tensor-aware proposal evaluations.
+    pub joint_assignment_scores: usize,
+    /// Completed categorical beam depths.
+    pub joint_assignment_depths: usize,
+    /// Full-data repair fits attempted.
+    pub joint_assignment_fits: usize,
+    /// Accepted repair rounds (at most three).
+    pub joint_assignment_accepted: usize,
+    /// Total time spent in repair, including rejected attempts.
+    pub joint_assignment_seconds: f64,
     /// Required element types, without counts.
     pub elements: Vec<String>,
     /// Actual count-independent phase starts.
@@ -506,6 +521,7 @@ enum FitPass<'a> {
     Screen(usize),
     ScreenSeed(&'a [f64], usize),
     Promote(&'a [f64]),
+    TensorSeed(&'a [phasesmith_crystallography::Matrix3]),
 }
 #[derive(Clone)]
 struct State {
@@ -699,6 +715,7 @@ fn refine(
         return Err(error("shared model is underdetermined"));
     }
     let initial = match pass {
+        FitPass::TensorSeed(tensors) => prepared.initial_tensor_parameters(tensors)?,
         FitPass::Promote(site_u) | FitPass::ScreenSeed(site_u, _) => {
             prepared.initial_site_parameters(site_u)?
         }
@@ -1962,6 +1979,11 @@ fn solve_elements_inner(
     search: &SharedSearchOptions,
 ) -> Result<Solution, SolutionError> {
     crate::solver::validate_options(options)?;
+    if search.joint_assignment_refinement && !search.phase_origin_selection {
+        return Err(error(
+            "joint_assignment_refinement requires phase_origin_selection",
+        ));
+    }
     crate::ball_transform(0., search.peak_density_radius_angstrom)?;
     if !(1..=128).contains(&search.maximum_atoms)
         || !(1..=8).contains(&search.beam_width)
@@ -2228,6 +2250,7 @@ fn solve_elements_inner(
         recycling_cycles: search.recycling_cycles,
         tangent_refinement: search.tangent_refinement,
         tangent_in_recycling: search.tangent_in_recycling,
+        joint_assignment_refinement: search.joint_assignment_refinement,
         adaptive_counts: search.adaptive_counts,
         wilson_normalization: search.wilson_normalization,
         phase_quality_selection: search.phase_quality_selection,
@@ -2734,6 +2757,25 @@ fn solve_elements_inner(
                 break;
             }
         }
+    }
+    if search.joint_assignment_refinement {
+        let start = Instant::now();
+        if let Some(context) = phase_context.as_ref() {
+            phase_path::repair(
+                cell,
+                group,
+                &elements,
+                options,
+                search,
+                shape,
+                context,
+                &mut winners,
+                &mut result,
+                &mut audit,
+                deadline,
+            )?;
+        }
+        audit.joint_assignment_seconds = start.elapsed().as_secs_f64();
     }
     winners.sort_by(|a, b| ordering(a, b, &elements));
     if let Some(best) = winners.first() {

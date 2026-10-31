@@ -7,6 +7,9 @@ use super::{
 };
 use crate::{PreparedPeakCompletion, PreparedPhaseOrigin};
 
+#[path = "shared_assignment_repair.rs"]
+mod joint_repair;
+pub(super) use joint_repair::repair;
 #[path = "isotropic_assignment.rs"]
 mod assignment;
 

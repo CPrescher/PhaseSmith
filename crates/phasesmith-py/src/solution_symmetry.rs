@@ -135,6 +135,7 @@ pub(super) fn result<'py>(
 #[pyclass(name = "_SymmetricSolutionModel", frozen)]
 struct NativeModel {
     inner: PreparedSymmetricModel,
+    cell: phasesmith_engine::crystallography::UnitCell,
 }
 
 #[pymethods]
@@ -195,7 +196,7 @@ impl NativeModel {
                 .map(|p| p.with_specialized_isotropic_evaluation(specialized_isotropic))
             })
             .map_err(invalid)?;
-        Ok(Self { inner })
+        Ok(Self { inner, cell })
     }
     fn metadata<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
         metadata(py, &self.inner)
@@ -221,6 +222,59 @@ impl NativeModel {
             .initial_site_parameters(site_u.as_slice()?)
             .map_err(invalid)?
             .into_pyarray(py))
+    }
+    fn initial_tensors<'py>(
+        &self,
+        py: Python<'py>,
+        tensors: PyReadonlyArray1<'_, f64>,
+    ) -> PyResult<Bound<'py, npy::PyArray1<f64>>> {
+        let raw = tensors.as_slice()?;
+        if raw.len() % 9 != 0 {
+            return Err(invalid("tensors must contain 3x3 matrices"));
+        }
+        let values: Vec<_> = raw
+            .chunks_exact(9)
+            .map(|s| std::array::from_fn(|i| std::array::from_fn(|j| s[3 * i + j])))
+            .collect();
+        Ok(self
+            .inner
+            .initial_tensor_parameters(&values)
+            .map_err(invalid)?
+            .into_pyarray(py))
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn tensor_completion(
+        &self,
+        py: Python<'_>,
+        parameters: PyReadonlyArray1<'_, f64>,
+        elements: Vec<String>,
+        hkl: PyReadonlyArray1<'_, i64>,
+        observed: PyReadonlyArray1<'_, f64>,
+        maximum_atoms: usize,
+    ) -> PyResult<super::origin::NativeCompletion> {
+        let parameters = parameters.as_slice()?.to_vec();
+        let hkl = crate::hkl_rows(&hkl)?;
+        let observed = observed.as_slice()?.to_vec();
+        let inner = py
+            .detach(|| {
+                let state = self.inner.evaluate(&parameters)?;
+                let mut model = self.inner.symmetry.clone();
+                for (site, p) in model.sites.iter_mut().zip(&state.fractional_xyz) {
+                    site.fractional_xyz = *p;
+                }
+                phasesmith_solution::PreparedPeakCompletion::new(
+                    self.cell,
+                    &model.group,
+                    &state.fractional_xyz,
+                    &elements,
+                    &hkl,
+                    &observed,
+                    maximum_atoms,
+                )?
+                .with_tensor_model(&model, &state.u_cartesian, &hkl)
+            })
+            .map_err(invalid)?;
+        Ok(super::origin::NativeCompletion { inner })
     }
     #[pyo3(signature=(parameters, workers=1))]
     fn evaluate<'py>(

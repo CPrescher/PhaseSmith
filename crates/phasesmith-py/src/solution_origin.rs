@@ -76,8 +76,8 @@ pub(super) fn origin_records<'py>(
 }
 
 #[pyclass(name = "_PeakCompletionPlan", frozen)]
-struct NativeCompletion {
-    inner: phasesmith_solution::PreparedPeakCompletion,
+pub(super) struct NativeCompletion {
+    pub(super) inner: phasesmith_solution::PreparedPeakCompletion,
 }
 #[pymethods]
 impl NativeCompletion {
@@ -204,6 +204,97 @@ impl NativeCompletion {
         }
         out.set_item("candidates", candidates)?;
         out.set_item("evaluations", result.evaluations)?;
+        Ok(out)
+    }
+    fn coherent<'py>(
+        &self,
+        py: Python<'py>,
+        labels: Vec<i32>,
+        shifts: Vec<f64>,
+        bounds: Vec<[f64; 2]>,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        let labels = completion_labels(labels)?;
+        let result = py
+            .detach(|| {
+                self.inner.coherent_reassign(
+                    &labels,
+                    &shifts,
+                    &bounds,
+                    Some(Instant::now() + Duration::from_secs(10)),
+                    None,
+                )
+            })
+            .map_err(invalid)?;
+        let out = PyDict::new(py);
+        let candidates = PyList::empty(py);
+        for c in result.candidates {
+            let d = PyDict::new(py);
+            d.set_item(
+                "labels",
+                c.labels
+                    .iter()
+                    .map(|e| e.map_or(-1, |v| i32::try_from(v).expect("bounded")))
+                    .collect::<Vec<_>>(),
+            )?;
+            d.set_item("shifts", c.shifts)?;
+            d.set_item("objective", c.objective)?;
+            d.set_item("score", c.score)?;
+            candidates.append(d)?;
+        }
+        out.set_item("candidates", candidates)?;
+        out.set_item("evaluations", result.evaluations)?;
+        out.set_item("depths", result.depths)?;
+        Ok(out)
+    }
+    fn shift_score(
+        &self,
+        labels: Vec<i32>,
+        shifts: Vec<f64>,
+        site: usize,
+    ) -> PyResult<(f64, f64, f64)> {
+        self.inner
+            .shift_score(&completion_labels(labels)?, &shifts, site)
+            .map_err(invalid)
+    }
+    #[pyo3(signature=(labels,bounds,maximum=2))]
+    fn joint<'py>(
+        &self,
+        py: Python<'py>,
+        labels: Vec<i32>,
+        bounds: Vec<[f64; 2]>,
+        maximum: usize,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        let labels = completion_labels(labels)?;
+        let result = py
+            .detach(|| {
+                self.inner.joint_neighbors(
+                    &labels,
+                    &bounds,
+                    maximum,
+                    Some(Instant::now() + Duration::from_secs(10)),
+                    None,
+                )
+            })
+            .map_err(invalid)?;
+        let out = PyDict::new(py);
+        let candidates = PyList::empty(py);
+        for c in result.candidates {
+            let d = PyDict::new(py);
+            d.set_item(
+                "labels",
+                c.labels
+                    .iter()
+                    .map(|e| e.map_or(-1, |v| i32::try_from(v).expect("bounded")))
+                    .collect::<Vec<_>>(),
+            )?;
+            d.set_item("shifts", c.shifts)?;
+            d.set_item("objective", c.objective)?;
+            d.set_item("score", c.score)?;
+            candidates.append(d)?;
+        }
+        out.set_item("candidates", candidates)?;
+        out.set_item("evaluations", result.evaluations)?;
+        out.set_item("depths", result.depths)?;
         Ok(out)
     }
     fn reassign<'py>(&self, py: Python<'py>, labels: Vec<i32>) -> PyResult<Bound<'py, PyDict>> {

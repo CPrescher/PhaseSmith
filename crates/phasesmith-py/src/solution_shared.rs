@@ -72,6 +72,12 @@ pub(super) fn summary<'py>(
     d.set_item("model_consensus_stopping", s.model_consensus_stopping)?;
     d.set_item("requested_workers", s.requested_workers)?;
     d.set_item("workers", s.workers)?;
+    d.set_item("joint_assignment_refinement", s.joint_assignment_refinement)?;
+    d.set_item("joint_assignment_scores", s.joint_assignment_scores)?;
+    d.set_item("joint_assignment_depths", s.joint_assignment_depths)?;
+    d.set_item("joint_assignment_fits", s.joint_assignment_fits)?;
+    d.set_item("joint_assignment_accepted", s.joint_assignment_accepted)?;
+    d.set_item("joint_assignment_seconds", s.joint_assignment_seconds)?;
     d.set_item("parallel_maps", s.parallel_maps)?;
     d.set_item("parallel_tasks", s.parallel_tasks)?;
     d.set_item("max_active_workers", s.max_active_workers)?;

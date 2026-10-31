@@ -755,6 +755,60 @@ impl PreparedSymmetricModel {
         Ok(parameters)
     }
 
+    /// Embed physical Cartesian site tensors in the invariant log-SPD basis.
+    /// # Errors
+    /// Rejects invalid eigenvalues or tensors incompatible with the model symmetry/mode.
+    pub fn initial_tensor_parameters(
+        &self,
+        tensors: &[Matrix3],
+    ) -> Result<Vec<f64>, SolutionError> {
+        if tensors.len() != self.symmetry.sites.len() {
+            return Err(error("tensor seed length differs"));
+        }
+        let mut parameters = vec![0.; self.parameter_count];
+        for (site, &tensor) in tensors.iter().enumerate() {
+            if tensor.iter().flatten().any(|x| !x.is_finite())
+                || (0..3).any(|i| (0..3).any(|j| (tensor[i][j] - tensor[j][i]).abs() > 1e-12))
+            {
+                return Err(error("invalid tensor seed"));
+            }
+            let (values, vectors) = crate::math3::eigen(tensor);
+            if values
+                .iter()
+                .any(|x| !(1e-5 - 1e-12..=0.2 + 1e-12).contains(x))
+            {
+                return Err(error("tensor seed eigenvalues outside bounds"));
+            }
+            let diagonal = std::array::from_fn(|i| {
+                std::array::from_fn(|j| {
+                    if i == j {
+                        values[i].clamp(1e-5, 0.2).ln()
+                    } else {
+                        0.
+                    }
+                })
+            });
+            let log = conjugate(vectors, diagonal);
+            let mut reconstructed = [[0.; 3]; 3];
+            for (i, &basis) in self.tensor_bases[site].iter().enumerate() {
+                let value = frobenius(log, basis);
+                parameters[self.offsets[site].1 + i] = value;
+                matrix_add(&mut reconstructed, basis.map(|r| r.map(|x| x * value)));
+            }
+            if reconstructed
+                .iter()
+                .flatten()
+                .zip(log.iter().flatten())
+                .any(|(a, b)| (a - b).abs() > 1e-9)
+            {
+                return Err(error(
+                    "tensor seed violates site symmetry/displacement mode",
+                ));
+            }
+        }
+        Ok(parameters)
+    }
+
     /// Evaluate values and analytical coordinate/log-tensor derivatives together.
     ///
     /// # Errors

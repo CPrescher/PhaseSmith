@@ -65,6 +65,7 @@ def worker(args):
         options=options,
         maximum_atoms=maximum_atoms,
         workers=getattr(args, "workers", 1),
+        joint_assignment_refinement=getattr(args, "joint_assignment_refinement", False),
         symmetry_recycling=True,
         tangent_refinement=True,
         adaptive_counts=not args.legacy_counts,
@@ -266,7 +267,8 @@ def collect_jobs(args):
     if args.resume:
         previous = json.loads((args.output / "before-reference-audit.json").read_text())
         if (
-            previous.get("workers", 1) != getattr(args, "workers", 1)
+            previous.get("joint_assignment_refinement", False) != getattr(args, "joint_assignment_refinement", False)
+            or previous.get("workers", 1) != getattr(args, "workers", 1)
             or previous.get("shelxt_threads", 1) != getattr(args, "shelxt_threads", 1)
             or previous["manifest_sha256"] != sha(args.manifest)
             or previous["seconds_per_job"] != args.seconds
@@ -412,6 +414,7 @@ def collect_jobs(args):
             "same quantized measured HKLF4, element types, cell, wavelength "
             "and fixed reference-setting space group; no counts or coordinates"
         ),
+        "joint_assignment_refinement": getattr(args, "joint_assignment_refinement", False),
         "workers": getattr(args, "workers", 1),
         "shelxt_threads": getattr(args, "shelxt_threads", 1),
         "thread_policy": (f"serial jobs; PhaseSmith call-owned pool <= {getattr(args, 'workers', 1)}; "
@@ -512,6 +515,7 @@ def collect_jobs(args):
                     str(work / "solution"),
                     "--seconds",
                     str(args.seconds),
+                    *(["--joint-assignment-refinement"] if getattr(args, "joint_assignment_refinement", False) else []),
                     "--workers",
                     str(getattr(args, "workers", 1)),
                     "--maximum-atoms",
