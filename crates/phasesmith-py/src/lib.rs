@@ -71,10 +71,10 @@ mod profile_estimation;
 mod profiles;
 mod project_bundle;
 mod rietveld;
-#[cfg(feature = "experimental-solution")]
-mod solution;
 #[cfg(feature = "experimental-spots")]
 mod scan_scaling;
+#[cfg(feature = "experimental-solution")]
+mod solution;
 #[cfg(feature = "experimental-spots")]
 mod spots;
 mod tof_lebail;
