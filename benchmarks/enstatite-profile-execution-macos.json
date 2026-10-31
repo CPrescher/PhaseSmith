@@ -30,6 +30,18 @@
       "previous_cli_wall_seconds": 63.39,
       "cli_wall_seconds": 61.82,
       "all_results_bitwise_identical": true
+    },
+    {
+      "stage": "3a",
+      "report": "benchmarks/enstatite-profile-execution-stage3a-macos.json",
+      "integration_speedup_over_baseline": 2.2321086176959373,
+      "previous_worker_seconds": 53.968562334019225,
+      "worker_seconds": 44.7490357090137,
+      "worker_speedup_over_previous": 1.2060273809017177,
+      "previous_cli_wall_seconds": 61.82,
+      "cli_wall_seconds": 52.89,
+      "cli_speedup_over_previous": 1.1688409907354886,
+      "all_results_bitwise_identical": true
     }
   ]
 }
