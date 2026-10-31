@@ -30,6 +30,18 @@ standalone structure refinement. Supplied priors, bounded coverage, conditional
 uncertainties and ADP-bound candidate-polishing stagnation remain documented.
 See `docs/single-crystal.md` and `docs/release-candidate-0.8.md`. Frozen v24 compares
 the ordinary installed package against v11/v23 without changing scientific inputs.
+Both fresh installed-wheel raw runs pass strict bitwise arrays/candidates/histories,
+R1 .04085182070733226, CLI 19.06/19.39 s. Source and installed-wheel suites pass
+3,277 Python tests; 515 Rust tests, strict Clippy, strict Rust/MkDocs docs and
+ordinary/minimal/legacy-feature builds pass. A NumPy-only wheel and independent
+source-archive reconstruction pass native-capability/HDF5 smoke. Thirteen public
+crates package with no-verify; remote CI/manual release gates are not yet run.
+Whole-repository Ruff retains 191 diagnostics exclusively in unchanged files;
+changed Python files pass. Do not claim that release lint gate passed. See
+`benchmarks/single-crystal-promotion-0.8-macos.json`. Authorized cleanup removes
+regenerable targets and 12 superseded environments after verifying retained
+wheel recovery, increasing free space by about 13.8 GB. Raw data/unique scientific
+records are retained and all eight source files pass the post-cleanup hash check.
 
 Frame preparation now has a native original-u32 batch API: in-place declared
 orientation, one native-endian SHA256, verification against every inferred

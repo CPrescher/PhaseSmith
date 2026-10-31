@@ -47,3 +47,59 @@ A whole-repository Ruff audit still reports 191 pre-existing diagnostics in
 unchanged research tools/references/tests. None is in a changed Python file;
 changed files pass targeted lint. This inherited release-CI gate remains to be
 resolved before tagging. It is not suppressed or presented as passing.
+
+
+## Completed distribution and raw-workflow checks
+
+The ordinary ABI3 macOS arm64 wheel passes all **3,277 Python tests outside the
+checkout**. A separate source archive builds from scratch into another empty
+environment and passes the same native-capability smoke with only NumPy installed.
+Optional numerical packages are blocked by that smoke. Native linkage contains
+system libraries only, with no external HDF5/filter dependency. All 13 public
+crate payloads and the applicable notices are retained outside Git.
+
+The installed package runs two fresh original-frame v24 workflows in
+**19.06 / 19.39 s** (workers **17.95 / 18.29 s**). Every retained numerical array,
+complete candidate record and phasing history matches v11 bitwise; R1 stays
+**.04085182070733226**. New summary schema/configuration metadata are intentional.
+The prior v23 pair was 18.65/18.56 s: the new pair is 3.3% longer on this shared
+desktop. These are not controlled interleaved A/B measurements; no promotion
+speedup or causal performance-regression claim follows. The full times are
+retained. Peak worker RSS remains about 4.03 GiB with the explicit 1 GiB cache.
+
+The final 19.39 s run partitions as follows; I/O and parallel work are included
+in their owning stage and nested timings are not added again.
+
+| Area | Seconds |
+| --- | ---: |
+| Shadow estimation | 2.783 |
+| Detection/linking | 3.404 |
+| Pixel collection/background | 2.906 |
+| Profile learning | 2.532 |
+| Profile fitting | 2.852 |
+| Archive output | 1.033 |
+| Corrections/scaling/errors | 0.286 |
+| Indexing/geometry | 0.253 |
+| Structure-search process | 0.796 |
+| Other worker assembly/bookkeeping | 1.446 |
+| Launch/parent checks/initialization | 1.099 |
+| **Total** | **19.390** |
+
+The small machine-readable receipt is
+[single-crystal promotion record](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/single-crystal-promotion-0.8-macos.json).
+Artifacts, complete equivalence reports and logs are external under
+`/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031`.
+
+## Storage cleanup
+
+After validation, generated build/doc targets and 12 superseded environments
+were removed. Every environment's complete PhaseSmith payload was checked
+against a retained wheel, and its Python/dependency versions were journaled for
+recreation. The directories accounted for 15,660,044,288 allocated bytes;
+filesystem free space increased **13,808,058,368 bytes (13.8 GB / 12.86 GiB)**
+during cleanup. These measures differ because of shared files/filesystem activity.
+All eight original files were rechecked afterward. Raw data, unique results,
+failed/slower trials, source/Git, active development environment and retained
+release artifacts remain. Fifty-eight Criterion files were archived and verified
+before clearing the target. Other worktrees and shared dependency caches were
+not cleaned. Future Rust builds regenerate the removed compiler artifacts.

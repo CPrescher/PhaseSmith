@@ -480,7 +480,7 @@ The machine-readable record is `benchmarks/enstatite-detection-execution-macos.j
 
 ## Native frame input and decoded-count reuse (v21–v23)
 
-The current default is `validation/enstatite-raw-workflow-v23.json`. A newly
+The v23 frame-input protocol is `validation/enstatite-raw-workflow-v23.json`. A newly
 verified digest is reused for the same owned original frame. Two Rust preparation
 workers compose verified masks in two-frame batches under a 256 MiB payload cap;
 eight detector workers consume them in source order. All source and count checks
@@ -511,3 +511,15 @@ The [frame-input report](frame-input-optimization.md) includes all intermediate
 regressions, final full wall partitions and remaining targets. Its machine-readable
 summary is `benchmarks/enstatite-frame-input-macos.json`. Large raw sources,
 decoded counts, full archives and wheel artifacts remain outside Git.
+
+
+## Supported package promotion (0.8, v24)
+
+The current default is `validation/enstatite-raw-workflow-v24.json`. The runner
+uses `phasesmith.single_crystal` and the explicit named `validated-v1` search
+configuration through an ordinary installed wheel. Scientific/execution settings
+remain v23's. Two fresh runs take 19.06/19.39 s and pass all v11 array, candidate
+and history bitwise gates; R1 remains .04085182070733226. The supported summary
+schema and expanded configuration are metadata changes. Large data stay external.
+See the [0.8 release candidate](release-candidate-0.8.md) for distribution checks,
+complete current wall partition, measured variability and storage cleanup.
