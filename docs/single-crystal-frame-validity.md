@@ -139,7 +139,12 @@ in the same cone over the whole exposure; convexity then covers the pixel
 interior. The closed angular boundary allows eight float64 epsilons in cosine.
 Thus neither an illuminated midpoint nor an illuminated pixel centre can hide
 partial exposure/pixel blocking. Evaluation uses bounded row tiles, without
-caching a full mask cube. This is conservative exclusion, not absorption or
+caching a full mask cube. The default `pixel_block=1` checks individual pixels.
+An explicit larger block checks the full block footprint and excludes the whole
+block if any part is blocked. This conservative option can exclude extra boundary
+pixels but can never expose a pixel excluded by the fine mask. Partial edge
+blocks use their actual detector footprint. Block size changes the fingerprint;
+row tiling does not. This is conservative exclusion, not absorption or
 partiality correction, and has no intensity significance threshold.
 
 `CombinedValidity` ORs masks from compatible ordered frames, detector shapes and
