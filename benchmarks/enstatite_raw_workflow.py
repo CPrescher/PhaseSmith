@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v20.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v21.json"
 
 
 def digest(path):
@@ -63,13 +63,14 @@ def log(message):
 class RawFrames:
     """Read-only one-frame HDF5 loader with explicit orientation and mask policy."""
 
-    def __init__(self, path, acquisition, expected, validity=None):
+    def __init__(self, path, acquisition, expected, validity=None, *, execution=None):
         from phasesmith.io.hdf5 import Hdf5Frames
 
         self.reader = Hdf5Frames(path, expected["dataset"])
         if list(self.reader.shape) != expected["shape"] or self.reader.dtype != "uint32":
             self.reader.close()
             raise ValueError("raw HDF5 shape/dtype differs from registered source")
+        self.execution = {} if execution is None else dict(execution)
         self.acquisition = acquisition
         self.indices = np.arange(
             acquisition["first_frame"], acquisition["last_frame_inclusive"] + 1
@@ -90,17 +91,23 @@ class RawFrames:
         self.pending_masks = {}
         self.hashes = {}
         self.loads = 0
+        self.digest_reuses = 0
 
     def load(self, index):
         image = self.reader.read_frame(int(self.indices[index]))
         if self.acquisition["vertical_flip"]:
             image = image[::-1]
         image = np.ascontiguousarray(image)
+        verified = None
         if self.validity is not None:
-            self.validity.verify_frame(index, image)
+            verified = self.validity.verify_frame(index, image)
         mask = image >= self.acquisition["mask_minimum_reserved_uint32"]
         self.pending_masks[index] = mask
-        self.hashes[index] = hashlib.sha256(image.tobytes()).hexdigest()
+        if self.execution.get("reuse_verified_digest", False) and verified is not None:
+            self.hashes[index] = verified
+            self.digest_reuses += 1
+        else:
+            self.hashes[index] = hashlib.sha256(image.tobytes()).hexdigest()
         self.loads += 1
         return image
 
@@ -300,7 +307,12 @@ def stage_validity(packet, out, protocol):
     if config is None:
         return None
     started = time.perf_counter()
-    frames = RawFrames(packet["raw_path"], protocol["acquisition"], packet["raw_array"])
+    frames = RawFrames(
+        packet["raw_path"],
+        protocol["acquisition"],
+        packet["raw_array"],
+        execution=protocol.get("frame_input_execution"),
+    )
     try:
         providers = []
         ids = tuple(f"{Path(packet['raw_path']).name}#{i}" for i in frames.indices)
@@ -368,7 +380,13 @@ def stage_positions(packet, out, protocol, validity=None):
     from phasesmith.experimental.rotation import RotationOptions, locate_series
     from phasesmith.experimental.spots import SpotOptions
 
-    frames = RawFrames(packet["raw_path"], protocol["acquisition"], packet["raw_array"], validity)
+    frames = RawFrames(
+        packet["raw_path"],
+        protocol["acquisition"],
+        packet["raw_array"],
+        validity,
+        execution=protocol.get("frame_input_execution"),
+    )
     try:
         geometry = poni_geometry(
             packet["poni_path"], frames.pixel1, frames.pixel2, protocol["acquisition"]["axis"]
@@ -431,6 +449,7 @@ def stage_positions(packet, out, protocol, validity=None):
                 wavelength_angstrom=geometry.wavelength,
                 pixel_sizes_m=[frames.pixel1, frames.pixel2],
                 source_loads=frames.loads,
+                source_digest_reuses=frames.digest_reuses,
                 frame_validity_fingerprint=None if validity is None else validity.fingerprint(),
                 shadow_incomplete_tracks=int((positions.flags != original_flags).sum()),
             ),
@@ -622,7 +641,11 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes, fr
     from phasesmith.io.space_groups import space_group_by_number
 
     frames = RawFrames(
-        packet["raw_path"], protocol["acquisition"], packet["raw_array"], frame_validity
+        packet["raw_path"],
+        protocol["acquisition"],
+        packet["raw_array"],
+        frame_validity,
+        execution=protocol.get("frame_input_execution"),
     )
     try:
         shape = tuple(packet["raw_array"]["shape"][1:])
@@ -814,6 +837,7 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes, fr
                 teachers=len(bank.reference_ids),
                 frame_hashes_equal=True,
                 source_loads=frames.loads,
+                source_digest_reuses=frames.digest_reuses,
                 frame_preparation_execution=observations.summation.execution,
                 excluded_from_search=int((~valid).sum()),
                 excluded_by_quality_flags=int(((~valid) & visible).sum()),

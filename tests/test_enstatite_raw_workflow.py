@@ -48,6 +48,55 @@ def test_raw_loader_preserves_zero_high_counts_reserved_mask_and_orientation():
         loader.close()
 
 
+def test_verified_digest_reuse_preserves_orientation_and_rejects_changed_sources():
+    import hashlib
+    from phasesmith.experimental.frame_validity import CombinedValidity, FrameValidity
+
+    path = ROOT / "crates/phasesmith-hdf5/tests/data/counts-bitshuffle-lz4.h5"
+    acquisition = dict(
+        first_frame=0,
+        last_frame_inclusive=1,
+        vertical_flip=True,
+        omega_at_original_frame_zero_degrees=-36.0,
+        step_degrees=0.5,
+        exposure_width_degrees=0.5,
+        mask_minimum_reserved_uint32=2**32 - 2,
+    )
+    expected = dict(dataset="detector/data", shape=[2, 3, 4])
+    with_loader = workflow.RawFrames(path, acquisition, expected)
+    try:
+        images = [with_loader.load(i) for i in range(2)]
+        hashes = [with_loader.hashes[i] for i in range(2)]
+    finally:
+        with_loader.close()
+    provider = FrameValidity(
+        tuple(f"{path.name}#{i}" for i in range(2)),
+        (3, 4),
+        np.zeros((2, 3, 4), bool),
+        1,
+        provenance=dict(image_sha256=hashes),
+    )
+    assert provider.verify_frame(0, images[0]) == hashes[0]
+    assert hashes[0] == hashlib.sha256(images[0].tobytes()).hexdigest()
+    changed = images[0].copy()
+    changed[0, 0] += 1
+    with pytest.raises(ValueError, match="hash differs"):
+        provider.verify_frame(0, changed)
+    combined = CombinedValidity((provider, provider))
+    for validity in [provider, combined]:
+        loader = workflow.RawFrames(
+            path, acquisition, expected, validity, execution=dict(reuse_verified_digest=True)
+        )
+        try:
+            for i in range(2):
+                assert loader.load(i).tobytes() == images[i].tobytes()
+                assert loader.hashes[i] == hashes[i]
+                loader.mask(i)
+            assert loader.digest_reuses == 2
+        finally:
+            loader.close()
+
+
 def test_poni_conversion_has_explicit_pixel_centres_and_axis(tmp_path):
     path = tmp_path / "calibration.poni"
     path.write_text(

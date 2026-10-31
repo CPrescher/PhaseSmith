@@ -119,7 +119,11 @@ class _MaskAccess:
             raise ValueError("validity exposure angles differ")
 
     def verify_frame(self, frame, image):
-        """Check layout and, for inferred masks, original-count source hash."""
+        """Check source identity and return its freshly verified SHA256, if present.
+
+        A returned digest is reusable only for this unchanged frame snapshot.
+        Geometric-only providers return None after validating the layout.
+        """
         frame = _integer(frame, "frame", 0, len(self.frame_ids) - 1)
         array = np.asarray(image)
         if array.shape != self.shape or array.dtype.kind not in "fiu":
@@ -129,6 +133,8 @@ class _MaskAccess:
             digest = hashlib.sha256(np.ascontiguousarray(array).tobytes()).hexdigest()
             if len(hashes) != len(self.frame_ids) or digest != hashes[frame]:
                 raise ValueError("source frame hash differs from validity snapshot")
+            return digest
+        return None
 
     def valid_points(self, frames, xy):
         """Centre eligibility only; integration must still consume full masks."""
@@ -665,8 +671,14 @@ class CombinedValidity(_MaskAccess):
         return result
 
     def verify_frame(self, frame, image):
+        digest = None
         for provider in self.providers:
-            provider.verify_frame(frame, image)
+            verified = provider.verify_frame(frame, image)
+            if verified is not None:
+                if digest is not None and digest != verified:
+                    raise ValueError("combined source verification digests differ")
+                digest = verified
+        return digest
 
     def boxes_valid(self, frame, boxes):
         result = np.ones(len(boxes), bool)
