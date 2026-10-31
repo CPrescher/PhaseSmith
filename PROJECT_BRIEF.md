@@ -3106,3 +3106,10 @@ hashes, fixed worker controls and comparator thread logs are verified. Results,
 limitations, attribution to the published papers and immutable provenance are in
 `docs/solution-holdout-results.md`. The 65-case holdout is now exposed validation
 evidence, with no claim that it remains untouched for future algorithm changes.
+
+Integration validation now checks the historical holdout's 402 source hashes
+against Git blobs from its recorded protocol commit and keeps its native-binary
+hash tied to the recorded result. Later merged code need not impersonate the
+frozen executable. The actual holdout runner retains its strict live-source and
+binary checks and will reject changed code. No historical freeze, predictions,
+counts or grading thresholds are rewritten by integration.

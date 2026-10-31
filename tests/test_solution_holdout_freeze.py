@@ -1,5 +1,6 @@
 """The frozen comparison cannot silently change controls or grade partial runs."""
 
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -31,7 +32,35 @@ def test_frozen_controls_are_the_accepted_development_configuration():
         c["id"] for c in manifest["cases"] if c["split"] == "holdout"
     }
     assert len(freeze["holdout_ids"]) == 65
-    frozen.verify_freeze(freeze)
+    # The historical freeze describes its committed snapshot, not later merged
+    # checkouts or newly compiled extensions. Keep the execution guard strict.
+    result = frozen.load(ROOT / "benchmarks/structure-solution-holdout-frozen-summary-macos.json")
+    assert frozen.sha(frozen.FREEZE) == result["freeze_sha256"]
+    assert freeze["native_sha256"] == result["native_sha256"]
+    available = subprocess.run(
+        ["git", "cat-file", "-e", result["protocol_commit"] + "^{commit}"],
+        cwd=ROOT, capture_output=True,
+    )
+    if available.returncode:
+        pytest.skip("historical source proof requires the recorded commit in Git history")
+    names = list(freeze["source_sha256"])
+    objects = "".join(f"{result['protocol_commit']}:{name}\n" for name in names)
+    stream = subprocess.check_output(
+        ["git", "cat-file", "--batch"], input=objects.encode(), cwd=ROOT
+    )
+    offset = 0
+    for name in names:
+        end = stream.index(b"\n", offset)
+        _, kind, size = stream[offset:end].split()
+        assert kind == b"blob", name
+        offset = end + 1
+        length = int(size)
+        content = stream[offset : offset + length]
+        assert hashlib.sha256(content).hexdigest() == freeze["source_sha256"][name], name
+        offset += length
+        assert stream[offset : offset + 1] == b"\n"
+        offset += 1
+    assert offset == len(stream)
 
 
 def test_source_mutation_is_rejected_before_any_reference_access(monkeypatch):
