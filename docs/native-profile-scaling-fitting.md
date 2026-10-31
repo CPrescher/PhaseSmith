@@ -28,9 +28,17 @@ Differentiation gives
 Mass and all five analytical partials share the existing voxel/sample pass.
 The native implementation also accumulates the profiled residual Gauss–Newton
 normal from these same Gram products; the production shape optimizer uses its
-analytical gradient with ten limited-memory positive-curvature pairs and a
-feasible Armijo backtracking search, at most 30 trials per accepted iteration.
-Only strictly improving feasible points are retained. Closed bounds, regularizer,
+analytical gradient with ten limited-memory positive-curvature pairs. Their
+small dense secant quadratic defines the projected-gradient generalized Cauchy
+point and free-variable subspace step; a feasible More–Thuente search uses at
+most 30 trials per accepted iteration. The cubic/quadratic interpolation helper
+is vendored from BSD-3-Clause `lbfgsb-rs-pure` 0.1.2 with exact source checksums
+and license (pure Rust, no additional dependency or change to the Rust minimum); PhaseSmith owns the optimizer state and line-search controller.
+The construction follows Byrd, Lu, Nocedal & Zhu (1995),
+[SIAM J. Scientific Computing 16, 1190–1208](https://doi.org/10.1137/0916069),
+and More & Thuente (1994),
+[ACM TOMS 20, 286–307](https://doi.org/10.1145/192115.192132).
+Only non-increasing feasible points are retained. Closed bounds, regularizer,
 fixed noise iterations, relative-cost tolerance `1e-9`, projected-gradient
 tolerance `1e-4`, and iteration cap remain explicit controls. Distinct optimizer
 paths are evaluated with tolerances, not claimed bitwise equivalent to SciPy.

@@ -195,3 +195,15 @@ the bundled native licenses and copyright notices are reproduced in
 `licenses/hdf5/` and included as wheel license files. HDF5/LZ4 use BSD licenses,
 Bitshuffle uses MIT, zlib uses its zlib license; the BSD alternative is selected
 for LZF. These notices apply only when those components are distributed.
+
+## Native bounded-profile line-search interpolation
+
+`phasesmith-spots` vendors only `dcstep` from `lbfgsb-rs-pure` 0.1.2 (BSD-3-Clause;
+https://github.com/nholle/lbfgsb-rs). Only its safeguarded cubic/quadratic interpolation helper is included. PhaseSmith owns the dense
+limited-memory quadratic, generalized Cauchy/free-subspace steps, More–Thuente
+controller, fit objectives and all policy/diagnostics. The included helper is pure Rust with no dependencies, external BLAS or
+C/Fortran runtime. Exact package/file checksums are retained in
+`licenses/optimizers/provenance.json`. The remainder of the upstream crate is
+not compiled or included; it requires newer Rust syntax than PhaseSmith. Its license
+is retained in `licenses/optimizers/lbfgsb-rs-pure.txt` and wheel/sdist metadata.
+It is unrelated to GSAS-II; no GSAS-II implementation or data was reused.

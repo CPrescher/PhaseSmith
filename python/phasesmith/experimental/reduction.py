@@ -468,7 +468,7 @@ def reduce_observations(
         profile_cache_key=key,
         cache_hit=cached is not None,
         reflections=n,
-        profile_fitting_backend="phasesmith-spots native bounded quasi-Newton",
+        profile_fitting_backend="phasesmith-spots native bounded L-BFGS-B",
         empirical_scaling_backend="phasesmith-spots native bounded least squares and IRLS",
         corrections=corrections,
         scaling=scaling_record,

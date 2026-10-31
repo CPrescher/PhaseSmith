@@ -1,4 +1,4 @@
-"""Compare saved v10 native profile/scaling output with preserved v9, after exit."""
+"""Compare saved v11 native profile/scaling output with preserved v9, after exit."""
 
 import argparse
 import json
@@ -12,7 +12,7 @@ def main():
     parser.add_argument("--baseline", required=True, type=Path)
     parser.add_argument("--candidate", required=True, type=Path)
     parser.add_argument(
-        "--protocol", type=Path, default=ROOT / "validation/enstatite-raw-workflow-v10.json"
+        "--protocol", type=Path, default=ROOT / "validation/enstatite-raw-workflow-v11.json"
     )
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()

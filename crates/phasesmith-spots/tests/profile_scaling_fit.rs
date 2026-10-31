@@ -230,3 +230,35 @@ fn strong_and_frozen_weak_batch_native_determinism_and_cancellation() {
         .is_err()
     );
 }
+
+#[test]
+fn bounded_bfgs_cauchy_and_subspace_recover_curved_and_active_minima() {
+    for upper in [0.8_f64, 2.] {
+        let fit = opt::quasi_newton(
+            &[-1.2, 1.],
+            &[-2., -2.],
+            &[upper, 2.],
+            opt::Options {
+                iterations: 300,
+                evaluations: 1500,
+                ftol: 1e-12,
+                gtol: 1e-8,
+                xtol: 1e-13,
+                cost_floor: 1.,
+            },
+            |p| {
+                opt::least_squares(
+                    &[10. * (p[1] - p[0] * p[0]), 1. - p[0]],
+                    &[-20. * p[0], 10., -1., 0.],
+                    2,
+                )
+            },
+        )
+        .unwrap();
+        let x = upper.min(1.);
+        assert!(fit.converged, "{:?}", fit.parameters);
+        assert!((fit.parameters[0] - x).abs() < 2e-6);
+        assert!((fit.parameters[1] - x * x).abs() < 2e-6);
+        assert!(fit.history.windows(2).all(|p| p[1] <= p[0]));
+    }
+}

@@ -18,6 +18,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument(
+        "--fit-shapes", action="store_true", help="diagnostic refit instead of frozen parameters"
+    )
     args = parser.parse_args()
     observations, bank = load_case(args.baseline / "raw-observations-and-bank.npz")
     geometry = json.loads((args.baseline / "geometry.json").read_text())
@@ -33,7 +36,7 @@ def main():
         model=bank,
         reference_mask=references,
         choices=saved["choices"],
-        frozen_parameters=saved["parameters"],
+        frozen_parameters=None if args.fit_shapes else saved["parameters"],
     )
     use = saved["use"]
     old = np.column_stack((saved["intensity"], saved["sigma"]))[use]
@@ -49,7 +52,7 @@ def main():
         archived_arrays_read=True,
         atomic_reference_read=False,
         structure_search_executed=False,
-        frozen_legacy_shape_parameters=True,
+        frozen_legacy_shape_parameters=not args.fit_shapes,
         observations=int(use.sum()),
         flags_identical=bool(np.array_equal(result.profile.flags, saved["flags"])),
         intensity_relative_l2=float(relative[0]),
@@ -59,7 +62,10 @@ def main():
         maximum_intensity_difference_in_baseline_sigma=float(standardized.max()),
         percentile95_intensity_difference_in_baseline_sigma=float(np.quantile(standardized, 0.95)),
         interpretation=(
-            "Diagnostic only: fixed legacy shapes isolate native GLS, joint sigma and "
+            "Diagnostic only: refit saved observations with the current native shape optimizer; "
+            "no raw frames or atomic references are read."
+            if args.fit_shapes
+            else "Diagnostic only: fixed legacy shapes isolate native GLS, joint sigma and "
             "scaling from independent shape-optimizer trajectories."
         ),
     )

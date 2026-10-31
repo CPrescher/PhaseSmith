@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "PhaseSmith contributors" }]
 license = "MIT"
-license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md", "licenses/hdf5/*.txt"]
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md", "licenses/hdf5/*.txt", "licenses/optimizers/*.txt"]
 dependencies = ["numpy>=1.26"]
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",

@@ -24,6 +24,7 @@ pub mod intensity_model;
 pub mod local_background;
 pub mod omega_background;
 pub mod prediction;
+mod profile_line_search;
 pub mod profile_refinement;
 pub mod profiles;
 mod profiles_affine;
