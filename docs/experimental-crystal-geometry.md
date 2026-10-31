@@ -163,3 +163,29 @@ synthetic many-reflection benchmark, not a measured-data accuracy certificate.
 See `benchmarks/geometry-refinement-rust-macos.json`. Workspace verification
 passes 505 Rust tests (34 ignored), 3,225 Python tests (11 skipped, 34 deselected),
 formatting and strict all-target/all-feature Clippy.
+
+The complete original-frame MgSiO3 v9 run passes every frozen v8 equivalence gate.
+Indexed/source arrays, exported HKLs, use mask and flags are identical; 246
+teachers and 4,125 signed observations (220 negative) are retained. The maximum
+eligible indexed-prediction change is 2.13e-7 pixels / 6.18e-8 degrees. Native
+geometry uses seven evaluations, with withheld RMS .33311 pixels/.165893 degrees.
+Intensity/sigma relative L2 changes are 9.21e-6/6.71e-6; the largest intensity
+change is .009495 baseline sigma, with 95th percentile 5.79e-7 sigma.
+
+The search again infers Mg16 Si16 O48 at amplitude R1 .0410522 (v8: .0411159).
+Maximum/RMS reference errors are .0069006/.0046574 A. After origin/hand alignment,
+maximum/RMS candidate-coordinate differences from v8 are .0005351/.0002411 A.
+The full worker takes 94.53 s. No reference coordinates/counts, source HKLs or
+archived arrays enter the worker; grading and candidate comparisons occur after
+it exits. All original source files remain unchanged. These are equivalent
+results within frozen tolerances, rather than bitwise identity of fitted
+intensities/atomic coordinates. This remains exposed prior-assisted development
+data and does not establish independent detector metrology or general solve rate.
+
+A clean NumPy-only installed wheel recovers a known geometry/reference cell with
+no SciPy/h5py/hdf5plugin installed. Rust standalone tests independently exercise
+the same solver and native nonlinear maps. Reports are
+`benchmarks/enstatite-native-geometry-macos.json` and
+`benchmarks/geometry-refinement-rust-macos.json`; large data/products stay in the
+external directories recorded there. The raw example still uses Python for
+orchestration and the existing strong-profile/empirical-scaling optimizers.

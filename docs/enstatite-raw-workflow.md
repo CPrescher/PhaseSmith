@@ -241,3 +241,22 @@ The earlier v5/v6/v7 outcomes remain retained. This verifies the complete
 existing workflow through native input, while Python orchestration and the
 experimental geometry/profile/scaling optimizers still require native ports
 before a wholly Rust-only raw-to-structure executable can be claimed.
+
+## Native single-crystal geometry fitting (v9)
+
+The complete v9 rerun uses native geometry parameter chains, robust bounded
+optimization and fit diagnostics, with v8 scientific settings unchanged. All
+predeclared comparison gates pass. The same 4,125 observations, export mask,
+HKLs, flags and inferred Mg16 Si16 O48 are retained. Maximum indexed-prediction
+changes are 2.13e-7 pixels and 6.18e-8 degrees. Intensities differ by 9.21e-6 in
+relative L2 norm, at most .009495 baseline sigma. Search R1 is .0410522 versus
+.0411159, and maximum labelled reference error is .0069006 A. The largest
+origin/hand-aligned coordinate change from v8 is .0005351 A. Full time is 94.53 s.
+
+Geometry fitting now runs without SciPy; standalone Rust and clean NumPy-only
+wheel tests cover that contract. All source hashes remain unchanged and large
+products stay outside Git. The remaining Python numerical optimizers are
+profile fitting and empirical scaling, alongside Python raw-workflow
+orchestration. See [native geometry calibration](experimental-crystal-geometry.md)
+and `benchmarks/enstatite-native-geometry-macos.json` for methods, tolerances,
+artifact identities and the full comparison.

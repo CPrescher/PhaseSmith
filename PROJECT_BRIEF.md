@@ -37,8 +37,16 @@ The clean wheel needs no h5py/hdf5plugin, external HDF5 or dynamic plugins. This
 validates I/O, not a completed Rust-only pipeline. The record is
 `benchmarks/enstatite-bundled-hdf5-macos.json`.
 Python orchestration and the profile/scaling optimizers remain pending. The v9
-protocol freezes a native-geometry full rerun with explicit v8 equivalence gates;
-its scientific model, loss, bounds, partitions and downstream controls are unchanged. Large raw data and full products stay outside Git; only a 10-KiB independent
+native-geometry full run passes every frozen v8 equivalence gate: same 4,125
+observations/flags/HKL mask and Mg16 Si16 O48, R1 .0410522 versus .0411159,
+maximum reference error .0069006 A, maximum aligned coordinate change .0005351 A.
+Intensity relative L2 drift is 9.21e-6 (maximum .009495 baseline sigma); indexed
+predictions change by at most 2.13e-7 pixels. Native geometry fitting needs no
+SciPy, passes independent/reference/derivative/native-map tests, and takes
+22.96 ms versus 34.53 ms for the previous fitter on the synthetic 10,888-spot
+benchmark. Full validation passes 505 Rust and 3,225 Python tests plus strict
+Clippy/formatting. Reports: `benchmarks/enstatite-native-geometry-macos.json` and
+`benchmarks/geometry-refinement-rust-macos.json`. Large raw data and full products stay outside Git; only a 10-KiB independent
 compressed interoperability fixture is checked in.
 
 The script-first MgSiO3 workflow now passes from original HDF5 frames through
