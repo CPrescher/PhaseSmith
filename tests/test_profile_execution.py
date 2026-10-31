@@ -47,7 +47,7 @@ def test_learning_cache_preserves_order_and_bounded_fallback(affine, weighted):
             np.testing.assert_array_equal(getattr(cached, key), getattr(baseline, key))
         assert cached.execution["cache_bytes"] <= budget
         assert (cached.execution["cache_entries"] > 0) == (budget > 1)
-    for workers, cache in [(0, 1), (5, 1), (1, -1), (1, 2**30 + 1)]:
+    for workers, cache in [(0, 1), (33, 1), (1, -1), (1, 2**30 + 1)]:
         with pytest.raises(ValueError):
             ProfileExecution(workers, cache)
 
@@ -109,7 +109,7 @@ def test_baseline_integration_cache_and_workers_are_bitwise_exact(expected, affi
         )
     bank = fixed_model(obs)
     baseline = fit_profiles(obs, bank, execution=ProfileExecution(1, 0))
-    for workers in [1, 2, 4]:
+    for workers in [1, 2, 4, 6, 8, 10]:
         for budget in [1, 1024**2]:
             value = fit_profiles(obs, bank, execution=ProfileExecution(workers, budget))
             assert value.values.tobytes() == baseline.values.tobytes()

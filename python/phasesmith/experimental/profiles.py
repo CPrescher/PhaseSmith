@@ -32,8 +32,8 @@ class ProfileExecution:
     geometry_cache_bytes: int = 64 * 1024 * 1024
 
     def __post_init__(self):
-        if type(self.workers) is not int or not 1 <= self.workers <= 4:
-            raise ValueError("profile workers must be in 1..4")
+        if type(self.workers) is not int or not 1 <= self.workers <= 32:
+            raise ValueError("profile workers must be in 1..32")
         if (
             type(self.geometry_cache_bytes) is not int
             or not 0 <= self.geometry_cache_bytes <= 1024**3
