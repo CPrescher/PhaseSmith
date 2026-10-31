@@ -128,91 +128,12 @@ fn design(
             rays[i * 8 + j] = a[j] + b[j];
         }
     }
-    let mut penalty = vec![];
-    for i in 0..width {
-        let mut r = vec![0.; p];
-        r[i] = 1. / 0.25;
-        penalty.extend(r);
-    }
-    let mut full = vec![vec![0.; p]; nf];
-    for (i, row) in full.iter_mut().enumerate() {
-        if i != nf / 2 {
-            row[i - usize::from(i > nf / 2)] = 1.;
-        }
-    }
-    for i in 0..nf - 2 {
-        penalty.extend((0..p).map(|j| (full[i + 2][j] - 2. * full[i + 1][j] + full[i][j]) / 0.10));
-    }
-    for i in 0..24 {
-        let mut r = vec![0.; p];
-        r[width + i] = 1. / 0.15;
-        penalty.extend(r);
-    }
-    let svd = nalgebra::DMatrix::from_fn(n, 8, |i, j| rays[i * 8 + j] / (n as f64).sqrt())
-        .svd(false, true);
-    let vt = svd
-        .v_t
-        .ok_or_else(|| Error("ray-design SVD failed".into()))?;
-    for i in 0..8 {
-        let mut r = vec![0.; p];
-        for j in 0..8 {
-            r[width + 24 + j] = svd.singular_values[i] * vt[(i, j)] / 0.25;
-        }
-        penalty.extend(r);
-    }
-    let canonical: Vec<_> = m
-        .hkl
-        .iter()
-        .map(|&h| {
-            let h = h.map(i64::from);
-            o.priors
-                .group
-                .rotations()
-                .iter()
-                .map(|r| {
-                    std::array::from_fn::<_, 3, _>(|j| {
-                        (0..3).map(|k| h[k] * i64::from(r[j][k])).sum()
-                    })
-                })
-                .min()
-                .expect("rotations")
-        })
-        .collect();
-    let mut families: BTreeMap<_, usize> = canonical.iter().copied().map(|h| (h, 0)).collect();
-    for (i, id) in families.values_mut().enumerate() {
-        *id = i;
-    }
-    let groups: Vec<_> = canonical.iter().map(|h| families[h]).collect();
-    let eligible: Vec<_> = values
-        .iter()
-        .zip(flags)
-        .map(|(v, &f)| f == 0 && v[0].is_finite() && v[1] > 0. && v[0] > 10. * v[1])
-        .collect();
-    let mut training: Vec<_> = eligible
-        .iter()
-        .zip(&canonical)
-        .map(|(&e, &h)| e && grains::fold(h) != 0)
-        .collect();
-    let mut count = vec![0usize; n];
-    for i in 0..n {
-        if training[i] {
-            count[groups[i]] += 1;
-        }
-    }
-    for i in 0..n {
-        training[i] &= count[groups[i]] >= 2;
-    }
-    let variance = values
-        .iter()
-        .zip(&eligible)
-        .map(|(v, &e)| {
-            if e {
-                (v[1] / v[0]).powi(2) + 0.02f64.powi(2)
-            } else {
-                1.
-            }
-        })
-        .collect();
+    let penalty = penalty_matrix(width, nf, &rays, n)?;
+    let FamilyDesign {
+        groups,
+        training,
+        variance,
+    } = family_design(&m.hkl, values, flags, &o.priors.group);
     let mut lower = vec![-2f64.ln(); width];
     lower.extend(vec![-0.5; 24]);
     lower.extend(vec![-1.; 8]);
@@ -327,6 +248,145 @@ pub(super) fn reduce(
     g: &phasesmith_spots::reciprocal::Geometry,
 ) -> Result<Reduced> {
     let n = m.hkl.len();
+    let (fitted, choices) = fit_profiles_native(m, o)?;
+    let beam = unit(g.beam);
+    let axis = unit(g.axis);
+    let e = [0., 1., 0.];
+    if dot(e, beam).abs() > 1e-8 {
+        return Err(Error(
+            "polarization vector must be perpendicular to beam".into(),
+        ));
+    }
+    let orth = cross(beam, e);
+    let physical: Vec<_> = m
+        .data
+        .centres
+        .iter()
+        .map(|c| {
+            let ray = profile_geometry([c[0], c[1]], *g).0;
+            let p = 0.98 * (1. - dot(ray, e).powi(2)) + (1. - 0.98) * (1. - dot(ray, orth).powi(2));
+            dot(cross(ray, beam), axis).abs() / p
+        })
+        .collect();
+    if physical.iter().any(|v| !v.is_finite() || *v <= 0.) {
+        return Err(Error("singular physical intensity correction".into()));
+    }
+    let mut values: Vec<_> = fitted
+        .values
+        .iter()
+        .zip(&physical)
+        .map(|(v, &f)| [v[0] * f, v[1] * f])
+        .collect();
+    let d = design(m, &values, &fitted.flags, *g, o)?;
+    let y: Vec<_> = values
+        .iter()
+        .map(|v| if v[0].is_finite() { v[0] } else { 0. })
+        .collect();
+    let fit = empirical_fit::fit(
+        &empirical_fit::Input {
+            design: intensity_model::Design {
+                rows: n,
+                widths: d.widths,
+                matrices: [&d.frames, &d.detector, &d.harmonics],
+            },
+            penalty: &d.penalty,
+            intensity: &y,
+            variance: &d.variance,
+            groups: &d.groups,
+            reference: &d.training,
+            lower: &d.lower,
+            upper: &d.upper,
+            start: &vec![0.; d.lower.len()],
+        },
+        empirical_options_v1(),
+    )?;
+    if !fit.converged {
+        return Err(Error(
+            "empirical scaling did not converge; retain unscaled observations".into(),
+        ));
+    }
+    for (v, &f) in values.iter_mut().zip(&fit.correction) {
+        v[0] *= f;
+        v[1] *= f;
+    }
+    let statistical_sigma = values.iter().map(|v| v[1]).collect();
+    let mut trained = vec![false; n];
+    for i in 0..n {
+        if d.training[i] {
+            trained[d.groups[i]] = true;
+        }
+    }
+    let train: Vec<_> = d.groups.iter().map(|&g| trained[g]).collect();
+    let beta = error_floor(&mut values, &d.groups, &fit.references, &train)?;
+    let use_mask: Vec<_> = values
+        .iter()
+        .zip(&fitted.flags)
+        .zip(&m.visible)
+        .map(|((v, &f), &visible)| {
+            (f & !131_072) == 0 && visible && v.iter().all(|x| x.is_finite()) && v[1] > 0.
+        })
+        .collect();
+    if use_mask.iter().filter(|&&v| v).count() < 1000 {
+        return Err(Error(
+            "insufficient quality-controlled signed observations".into(),
+        ));
+    }
+    Ok(Reduced {
+        hkl: m.hkl.clone(),
+        values,
+        statistical_sigma,
+        physical,
+        empirical: fit.correction.clone(),
+        flags: fitted.flags,
+        use_mask,
+        visible: m.visible.clone(),
+        profiles: fitted.values,
+        parameters: fitted.parameters,
+        choices,
+        scaling: fit,
+        error_floor: beta,
+    })
+}
+
+fn penalty_matrix(width: usize, nf: usize, rays: &[f64], n: usize) -> Result<Vec<f64>> {
+    let p = width + 24 + 8;
+    let mut penalty = vec![];
+    for i in 0..width {
+        let mut r = vec![0.; p];
+        r[i] = 1. / 0.25;
+        penalty.extend(r);
+    }
+    let mut full = vec![vec![0.; p]; nf];
+    for (i, row) in full.iter_mut().enumerate() {
+        if i != nf / 2 {
+            row[i - usize::from(i > nf / 2)] = 1.;
+        }
+    }
+    for i in 0..nf - 2 {
+        penalty.extend((0..p).map(|j| (full[i + 2][j] - 2. * full[i + 1][j] + full[i][j]) / 0.10));
+    }
+    for i in 0..24 {
+        let mut r = vec![0.; p];
+        r[width + i] = 1. / 0.15;
+        penalty.extend(r);
+    }
+    let svd = nalgebra::DMatrix::from_fn(n, 8, |i, j| rays[i * 8 + j] / (n as f64).sqrt())
+        .svd(false, true);
+    let vt = svd
+        .v_t
+        .ok_or_else(|| Error("ray-design SVD failed".into()))?;
+    for i in 0..8 {
+        let mut r = vec![0.; p];
+        for j in 0..8 {
+            r[width + 24 + j] = svd.singular_values[i] * vt[(i, j)] / 0.25;
+        }
+        penalty.extend(r);
+    }
+    Ok(penalty)
+}
+
+fn fit_profiles_native(m: &Measurements, o: &Options) -> Result<(refinement::Fit, Vec<u8>)> {
+    let n = m.hkl.len();
     let borrowed = m.data.borrowed();
     let mut base = profiles::fit_with_execution(
         &borrowed,
@@ -379,105 +439,148 @@ pub(super) fn reduce(
         &input,
         refinement::Options {
             workers: o.profile_workers,
-            ..refinement::Options::default()
+            iterations: 3,
+            maximum_iterations: 80,
+            centre_pixels: 1.,
+            centre_degrees: 0.4,
+            spatial_range: [0.65, 1.5],
+            rocking_range: [0.5, 1.5],
+            regularizer: [0.01, 0.01, 0.16, 0.04, 0.04],
+            weak_design_counts: 1000.,
+            weak_spatial_width: 0.95,
         },
         |_, _| o.checkpoint().map_err(|e| phasesmith_spots::SpotError(e.0)),
     )?;
-    let beam = unit(g.beam);
-    let axis = unit(g.axis);
-    let e = [0., 1., 0.];
-    if dot(e, beam).abs() > 1e-8 {
-        return Err(Error(
-            "polarization vector must be perpendicular to beam".into(),
-        ));
-    }
-    let orth = cross(beam, e);
-    let physical: Vec<_> = m
-        .data
-        .centres
+    Ok((fitted, choices))
+}
+
+struct FamilyDesign {
+    groups: Vec<usize>,
+    training: Vec<bool>,
+    variance: Vec<f64>,
+}
+fn family_design(
+    hkl: &[[i32; 3]],
+    values: &[[f64; 2]],
+    flags: &[u32],
+    group: &phasesmith_crystallography::SpaceGroup,
+) -> FamilyDesign {
+    let n = hkl.len();
+    let canonical: Vec<_> = hkl
         .iter()
-        .map(|c| {
-            let ray = profile_geometry([c[0], c[1]], *g).0;
-            let p = 0.98 * (1. - dot(ray, e).powi(2)) + (1. - 0.98) * (1. - dot(ray, orth).powi(2));
-            dot(cross(ray, beam), axis).abs() / p
+        .map(|&h| {
+            let h = h.map(i64::from);
+            group
+                .rotations()
+                .iter()
+                .map(|r| {
+                    std::array::from_fn::<_, 3, _>(|j| {
+                        (0..3).map(|k| h[k] * i64::from(r[j][k])).sum()
+                    })
+                })
+                .min()
+                .expect("rotations")
         })
         .collect();
-    if physical.iter().any(|v| !v.is_finite() || *v <= 0.) {
-        return Err(Error("singular physical intensity correction".into()));
+    let mut families: BTreeMap<_, usize> = canonical.iter().copied().map(|h| (h, 0)).collect();
+    for (i, id) in families.values_mut().enumerate() {
+        *id = i;
     }
-    let mut values: Vec<_> = fitted
-        .values
+    let groups: Vec<_> = canonical.iter().map(|h| families[h]).collect();
+    let eligible: Vec<_> = values
         .iter()
-        .zip(&physical)
-        .map(|(v, &f)| [v[0] * f, v[1] * f])
+        .zip(flags)
+        .map(|(v, &f)| f == 0 && v[0].is_finite() && v[1] > 0. && v[0] > 10. * v[1])
         .collect();
-    let d = design(m, &values, &fitted.flags, *g, o)?;
-    let y: Vec<_> = values
+    let mut training: Vec<_> = eligible
         .iter()
-        .map(|v| if v[0].is_finite() { v[0] } else { 0. })
+        .zip(&canonical)
+        .map(|(&e, &h)| e && grains::fold(h) != 0)
         .collect();
-    let fit = empirical_fit::fit(
-        &empirical_fit::Input {
-            design: intensity_model::Design {
-                rows: n,
-                widths: d.widths,
-                matrices: [&d.frames, &d.detector, &d.harmonics],
-            },
-            penalty: &d.penalty,
-            intensity: &y,
-            variance: &d.variance,
-            groups: &d.groups,
-            reference: &d.training,
-            lower: &d.lower,
-            upper: &d.upper,
-            start: &vec![0.; d.lower.len()],
-        },
-        empirical_fit::Options::default(),
-    )?;
-    if !fit.converged {
-        return Err(Error(
-            "empirical scaling did not converge; retain unscaled observations".into(),
-        ));
-    }
-    for (v, &f) in values.iter_mut().zip(&fit.correction) {
-        v[0] *= f;
-        v[1] *= f;
-    }
-    let statistical_sigma = values.iter().map(|v| v[1]).collect();
-    let mut trained = vec![false; n];
+    let mut count = vec![0usize; n];
     for i in 0..n {
-        if d.training[i] {
-            trained[d.groups[i]] = true;
+        if training[i] {
+            count[groups[i]] += 1;
         }
     }
-    let train: Vec<_> = d.groups.iter().map(|&g| trained[g]).collect();
-    let beta = error_floor(&mut values, &d.groups, &fit.references, &train)?;
-    let use_mask: Vec<_> = values
+    for i in 0..n {
+        training[i] &= count[groups[i]] >= 2;
+    }
+    let variance = values
         .iter()
-        .zip(&fitted.flags)
-        .zip(&m.visible)
-        .map(|((v, &f), &visible)| {
-            (f & !131_072) == 0 && visible && v.iter().all(|x| x.is_finite()) && v[1] > 0.
+        .zip(&eligible)
+        .map(|(v, &e)| {
+            if e {
+                (v[1] / v[0]).powi(2) + 0.02f64.powi(2)
+            } else {
+                1.
+            }
         })
         .collect();
-    if use_mask.iter().filter(|&&v| v).count() < 1000 {
-        return Err(Error(
-            "insufficient quality-controlled signed observations".into(),
-        ));
+    FamilyDesign {
+        groups,
+        training,
+        variance,
     }
-    Ok(Reduced {
-        hkl: m.hkl.clone(),
-        values,
-        statistical_sigma,
-        physical,
-        empirical: fit.correction.clone(),
-        flags: fitted.flags,
-        use_mask,
-        visible: m.visible.clone(),
-        profiles: fitted.values,
-        parameters: fitted.parameters,
-        choices,
-        scaling: fit,
-        error_floor: beta,
-    })
+}
+
+fn empirical_options_v1() -> empirical_fit::Options {
+    empirical_fit::Options {
+        strength: 1000.,
+        huber: 2.5,
+        iterations: 100,
+        minimum_component: 0.2,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    #[allow(clippy::float_cmp)] // Unchanged integer-valued source counts are exact.
+    fn equivalent_error_recovers_analytic_paired_width_without_changing_signed_intensity() {
+        let mut values = vec![[90., 1.], [110., 1.], [-5., 1.], [-5., 1.]];
+        let beta = error_floor(
+            &mut values,
+            &[0, 0, 1, 1],
+            &[true, true, false, false],
+            &[true; 4],
+        )
+        .unwrap();
+        let expected =
+            ((20f64 / 0.674_489_750_196_081_7).powi(2) - 2.).sqrt() / (2f64.sqrt() * 100.);
+        assert!((beta - expected).abs() < 1e-14);
+        assert_eq!(
+            values.iter().map(|x| x[0]).collect::<Vec<_>>(),
+            vec![90., 110., -5., -5.]
+        );
+        assert_eq!(values[2][1], 1.);
+    }
+    #[test]
+    fn ray_svd_penalty_preserves_the_complete_physical_harmonic_gram() {
+        let n = 24;
+        let rays: Vec<_> = (0..n)
+            .flat_map(|i| {
+                let a = i as f64 * 0.3;
+                harmonics([a.cos() * 0.8, a.sin() * 0.8, 0.6])
+            })
+            .collect();
+        let nf = 8;
+        let width = nf - 1;
+        let p = width + 32;
+        let penalty = penalty_matrix(width, nf, &rays, n).unwrap();
+        let last = &penalty[penalty.len() - 8 * p..];
+        for i in 0..8 {
+            for j in 0..8 {
+                let got = (0..8)
+                    .map(|k| last[k * p + width + 24 + i] * last[k * p + width + 24 + j])
+                    .sum::<f64>();
+                let expected = (0..n)
+                    .map(|k| rays[k * 8 + i] * rays[k * 8 + j])
+                    .sum::<f64>()
+                    / (n as f64 * 0.25f64.powi(2));
+                assert!((got - expected).abs() < 1e-12);
+            }
+        }
+    }
 }
