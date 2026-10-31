@@ -45,3 +45,14 @@ An admission diagnostic measures 177,855,620 cache-capacity bytes (169.6 MiB),
 learned bank. The full v13 example explicitly requests a 256 MiB additional
 cache cap; v12's unadmitted 64 MiB protocol/measurement are retained. This
 resource choice uses geometry capacity, never R1 or an atomic reference.
+
+Stage 1 completes with a three-repeat learning median of 2.543 s versus
+38.780 s (15.25x). The fresh v13 numerical worker takes 54.89 s versus
+87.77 s for retained v11; full CLI wall time is 63.39 s versus 88.80 s.
+The parent setup/assessment portion varies, so these are single full-run
+measurements rather than a claimed stable distribution. Every numerical array,
+full candidate record and phasing history is bitwise identical. Source files
+are unchanged. Native workspace tests pass 510 cases and Python 3,239, plus
+strict Clippy/formatting. Reports:
+`benchmarks/enstatite-profile-execution-stage1-macos.json` and the cumulative
+`benchmarks/enstatite-profile-execution-macos.json`.

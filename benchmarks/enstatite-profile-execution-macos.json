@@ -1,0 +1,24 @@
+{
+  "schema": "phasesmith.enstatite-profile-execution-progress.v1",
+  "baseline": {
+    "protocol": "validation/enstatite-raw-workflow-v11.json",
+    "worker_seconds": 87.76859870896442,
+    "cli_wall_seconds": 88.8,
+    "learning_seconds": 38.78012066701194,
+    "baseline_integration_seconds": 17.79165174998343
+  },
+  "stages": [
+    {
+      "stage": 1,
+      "report": "benchmarks/enstatite-profile-execution-stage1-macos.json",
+      "learning_speedup": 15.250501159332371,
+      "baseline_worker_seconds": 87.76859870896442,
+      "worker_seconds": 54.89267187495716,
+      "worker_speedup": 1.5989128550509806,
+      "baseline_cli_wall_seconds": 88.8,
+      "cli_wall_seconds": 63.39,
+      "cli_speedup": 1.4008518693800283,
+      "all_results_bitwise_identical": true
+    }
+  ]
+}
