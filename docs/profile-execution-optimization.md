@@ -75,3 +75,12 @@ are included in admitted cache capacity. Per-worker gradient buffers replace
 the serial bank-wide gradient allocation; at most one gradient per active bank
 is live. The global bank contains all teachers, so bank parallelism does not
 imply fourfold speedup. Measurements determine the actual additional gain.
+
+Stage 2's measured learning median is 2.493 s, versus 2.543 s after caching:
+only a 1.02x incremental gain, 15.56x versus the original. All numerical arrays
+and candidate/search histories remain bitwise identical. The four-worker
+cache including its row index uses 181,907,500 capacity bytes under the same
+256 MiB cap. The full CLI run takes 61.82 s; single-run parent/machine overhead
+varies, so no large additional end-to-end gain is claimed. The global bank and
+serial preparation limit this coarse bank-level parallelism. Report:
+`benchmarks/enstatite-profile-execution-stage2-macos.json`.
