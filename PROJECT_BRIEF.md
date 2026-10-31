@@ -23,6 +23,18 @@ Automatic element-search caps now respect both volume and memory; explicit
 over-budget caps still fail. See `docs/solution-memory-budget.md` for contracts,
 independent integer admission, compatibility and validation.
 
+With a 64 MiB dense budget, native preflight admits 105 atoms for enstatite's
+10,694 expanded measured rows. One unchanged-seed/effort PhaseSmith search per
+existing intensity source recovers Mg=16, Si=16, O=48. Independent post-search
+reference matching gives maximum/RMS errors 0.00920/0.00536 A for the archived
+PhaseSmith reduction and 0.01200/0.00682 A for the source integration. Native
+amplitude R1 is 0.0428393/0.0481402. Reference coordinates/counts do not enter
+search. No full raw-frame rerun or standalone structural refinement is claimed.
+The change passes 489 Rust and 3,174 Python tests plus formatting/strict Clippy;
+kernel fingerprints match the preserved baseline exactly. Reports are in
+`benchmarks/enstatite-memory-budget-search-macos.json` and
+`validation/solution-memory-budget-validation-v1.json`.
+
 The 31 October single-crystal promotion audit proposes a supported
 `phasesmith.single_crystal` namespace and an external-data MgSiO3 enstatite
 workflow ending in PhaseSmith structure search and candidate assessment.

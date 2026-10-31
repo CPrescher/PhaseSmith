@@ -4,6 +4,13 @@ Audit date: 31 October 2026. Reviewed baseline: `54784c5` on
 `codex/hkl-structure-solution`, incorporating integration `63bb354` and the
 committed spot/intensity, FFT and Row search work through `297d157`.
 
+Follow-up: the [explicit memory budget](solution-memory-budget.md), implemented
+in `5e6bfa8`, resolves the search-capacity blocker for this example. Both existing
+enstatite intensity sources recover the complete 80-atom labelled structure with
+post-search maximum coordinate errors below 0.02 A. The original failing probes
+below remain historical evidence. Fresh raw-frame-to-search validation, public API
+promotion, packaging and the other release gates remain pending.
+
 ## Decision
 
 Single-crystal analysis should become a normal PhaseSmith capability. The next
@@ -51,7 +58,7 @@ need a new untouched set.
 | Public Python surface | Modules live under `experimental`; many expose implementation helpers | Select explicit `__all__` exports and options; add compatibility aliases without duplicate type identities |
 | Search defaults | Frozen benchmark uses many explicit flags beyond public defaults | Publish a named, fully expanded search configuration; verify it reproduces its tested baseline before changing defaults |
 | Measured pipeline | Raw-count reduction and external structural checks exist as exposed research workflows | Build a script-first raw-frame-to-PhaseSmith-search runner; assess candidate recovery separately |
-| Search capacity | Dense-memory guard is 2,000,000 elements | Resolve the enstatite capacity failure with a general resource policy and numerical/performance validation |
+| Search capacity | Default remains 2,000,000 elements; explicit budget and input-only preflight implemented | Complete: 64 MiB admits 105 atoms; both existing intensity sources recover the correct 80-atom candidate; see follow-up |
 | Scientific scope | Conditional profile errors, finite supports and empirical corrections are documented | Keep signed observations, quality flags, support conventions, explicit correction provenance and truthful termination |
 | Optional packages | Geometry/strong-shape/scaling orchestration can require SciPy | Declare the installation extra and test missing-dependency errors; avoid import-time optimizer requirements |
 | File loading | Image orientation, HDF5 decoding and masks have been application-owned | Provide a small optional example loader or adapter; keep Dioptas/Qt outside runtime requirements |
@@ -113,7 +120,7 @@ receipts by hash rather than importing their research scripts.
    retain this baseline otherwise. Adopt the module/export/configuration plan.
    Inventory mutable arrays, exceptions, units and serialized contracts. Freeze
    a migration fixture before moving implementation modules.
-2. **Search resource capacity.** Implement a general bounded resource solution
+2. **Search resource capacity (completed in follow-up).** Implement a general bounded resource solution
    and input preflight. Run the repository's full numerical gates and a realistic
    many-reflection benchmark. No enstatite-specific atom-cap default.
 3. **Enstatite workflow.** Implement the external-data runner described in the

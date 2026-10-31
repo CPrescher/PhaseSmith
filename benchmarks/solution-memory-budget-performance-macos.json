@@ -1,0 +1,261 @@
+{
+  "schema": "phasesmith.solution-memory-budget-performance.v1",
+  "implementation_commit": "5e6bfa81113322bb8f8128168dffaf512b357b9e",
+  "scope": "Single-host, serial fixed many-reflection model timings; not an end-to-end solver speed claim",
+  "kernel_before": {
+    "schema": "phasesmith.solution-memory-kernel.v1",
+    "reflections": 6400,
+    "atoms": 24,
+    "scope": "native fused values/analytical Jacobian including Python array boundary",
+    "warmups": 5,
+    "repetitions": 30,
+    "native_sha256": "7fd6cfa5dd3d71f0537757c9492ee7a2c9f75a4bdbcd174b9cdefecc95669026",
+    "scientific_sha256": "0cd0ff08d9ecd562a5bb42eb7289eaec04495d454901dc3dcae308032c97dc81",
+    "numpy": "2.5.4",
+    "python": "3.13.7",
+    "machine": "arm64",
+    "samples_seconds": [
+      0.01053237495943904,
+      0.010969291965011507,
+      0.01062433299375698,
+      0.010557000001426786,
+      0.010757041978649795,
+      0.010466624982655048,
+      0.010922207962721586,
+      0.01070191600592807,
+      0.010718624980654567,
+      0.010588540986645967,
+      0.01081983302719891,
+      0.010586165997665375,
+      0.010754499991890043,
+      0.010588417004328221,
+      0.010875292005948722,
+      0.01022991701029241,
+      0.010101541003677994,
+      0.010503167053684592,
+      0.010434042022097856,
+      0.010459707991685718,
+      0.010491374996490777,
+      0.010890499979723245,
+      0.010442166007123888,
+      0.010622416972182691,
+      0.010448665998410434,
+      0.010678082995582372,
+      0.010809875035192817,
+      0.010628624993842095,
+      0.010541750001721084,
+      0.010733290982898325
+    ],
+    "median_seconds": 0.010605478979414329,
+    "p95_seconds": 0.010907939370372332
+  },
+  "kernel_after": {
+    "schema": "phasesmith.solution-memory-kernel.v1",
+    "reflections": 6400,
+    "atoms": 24,
+    "scope": "native fused values/analytical Jacobian including Python array boundary",
+    "warmups": 5,
+    "repetitions": 30,
+    "native_sha256": "e70e7d6e209d338c5f53447ad6328ea50501684c38a8fcd049801fe07d82acc3",
+    "scientific_sha256": "0cd0ff08d9ecd562a5bb42eb7289eaec04495d454901dc3dcae308032c97dc81",
+    "numpy": "2.5.4",
+    "python": "3.13.7",
+    "machine": "arm64",
+    "samples_seconds": [
+      0.010450166999362409,
+      0.011486542003694922,
+      0.010652124998159707,
+      0.010801249998621643,
+      0.010522417025640607,
+      0.010570540966000408,
+      0.01092637499095872,
+      0.010365833004470915,
+      0.010949124989565462,
+      0.010427208035252988,
+      0.010310249985195696,
+      0.010434583993628621,
+      0.010985208034981042,
+      0.011138500005472451,
+      0.011152999999467283,
+      0.011336083000060171,
+      0.010453042050357908,
+      0.010444458050187677,
+      0.010579833993688226,
+      0.010754875023849308,
+      0.010677541955374181,
+      0.010361208987887949,
+      0.010695416014641523,
+      0.011007332999724895,
+      0.010338250023778528,
+      0.011394334025681019,
+      0.010277666035108268,
+      0.010574583022389561,
+      0.010766083025373518,
+      0.010815249988809228
+    ],
+    "median_seconds": 0.010664833476766944,
+    "p95_seconds": 0.011368121064151637
+  },
+  "numerical_fingerprints_identical": true,
+  "median_after_before_ratio": 1.005596588090724,
+  "criterion_estimates_nanoseconds": {
+    "dense_memory_24_atoms_6400_reflections_64mib": {
+      "mean": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 10772736.605,
+          "upper_bound": 10960025.158333331
+        },
+        "point_estimate": 10854956.920555556,
+        "standard_error": 48416.9838819025
+      },
+      "median": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 10754322.9375,
+          "upper_bound": 10969131.0
+        },
+        "point_estimate": 10780645.833333332,
+        "standard_error": 54470.259406770645
+      },
+      "median_abs_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 11911.776518522956,
+          "upper_bound": 246278.2233943557
+        },
+        "point_estimate": 57028.61982087325,
+        "standard_error": 59250.731145534635
+      },
+      "slope": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 10775943.47731246,
+          "upper_bound": 10937861.48513011
+        },
+        "point_estimate": 10837217.271428572,
+        "standard_error": 41293.280551361844
+      },
+      "std_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 37477.58602259447,
+          "upper_bound": 223700.37538415965
+        },
+        "point_estimate": 160676.86282298458,
+        "standard_error": 47919.47583421587
+      }
+    },
+    "dense_memory_24_atoms_6400_reflections_default": {
+      "mean": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 10697986.374761906,
+          "upper_bound": 10841987.304761905
+        },
+        "point_estimate": 10768613.377658729,
+        "standard_error": 36865.192337339155
+      },
+      "median": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 10657929.1,
+          "upper_bound": 10907528.625
+        },
+        "point_estimate": 10732178.833333332,
+        "standard_error": 63300.96979433109
+      },
+      "median_abs_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 23708.75037908508,
+          "upper_bound": 195105.95583617594
+        },
+        "point_estimate": 127141.65801778436,
+        "standard_error": 47665.59856644903
+      },
+      "slope": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 10738880.77593361,
+          "upper_bound": 10885228.250360629
+        },
+        "point_estimate": 10824284.838961039,
+        "standard_error": 37150.87040973372
+      },
+      "std_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 74146.03106731456,
+          "upper_bound": 142579.4143407408
+        },
+        "point_estimate": 122341.09004584672,
+        "standard_error": 17389.28296753996
+      }
+    },
+    "dense_memory_64_atoms_6400_reflections_64mib": {
+      "mean": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 29227596.258472223,
+          "upper_bound": 29565015.42777778
+        },
+        "point_estimate": 29399378.67777778,
+        "standard_error": 86708.82966365057
+      },
+      "median": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 29146931.25,
+          "upper_bound": 29698541.0
+        },
+        "point_estimate": 29363658.333333336,
+        "standard_error": 135840.98867292303
+      },
+      "median_abs_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 45644.064089655876,
+          "upper_bound": 528926.8068596721
+        },
+        "point_estimate": 423160.3074540664,
+        "standard_error": 138661.12201616145
+      },
+      "slope": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 29269129.557746477,
+          "upper_bound": 29574294.967741936
+        },
+        "point_estimate": 29425195.449350648,
+        "standard_error": 77395.79069993868
+      },
+      "std_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 176723.7584767218,
+          "upper_bound": 351973.0759786498
+        },
+        "point_estimate": 289823.94288415316,
+        "standard_error": 45449.23433986664
+      }
+    }
+  },
+  "criterion_command": [
+    "cargo",
+    "bench",
+    "-p",
+    "phasesmith-solution",
+    "--bench",
+    "solution",
+    "--",
+    "dense_memory_",
+    "--sample-size",
+    "10",
+    "--warm-up-time",
+    "1",
+    "--measurement-time",
+    "1"
+  ],
+  "criterion_log_sha256": "6fe86f159e9c488f2b9067d7872820b3eac80310e9b304fbca47fc0d7d424e71"
+}

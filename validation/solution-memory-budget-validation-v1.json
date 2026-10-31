@@ -1,0 +1,86 @@
+{
+  "schema": "phasesmith.solution-memory-budget-validation.v1",
+  "date": "2026-10-31",
+  "implementation_commit": "5e6bfa81113322bb8f8128168dffaf512b357b9e",
+  "native_sha256": "e70e7d6e209d338c5f53447ad6328ea50501684c38a8fcd049801fe07d82acc3",
+  "native_archive": "runs/solution-memory-validation/native/_core.abi3.so",
+  "checks": [
+    {
+      "check": "fmt-final",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.7725122919655405,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "check": "clippy-final",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 1.933578916999977,
+      "log_sha256": "60892c57413d8482215d1c621d2eeea70bc366e118025cd3e5c272f5a2efd80b"
+    },
+    {
+      "check": "rust-final",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--all-features"
+      ],
+      "exit_code": 0,
+      "seconds": 75.63426754099783,
+      "log_sha256": "cdf9f1cf96fa83875e233c0ee993132152b9f3047a61ed3b61f860504c2ba609"
+    },
+    {
+      "check": "python-final",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "exit_code": 0,
+      "seconds": 104.96176445798483,
+      "log_sha256": "180395f927cbe9538dbadd1d4bfedc0884a489f2ce8c3486bc925cbb9e393d9f"
+    }
+  ],
+  "rust": {
+    "passed": 489,
+    "ignored": 34
+  },
+  "python": {
+    "passed": 3174,
+    "skipped": 11,
+    "deselected": 34
+  },
+  "python_changed_files_ruff": "passed",
+  "changed_python_format": "passed",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python_version": "3.13.7",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+  "kernel_performance": "benchmarks/solution-memory-budget-performance-macos.json",
+  "structure_search": "benchmarks/enstatite-memory-budget-search-macos.json",
+  "scope_limits": [
+    "Local arm64 validation; no new cross-platform CI run in this task",
+    "No production profile/structure-factor/phasing equations or finite supports changed",
+    "Default dense ceiling remains 16000000 bytes; automatic caps now include memory",
+    "No frozen holdout sources, expected results, source manifest or archived binary rewritten",
+    "Raw observations, references and candidate CIF/NPZ outputs remain outside tracked Git content",
+    "Standalone single-crystal structure refinement and fresh raw-to-search validation remain outside this task"
+  ]
+}
