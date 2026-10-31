@@ -12,6 +12,8 @@
 
 use std::fmt::{Display, Formatter};
 
+pub mod box_optimizer;
+pub mod empirical_fit;
 pub mod fft;
 mod fourier_refinement;
 pub mod frame_validity;
@@ -22,6 +24,7 @@ pub mod intensity_model;
 pub mod local_background;
 pub mod omega_background;
 pub mod prediction;
+pub mod profile_refinement;
 pub mod profiles;
 mod profiles_affine;
 pub mod profiles_variation;

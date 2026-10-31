@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v9.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v10.json"
 
 
 def digest(path):
@@ -891,10 +891,28 @@ def validate_worker_input(packet):
     return packet
 
 
+def block_optional_python_numerics():
+    """Make a production dependency regression fail in both numerical workers."""
+    from importlib.abc import MetaPathFinder
+
+    blocked = {"scipy", "h5py", "hdf5plugin"}
+
+    class NativeOnly(MetaPathFinder):
+        def find_spec(self, fullname, path=None, target=None):
+            if fullname.split(".")[0] in blocked:
+                raise ImportError(f"numerical worker requires native backend: {fullname}")
+            return None
+
+    if blocked.intersection(sys.modules):
+        raise RuntimeError("optional numerical Python package already loaded")
+    sys.meta_path.insert(0, NativeOnly())
+
+
 def numerical_worker(packet_path):
     packet = validate_worker_input(json.loads(Path(packet_path).read_text()))
     out = Path(packet["output"])
     protocol = packet["protocol"]
+    block_optional_python_numerics()
     started = time.perf_counter()
     validity = stage_validity(packet, out, protocol)
     positions, geometry, hashes = stage_positions(packet, out, protocol, validity)
@@ -914,6 +932,10 @@ def numerical_worker(packet_path):
             reference_model_read=False,
             source_hkls_read=False,
             archived_arrays_read=False,
+            blocked_python_packages=["scipy", "h5py", "hdf5plugin"],
+            loaded_blocked_python_packages=[
+                n for n in ("scipy", "h5py", "hdf5plugin") if n in sys.modules
+            ],
         ),
     )
 
@@ -927,6 +949,7 @@ def main():
     parser.add_argument("--search-only", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.search_only:
+        block_optional_python_numerics()
         packet = validate_worker_input(json.loads(args.search_only.read_text()))
         out = Path(packet["output"])
         with np.load(out / "reduced-observations.npz", allow_pickle=False) as data:

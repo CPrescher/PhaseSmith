@@ -58,6 +58,8 @@ use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
+#[cfg(feature = "experimental-spots")]
+mod empirical_fit;
 mod fft;
 mod fit_diagnostics;
 #[cfg(feature = "experimental-spots")]
@@ -4297,6 +4299,8 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     profiles::register(module)?;
     #[cfg(feature = "experimental-spots")]
     intensity_model::register(module)?;
+    #[cfg(feature = "experimental-spots")]
+    empirical_fit::register(module)?;
     #[cfg(feature = "experimental-spots")]
     scan_scaling::register(module)?;
     #[cfg(feature = "experimental-spots")]

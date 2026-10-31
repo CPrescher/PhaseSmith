@@ -18,7 +18,7 @@ from solution_corpus.audit import match_geometry  # noqa: E402
 
 
 def compare(baseline, candidate, protocol):
-    targets = protocol["geometry_equivalence"]
+    targets = protocol.get("numerical_equivalence", protocol.get("geometry_equivalence"))
 
     def read(root, name):
         return json.loads((root / name).read_text())

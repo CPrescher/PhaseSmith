@@ -13,8 +13,6 @@ from phasesmith import _core
 
 from .profiles import (
     ProfileIntegration,
-    _reference_observations,
-    evaluate_profile_shape,
     fit_profiles,
 )
 
@@ -64,209 +62,83 @@ class ShapeFitOptions:
             raise ValueError("invalid shape regularizer")
 
 
+def _native_options(o):
+    if not isinstance(o, ShapeFitOptions):
+        raise TypeError("options must be ShapeFitOptions")
+    return (
+        o.workers,
+        o.iterations,
+        o.maximum_iterations,
+        o.centre_pixels,
+        o.centre_degrees,
+        o.spatial_range,
+        o.rocking_range,
+        o.regularizer,
+        o.weak_design_counts,
+        o.weak_spatial_width,
+    )
+
+
+def _noise(observations):
+    t = observations.summation
+    gain, read = t.noise_parameters[:2]
+    return t.noise_model != "supplied_independent_pixel_variance", float(gain), float(read)
+
+
 class _Spot:
+    """Diagnostic view of the native objective, also used by independent tests."""
+
     def __init__(self, observations, model, bank):
-        self.o, self.model, self.bank = observations, model, int(bank)
-        t = observations.summation
-        self.profile = model.volumes[self.bank]
-        shift = model.shifts[self.bank]
-        self.actual = observations.centres[0].copy()
-        self.actual[:2] += np.linalg.solve(
-            observations.planar_transforms[0], shift[:2] / observations.scales[0, :2]
+        self._native = _core.NativeProfileSpot(
+            observations._native(),
+            model.profiles,
+            model.options.shape,
+            model.options.step,
+            int(bank),
+            model.shifts,
+            model.options.minimum_mass,
+            *_noise(observations),
         )
-        self.actual[2] += shift[2] / observations.scales[0, 2]
-        bounds, basis = [], []
-        for g, box in enumerate(t.boxes):
-            x0, y0, x1, y1 = box
-            yy, xx = np.mgrid[y0:y1, x0:x1]
-            xx, yy = xx.ravel(), yy.ravel()
-            a, b = sorted(t.omega_bounds[t.frame_indices[g]])
-            bounds.append(
-                np.c_[
-                    xx - 0.5, xx + 0.5, yy - 0.5, yy + 0.5, np.full(len(xx), a), np.full(len(xx), b)
-                ]
-            )
-            basis.append(
-                np.c_[
-                    np.ones(len(xx)),
-                    (xx - (x0 + x1 - 1) / 2) / max((x1 - x0) / 2, 1),
-                    (yy - (y0 + y1 - 1) / 2) / max((y1 - y0) / 2, 1),
-                ]
-            )
-        self.bounds = np.concatenate(bounds) if bounds else np.empty((0, 6))
-        self.basis = np.ascontiguousarray(np.concatenate(basis) if basis else np.empty((0, 3)))
-        self.signal = np.ascontiguousarray(
-            np.where(observations.valid, observations.samples[:, 0], 0.0)
-        )
-        self.cov = np.ascontiguousarray(
-            np.where(np.isfinite(observations.covariance), observations.covariance, 0.0)
-        )
-        self.offsets = np.ascontiguousarray(observations.offsets, np.int64)
-        self.weights = None
+        self.__dict__.update(self._native.snapshot())
 
     def mass(self, parameters):
-        steps = np.array(self.model.options.step) * np.exp(
-            [parameters[3], parameters[3], parameters[4]]
-        )
-        return evaluate_profile_shape(
-            self.profile,
-            self.bounds,
-            step=steps,
-            centre=self.actual + parameters[:3],
-            scales=self.o.scales[0],
-            planar_transform=self.o.planar_transforms[0],
-        )
+        return self._native.mass(list(parameters))
 
     def set_noise(self, mass, intensity, foreground=False):
-        t = self.o.summation
-        if t.noise_model == "supplied_independent_pixel_variance":
-            variance = self.o.samples[:, 1]
-        else:
-            gain, read = t.noise_parameters[:2]
-            variance = np.maximum(
-                1.0,
-                np.maximum(0.0, self.o.samples[:, 2] + max(intensity, 0) * mass) / gain + read**2,
-            )
-        valid = self.o.valid & ((mass > 0) if foreground else True)
-        self.weights = np.ascontiguousarray(
-            np.divide(1.0, variance, out=np.zeros_like(variance), where=valid)
-        )
+        self._native.set_noise(np.ascontiguousarray(mass), float(intensity), foreground)
+        self.weights = self._native.snapshot()["weights"]
 
     def normal(self, design):
-        return _core.experimental_profile_normal(
-            self.signal,
-            self.weights,
-            self.basis,
-            self.offsets,
-            self.cov,
-            np.ascontiguousarray(design),
-        )
+        return self._native.normal(np.ascontiguousarray(design))
 
     def objective(self, parameters, regularizer):
-        gram = self.normal(self.mass(parameters))
-        den, num = gram[0, 0], gram[0, -1]
-        if den <= 0:
-            return 1e20, np.zeros(5)
-        amplitude = num / den
-        value = gram[-1, -1] - num * amplitude + np.sum(regularizer * parameters**2)
-        derivative = (
-            -2 * amplitude * (gram[1:6, -1] - amplitude * gram[1:6, 0])
-            + 2 * regularizer * parameters
-        )
-        return float(value), derivative
-
-    def native_fit(self, parameters):
-        native = list(self.o._native())
-        native[7] = np.ascontiguousarray(self.o.centres + parameters[:3])
-        steps = tuple(
-            np.array(self.model.options.step)
-            * np.exp([parameters[3], parameters[3], parameters[4]])
-        )
-        gain, read = self.o.summation.noise_parameters[:2]
-        values, flags = _core.experimental_profile_fit(
-            tuple(native),
-            self.model.profiles,
-            self.model.options.shape,
-            steps,
-            np.array([self.bank], np.int64),
-            self.model.shifts,
-            self.model.options.minimum_mass,
-            self.o.summation.noise_model != "supplied_independent_pixel_variance",
-            float(gain),
-            float(read),
-        )
-        return values[0], flags[0]
-
-    def refine(self, initial, choice, options):
-        from scipy.optimize import minimize
-
-        parameters = np.zeros(5)
-        bounds = [(-options.centre_pixels, options.centre_pixels)] * 2 + [
-            (-options.centre_degrees, options.centre_degrees),
-            tuple(np.log(options.spatial_range)),
-            tuple(np.log(options.rocking_range)),
-        ]
-        if choice == 2:
-            bounds[2:] = [(0.0, 0.0)] * 3
-        reg = np.array(options.regularizer)
-        intensity = initial
-        converged = True
-        for _ in range(options.iterations):
-            self.set_noise(self.mass(parameters)[:, 0], intensity)
-            before = self.objective(parameters, reg)[0]
-            result = minimize(
-                self.objective,
-                parameters,
-                args=(reg,),
-                jac=True,
-                method="L-BFGS-B",
-                bounds=bounds,
-                options=dict(maxiter=options.maximum_iterations, ftol=1e-9, gtol=1e-4, maxls=30),
-            )
-            converged &= bool(result.success)
-            if np.isfinite(result.fun) and result.fun <= before + 1e-5:
-                parameters = result.x
-            gram = self.normal(self.mass(parameters))
-            if gram[0, 0] <= 0:
-                raise ValueError("nonidentifiable strong profile")
-            intensity = gram[0, -1] / gram[0, 0]
-        values, flags = self.finish(parameters, choice)
-        return values, flags, parameters, converged
-
-    def finish(self, parameters, choice):
-        """Apply frozen strong shape parameters with conditional joint sigma."""
-        values, flags = self.native_fit(parameters)
-        mass = self.mass(parameters)
-        self.set_noise(mass[:, 0], float(values[0]), foreground=True)
-        active = [0, 1, 2] if choice == 2 else list(range(6))
-        design = mass[:, active].copy()
-        design[:, 1:] *= values[0]
-        normal = self.normal(design)[:-1, :-1]
-        diag = np.sqrt(np.maximum(normal.diagonal(), 1e-30))
-        scaled = normal / diag[:, None] / diag[None]
-        eig, vectors = np.linalg.eigh((scaled + scaled.T) / 2)
-        if eig.min() < -1e-7:
-            raise ValueError("nonpositive profile normal matrix")
-        covariance = (vectors * np.where(eig > 1e-9, 1 / np.maximum(eig, 1e-300), 0.0)) @ vectors.T
-        values[1] = max(values[1], np.sqrt(max(0.0, covariance[0, 0])) / diag[0])
-        return values, flags
-
-    def fixed(self, parameters, design_counts):
-        mass = self.mass(parameters)[:, 0]
-        self.set_noise(mass, design_counts, foreground=True)
-        observed = np.ascontiguousarray(np.where(self.o.valid, self.o.samples[:, 1], 0.0))
-        intensity, sigma = _core.experimental_fixed_profile(
-            self.signal,
-            observed,
-            self.weights,
-            self.basis,
-            self.offsets,
-            self.cov,
-            np.ascontiguousarray(mass),
-        )
-        return intensity, sigma, float(mass[self.o.valid].sum())
+        return self._native.objective(list(parameters), list(regularizer))
 
 
 def profile_centroid_offsets(observations, model, model_ids, log_spatial_width=0.0):
     """Physical template centroid minus predicted position, in detector pixels.
 
-    This includes both bank shift and template first moment. A learned sensor
-    centroid correction must subtract this quantity to obtain profile origin.
+    Includes the bank shift and finite template first moment. Sensor centroid
+    corrections subtract this quantity to obtain the profile origin.
     """
-    nx, ny, nz = model.options.shape
-    z, y, x = np.meshgrid(
-        *[
-            (np.arange(n) - (n - 1) / 2) * s
-            for n, s in zip((nz, ny, nx), model.options.step[::-1], strict=True)
-        ],
-        indexing="ij",
-    )
-    moments = model.profiles @ np.c_[x.ravel(), y.ravel(), z.ravel()]
+    n = len(observations.centres)
     ids = np.asarray(model_ids)
-    local = (
-        model.shifts[ids, :2] + moments[ids, :2] * np.exp(np.asarray(log_spatial_width)[..., None])
-    ) / observations.scales[:, :2]
-    return np.linalg.solve(observations.planar_transforms, local[..., None])[..., 0]
+    widths = np.asarray(log_spatial_width)
+    if ids.shape != (n,) or ids.dtype.kind not in "iu" or np.any(ids < 0):
+        raise ValueError("invalid profile assignments")
+    if widths.dtype.kind not in "fiu" or not np.isfinite(widths).all():
+        raise ValueError("invalid log spatial widths")
+    widths = np.ascontiguousarray(np.broadcast_to(widths, (n,)), dtype=float)
+    return _core.experimental_profile_centroids(
+        model.profiles,
+        model.options.shape,
+        model.options.step,
+        model.shifts,
+        np.ascontiguousarray(ids, dtype=np.int64),
+        observations.scales,
+        observations.planar_transforms.reshape(n, 4),
+        widths,
+    )
 
 
 @dataclass(frozen=True)
@@ -323,50 +195,28 @@ def refine_profiles(
     ):
         raise ValueError("frozen parameters must be finite real (reflections,5)")
     baseline = fit_profiles(observations, model)
-    values, flags = baseline.values.copy(), baseline.flags.copy()
-    parameters = np.zeros((n, 5))
-    converged = np.ones(n, bool)
-    centroid = profile_centroid_offsets(
-        observations, model, baseline.model_ids, np.log(o.weak_spatial_width)
+    result = _core.experimental_profile_refine(
+        observations._native(),
+        model.profiles,
+        model.options.shape,
+        model.options.step,
+        baseline.model_ids,
+        model.shifts,
+        model.options.minimum_mass,
+        *_noise(observations),
+        np.ascontiguousarray(c, dtype=np.uint8),
+        np.ascontiguousarray(weak),
+        np.ascontiguousarray(offsets, dtype=float),
+        _native_options(o),
+        baseline.values,
+        baseline.flags,
+        None if frozen is None else np.ascontiguousarray(frozen, dtype=float),
+        progress,
     )
-    selected = np.flatnonzero((c != 0) | weak)
-
-    def integrate_one(i):
-        one = _reference_observations(observations, np.array([i], np.int64))
-        spot = _Spot(one, model, baseline.model_ids[i])
-        value, flag = baseline.values[i].copy(), baseline.flags[i]
-        parameters = np.zeros(5)
-        success = True
-        try:
-            if c[i]:
-                if frozen is None:
-                    value, flag, parameters, success = spot.refine(value[0], c[i], o)
-                else:
-                    parameters = frozen[i].copy()
-                    value, flag = spot.finish(parameters, c[i])
-            else:
-                parameters[3] = np.log(o.weak_spatial_width)
-                parameters[:2] = offsets[i] - centroid[i]
-                value[:3] = spot.fixed(parameters, o.weak_design_counts)
-                # Remaining diagnostics belong to the baseline, not this fit.
-                value[3:] = np.nan
-        except (ValueError, np.linalg.LinAlgError):
-            flag |= 16384
-            success = False
-        return i, value, flag, parameters, success
-
-    from concurrent.futures import ThreadPoolExecutor
-
-    with ThreadPoolExecutor(max_workers=o.workers) as pool:
-        # Source-order consumption and independent arrays preserve determinism.
-        for done, (i, value, flag, parameter, success) in enumerate(
-            pool.map(integrate_one, selected)
-        ):
-            values[i], flags[i], parameters[i], converged[i] = value, flag, parameter, success
-            if progress is not None:
-                progress(done + 1, len(selected))
-    integrated = replace(baseline, values=values, flags=flags)
-    return RefinedProfiles(baseline, integrated, parameters, c.copy(), weak.copy(), converged)
+    integrated = replace(baseline, values=result["values"], flags=result["flags"])
+    return RefinedProfiles(
+        baseline, integrated, result["parameters"], c.copy(), weak.copy(), result["converged"]
+    )
 
 
 def calibrate_sensor_offsets(
