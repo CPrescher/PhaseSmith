@@ -273,12 +273,258 @@ pub fn minimize(
     })
 }
 
-/// Bounded limited-memory quasi-Newton steps for finite-support shape objectives.
-/// Uses ten positive-curvature pairs and a feasible Armijo backtracking line
-/// search (at most thirty trials), using the fused analytical shape gradient.
+fn dot(a: &[f64], b: &[f64]) -> f64 {
+    a.iter().zip(b).map(|(a, b)| a * b).sum()
+}
+fn product(matrix: &[f64], vector: &[f64]) -> Vec<f64> {
+    matrix
+        .chunks_exact(vector.len())
+        .map(|row| dot(row, vector))
+        .collect()
+}
+// Explicit small dense representation of ten limited-memory BFGS pairs. The
+// initial scalar theta and rank-two secant updates define the quadratic model.
+fn bfgs_matrix(n: usize, pairs: &[(Vec<f64>, Vec<f64>)]) -> Vec<f64> {
+    let theta = pairs.last().map_or(1., |(s, y)| dot(y, y) / dot(s, y));
+    let mut b = vec![0.; n * n];
+    for i in 0..n {
+        b[i * n + i] = theta;
+    }
+    for (s, y) in pairs {
+        let bs = product(&b, s);
+        let sbs = dot(s, &bs);
+        let sy = dot(s, y);
+        for i in 0..n {
+            for j in 0..n {
+                b[i * n + j] += y[i] * y[j] / sy - bs[i] * bs[j] / sbs;
+            }
+        }
+    }
+    b
+}
+// Minimize the secant quadratic along the piecewise projected-gradient path,
+// then on the free-variable subspace. This is the generalized Cauchy point,
+// rather than clipping an unconstrained inverse-Hessian direction.
+#[allow(clippy::many_single_char_names, clippy::too_many_lines)]
+fn bounded_direction(
+    p: &[f64],
+    g: &[f64],
+    b: &[f64],
+    lower: &[f64],
+    upper: &[f64],
+) -> Result<Vec<f64>, SpotError> {
+    let n = p.len();
+    let mut cp = p.to_vec();
+    let mut d: Vec<_> = g.iter().map(|g| -g).collect();
+    let mut breaks = Vec::new();
+    for i in 0..n {
+        if lower[i] >= upper[i] {
+            d[i] = 0.;
+        } else if g[i] > 0. {
+            breaks.push(((p[i] - lower[i]) / g[i], i, lower[i]));
+        } else if g[i] < 0. {
+            breaks.push(((p[i] - upper[i]) / g[i], i, upper[i]));
+        }
+    }
+    breaks.sort_by(|a, b| a.0.total_cmp(&b.0));
+    let mut time = 0.;
+    let mut k = 0;
+    loop {
+        let delta: Vec<_> = cp.iter().zip(p).map(|(a, b)| a - b).collect();
+        let bd = product(b, &d);
+        let slope = dot(g, &d) + dot(&delta, &bd);
+        let curve = dot(&d, &bd);
+        if slope >= 0. || curve <= 0. {
+            break;
+        }
+        let step = -slope / curve;
+        let next = breaks.get(k).map_or(f64::INFINITY, |v| v.0);
+        if step <= (next - time).max(0.) {
+            for i in 0..n {
+                cp[i] = (cp[i] + step * d[i]).clamp(lower[i], upper[i]);
+            }
+            break;
+        }
+        let interval = (next - time).max(0.);
+        for i in 0..n {
+            cp[i] = (cp[i] + interval * d[i]).clamp(lower[i], upper[i]);
+        }
+        time = next;
+        while k < breaks.len() && breaks[k].0 <= time {
+            let (_, i, bound) = breaks[k];
+            cp[i] = bound;
+            d[i] = 0.;
+            k += 1;
+        }
+        if k == breaks.len() {
+            break;
+        }
+    }
+    let cauchy = cp.clone();
+    let delta: Vec<_> = cp.iter().zip(p).map(|(a, b)| a - b).collect();
+    let bd = product(b, &delta);
+    let free: Vec<_> = (0..n)
+        .filter(|&i| cp[i] > lower[i] && cp[i] < upper[i])
+        .collect();
+    if !free.is_empty() {
+        let matrix: Vec<_> = free
+            .iter()
+            .flat_map(|&i| free.iter().map(move |&j| b[i * n + j]))
+            .collect();
+        let rhs: Vec<_> = free.iter().map(|&i| -g[i] - bd[i]).collect();
+        let q = solve(&matrix, &rhs)?;
+        let mut alpha = 1_f64;
+        for (&i, &q) in free.iter().zip(&q) {
+            if q > 0. {
+                alpha = alpha.min((upper[i] - cp[i]) / q);
+            } else if q < 0. {
+                alpha = alpha.min((lower[i] - cp[i]) / q);
+            }
+        }
+        for (&i, &q) in free.iter().zip(&q) {
+            cp[i] = (cp[i] + alpha * q).clamp(lower[i], upper[i]);
+        }
+    }
+    let direction: Vec<_> = cp.iter().zip(p).map(|(a, b)| a - b).collect();
+    if dot(&direction, g) < 0. {
+        Ok(direction)
+    } else {
+        Ok(cauchy.iter().zip(p).map(|(a, b)| a - b).collect())
+    }
+}
+
+// Safeguarded More–Thuente search of the feasible ray. The external BSD helper
+// provides only cubic/quadratic interval interpolation (dcstep), no model,
+// optimizer state, Python, BLAS, native-code dependency or fitting policy.
+#[allow(
+    clippy::many_single_char_names,
+    clippy::too_many_arguments,
+    clippy::too_many_lines
+)]
+fn wolfe_search(
+    p: &[f64],
+    initial: &Model,
+    d: &[f64],
+    lower: &[f64],
+    upper: &[f64],
+    first: bool,
+    evaluations: &mut usize,
+    budget: usize,
+    evaluate: &mut impl FnMut(&[f64]) -> Result<Model, SpotError>,
+) -> Option<(Vec<f64>, Model)> {
+    let slope = dot(&initial.gradient, d);
+    if slope >= 0. {
+        return None;
+    }
+    let mut maximum = if first { 1_f64 } else { 1e10_f64 };
+    for i in 0..p.len() {
+        if d[i] > 0. {
+            maximum = maximum.min((upper[i] - p[i]) / d[i]);
+        } else if d[i] < 0. {
+            maximum = maximum.min((lower[i] - p[i]) / d[i]);
+        }
+    }
+    if maximum <= 0. {
+        return None;
+    }
+    let mut stp = 1_f64.min(maximum);
+    let gtest = 1e-3 * slope;
+    let (mut stx, mut fx, mut gx) = (0., initial.cost, slope);
+    let (mut sty, mut fy, mut gy) = (0., initial.cost, slope);
+    let mut brackt = false;
+    let mut stage1 = true;
+    let (mut stmin, mut stmax) = (0., stp + 4. * stp);
+    let mut width = maximum;
+    let mut width1 = 2. * width;
+    for _ in 0..30 {
+        if *evaluations >= budget {
+            return None;
+        }
+        let trial: Vec<_> = (0..p.len())
+            .map(|i| (p[i] + stp * d[i]).clamp(lower[i], upper[i]))
+            .collect();
+        *evaluations += 1;
+        let model = evaluate(&trial).ok()?;
+        if check(&model, p.len()).is_err() {
+            return None;
+        }
+        let f = model.cost;
+        let g = dot(&model.gradient, d);
+        let ftest = initial.cost + stp * gtest;
+        if stage1 && f <= ftest && g >= 0. {
+            stage1 = false;
+        }
+        let warning = (brackt && (stp <= stmin || stp >= stmax || stmax - stmin <= 0.1 * stmax))
+            || (stp >= maximum && f <= ftest && g <= gtest);
+        if (f <= ftest && g.abs() <= 0.9 * (-slope)) || warning {
+            return (f <= initial.cost).then_some((trial, model));
+        }
+        if stage1 && f <= fx && f > ftest {
+            let (fm, mut fxm, mut fym) = (f - stp * gtest, fx - stx * gtest, fy - sty * gtest);
+            let (gm, mut gxm, mut gym) = (g - gtest, gx - gtest, gy - gtest);
+            crate::profile_line_search::dcstep(
+                &mut stx,
+                &mut fxm,
+                &mut gxm,
+                &mut sty,
+                &mut fym,
+                &mut gym,
+                &mut stp,
+                fm,
+                gm,
+                &mut brackt,
+                stmin,
+                stmax,
+            );
+            fx = fxm + stx * gtest;
+            fy = fym + sty * gtest;
+            gx = gxm + gtest;
+            gy = gym + gtest;
+        } else {
+            crate::profile_line_search::dcstep(
+                &mut stx,
+                &mut fx,
+                &mut gx,
+                &mut sty,
+                &mut fy,
+                &mut gy,
+                &mut stp,
+                f,
+                g,
+                &mut brackt,
+                stmin,
+                stmax,
+            );
+        }
+        if brackt {
+            if (sty - stx).abs() >= 0.66 * width1 {
+                stp = stx + 0.5 * (sty - stx);
+            }
+            width1 = width;
+            width = (sty - stx).abs();
+            stmin = stx.min(sty);
+            stmax = stx.max(sty);
+        } else {
+            stmin = stp + 1.1 * (stp - stx);
+            stmax = stp + 4. * (stp - stx);
+        }
+        stp = stp.clamp(0., maximum);
+        if brackt && (stp <= stmin || stp >= stmax || stmax - stmin <= 0.1 * stmax) {
+            stp = stx;
+        }
+        if !stp.is_finite() || stp <= 0. {
+            return None;
+        }
+    }
+    None
+}
+
+/// Bounded limited-memory BFGS for the small finite-support profile problem.
+/// Ten secant pairs define the generalized Cauchy/free-subspace model; the
+/// feasible ray uses a safeguarded More–Thuente search, capped at 30 evaluations.
 /// # Errors
 /// Invalid controls/bounds, nonfinite initial model, or invalid objective arrays.
-#[allow(clippy::too_many_lines)]
+#[allow(clippy::too_many_lines, clippy::many_single_char_names)]
 pub fn quasi_newton(
     start: &[f64],
     lower: &[f64],
@@ -289,7 +535,6 @@ pub fn quasi_newton(
     if options.evaluations == 0 || options.evaluations > 10_000 {
         return Err(invalid("invalid quasi-Newton evaluation budget"));
     }
-    // Reuse the complete input and initial-objective validation, without taking a step.
     let mut out = minimize(
         start,
         lower,
@@ -301,99 +546,63 @@ pub fn quasi_newton(
         &mut evaluate,
     )?;
     let n = start.len();
-    let mut pairs: Vec<(Vec<f64>, Vec<f64>, f64)> = Vec::new();
-    let dot = |a: &[f64], b: &[f64]| a.iter().zip(b).map(|(a, b)| a * b).sum::<f64>();
-    for _ in 0..options.iterations {
+    let mut pairs: Vec<(Vec<f64>, Vec<f64>)> = Vec::new();
+    while out.history.len() - 1 < options.iterations && out.evaluations < options.evaluations {
         let p = &out.parameters;
         let g = &out.model.gradient;
-        let projected: Vec<_> = (0..n)
+        let projected = (0..n)
             .map(|i| {
-                if lower[i] >= upper[i]
-                    || (p[i] <= lower[i] && g[i] > 0.)
-                    || (p[i] >= upper[i] && g[i] < 0.)
-                {
-                    0.
+                if g[i] < 0. {
+                    g[i].max(p[i] - upper[i]).abs()
                 } else {
-                    g[i]
+                    g[i].min(p[i] - lower[i]).abs()
                 }
             })
-            .collect();
-        if projected.iter().map(|v| v.abs()).fold(0., f64::max) <= options.gtol {
+            .fold(0., f64::max);
+        if projected <= options.gtol {
             out.converged = true;
             break;
         }
-        let mut direction: Vec<_> = projected.iter().map(|v| -v).collect();
-        let mut alpha = vec![0.; pairs.len()];
-        for (i, (s, y, rho)) in pairs.iter().enumerate().rev() {
-            alpha[i] = rho * dot(s, &direction);
-            for j in 0..n {
-                direction[j] -= alpha[i] * y[j];
-            }
-        }
-        if let Some((s, y, _)) = pairs.last() {
-            let gamma = dot(s, y) / dot(y, y);
-            for v in &mut direction {
-                *v *= gamma;
-            }
-        }
-        for (i, (s, y, rho)) in pairs.iter().enumerate() {
-            let beta = rho * dot(y, &direction);
-            for j in 0..n {
-                direction[j] += s[j] * (alpha[i] - beta);
-            }
-        }
-        for j in 0..n {
-            direction[j] = (p[j] + direction[j]).clamp(lower[j], upper[j]) - p[j];
-        }
-        if dot(&direction, g) >= 0. {
-            pairs.clear();
-            for j in 0..n {
-                direction[j] = (p[j] - projected[j]).clamp(lower[j], upper[j]) - p[j];
-            }
-        }
-        let slope = dot(&direction, g);
-        let mut step = 1.;
-        let mut accepted = None;
-        for _ in 0..30 {
-            if out.evaluations >= options.evaluations {
+        let b = bfgs_matrix(n, &pairs);
+        let d = bounded_direction(p, g, &b, lower, upper)?;
+        let Some((trial, model)) = wolfe_search(
+            p,
+            &out.model,
+            &d,
+            lower,
+            upper,
+            out.history.len() == 1,
+            &mut out.evaluations,
+            options.evaluations,
+            &mut evaluate,
+        ) else {
+            if pairs.is_empty() {
                 break;
             }
-            let trial: Vec<_> = (0..n)
-                .map(|j| (p[j] + step * direction[j]).clamp(lower[j], upper[j]))
-                .collect();
-            out.evaluations += 1;
-            if let Ok(model) = evaluate(&trial) {
-                if check(&model, n).is_ok()
-                    && model.cost < out.model.cost
-                    && model.cost <= out.model.cost + 1e-4 * step * slope
-                {
-                    accepted = Some((trial, model));
-                    break;
-                }
-            }
-            step *= 0.5;
-        }
-        let Some((trial, model)) = accepted else {
-            break;
+            // A failed secant-model search restarts the quadratic at the same
+            // retained state, as in bounded limited-memory BFGS; never retain a
+            // rejected trial or invent convergence.
+            pairs.clear();
+            continue;
         };
         let s: Vec<_> = trial.iter().zip(p).map(|(a, b)| a - b).collect();
         let y: Vec<_> = model.gradient.iter().zip(g).map(|(a, b)| a - b).collect();
         let sy = dot(&s, &y);
-        if sy > 1e-12 * dot(&s, &s).sqrt() * dot(&y, &y).sqrt() {
+        if sy > f64::EPSILON * (-dot(g, &s)) {
             if pairs.len() == 10 {
                 pairs.remove(0);
             }
-            pairs.push((s, y, 1. / sy));
+            pairs.push((s, y));
         }
         let change = out.model.cost - model.cost;
-        let cost_scale = options
+        let scale = options
             .cost_floor
             .max(out.model.cost.abs())
             .max(model.cost.abs());
         out.parameters = trial;
         out.model = model;
         out.history.push(out.model.cost);
-        if change <= options.ftol * cost_scale {
+        if change <= options.ftol * scale {
             out.converged = true;
             break;
         }

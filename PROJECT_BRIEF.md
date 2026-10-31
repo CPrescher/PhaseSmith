@@ -15,7 +15,7 @@ not part of the numerical library.
 Rust-only production is an explicit user requirement (31 October 2026). The
 initial NumPy/SciPy shadow prototype has been replaced by native kernels in
 `phasesmith-spots`; Python remains an optional array/loader adapter, and SciPy
-is retained only in independent masking reference tests. Production masking
+is retained in independent numerical references for these single-crystal paths. Production masking
 now has native block medians, float32 filters, percentile normalization,
 connectivity/morphology and full-exposure DAC visibility. Single-crystal geometry
 fitting now also lives entirely in `phasesmith-spots`, including parameter chains,
@@ -23,9 +23,16 @@ bounded soft-L1 optimization and conditional/withheld diagnostics. An independen
 NumPy/SciPy reference remains separate. Strong-profile and empirical-scaling
 experimental optimizers now have native Rust entry points for bounded shape fits,
 frozen weak filters, conditional joint sigma and robust within-family scaling;
-do not claim the complete raw workflow is Rust-only until orchestration and
-remaining design/convenience calculations also have Rust entry points. Do not introduce further production SciPy
-algorithms. HDF5 I/O now lives in the separate optional `phasesmith-hdf5` adapter.
+shape fitting uses a small dense limited-memory BFGS quadratic with generalized
+Cauchy/free-subspace steps and safeguarded More–Thuente search. Only its BSD
+interpolation helper is vendored, with provenance/license; no new runtime
+dependency or Rust minimum change. The first v10 simplified-quasi-Newton run
+recovers the same structure but fails frozen reduction equivalence; it is retained
+in `benchmarks/enstatite-native-profile-scaling-v10-macos.json`. Frozen-shape
+controls isolate that drift to optimization trajectories.
+Do not claim the complete raw workflow is Rust-only until orchestration and
+remaining design/convenience calculations also have Rust entry points. Do not
+introduce further production SciPy algorithms. HDF5 I/O now lives in the separate optional `phasesmith-hdf5` adapter.
 The facade and Python extension enable it with feature `hdf5`; release wheels
 include it. It builds HDF5, Bitshuffle/LZ4, zlib and LZF from Cargo sources,
 requiring a C compiler, CMake >=3.26 and Git at build time, with no installed HDF5 or
