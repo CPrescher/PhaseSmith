@@ -145,6 +145,7 @@ pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(experimental_rotation_link, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_rotation_centroid, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_reciprocal, module)?)?;
+    module.add_function(wrap_pyfunction!(experimental_reciprocal_jacobian, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_predict_spots, module)?)?;
     module.add_function(wrap_pyfunction!(
         experimental_predict_spots_with_detector,
@@ -414,6 +415,45 @@ fn experimental_reciprocal<'py>(
             .unwrap()
             .into_pyarray(py),
     )
+}
+
+#[pyfunction]
+#[allow(clippy::many_single_char_names, clippy::type_complexity)]
+fn experimental_reciprocal_jacobian<'py>(
+    py: Python<'py>,
+    samples: PyReadonlyArray2<'py, f64>,
+    parameters: PyReadonlyArray2<'py, f64>,
+    wavelength: f64,
+) -> PyResult<(Bound<'py, PyArray2<f64>>, Bound<'py, PyArray2<f64>>)> {
+    let samples = triples(samples)?;
+    if samples.len() > 100_000 {
+        return Err(PyValueError::new_err("at most 100000 observations"));
+    }
+    let p = triples(parameters)?;
+    if p.len() != 5 {
+        return Err(PyValueError::new_err("geometry must be (5,3)"));
+    }
+    let g = phasesmith_spots::reciprocal::Geometry {
+        origin: p[0],
+        fast: p[1],
+        slow: p[2],
+        beam: p[3],
+        axis: p[4],
+        wavelength,
+    };
+    let result = py
+        .detach(move || g.convert_with_jacobian(&samples))
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let n = result.len();
+    let (q, j): (Vec<_>, Vec<_>) = result.into_iter().unzip();
+    Ok((
+        Array2::from_shape_vec((n, 3), q.into_iter().flatten().collect())
+            .unwrap()
+            .into_pyarray(py),
+        Array2::from_shape_vec((n, 9), j.into_iter().flatten().flatten().collect())
+            .unwrap()
+            .into_pyarray(py),
+    ))
 }
 
 #[pyfunction]
