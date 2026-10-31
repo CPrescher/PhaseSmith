@@ -4,7 +4,8 @@ This explicit example coordinates PhaseSmith's existing detector, reciprocal,
 indexing, position-refinement, integration, profile, scaling and structure-search
 APIs. It reads original HDF5 counts and generates new measurements throughout.
 The first protocol is `validation/enstatite-raw-workflow-v1.json`, committed
-before executing the measured workflow. This is exposed development/regression
+before executing the measured workflow. Version 2 retains that run and uses
+measured competing tracks for background exclusion, as described below. This is exposed development/regression
 data with declared cell and symmetry priors, not a new blind holdout.
 
 ## Run and storage
@@ -73,9 +74,9 @@ numerical R1 target are separate from complete labelled coordinate recovery.
    Refit their bases on training q after calibration; require 30 training/10
    withheld assignments and withheld reciprocal RMS <=0.015 inverse angstrom.
    They are alternative orientation models, not assigned physical grains/phases.
-6. Predict crossings to q=2 inverse angstrom; supplied symmetry determines target
+6. Predict target crossings to q=2 inverse angstrom; supplied symmetry determines target
    absences. Restrict the declared rocking-coordinate support to |zeta|>=0.1.
-   Collect all domains together so their finite apertures exclude each other's
+   Collect target predictions and measured competing tracks together so their finite apertures exclude each other's
    backgrounds and flag overlaps. Stream the original counts again and require
    identical per-frame hashes to the detection pass. Use the existing guarded
    plane background and finite collection windows from the protocol.
@@ -92,7 +93,7 @@ numerical R1 target are separate from complete labelled coordinate recovery.
    Shapes, sensor or scale models never select settings using structural R1/ADPs.
 9. Export >=1,000 finite, positive-sigma, quality-controlled signed observations.
    Exclusions are by explicit flags/support, not intensity significance. Run
-   PhaseSmith element-only search with seed 0, four starts, 800 cycles, 64 MiB
+   PhaseSmith element-only search with seed 0, four starts, 800 cycles, 128 MiB
    dense-buffer budget and a 13-second native safeguard/20-second process cap.
    Input-only preflight sets atom capacity; reference counts do not set it.
 10. Save the chosen candidate before reference grading. The established independent
@@ -115,3 +116,22 @@ groups and signed values. It does not refit or reread measurements. Synthetic
 tests check domain-ID propagation, unchanged numerical counts, covariance/row
 selection and malformed inputs, alongside raw HDF5 orientation/mask and family
 partition checks. No numerical kernel, physical equation or support changed.
+
+
+## Preserved first outcome and bounded follow-up
+
+Version 1 detected 3,308 tracks from 4,483 frame detections on 142 raw frames.
+It recovered the primitive enstatite-like cell and passed calibration gates:
+1,421 training/782 withheld assignments, 0.3342 pixel withheld xy RMS and
+0.16395-degree omega RMS. It stopped before integration because one provisional
+competing cell required a 310,005-HKL enumeration, above the default 250,000 cap.
+No intensity or atomic comparison was produced or consulted.
+
+Version 2 uses the measured unassigned competing tracks as exclusion supports.
+It does not invent unobserved reflections from provisional large-cell models.
+The target remains fully prediction-driven, including weak/negative intensities.
+Its explicitly bounded 128-MiB dense budget accommodates the volume-derived atom
+cap for potentially broader new q<=2 coverage without a reference count. Seed,
+cycle/time budgets and scientific gate thresholds are unchanged. The frozen
+version-1 protocol/run are retained; the small record is
+`benchmarks/enstatite-raw-workflow-attempts-macos.json`.
