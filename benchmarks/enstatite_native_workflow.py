@@ -38,7 +38,7 @@ def main():
     p.add_argument("--output", required=True, type=Path)
     p.add_argument("--executable", required=True, type=Path)
     p.add_argument(
-        "--protocol", type=Path, default=ROOT / "validation/enstatite-raw-workflow-v28.json"
+        "--protocol", type=Path, default=ROOT / "validation/enstatite-raw-workflow-v29.json"
     )
     args = p.parse_args()
     started = time.perf_counter()
