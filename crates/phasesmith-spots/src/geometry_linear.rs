@@ -1,4 +1,4 @@
-//! Small dense linear algebra for the bounded geometry solver, at most 12 columns.
+//! Dense Cholesky solves for bounded native fits and small symmetric eigensystems.
 use crate::{SpotError, invalid};
 
 pub(super) fn cholesky(matrix: &[f64], n: usize) -> Result<Vec<f64>, SpotError> {

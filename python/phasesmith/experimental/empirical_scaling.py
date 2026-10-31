@@ -2,7 +2,7 @@
 
 No atomic model, external integration or displacement parameter enters the fit.
 Designs and family partitions are caller supplied and retained in the result.
-SciPy orchestrates; Rust evaluates values/partials and eliminates family means.
+Rust owns the model/partials, family centering, robust weights and bounded optimization.
 """
 
 from dataclasses import dataclass
@@ -140,91 +140,48 @@ def paired_mask(groups, mask):
 def fit_empirical_scale(
     design, intensity, log_variance, groups, reference_mask, *, options=None, start=None
 ):
-    """Robust within-family log fit, preserving every signed output observation.
-
-    References must be positive with positive log variance. Weak/negative rows
-    remain in output, but do not teach their own multiplicative correction.
-    ``groups`` must represent independently declared intensity equivalence;
-    lattice metric alone does not establish that equivalence.
-    """
-    from scipy.optimize import least_squares
-
+    """Native robust within-family log fit, preserving every signed output row."""
     if not isinstance(design, ScalingDesign):
         raise TypeError("design must be ScalingDesign")
     o = ScalingOptions() if options is None else options
+    if not isinstance(o, ScalingOptions):
+        raise TypeError("options must be ScalingOptions")
     y = _real(intensity, "intensity", 1)
-    var = _real(log_variance, "log variance", 1)
-    if y.shape != (len(design.frames),) or var.shape != y.shape or np.any(var <= 0):
-        raise ValueError("invalid intensity/variance dimensions")
+    variance = _real(log_variance, "log variance", 1)
     mask = paired_mask(groups, reference_mask)
-    if np.count_nonzero(mask) < 2 or np.any(y[mask] <= 0):
-        raise ValueError("scaling requires positive paired references")
-    # Compress labels after subsetting: Rust budgets groups by reference count.
-    ids = np.flatnonzero(mask)
-    _, g = np.unique(np.asarray(groups)[ids], return_inverse=True)
-    target = np.log(y[ids])
-    basew = 1 / var[ids]
-    w = basew.copy()
-    b = np.zeros(design.parameters) if start is None else _real(start, "start", 1).copy()
-    if b.shape != design.lower.shape or np.any(b < design.lower) or np.any(b > design.upper):
-        raise ValueError("starting coefficients outside design bounds")
-    history = []
-    rootreg = np.sqrt(o.strength)
-    for _ in range(o.iterations):
-        root = np.sqrt(w)
-        centered_target = family_center(target[:, None], g, w)[:, 0]
-
-        def residual(p, root=root, w=w, centered_target=centered_target):
-            v, _, _ = design.evaluate(p, ids)
-            _, all_components, _ = design.evaluate(p)
-            # Same explicit positive-component barrier for every integration.
-            barrier = 1000 * min(float(all_components.min()) - o.minimum_component, 0.0)
-            return np.r_[
-                root * (family_center(v[:, None], g, w)[:, 0] - centered_target),
-                rootreg * (design.penalty @ p),
-                barrier,
-            ]
-
-        def jacobian(p, root=root, w=w):
-            _, _, j = design.evaluate(p, ids)
-            _, comp, _ = design.evaluate(p)
-            k, sector = np.unravel_index(np.argmin(comp), comp.shape)
-            barrier = np.zeros(design.parameters)
-            if comp[k, sector] < o.minimum_component:
-                nf = design.frames.shape[1]
-                nd = design.detector.shape[1]
-                sl = slice(nf, nf + nd) if sector == 0 else slice(nf + nd, None)
-                raw = design.detector if sector == 0 else design.harmonics
-                barrier[sl] = 1000 * raw[k]
-            return np.r_[
-                root[:, None] * family_center(j, g, w), rootreg * design.penalty, barrier[None]
-            ]
-
-        fit = least_squares(
-            residual,
-            b,
-            jac=jacobian,
-            bounds=(design.lower, design.upper),
-            x_scale="jac",
-            max_nfev=80,
-            ftol=1e-10,
-            xtol=1e-10,
-            gtol=1e-7,
+    b = np.zeros(design.parameters) if start is None else _real(start, "start", 1)
+    if not hasattr(_core, "experimental_empirical_fit"):
+        raise RuntimeError("rebuild PhaseSmith with experimental-spots native scaling optimization")
+    result = _core.experimental_empirical_fit(
+        design.frames,
+        design.detector,
+        design.harmonics,
+        design.penalty,
+        y,
+        variance,
+        np.ascontiguousarray(groups, np.int64),
+        np.ascontiguousarray(mask),
+        design.lower,
+        design.upper,
+        np.ascontiguousarray(b),
+        o.strength,
+        o.huber,
+        o.iterations,
+        o.minimum_component,
+    )
+    history = tuple(
+        dict(
+            parameter_change=float(row[0]), weight_change=float(row[1]), inner_success=bool(row[2])
         )
-        v = design.evaluate(fit.x, ids)[0]
-        r = family_center((target - v)[:, None], g, w)[:, 0]
-        neww = basew * np.minimum(1.0, o.huber / np.maximum(abs(r) / np.sqrt(var[ids]), 1e-30))
-        db = float(np.linalg.norm(fit.x - b))
-        dw = float(np.max(abs(neww - w) / basew))
-        b, w = fit.x, neww
-        history.append(dict(parameter_change=db, weight_change=dw, inner_success=bool(fit.success)))
-        if db < 1e-6 and dw < 1e-5:
-            break
-    v, components, _ = design.evaluate(b)
-    if np.any(components < o.minimum_component - 1e-6) or not np.isfinite(np.exp(-v)).all():
-        raise ValueError("empirical correction leaves its declared physical domain")
+        for row in result["history"]
+    )
     return ScalingResult(
-        b, np.exp(-v), components, mask, bool(db < 1e-6 and dw < 1e-5), tuple(history)
+        result["coefficients"],
+        result["correction"],
+        result["components"],
+        result["references"],
+        result["converged"],
+        history,
     )
 
 

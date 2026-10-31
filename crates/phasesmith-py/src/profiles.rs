@@ -1,9 +1,11 @@
 //! Typed `NumPy` snapshots for experimental empirical profiles; no Python in kernels.
 use npy::ndarray::Array2;
 use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2};
+use phasesmith_spots::profile_refinement as refinement;
 use phasesmith_spots::{Bounds, Detection, Image, profiles as kernel};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 
 type Input<'py> = (
     PyReadonlyArray2<'py, f64>,
@@ -300,6 +302,9 @@ pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
         experimental_profile_fit_variations,
         module
     )?)?;
+    module.add_class::<NativeProfileSpot>()?;
+    module.add_function(wrap_pyfunction!(experimental_profile_refine, module)?)?;
+    module.add_function(wrap_pyfunction!(experimental_profile_centroids, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_profile_frame, module)?)
 }
 
@@ -398,4 +403,253 @@ fn experimental_profile_fit_variations<'py>(
         matrix(py, result.coefficients),
         matrix(py, result.covariance),
     ))
+}
+
+// Small typed controls keep the native numerical API independent of Python objects.
+type ShapeOptions = (
+    usize,
+    usize,
+    usize,
+    f64,
+    f64,
+    [f64; 2],
+    [f64; 2],
+    [f64; 5],
+    f64,
+    f64,
+);
+fn shape_options(o: ShapeOptions) -> refinement::Options {
+    refinement::Options {
+        workers: o.0,
+        iterations: o.1,
+        maximum_iterations: o.2,
+        centre_pixels: o.3,
+        centre_degrees: o.4,
+        spatial_range: o.5,
+        rocking_range: o.6,
+        regularizer: o.7,
+        weak_design_counts: o.8,
+        weak_spatial_width: o.9,
+    }
+}
+/// Diagnostic adapter to the same native per-reflection objective used by the batch.
+#[pyclass]
+struct NativeProfileSpot {
+    inner: refinement::PreparedSpot,
+}
+#[pymethods]
+impl NativeProfileSpot {
+    #[new]
+    #[allow(clippy::too_many_arguments)]
+    fn new(
+        observations: Input<'_>,
+        profiles: PyReadonlyArray2<'_, f64>,
+        shape: [usize; 3],
+        step: [f64; 3],
+        bank: usize,
+        shifts: PyReadonlyArray2<'_, f64>,
+        minimum_mass: f64,
+        expected: bool,
+        gain: f64,
+        read: f64,
+    ) -> PyResult<Self> {
+        let owned = Owned::new(observations)?;
+        Ok(Self {
+            inner: refinement::PreparedSpot::new(
+                &owned.borrowed(),
+                0,
+                profiles.as_slice()?,
+                kernel::Grid { shape, step },
+                bank,
+                &rows(shifts)?,
+                minimum_mass,
+                refinement::Noise {
+                    expected,
+                    gain,
+                    read,
+                },
+            )
+            .map_err(error)?,
+        })
+    }
+    fn mass<'py>(
+        &self,
+        py: Python<'py>,
+        parameters: [f64; 5],
+    ) -> PyResult<Bound<'py, PyArray2<f64>>> {
+        Ok(matrix(
+            py,
+            py.detach(|| self.inner.mass(parameters)).map_err(error)?,
+        ))
+    }
+    fn set_noise(
+        &mut self,
+        mass: PyReadonlyArray1<'_, f64>,
+        intensity: f64,
+        foreground: bool,
+    ) -> PyResult<()> {
+        self.inner
+            .set_noise(mass.as_slice()?, intensity, foreground)
+            .map_err(error)
+    }
+    fn normal<'py>(
+        &self,
+        py: Python<'py>,
+        design: PyReadonlyArray2<'py, f64>,
+    ) -> PyResult<Bound<'py, PyArray2<f64>>> {
+        let n = design.as_array().ncols();
+        let design = design.as_slice()?.to_vec();
+        let out = py.detach(|| self.inner.normal(&design, n)).map_err(error)?;
+        Ok(Array2::from_shape_vec((n + 1, n + 1), out)
+            .expect("validated Gram")
+            .into_pyarray(py))
+    }
+    fn objective<'py>(
+        &self,
+        py: Python<'py>,
+        parameters: [f64; 5],
+        regularizer: [f64; 5],
+    ) -> PyResult<(f64, Bound<'py, PyArray1<f64>>)> {
+        let out = py
+            .detach(|| self.inner.objective(parameters, regularizer))
+            .map_err(error)?;
+        Ok((out.cost, out.gradient.into_pyarray(py)))
+    }
+    fn snapshot<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        let s = self.inner.snapshot();
+        let d = PyDict::new(py);
+        d.set_item("signal", s.signal.to_vec().into_pyarray(py))?;
+        d.set_item("weights", s.weights.to_vec().into_pyarray(py))?;
+        d.set_item("basis", matrix(py, s.basis.to_vec()))?;
+        d.set_item("bounds", matrix(py, s.bounds.to_vec()))?;
+        d.set_item("cov", matrix(py, s.covariance.to_vec()))?;
+        d.set_item(
+            "offsets",
+            s.offsets
+                .iter()
+                .map(|&v| i64::try_from(v).expect("sample index"))
+                .collect::<Vec<_>>()
+                .into_pyarray(py),
+        )?;
+        Ok(d)
+    }
+}
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn experimental_profile_centroids<'py>(
+    py: Python<'py>,
+    profiles: PyReadonlyArray2<'py, f64>,
+    shape: [usize; 3],
+    step: [f64; 3],
+    shifts: PyReadonlyArray2<'py, f64>,
+    assignments: PyReadonlyArray1<'py, i64>,
+    scales: PyReadonlyArray2<'py, f64>,
+    planar: PyReadonlyArray2<'py, f64>,
+    log_width: PyReadonlyArray1<'py, f64>,
+) -> PyResult<Bound<'py, PyArray2<f64>>> {
+    let profiles = profiles.as_slice()?.to_vec();
+    let shifts = rows(shifts)?;
+    let ids = integers(assignments)?;
+    let scales = rows(scales)?;
+    let planar = rows(planar)?;
+    let widths = log_width.as_slice()?.to_vec();
+    Ok(matrix(
+        py,
+        py.detach(|| {
+            refinement::centroid_offsets(
+                &profiles,
+                kernel::Grid { shape, step },
+                &shifts,
+                &ids,
+                &scales,
+                &planar,
+                &widths,
+            )
+        })
+        .map_err(error)?,
+    ))
+}
+#[pyfunction]
+#[pyo3(signature=(observations,profiles,shape,step,assignments,shifts,minimum_mass,expected,gain,read,choices,weak,sensor_offsets,options,baseline_values,baseline_flags,frozen=None,progress=None))]
+#[allow(clippy::too_many_arguments)]
+fn experimental_profile_refine<'py>(
+    py: Python<'py>,
+    observations: Input<'py>,
+    profiles: PyReadonlyArray2<'py, f64>,
+    shape: [usize; 3],
+    step: [f64; 3],
+    assignments: PyReadonlyArray1<'py, i64>,
+    shifts: PyReadonlyArray2<'py, f64>,
+    minimum_mass: f64,
+    expected: bool,
+    gain: f64,
+    read: f64,
+    choices: PyReadonlyArray1<'py, u8>,
+    weak: PyReadonlyArray1<'py, bool>,
+    sensor_offsets: PyReadonlyArray2<'py, f64>,
+    options: ShapeOptions,
+    baseline_values: PyReadonlyArray2<'py, f64>,
+    baseline_flags: PyReadonlyArray1<'py, u32>,
+    frozen: Option<PyReadonlyArray2<'py, f64>>,
+    progress: Option<Py<PyAny>>,
+) -> PyResult<Bound<'py, PyDict>> {
+    let owned = Owned::new(observations)?;
+    let profiles = profiles.as_slice()?.to_vec();
+    let assignments = integers(assignments)?;
+    let shifts = rows(shifts)?;
+    let choices = choices.as_slice()?.to_vec();
+    let weak = weak.as_slice()?.to_vec();
+    let sensor_offsets = rows(sensor_offsets)?;
+    let baseline_values = rows(baseline_values)?;
+    let baseline_flags = baseline_flags.as_slice()?.to_vec();
+    let frozen = frozen.map(rows).transpose()?;
+    let mut callback_error = None;
+    let result = py.detach(|| {
+        refinement::refine(
+            &refinement::Input {
+                observations: owned.borrowed(),
+                profiles: &profiles,
+                grid: kernel::Grid { shape, step },
+                assignments: &assignments,
+                shifts: &shifts,
+                minimum_mass,
+                noise: refinement::Noise {
+                    expected,
+                    gain,
+                    read,
+                },
+                choices: &choices,
+                weak: &weak,
+                sensor_offsets: &sensor_offsets,
+                frozen: frozen.as_deref(),
+                baseline: Some(refinement::Baseline {
+                    values: &baseline_values,
+                    flags: &baseline_flags,
+                }),
+            },
+            shape_options(options),
+            |done, total| {
+                if let Some(cb) = &progress {
+                    if let Err(e) = Python::attach(|py| cb.call1(py, (done, total))) {
+                        callback_error = Some(e);
+                        return Err(phasesmith_spots::SpotError(
+                            "profile refinement cancelled".into(),
+                        ));
+                    }
+                }
+                Ok(())
+            },
+        )
+    });
+    if let Some(e) = callback_error {
+        return Err(e);
+    }
+    let result = result.map_err(error)?;
+    let d = PyDict::new(py);
+    d.set_item("values", matrix(py, result.values))?;
+    d.set_item("flags", result.flags.into_pyarray(py))?;
+    d.set_item("parameters", matrix(py, result.parameters))?;
+    d.set_item("converged", result.converged.into_pyarray(py))?;
+    d.set_item("evaluations", result.evaluations)?;
+    Ok(d)
 }

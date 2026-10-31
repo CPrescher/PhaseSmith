@@ -21,9 +21,10 @@ connectivity/morphology and full-exposure DAC visibility. Single-crystal geometr
 fitting now also lives entirely in `phasesmith-spots`, including parameter chains,
 bounded soft-L1 optimization and conditional/withheld diagnostics. An independent
 NumPy/SciPy reference remains separate. Strong-profile and empirical-scaling
-experimental optimizers still need native ports;
-do not claim the complete raw workflow is Rust-only until those paths and
-orchestration have Rust entry points. Do not introduce further production SciPy
+experimental optimizers now have native Rust entry points for bounded shape fits,
+frozen weak filters, conditional joint sigma and robust within-family scaling;
+do not claim the complete raw workflow is Rust-only until orchestration and
+remaining design/convenience calculations also have Rust entry points. Do not introduce further production SciPy
 algorithms. HDF5 I/O now lives in the separate optional `phasesmith-hdf5` adapter.
 The facade and Python extension enable it with feature `hdf5`; release wheels
 include it. It builds HDF5, Bitshuffle/LZ4, zlib and LZF from Cargo sources,
@@ -36,7 +37,7 @@ Si16 O48, R1 .0411159, maximum/RMS coordinate errors .0065804/.0045658 A in
 The clean wheel needs no h5py/hdf5plugin, external HDF5 or dynamic plugins. This
 validates I/O, not a completed Rust-only pipeline. The record is
 `benchmarks/enstatite-bundled-hdf5-macos.json`.
-Python orchestration and the profile/scaling optimizers remain pending. The v9
+Python orchestration remains pending. The v9
 native-geometry full run passes every frozen v8 equivalence gate: same 4,125
 observations/flags/HKL mask and Mg16 Si16 O48, R1 .0410522 versus .0411159,
 maximum reference error .0069006 A, maximum aligned coordinate change .0005351 A.
