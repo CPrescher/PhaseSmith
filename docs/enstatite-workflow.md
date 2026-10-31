@@ -1,8 +1,9 @@
 # Enstatite external-data workflow
 
 MgSiO3 enstatite is the first exposed measured development case for the proposed
-raw-images-to-PhaseSmith-structure-search workflow. The complete workflow has
-not yet passed. See the [promotion audit](single-crystal-promotion.md).
+raw-images-to-PhaseSmith-structure-search workflow. The
+[complete runner](enstatite-raw-workflow.md) is implemented and has executed all stages, but fresh raw-frame structure recovery has not passed. See the
+[promotion audit](single-crystal-promotion.md).
 
 ## Storage
 
@@ -94,15 +95,15 @@ One run per source with the unchanged seed/search effort recovered Mg=16, Si=16,
 O=48. Post-search reference matching gives maximum/RMS coordinate errors of
 0.00920/0.00536 A for the PhaseSmith reduction and 0.01200/0.00682 A for the source
 integration. Both pass the strict 0.02 A maximum criterion. This establishes
-structure search from these existing intensities. The complete raw-frame runner
-below is still pending; no standalone structure-refinement workflow is claimed.
+structure search from these existing intensities. The fresh raw-frame runner
+now executes all stages but produces no candidate with its frozen recipe; no standalone structure-refinement workflow is claimed.
 
 The exact records are `benchmarks/enstatite-memory-budget-search-macos.json`.
 Local recovered structures are `runs/enstatite-memory-64mib-phasesmith/candidate/candidate.cif`
 and the corresponding `...-source/candidate/candidate.cif`; each also retains its
 density-frame full-cell `candidate-p1.cif`.
 
-## Complete runner to implement
+## Implemented complete runner
 
 1. Verify source hashes and write a run manifest with source/native/configuration
    hashes, explicit fixed priors and a fresh output directory.
@@ -130,9 +131,15 @@ density-frame full-cell `candidate-p1.cif`.
    and diagnostics. Standalone single-crystal structure refinement is outside
    this runner's scope.
 
-Before running, commit a stage-check specification: frame/mask/axis checks,
-reserved positional residuals, domain assignment/completeness, integrated-count
-controls, held-out equivalent consistency, search budgets and count/coordinate
-assessment. Keep the first recorded outcome even when it fails. Enstatite is
+The implementation and frozen protocols are documented in
+[the raw-frame example](enstatite-raw-workflow.md). Its retained first outcomes
+and final run are recorded in `enstatite-raw-workflow-attempts-macos.json` and
+`enstatite-raw-workflow-macos.json` under `benchmarks/`.
+
+The frozen checks cover frame/mask/axis conventions, reserved positional
+residuals, independently supported competing tracks, signed integration controls,
+training-family separation, search budgets and post-search count/coordinate
+assessment. Further equivalent-consistency diagnosis remains scientific follow-up.
+Keep the first recorded outcome even when it fails. Enstatite is
 previously inspected development evidence; independent transfer validation still
 needs additional datasets.
