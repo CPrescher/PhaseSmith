@@ -1,0 +1,12 @@
+{
+  "schema": "phasesmith.enstatite-detection-scaling.v1",
+  "scope": "Original-count detection/linking execution only; no scientific setting changes",
+  "baseline_protocol": "validation/enstatite-raw-workflow-v19.json",
+  "workers": [4, 6, 8, 10],
+  "repeats": 3,
+  "isolated_benchmark": "benchmarks/detection_execution.py",
+  "isolated_inputs": "Reread all 142 original HDF5 frames with frozen v19 raw-derived masks. Position arrays compared only after trial, never supplied to detector or linker.",
+  "gates": "Every position array and frame fingerprint bitwise identical; full raw-to-search run must match all v11 numerical arrays, candidate records and phasing histories.",
+  "selection": "Choose resources using wall time and memory, never R1 or an atomic-reference score. Preserve every trial. Commit full-run protocol before frames.",
+  "full_timing_report": "Partition full workflow wall time; detection subparts include ordered detection, serial loader work, linking and track assembly. Overlapping thread times are not additive."
+}
