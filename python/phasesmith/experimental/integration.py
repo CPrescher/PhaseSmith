@@ -6,6 +6,8 @@ and cross-frame accumulation runs in Rust; Python orchestrates frame arrays.
 """
 
 import hashlib
+from collections import deque
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from enum import IntFlag
 from typing import ClassVar
@@ -17,6 +19,84 @@ from phasesmith import _core
 from .prediction import ScanPredictions, _hkl, _readonly
 from .rotation import angle_segments
 from .spots import SpotOptions, _inputs, extract_spots
+
+
+@dataclass(frozen=True)
+class FrameExecution:
+    """Bounded owned frame payloads; ordinary output/workspace is separate."""
+
+    workers: int = 1
+    max_in_flight_bytes: int = 512 * 1024**2
+
+    def __post_init__(self):
+        if type(self.workers) is not int or not 1 <= self.workers <= 32:
+            raise ValueError("frame workers must be in 1..32")
+        if type(self.max_in_flight_bytes) is not int or not 1 <= self.max_in_flight_bytes <= 2**30:
+            raise ValueError("frame payload budget must be in 1 byte..1 GiB")
+
+
+def _ordered_frames(load, measure, count, execution, stats):
+    """Caller-owned loaders; bounded native tasks and source-order results/errors."""
+    stats.update(
+        requested_workers=execution.workers,
+        maximum_in_flight_frames=0,
+        payload_budget_bytes=execution.max_in_flight_bytes,
+        peak_payload_bytes=0,
+    )
+
+    def prepare(frame):
+        payload = load(frame)
+        image, _mask, variance = payload
+        size = sum(a.nbytes for a in payload if a is not None)
+        size += 2 * image.size * (9 + (8 if variance is not None else 0))
+        if size > execution.max_in_flight_bytes:
+            raise ValueError("one frame exceeds the declared frame payload budget")
+        return payload, size
+
+    if execution.workers == 1:
+        for frame in range(count):
+            payload, size = prepare(frame)
+            stats["maximum_in_flight_frames"] = 1
+            stats["peak_payload_bytes"] = max(stats["peak_payload_bytes"], size)
+            yield measure(frame, payload)
+        return
+    pool = ThreadPoolExecutor(max_workers=execution.workers, thread_name_prefix="phasesmith-frames")
+    pending = deque()
+    charged = 0
+    largest = 0
+    try:
+        for frame in range(count):
+            # Release completed work before requesting another loader snapshot.
+            while pending and (
+                len(pending) >= execution.workers
+                or charged + largest > execution.max_in_flight_bytes
+            ):
+                old_size, future = pending.popleft()
+                yield future.result()
+                charged -= old_size
+            try:
+                payload, size = prepare(frame)
+                largest = max(largest, size)
+            except Exception as error:
+                future = Future()
+                future.set_exception(error)
+                pending.append((0, future))
+                break
+            while pending and charged + size > execution.max_in_flight_bytes:
+                old_size, future = pending.popleft()
+                yield future.result()
+                charged -= old_size
+            pending.append((size, pool.submit(measure, frame, payload)))
+            charged += size
+            stats["maximum_in_flight_frames"] = max(stats["maximum_in_flight_frames"], len(pending))
+            stats["peak_payload_bytes"] = max(stats["peak_payload_bytes"], charged)
+        while pending:
+            _, future = pending.popleft()
+            yield future.result()
+    finally:
+        for _, future in pending:
+            future.cancel()
+        pool.shutdown(wait=True, cancel_futures=True)
 
 
 class IntegrationFlag(IntFlag):
@@ -115,6 +195,7 @@ class ReflectionTable:
     noise_parameters: tuple | None = None
     background_models: np.ndarray | None = None
     angular_half_widths: np.ndarray | None = None
+    execution: dict | None = None
     columns: ClassVar = (
         "intensity",
         "sigma",
@@ -198,6 +279,7 @@ def integrate_series(
     read_noise=0.0,
     saturation=None,
     progress=None,
+    execution=None,
     _profile_sink=None,
     _profile_half_widths=None,
 ):
@@ -216,6 +298,9 @@ def integrate_series(
     options = options or IntegrationOptions()
     if not isinstance(options, IntegrationOptions):
         raise TypeError("options must be IntegrationOptions")
+    execution = FrameExecution() if execution is None else execution
+    if not isinstance(execution, FrameExecution):
+        raise TypeError("execution must be FrameExecution")
     hkl = _hkl(predictions.hkl)
     xyz = np.asarray(predictions.values)
     if xyz.dtype.kind not in "fiu" or xyz.shape != (len(hkl), 3) or not np.isfinite(xyz).all():
@@ -267,14 +352,12 @@ def integrate_series(
     ids_parts, frames_parts, boxes_parts, values_parts, flags_parts = [], [], [], [], []
     hashes, shape, observations = [], None, 0
     model_parts = []
-    if progress:
-        progress(0, len(bounds))
-    for frame in range(len(bounds)):
-        # Snapshot before another callback can reuse the loader's backing storage.
+
+    def load(frame):
+        nonlocal shape, observations
         image = np.array(frame_loader(frame), copy=True)
         mask = None if mask_loader is None else np.array(mask_loader(frame), copy=True)
         variance = None if variance_loader is None else np.array(variance_loader(frame), copy=True)
-        data, excluded, var, _, _, _ = _inputs(image, mask, variance, gain, read_noise, saturation)
         if shape is None:
             shape = image.shape
             if (
@@ -286,16 +369,21 @@ def integrate_series(
                 raise ValueError("predicted centres must lie on the detector footprint")
         if image.shape != shape:
             raise ValueError("all frames must have the same detector shape")
+        observations += int(np.count_nonzero((start < high[frame]) & (end > low[frame])))
+        if observations > options.max_observations:
+            raise ValueError("integration observation budget exceeded")
+        return image, mask, variance
+
+    def measure(frame, payload):
+        image, mask, variance = payload
+        data, excluded, var, _, _, _ = _inputs(image, mask, variance, gain, read_noise, saturation)
         digest = hashlib.sha256()
         for a in (data, excluded, var):
             if a is not None:
                 digest.update(str((a.shape, a.dtype.str)).encode())
                 digest.update(a.tobytes(order="C"))
-        hashes.append(digest.hexdigest())
         ids = np.flatnonzero((start < high[frame]) & (end > low[frame]))
-        observations += len(ids)
-        if observations > options.max_observations:
-            raise ValueError("integration observation budget exceeded")
+        table, model, extracted = None, None, None
         if len(ids):
             centres = np.floor(xyz[ids, :2] + 0.5).astype(np.int64)
             r = options.pixel_radius
@@ -329,9 +417,6 @@ def integrate_series(
                 )
                 b, v, f, model = extracted[:4]
                 table = SpotTable(b, v, f)
-                model_parts.append(model)
-                if _profile_sink is not None:
-                    _profile_sink(ids, frame, b, extracted[4], extracted[5], extracted[6])
             else:
                 table = extract_spots(
                     data,
@@ -343,13 +428,29 @@ def integrate_series(
                     read_noise=read_noise,
                     saturation=saturation,
                 )
-            ids_parts.append(ids)
-            frames_parts.append(np.full(len(ids), frame, np.int64))
-            boxes_parts.append(table.boxes)
-            values_parts.append(table.values)
-            flags_parts.append(table.flags & np.uint32(~64 & 0xFFFFFFFF))
-        if progress:
-            progress(frame + 1, len(bounds))
+        return frame, digest.hexdigest(), ids, table, model, extracted
+
+    stats = {}
+    if progress:
+        progress(0, len(bounds))
+    results = _ordered_frames(load, measure, len(bounds), execution, stats)
+    try:
+        for frame, digest, ids, table, model, extracted in results:
+            hashes.append(digest)
+            if len(ids):
+                if model is not None:
+                    model_parts.append(model)
+                if _profile_sink is not None:
+                    _profile_sink(ids, frame, table.boxes, extracted[4], extracted[5], extracted[6])
+                ids_parts.append(ids)
+                frames_parts.append(np.full(len(ids), frame, np.int64))
+                boxes_parts.append(table.boxes)
+                values_parts.append(table.values)
+                flags_parts.append(table.flags & np.uint32(~64 & 0xFFFFFFFF))
+            if progress:
+                progress(frame + 1, len(bounds))
+    finally:
+        results.close()
     ids = np.concatenate(ids_parts) if ids_parts else np.empty(0, np.int64)
     frames = np.concatenate(frames_parts) if frames_parts else np.empty(0, np.int64)
     boxes = np.concatenate(boxes_parts) if boxes_parts else np.empty((0, 4), np.int64)
@@ -379,4 +480,5 @@ def integrate_series(
         if options.background_model == "plane"
         else None,
         widths,
+        stats,
     )

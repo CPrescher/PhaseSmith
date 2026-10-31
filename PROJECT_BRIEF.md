@@ -17,6 +17,13 @@ and replaces worker-sized strong-fit barriers with a continuous native queue.
 Each reflection retains its original arithmetic; results and progress callbacks
 are assembled in source order, with cancellation stopping further scheduling.
 No scientific controls, finite support or independent reference equations change.
+Frame preparation now optionally queues bounded immutable frame snapshots for
+independent native measurements. Loaders, profile sinks, errors and progress
+remain ordered on the calling thread; Rust retains background/sample extraction
+and cross-frame accumulation. Frame payload admission includes snapshots and
+normalized/native copies, with ordinary outputs/workspace and one transient
+loader snapshot separate. The default remains serial. Resource diagnostics are
+separate from scientific options and fingerprints.
 The current experiment will benchmark 4/6/8/10 workers before selecting a resource
 configuration, then separately measure bounded frame preparation and lossless
 archive output. See `docs/profile-execution-optimization.md`.

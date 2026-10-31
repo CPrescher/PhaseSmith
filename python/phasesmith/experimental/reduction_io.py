@@ -19,6 +19,7 @@ def save_case(path, observations, model=None):
         options=asdict(t.options),
         noise_model=t.noise_model,
         noise_parameters=t.noise_parameters,
+        frame_execution=t.execution,
     )
     names = (
         "hkl",
@@ -83,6 +84,7 @@ def load_case(path):
     table = ReflectionTable(
         **fields,
         frame_hashes=tuple(meta["frame_hashes"]),
+        execution=meta.get("frame_execution"),
         options=IntegrationOptions(**meta["options"]),
         noise_model=meta["noise_model"],
         noise_parameters=None

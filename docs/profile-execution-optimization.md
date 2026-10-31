@@ -178,3 +178,30 @@ Fresh v17 passes every bitwise gate; worker time is 33.91 s versus 37.86 s.
 Its CLI is 42.49 s versus 38.95 s: cold parent/setup overhead accounts for
 the reversal, so this single run does not establish a CLI gain. Both are
 retained. Report: `benchmarks/enstatite-next-execution-stage1-macos.json`.
+
+## Follow-up 2: bounded independent frame preparation
+
+`FrameExecution` adds optional 1–32 frame workers and an explicit owned-payload
+budget (default 512 MiB, maximum 1 GiB), independently of scientific integration
+options. The optional Python adapter owns ordered loading and immutable snapshots;
+background fitting, sample collection and final cross-frame accumulation stay in
+Rust. Each frame has the same kernel inputs and scalar operations; results,
+sample sinks, errors and progress are consumed in source order. Cancellation
+joins active work and returns no partial result. The default serial path retains
+its callback timing. No independent equation/reference or oracle fixture changes.
+
+Admission charges raw snapshots plus normalized/native image/mask/variance
+copies; queued charge is bounded and recorded. Ordinary result/scratch arrays,
+thread stacks, and at most one transient loader snapshot are separate from this
+payload cap. Requested concurrency can be reduced by memory admission.
+Tests exercise reused loader buffers, reverse exposures, masks, supplied and
+expected-count variances, mean/plane backgrounds, exact sample/covariance bytes,
+ordered errors/cancellation and budget-limited concurrency.
+
+The raw benchmark measures 142 source frames and the 7,277 frozen target
+predictions, without competing-domain exclusions; each execution control uses
+exactly that same cohort. The separate full run retains all competing domains.
+Serial baseline is 8.964 s; new serial/4-worker/10-worker medians are
+8.849/5.039/5.072 s, all hashes identical. Four workers are selected using time
+and lower queued memory, not scientific agreement. Their charged payload is
+411,333,472 bytes, so the full example requests a 512 MiB cap.

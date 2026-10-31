@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v17.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v18.json"
 
 
 def digest(path):
@@ -581,7 +581,7 @@ def stage_indexing(positions, geometry, packet, out, protocol):
 
 
 def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes, frame_validity=None):
-    from phasesmith.experimental.integration import IntegrationOptions
+    from phasesmith.experimental.integration import FrameExecution, IntegrationOptions
     from phasesmith.experimental.prediction import ScanPredictions, predict_scan
     from phasesmith.experimental.profile_refinement import ShapeFitOptions
     from phasesmith.experimental.profiles import (
@@ -664,6 +664,7 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes, fr
             scales=np.column_stack((np.ones((len(zeta), 2)), zeta)),
             planar_transforms=planar,
             angular_half_widths=half_widths,
+            execution=FrameExecution(**protocol.get("frame_preparation_execution", {})),
             progress=lambda n, total: (
                 log(f"integrate {n}/{total}") if n % 20 == 0 or n == total else None
             ),
@@ -787,6 +788,7 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes, fr
                 teachers=len(bank.reference_ids),
                 frame_hashes_equal=True,
                 source_loads=frames.loads,
+                frame_preparation_execution=observations.summation.execution,
                 excluded_from_search=int((~valid).sum()),
                 excluded_by_quality_flags=int(((~valid) & visible).sum()),
                 measurement_validity=validity,
