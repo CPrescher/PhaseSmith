@@ -159,3 +159,9 @@ the previously measured 65-case search corpus is now exposed regression data.
 
 The [0.8 release candidate](release-candidate-0.8.md) records the promotion checks,
 installed-wheel/source distribution evidence and remaining release work.
+
+
+The completed 0.8 installed-wheel v24 checks take 19.06/19.39 s and reproduce
+all retained v11 numerical arrays, candidate records and histories bitwise, with
+R1 .04085182070733226. See the release candidate for actual distribution checks
+and timing limits; the earlier v23 pair is retained as historical evidence.

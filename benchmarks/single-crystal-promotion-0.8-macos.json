@@ -1,0 +1,435 @@
+{
+  "schema": "phasesmith.single-crystal-promotion.v1",
+  "version": "0.8.0",
+  "source_commit": "e3915ec",
+  "promotion_commit": "0612de7",
+  "protocol": "validation/enstatite-raw-workflow-v24.json",
+  "scope": "Supported package/API promotion; normal wheel capabilities; no numerical equation or global solver-default changes; no publication/tag/push.",
+  "python_namespace": "phasesmith.single_crystal",
+  "legacy_aliases_until": "1.0",
+  "rust_default_features": [
+    "single-crystal"
+  ],
+  "rust_capabilities": [
+    "spots",
+    "solution",
+    "row-search"
+  ],
+  "rust_hdf5_optional": true,
+  "python_wheel_hdf5_bundled": true,
+  "artifacts": [
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/wheels/phasesmith-0.8.0-cp311-abi3-macosx_11_0_arm64.whl",
+      "bytes": 8201399,
+      "sha256": "2e6aaa0594c6fc8f0f100304ba7f12cf8f41bb33d5cad116bb4b324d8fe977a4"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/sdist/phasesmith-0.8.0.tar.gz",
+      "bytes": 1753288,
+      "sha256": "5c02b6c189f1517465c4996e4d8b944b6a979cf0a3c1cd99fa57be19600e2267"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/crates/phasesmith-0.8.0.crate",
+      "bytes": 51573,
+      "sha256": "6b4fa40215bea315272c2c80317350215d82a41aa771c3e477e849bcd7a1e94a"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/crates/phasesmith-core-0.8.0.crate",
+      "bytes": 65556,
+      "sha256": "c6b6822a66f36ddba98f67b8be9a7dc9e1f1cad2a32e6d5388822a728d717812"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/crates/phasesmith-crystallography-0.8.0.crate",
+      "bytes": 83408,
+      "sha256": "98cc5b0b4de1c16ae9d747d34a84210928bbd2483737774cd66b7fbfd4703f01"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/crates/phasesmith-engine-0.8.0.crate",
+      "bytes": 46831,
+      "sha256": "821e805f5a596418f90c1d2c10f29e5f68cd5d68c2d33ac3d59391dc9a5113b0"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/crates/phasesmith-execution-0.8.0.crate",
+      "bytes": 13253,
+      "sha256": "c18f6ebc7b9f29772d92b598bae5e866aacdbe6074d5f57e9896cb3dda415a29"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/crates/phasesmith-hdf5-0.8.0.crate",
+      "bytes": 23011,
+      "sha256": "8116f29fe82b29c5dd5f31c4f8995682cc280b5a6486755a43a408cdb91b226a"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/crates/phasesmith-io-0.8.0.crate",
+      "bytes": 51049,
+      "sha256": "f7b8fa2ff9c14fa13919f4b3b985159a4ce8fef6abd351a958ad50eb18f6ed40"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/crates/phasesmith-model-0.8.0.crate",
+      "bytes": 19001,
+      "sha256": "0c56f1f5f706188f139ccd3c180289b9b0b9acebd8ba9624345790b9d8b865e5"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/crates/phasesmith-persistence-0.8.0.crate",
+      "bytes": 75590,
+      "sha256": "6ee1000141e56c1672c8859f1278b107d7344aab962092e048576ab5c994fde9"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/crates/phasesmith-row-search-0.8.0.crate",
+      "bytes": 39176,
+      "sha256": "6f8a6b4c50111816d638b5b2d04a3790ce0ac34e32c7736dbdf80e4799641b67"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/crates/phasesmith-solution-0.8.0.crate",
+      "bytes": 192808,
+      "sha256": "6e7ef79e3d3f319ea8754b8aafa42b48c34542948cc78dca859fe0c019c31342"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/crates/phasesmith-spots-0.8.0.crate",
+      "bytes": 118010,
+      "sha256": "90b4828b2d9ac37ced6139ebbc5fbab17313d7032ff5d56c8691705eaf91d0aa"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/crates/phasesmith-workflows-0.8.0.crate",
+      "bytes": 310410,
+      "sha256": "20f96d9ffaad86084782b3723478372ec7f622f2f781217a84eed56c86195a81"
+    }
+  ],
+  "validation": {
+    "rust_passed": 515,
+    "rust_ignored": 34,
+    "source_python_passed": 3277,
+    "installed_wheel_python_passed": 3277,
+    "python_external_data_skips": 11,
+    "python_slow_deselected": 34,
+    "default_minimal_and_legacy_feature_builds": true,
+    "clippy_strict": true,
+    "rust_docs_strict": true,
+    "mkdocs_strict": true,
+    "public_api_snapshot": true,
+    "synchronized_release_versions": true,
+    "skill_and_math_docs_sync": true,
+    "ordinary_wheel_numpy_only_smoke": true,
+    "source_distribution_clean_build_numpy_only_smoke": true,
+    "no_external_hdf5_dynamic_library": true,
+    "public_crates_packaged_no_verify": 13,
+    "packaged_new_crate_license_checks": true,
+    "inherited_whole_repository_ruff": {
+      "passed": false,
+      "diagnostics": 191,
+      "all_diagnostics_in_unchanged_files": true,
+      "changed_python_files_pass": true,
+      "remaining_release_gate": true
+    },
+    "remote_ci_and_manual_release_workflow": "not_run"
+  },
+  "full_runs": [
+    {
+      "output": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v24",
+      "cli_wall_seconds": 19.06,
+      "worker_seconds": 17.94656379101798,
+      "gates": {
+        "all_numerical_arrays_bitwise_identical": true,
+        "full_candidate_records_identical": true,
+        "phasing_histories_identical": true,
+        "source_files_unchanged": true,
+        "structure_recovered": true,
+        "worker_isolation": true,
+        "no_optional_python_numerics": true
+      },
+      "r1": 0.04085182070733226,
+      "worker_peak_resident_bytes": 4330504192,
+      "exclusive_by_name": {
+        "shadow_estimation": 2.8416678750072606,
+        "compressed_archives": 1.011830958945211,
+        "stage_validity": 0.0013145829434506595,
+        "detection_and_linking": 3.3533184999832883,
+        "stage_positions": 0.23737237497698516,
+        "grain_indexing": 0.23002929199719802,
+        "geometry_fit": 0.003701667010318488,
+        "stage_indexing": 0.02025170804699883,
+        "pixel_collection_and_background": 2.729331957991235,
+        "profile_learning": 2.5169251250335947,
+        "observation_archive": 7.808400550857186e-05,
+        "profile_fitting": 2.783300541981589,
+        "physical_corrections": 0.0007476250175386667,
+        "empirical_design": 0.033463541010860354,
+        "empirical_scaling": 0.217666249955073,
+        "equivalent_error_model": 0.021448417042847723,
+        "reduction_other": 0.010513041983358562,
+        "stage_integrate": 1.1206088740145788,
+        "search_process": 0.7781087500043213,
+        "process_main": 0.036026750050950795
+      },
+      "summary_schema": "phasesmith.single-crystal-solution.v1",
+      "named_search_configuration": {
+        "controls": {
+          "adaptive_checkpoints": false,
+          "adaptive_counts": true,
+          "ambiguous_assignments": true,
+          "assignment_convergence_stopping": true,
+          "batched_fft": true,
+          "beam_width": 4,
+          "blocked_normal_matrices": true,
+          "cached_assignment_refinement": true,
+          "cached_normal_refinement": true,
+          "cached_refinement": true,
+          "cached_repair_evaluation": true,
+          "calculated_shell_normalization": true,
+          "chemical_assignment": true,
+          "dual_checkpoints": true,
+          "dual_peak_cap": 128,
+          "dual_peak_sigma": 2.0,
+          "filtered_peak_search": true,
+          "fused_phase_workspace": true,
+          "independent_origin_sampling": false,
+          "integrated_peak_density": true,
+          "isotropic_assignment_refinement": true,
+          "iterative_refinement": true,
+          "joint_assignment_refinement": true,
+          "late_phase_plateau_stopping": true,
+          "missing_reflections": false,
+          "model_consensus_stopping": true,
+          "multiplicity_weighted_refinement": true,
+          "peak_density_radius_angstrom": 0.7,
+          "phase_first_selection": true,
+          "phase_origin_selection": true,
+          "phase_plateau_stopping": true,
+          "phase_quality_selection": true,
+          "real_fft": true,
+          "recycling_cycles": 10,
+          "refinement_shortlist": 3,
+          "resolution_extension": 1.0,
+          "reusable_fourier_workspaces": true,
+          "reuse_normal_matrices": true,
+          "score_only_evaluation": true,
+          "screening_iterations": 8,
+          "search_rounds": 8,
+          "short_phase_starts": true,
+          "specialized_isotropic_refinement": true,
+          "staged_refinement": true,
+          "streamed_peak_search": true,
+          "symmetry_recycling": true,
+          "tangent_in_recycling": true,
+          "tangent_refinement": true,
+          "wilson_normalization": true,
+          "work_sliced_phasing": true,
+          "workers": 1
+        },
+        "name": "validated-v1",
+        "options": {
+          "assignment_rounds": 4,
+          "cleanup_cycles": 10,
+          "completion": false,
+          "cycles": 800,
+          "delta_sigma": 1.0,
+          "dense_memory_budget_bytes": 134217728,
+          "grid_shape": null,
+          "max_seconds": 60.0,
+          "phasing": "dual_space",
+          "polish_iterations": 50,
+          "r1_target": 0.06,
+          "refinement": "anisotropic",
+          "seed": 0,
+          "symmetry_iterations": 80,
+          "symmetry_tolerance_angstrom": 0.15,
+          "trials": 4,
+          "weak_fraction": 0.2
+        },
+        "schema": "phasesmith.element-search-config.v1"
+      },
+      "decoded_frame_cache": {
+        "budget_bytes": 1073741824,
+        "decodes": 306,
+        "frames": 60,
+        "hits": 120,
+        "invalidations": 0,
+        "payload_bytes": 1073043840,
+        "requests": 426
+      },
+      "reference_assessment": {
+        "counts_match": true,
+        "rms_error_angstrom": 0.004538501994491189,
+        "maximum_error_angstrom": 0.007523594148997598,
+        "hand": -1,
+        "shift": [
+          0.836137362336214,
+          0.31599369727651205,
+          0.47339919140711983
+        ],
+        "correct": true,
+        "strict_002_angstrom": true,
+        "reference_read_after_worker_stopped": true
+      }
+    },
+    {
+      "output": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v24-repeat",
+      "cli_wall_seconds": 19.39,
+      "worker_seconds": 18.290133208036423,
+      "gates": {
+        "all_numerical_arrays_bitwise_identical": true,
+        "full_candidate_records_identical": true,
+        "phasing_histories_identical": true,
+        "source_files_unchanged": true,
+        "structure_recovered": true,
+        "worker_isolation": true,
+        "no_optional_python_numerics": true
+      },
+      "r1": 0.04085182070733226,
+      "worker_peak_resident_bytes": 4324360192,
+      "exclusive_by_name": {
+        "shadow_estimation": 2.7833110420033336,
+        "compressed_archives": 1.032859207072761,
+        "stage_validity": 0.0014116669772192836,
+        "detection_and_linking": 3.403637291979976,
+        "stage_positions": 0.24523058300837874,
+        "grain_indexing": 0.24881324998568743,
+        "geometry_fit": 0.004200208990368992,
+        "stage_indexing": 0.021834332961589098,
+        "pixel_collection_and_background": 2.905502957990393,
+        "profile_learning": 2.531896375003271,
+        "observation_archive": 7.887394167482853e-05,
+        "profile_fitting": 2.852359250013251,
+        "physical_corrections": 0.0007541670347563922,
+        "empirical_design": 0.03271054202923551,
+        "empirical_scaling": 0.2301930829999037,
+        "equivalent_error_model": 0.02254929201444611,
+        "reduction_other": 0.011068415944464505,
+        "stage_integrate": 1.1318683350109495,
+        "search_process": 0.7963535409653559,
+        "process_main": 0.03474591707345098
+      },
+      "summary_schema": "phasesmith.single-crystal-solution.v1",
+      "named_search_configuration": {
+        "controls": {
+          "adaptive_checkpoints": false,
+          "adaptive_counts": true,
+          "ambiguous_assignments": true,
+          "assignment_convergence_stopping": true,
+          "batched_fft": true,
+          "beam_width": 4,
+          "blocked_normal_matrices": true,
+          "cached_assignment_refinement": true,
+          "cached_normal_refinement": true,
+          "cached_refinement": true,
+          "cached_repair_evaluation": true,
+          "calculated_shell_normalization": true,
+          "chemical_assignment": true,
+          "dual_checkpoints": true,
+          "dual_peak_cap": 128,
+          "dual_peak_sigma": 2.0,
+          "filtered_peak_search": true,
+          "fused_phase_workspace": true,
+          "independent_origin_sampling": false,
+          "integrated_peak_density": true,
+          "isotropic_assignment_refinement": true,
+          "iterative_refinement": true,
+          "joint_assignment_refinement": true,
+          "late_phase_plateau_stopping": true,
+          "missing_reflections": false,
+          "model_consensus_stopping": true,
+          "multiplicity_weighted_refinement": true,
+          "peak_density_radius_angstrom": 0.7,
+          "phase_first_selection": true,
+          "phase_origin_selection": true,
+          "phase_plateau_stopping": true,
+          "phase_quality_selection": true,
+          "real_fft": true,
+          "recycling_cycles": 10,
+          "refinement_shortlist": 3,
+          "resolution_extension": 1.0,
+          "reusable_fourier_workspaces": true,
+          "reuse_normal_matrices": true,
+          "score_only_evaluation": true,
+          "screening_iterations": 8,
+          "search_rounds": 8,
+          "short_phase_starts": true,
+          "specialized_isotropic_refinement": true,
+          "staged_refinement": true,
+          "streamed_peak_search": true,
+          "symmetry_recycling": true,
+          "tangent_in_recycling": true,
+          "tangent_refinement": true,
+          "wilson_normalization": true,
+          "work_sliced_phasing": true,
+          "workers": 1
+        },
+        "name": "validated-v1",
+        "options": {
+          "assignment_rounds": 4,
+          "cleanup_cycles": 10,
+          "completion": false,
+          "cycles": 800,
+          "delta_sigma": 1.0,
+          "dense_memory_budget_bytes": 134217728,
+          "grid_shape": null,
+          "max_seconds": 60.0,
+          "phasing": "dual_space",
+          "polish_iterations": 50,
+          "r1_target": 0.06,
+          "refinement": "anisotropic",
+          "seed": 0,
+          "symmetry_iterations": 80,
+          "symmetry_tolerance_angstrom": 0.15,
+          "trials": 4,
+          "weak_fraction": 0.2
+        },
+        "schema": "phasesmith.element-search-config.v1"
+      },
+      "decoded_frame_cache": {
+        "budget_bytes": 1073741824,
+        "decodes": 306,
+        "frames": 60,
+        "hits": 120,
+        "invalidations": 0,
+        "payload_bytes": 1073043840,
+        "requests": 426
+      },
+      "reference_assessment": {
+        "counts_match": true,
+        "rms_error_angstrom": 0.004538501994491189,
+        "maximum_error_angstrom": 0.007523594148997598,
+        "hand": -1,
+        "shift": [
+          0.836137362336214,
+          0.31599369727651205,
+          0.47339919140711983
+        ],
+        "correct": true,
+        "strict_002_angstrom": true,
+        "reference_read_after_worker_stopped": true
+      }
+    }
+  ],
+  "performance": {
+    "previous_v23_cli_seconds": [
+      18.65,
+      18.56
+    ],
+    "promoted_v24_cli_seconds": [
+      19.06,
+      19.39
+    ],
+    "mean_fractional_cli_increase": 0.033324375167965936,
+    "interpretation": "About 19 s; observed pair is 3.3 percent longer than prior pair. Runs are not interleaved controlled A/B; no promotion speedup or causal regression claim. All numerical arrays/candidate records/histories match bitwise; timings and memory retained."
+  },
+  "cleanup": {
+    "removed_generated_allocated_bytes": 15660044288,
+    "observed_filesystem_free_byte_increase": 13808058368,
+    "removed_superseded_environments": 12,
+    "removed_directories": 15,
+    "retained_environment_recovery_wheels": true,
+    "retained_criterion_observation_files": 58,
+    "all_original_eight_files_verified_after": true,
+    "raw_data_and_unique_scientific_results_retained": true,
+    "other_worktrees_and_shared_dependency_caches_untouched": true,
+    "journal": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/cleanup/executed.json"
+  },
+  "limitations": [
+    "Supplied cell/symmetry/elements and provisional acquisition/aperture priors remain explicit.",
+    "Exposed MgSiO3 and 65-case corpus regression evidence, not a new holdout.",
+    "Existing ADP-bound candidate-polishing stagnation remains; no standalone structure-refinement workflow.",
+    "Native kernels available in Rust; complete example orchestration still uses Python/NumPy."
+  ],
+  "large_data_policy": "All raw sources, full arrays/results, wheels, source archive, crates and trial logs remain external.",
+  "validation_directory": "/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031/validation"
+}
