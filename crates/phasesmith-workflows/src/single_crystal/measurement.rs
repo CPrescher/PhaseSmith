@@ -14,6 +14,7 @@ pub struct ProfileData {
     pub scales: Vec<V3>,
     pub planar: Vec<[f64; 4]>,
     pub flags: Vec<u32>,
+    pub native_flags: Vec<u32>,
     pub frame_values: Vec<[f64; 11]>,
     pub background: Vec<[f64; 12]>,
 }
@@ -30,7 +31,7 @@ impl ProfileData {
             centres: &self.centres,
             scales: &self.scales,
             planar: &self.planar,
-            flags: &self.flags,
+            flags: &self.native_flags,
         }
     }
 }
@@ -185,6 +186,7 @@ pub(super) fn measure(
         scales: vec![],
         planar: vec![],
         flags: vec![],
+        native_flags: vec![],
         frame_values: vec![],
         background: vec![],
     };
@@ -309,6 +311,7 @@ pub(super) fn measure(
         scales: vec![],
         planar: vec![],
         flags: vec![],
+        native_flags: vec![],
         frame_values: vec![],
         background: vec![],
     };
@@ -395,6 +398,12 @@ pub(super) fn measure(
         shape: [31, 31, 23],
         step: [0.0125, 0.0125, 0.05],
     };
+    selected.native_flags = selected
+        .flags
+        .iter()
+        .zip(&selected.ids)
+        .map(|(&f, &id)| f | (flags[id] & 256))
+        .collect();
     let bank = profiles::learn_with_execution(
         &selected.borrowed(),
         &regions,
