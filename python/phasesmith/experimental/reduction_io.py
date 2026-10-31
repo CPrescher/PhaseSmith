@@ -10,7 +10,7 @@ from .integration import IntegrationOptions, ReflectionTable
 from .profiles import ProfileModel, ProfileObservations, ProfileOptions
 
 
-def save_case(path, observations, model=None):
+def save_case(path, observations, model=None, *, compression_level=None):
     t = observations.summation
     metadata = dict(
         schema="phasesmith.experimental.profile-case.v1",
@@ -70,8 +70,13 @@ def save_case(path, observations, model=None):
         json.dumps(metadata, allow_nan=False).encode(), dtype=np.uint8
     )
     # Exclusive create: archival cases are never silently overwritten.
-    with Path(path).open("xb") as stream:
-        np.savez_compressed(stream, **arrays)
+    if compression_level is None:
+        with Path(path).open("xb") as stream:
+            np.savez_compressed(stream, **arrays)
+    else:
+        from phasesmith.io.numeric_archive import save_npz
+
+        save_npz(path, arrays, compression_level=compression_level)
 
 
 def load_case(path):

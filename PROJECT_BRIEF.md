@@ -17,6 +17,14 @@ and replaces worker-sized strong-fit barriers with a continuous native queue.
 Each reflection retains its original arithmetic; results and progress callbacks
 are assembled in source order, with cancellation stopping further scheduling.
 No scientific controls, finite support or independent reference equations change.
+Native lossless numeric NPZ output now lives in `phasesmith-persistence`, with
+explicit compression levels, exact numeric byte preservation and exclusive
+creation. It accepts bounded real/integer/boolean arrays and streams NPY members
+using existing Rust ZIP/DEFLATE dependencies. Its optional Python adapter copies
+up to 1 GiB before detaching. Existing project-bundle serialization and default
+case/mask writers remain unchanged; the example will explicitly select the
+measured native archive policy. Both compressed and uncompressed controls are
+benchmarked, including file sizes and exact read-back checks.
 Frame preparation now optionally queues bounded immutable frame snapshots for
 independent native measurements. Loaders, profile sinks, errors and progress
 remain ordered on the calling thread; Rust retains background/sample extraction

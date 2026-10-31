@@ -52,6 +52,7 @@
 
 mod arrays;
 mod bundle;
+pub mod numeric_archive;
 pub use bundle::{
     ProjectBundle, load_pawley_bundle, load_project_bundle, save_pawley_bundle, save_project_bundle,
 };

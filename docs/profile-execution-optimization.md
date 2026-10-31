@@ -210,3 +210,39 @@ The full all-domain v18 run also passes every bitwise identity gate. Frame
 preparation takes 5.132 s versus 9.350 s in v17. The numerical worker falls
 from 33.91 s to 29.41 s; CLI from 42.49 s to 37.80 s, with the same cold-parent
 qualification. Report: `benchmarks/enstatite-next-execution-stage2-macos.json`.
+
+## Follow-up 3: native lossless numeric archives
+
+`phasesmith_persistence::numeric_archive::write_numeric_npz` writes NPY members
+inside a standard NPZ archive using the existing pure-Rust ZIP/DEFLATE stack.
+Level zero stores members; levels 1–9 select lossless compression effort. Shape,
+dtype/endianness, signed zeros and NaN payload bytes are preserved exactly.
+Metadata remains ordinary uint8 arrays; no pickle or executable objects are
+accepted. This is a separate I/O API; existing project-bundle encoding is unchanged.
+
+Validate flat names, duplicate keys, supported numeric dtypes, rank (up to 32),
+shape/byte-count agreement, at most 4,096 arrays and at most 1 GiB total raw
+payload before creating a file. Creation is exclusive, timestamps deterministic,
+and a newly created partial file is removed on write failure. The optional
+NumPy adapter copies payloads before releasing the interpreter; that copy and
+compressor workspace are distinct from frame/profile cache caps.
+
+The example can explicitly choose the native writer for mask/case snapshots
+and every numeric stage archive; legacy controls remain reproducible. Benchmark
+three complete real-case writes per backend/level, with output sizes and exact
+NumPy read-back, then run the complete raw workflow again. Native tests also
+write/read ZIP/NPY bytes without Python. No numerical equations, support or
+reference/oracle fixtures change.
+
+The first archive trial completed three exact level-1 writes (median 1.589 s)
+but ran out of disk space during the third uncompressed write. Its error log
+and measurements are retained. Only verified duplicate files made by this
+benchmark were removed (1,299,741,524 bytes); source data and all full workflow
+products remain untouched. Repeats now journal each verified result and can
+discard only their own successful archive after exact read-back.
+
+The clean bounded-storage rerun gives native level-1/uncompressed medians
+1.167/.579 s. Level 1 is 152,576,907 bytes versus NumPy level 6's 143,890,029
+bytes (about 6% larger); uncompressed is 353,403,826 bytes. Level 1 is selected
+for the full v19 run to retain compression. The interrupted trial remains in
+the report; no numerical thresholds or scientific settings changed.

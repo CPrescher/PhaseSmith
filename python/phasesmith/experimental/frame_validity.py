@@ -265,14 +265,19 @@ class FrameValidity(_MaskAccess):
             self.excluded[frame], boxes, self.shape, self.block, self.fixed_mask
         )
 
-    def save(self, path):
+    def save(self, path, *, compression_level=None):
         arrays = dict(excluded=self.excluded)
         for name in ("fixed_mask", "omega_bounds"):
             if getattr(self, name) is not None:
                 arrays[name] = getattr(self, name)
         arrays["metadata"] = np.frombuffer(_json(self.metadata()).encode(), np.uint8)
-        with Path(path).open("xb") as stream:
-            np.savez_compressed(stream, **arrays)
+        if compression_level is None:
+            with Path(path).open("xb") as stream:
+                np.savez_compressed(stream, **arrays)
+        else:
+            from phasesmith.io.numeric_archive import save_npz
+
+            save_npz(path, arrays, compression_level=compression_level)
 
     @classmethod
     def load(cls, path, *, frame_ids=None, shape=None, omega_bounds=None):

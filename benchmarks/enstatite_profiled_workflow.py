@@ -113,6 +113,12 @@ def main():
         import numpy as np
 
         timer.patch(np, "savez_compressed", "compressed_archives")
+        try:
+            archive = importlib.import_module("phasesmith.io.numeric_archive")
+        except ModuleNotFoundError:
+            pass  # Retained baseline wheels predate the native writer.
+        else:
+            timer.patch(archive, "save_npz", "compressed_archives")
     if not worker and not search:
         timer.patch(workflow, "verify_dataset", "source_verification")
     original_run = subprocess.run

@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v18.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v19.json"
 
 
 def digest(path):
@@ -37,6 +37,23 @@ def save_json(path, value):
     # Run directories are new; existing stage records cannot silently change.
     with Path(path).open("x") as stream:
         stream.write(json.dumps(value, indent=2, allow_nan=False) + "\n")
+
+
+def archive_controls(protocol):
+    return (
+        {}
+        if "archive_output" not in protocol
+        else {"compression_level": protocol["archive_output"]["compression_level"]}
+    )
+
+
+def save_archive(path, protocol, **arrays):
+    if "archive_output" in protocol:
+        from phasesmith.io.numeric_archive import save_npz
+
+        save_npz(path, arrays, **archive_controls(protocol))
+    else:
+        np.savez_compressed(path, **arrays)
 
 
 def log(message):
@@ -304,7 +321,7 @@ def stage_validity(packet, out, protocol):
                 frames.hashes[i] for i in range(len(frames.indices))
             ]:
                 raise ValueError("mask estimator source hashes differ from original frames")
-            estimate.save(out / "frame-validity.npz")
+            estimate.save(out / "frame-validity.npz", **archive_controls(protocol))
             providers.append(estimate)
         if config["mode"] in ("geometric", "combined"):
             geometry = poni_geometry(
@@ -380,8 +397,9 @@ def stage_positions(packet, out, protocol, validity=None):
                     frames.hashes[i] for i in range(len(frames.indices))
                 ]:
                     raise ValueError("source frame bytes changed after mask estimation")
-        np.savez_compressed(
+        save_archive(
             out / "positions.npz",
+            protocol,
             original_flags=original_flags,
             **{
                 name: getattr(positions, name)
@@ -524,8 +542,9 @@ def stage_indexing(positions, geometry, packet, out, protocol):
             reference_coordinates_used=False,
         ),
     )
-    np.savez_compressed(
+    save_archive(
         out / "indexed-positions.npz",
+        protocol,
         track_ids=ids,
         hkl=indices,
         observed=observed,
@@ -678,8 +697,9 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes, fr
             p.values[:target_count], observations.summation.flags[:target_count], shape
         )
         outside_ids = np.flatnonzero(~interior)
-        np.savez_compressed(
+        save_archive(
             out / "edge-exclusions.npz",
+            protocol,
             hkl=p.hkl[outside_ids],
             predicted=p.values[outside_ids],
             aperture=observations.summation.values[outside_ids],
@@ -700,7 +720,9 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes, fr
         if len(bank.reference_ids) < protocol["gates"]["minimum_profile_teachers"]:
             raise ValueError("insufficient independent training profile teachers")
         # Large shoebox arrays are written only to the explicitly external run directory.
-        save_case(out / "raw-observations-and-bank.npz", observations, bank)
+        save_case(
+            out / "raw-observations-and-bank.npz", observations, bank, **archive_controls(protocol)
+        )
         r = protocol["reduction"]
         config = ReductionConfig(
             profile=options,
@@ -759,8 +781,9 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes, fr
             )
         if valid.sum() < protocol["gates"]["minimum_exported_observations"]:
             raise ValueError("insufficient quality-controlled signed observations")
-        np.savez_compressed(
+        save_archive(
             out / "reduced-observations.npz",
+            protocol,
             hkl=target_hkl,
             intensity=values[:, 0],
             sigma=values[:, 1],

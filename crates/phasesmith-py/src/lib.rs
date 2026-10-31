@@ -71,6 +71,7 @@ mod geometry_refinement;
 mod hdf5;
 #[cfg(feature = "experimental-spots")]
 mod intensity_model;
+mod numeric_archive;
 #[cfg(feature = "experimental-spots")]
 mod omega_background;
 mod pawley;
@@ -4324,6 +4325,7 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     pawley::register(module)?;
     tof_pawley::register(module)?;
     project_bundle::register(module)?;
+    numeric_archive::register(module)?;
     tof_multibank::register(module)?;
     tof_structural_multibank::register(module)?;
     module.add_function(wrap_pyfunction!(unit_cell_geometry, module)?)?;
