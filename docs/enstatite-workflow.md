@@ -71,7 +71,7 @@ the reference count. A process error or an 18-second outer timeout returns exit
 status 2; completed searches return 0 even if no candidate or target is reached.
 Inspect the report's separate execution, search and assessment fields.
 
-The current 2,000,000-element dense bound caps both inputs at 36 atoms for
+The default 2,000,000-element dense bound caps both inputs at 36 atoms for
 10,694 expanded measured rows. The supplied reference has 80. These searches
 cannot establish full structure recovery, irrespective of R1. The benchmark
 keeps that limit, four starts, 800 cycles, seed 0, a 13-second native budget and
@@ -82,6 +82,25 @@ reported `search_budget` and missed the numerical target, with no process
 timeout. The small recorded comparison is
 `benchmarks/enstatite-promotion-search-macos.json`. This is a retained failing
 development result, not a passed complete-workflow test.
+
+### Explicit-memory follow-up
+
+The [memory-budget change](solution-memory-budget.md) now permits larger explicitly
+budgeted searches. Add `--dense-memory-budget-bytes 67108864` and use a fresh
+output directory. Native input-only preflight admits 105 atoms for either source;
+the reference count does not set that cap.
+
+One run per source with the unchanged seed/search effort recovered Mg=16, Si=16,
+O=48. Post-search reference matching gives maximum/RMS coordinate errors of
+0.00920/0.00536 A for the PhaseSmith reduction and 0.01200/0.00682 A for the source
+integration. Both pass the strict 0.02 A maximum criterion. This establishes
+structure search from these existing intensities. The complete raw-frame runner
+below is still pending; no standalone structure-refinement workflow is claimed.
+
+The exact records are `benchmarks/enstatite-memory-budget-search-macos.json`.
+Local recovered structures are `runs/enstatite-memory-64mib-phasesmith/candidate/candidate.cif`
+and the corresponding `...-source/candidate/candidate.cif`; each also retains its
+density-frame full-cell `candidate-p1.cif`.
 
 ## Complete runner to implement
 
