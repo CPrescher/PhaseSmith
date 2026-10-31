@@ -1,0 +1,198 @@
+{
+  "schema": "phasesmith.package-review.v1",
+  "review_date": "2026-10-31",
+  "version": "0.8.0",
+  "review_baseline": "fbfc0d0",
+  "runtime_source_commit": "92d69e3",
+  "native_source_commit": "c7f48d0",
+  "dioptas_migration_commit": "31d79408",
+  "scope": [
+    "Ruff backlog",
+    "package ownership and namespaces",
+    "dependencies and build contracts",
+    "configuration stability",
+    "documentation navigation and local links",
+    "Dioptas consumer migration"
+  ],
+  "changes": {
+    "ruff_diagnostics_fixed": 191,
+    "compatibility_wrappers_removed": 35,
+    "independent_references_retained": 35,
+    "reference_namespace": "phasesmith.single_crystal.reference",
+    "rust_minimum": "1.89.0",
+    "literal_search_controls": 51,
+    "active_brief_lines": 167,
+    "archived_brief_lines": 3419
+  },
+  "validation": {
+    "rust": {
+      "toolchain": "1.89.0",
+      "passed": 515,
+      "failed": 0,
+      "ignored": 34
+    },
+    "python_installed_wheel": {
+      "passed": 3281,
+      "skipped": 11,
+      "deselected": 34,
+      "seconds": 115.59,
+      "source_commit": "c7f48d0",
+      "final_followup": "92d69e3 changes three unavailable-backend error messages and docs; rebuilt wheel, 54 affected/API tests passed"
+    },
+    "dioptas": {
+      "passed": 335,
+      "first_group": 247,
+      "adapter_group": 88,
+      "preexisting_tracked_edits_preserved": true,
+      "lock_check_offline": true
+    },
+    "minimal_python_runtime": [
+      "numpy==2.5.4",
+      "phasesmith==0.8.0"
+    ],
+    "no_optional_python_numerics_smoke": true,
+    "strict_clippy": true,
+    "strict_rustdoc": true,
+    "minimal_rust_feature_checks": true,
+    "documentation": {
+      "html_pages": 181,
+      "internal_link_instances_checked": 22362,
+      "unique_external_urls": 210,
+      "external_urls_live_checked": false,
+      "broken_internal_links": [],
+      "unreachable_html_pages": []
+    }
+  },
+  "dependencies": {
+    "workspace_packages": 15,
+    "locked_external_package_identities": 164,
+    "normal_and_build_external": {
+      "core": 6,
+      "minimal_facade": 61,
+      "default_facade": 70,
+      "hdf5_facade": 101,
+      "python_hdf5": 112
+    },
+    "unused_direct_production_dependencies_found": 0
+  },
+  "distributions": [
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/wheels/phasesmith-0.8.0-cp311-abi3-macosx_11_0_arm64.whl",
+      "bytes": 8183846,
+      "sha256": "78941d805892d55e24d95bf208ef5bbf47c69046875e93cc3dc161307256c261"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/sdist/phasesmith-0.8.0.tar.gz",
+      "bytes": 1749950,
+      "sha256": "b26917bd7667d4727d7969939d91b0ff63245232d75d0c635f909a08333b461e"
+    }
+  ],
+  "mg_sio3": {
+    "wall_seconds": 19.06,
+    "gates": {
+      "all_numerical_arrays_bitwise_identical": true,
+      "full_candidate_records_identical": true,
+      "phasing_histories_identical": true,
+      "source_files_unchanged": true,
+      "structure_recovered": true,
+      "worker_isolation": true,
+      "no_optional_python_numerics": true
+    },
+    "r1": 0.04085182070733226,
+    "protocol": "validation/enstatite-raw-workflow-v25.json",
+    "output": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v25",
+    "baseline": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v11-timing",
+    "comparison": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/equivalence-v25.json",
+    "comparison_sha256": "9e99c8e2aec2afbda33db524dd53671683e0883c9ab2bbf243482e3c49080954"
+  },
+  "logs": {
+    "ruff": {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/logs/phasesmith-review-final-ruff.log",
+      "sha256": "6aac21911e4eb2d5ea48f0e0a5fdf5ce126f868ec32595857752a7bc1e8a516a"
+    },
+    "rust_tests": {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/logs/phasesmith-review-final-rust-tests.log",
+      "sha256": "3de45755e3f4dbc030839fc42d530d1cd48d99fcfd467b6f93c2f8c8819e9413"
+    },
+    "clippy": {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/logs/phasesmith-review-clippy-validated-final.log",
+      "sha256": "ce33d2274622e67f02768ec15503974c12aa7ba88a0062a50c0de468e76d43bd"
+    },
+    "rustdoc": {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/logs/phasesmith-review-final-rustdoc.log",
+      "sha256": "36c9f1b504f65024518f457fdd6d38beedd2b97b87b3f154ba8164d38ed4aa2f"
+    },
+    "rust_minimal": {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/logs/phasesmith-review-final-minimal-rust.log",
+      "sha256": "d7fbfe2ae8832f3b3c7c1a3852f39ed076a69876ccda28890cf1c609a3d17ea0"
+    },
+    "py_minimal": {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/logs/phasesmith-review-final-minimal-py.log",
+      "sha256": "3649971bdeccf70bc5a3f1a781e8ce4068a18560b07bdb4e2473a04d6804a6b2"
+    },
+    "installed_pytest": {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/logs/phasesmith-review-final-installed-pytest.log",
+      "sha256": "3d7bccfdfb7a50e30a2c9c60f1337f72bff72d84db1cfb795f9c524e7fe74b88"
+    },
+    "last_error_message_tests": {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/logs/phasesmith-review-final-guide-followup-tests.log",
+      "sha256": "f0e53e1c9e9528826ebaf0463e64e8cedb2dfe78815403fcf37bdcea0a276dfc"
+    },
+    "dioptas": {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/logs/phasesmith-review-final-dioptas-tests.log",
+      "sha256": "19062c49fbd154c40265c29a546e6a61494e3f0f10eab758636db9f37db9c700"
+    },
+    "dioptas_adapters": {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/logs/phasesmith-review-final-dioptas-adapter-tests.log",
+      "sha256": "0731e5c3e3bff2ec5880104fe2a6de95660897704061cac3fa81ab13bdd894dc"
+    },
+    "minimal_smoke": {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/logs/phasesmith-review-final-minimal-smoke.log",
+      "sha256": "d376efcfcebcf383cb66b5bc9672ce6b73af4f9115a66d0342af4b9833f3adc4"
+    },
+    "docs": {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/logs/phasesmith-review-final-docs.log",
+      "sha256": "7a85db23296011434f892086b9f64d73eba9ca7dc8c568b955f126ff99322f81"
+    },
+    "raw_workflow": {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031/logs/phasesmith-review-v25-full.log",
+      "sha256": "5844f19b4398cc04bad9d16aa26a45da43b4ffb4fcec3b5489f25d229a6b4fd5"
+    }
+  },
+  "remaining_work": [
+    "Typed native end-to-end coordinator",
+    "Split large binding and orchestration modules with exact replay coverage",
+    "Canonical third-party notice synchronization",
+    "Constrained candidate-polishing convergence remains a scientific limitation",
+    "Remote platform CI and unpublished release workflow before tagging"
+  ],
+  "not_performed": [
+    "publication",
+    "tag",
+    "push",
+    "live check of all external documentation URLs",
+    "exhaustive dependency security audit"
+  ],
+  "cleanup": {
+    "removed_regenerable_directories": [
+      {
+        "path": "/Users/clemens/Programming/PhaseSmith-single-crystal-promotion/target",
+        "allocated_bytes_before": 4051939328
+      },
+      {
+        "path": "/tmp/phasesmith-package-review-site",
+        "allocated_bytes_before": 17690624
+      }
+    ],
+    "free_bytes_before": 54327726080,
+    "free_bytes_after": 58164027392,
+    "retained": [
+      "raw detector inputs and all scientific outputs",
+      "tested wheels and source archives",
+      "full logs and comparison receipts",
+      "Rust 1.89 maintenance toolchain",
+      "working Python environments",
+      "shared caches and other worktrees"
+    ]
+  }
+}
