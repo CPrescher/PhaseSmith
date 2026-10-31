@@ -84,3 +84,35 @@ cache including its row index uses 181,907,500 capacity bytes under the same
 varies, so no large additional end-to-end gain is claimed. The global bank and
 serial preparation limit this coarse bank-level parallelism. Report:
 `benchmarks/enstatite-profile-execution-stage2-macos.json`.
+
+## Stage 3: fixed-profile integration
+
+Keep the legacy streaming `profiles::fit` as a control/convenience entry point.
+The resource-controlled `fit_with_execution` first evaluates each sample's
+profile mass in its original voxel order. Independent chunks may fill disjoint
+probability rows in parallel; mass sums retain source order. Only integer
+overlap flags couple reflections. Group these by exact exposure-bound bit
+patterns and keep one exposure's pixel map at a time, preserving the original
+flag criterion without an all-scan occupancy hash.
+
+Stable per-reflection group indices retain the original group/sample order.
+Each reflection independently executes the unchanged eight expected-count
+updates (or one supplied-variance pass). The first pass saves each original
+per-voxel derivative contribution `profile[j]*dp[j]`, including zeros and signs,
+in callback order. Subsequent noise passes replay these contributions with the
+current weights and residuals, retaining every multiplication/addition order.
+Do not sum them into one derivative first: that would reorder floating point.
+Mass/partial evaluation still uses the original fused finite-intersection kernel.
+
+Divide the declared extra derivative-cache cap among active workers. Each
+working reflection admits its row pointers first and grows its contiguous
+contributions only within that cap; admission/allocation overflow discards
+that cache and continues streaming without changing the fit. Cache capacities,
+counts of cached/uncached rows, actual/requested workers, and a conservative
+concurrent-cache upper bound are reported. The cap excludes caller input,
+output, ordinary algorithm workspace and OS thread stacks; process peak RSS is
+measured separately. The overlap map now scales with a single exposure.
+
+The final integration is benchmarked both with one worker and four, before
+fresh full runs for each resource configuration. All science controls, signed
+intensities, covariance propagation, support and quality flags must remain exact.

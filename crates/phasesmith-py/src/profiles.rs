@@ -202,6 +202,7 @@ fn experimental_profile_learn<'py>(
     ))
 }
 #[pyfunction]
+#[pyo3(signature=(observations,profiles,shape,step,assignments,shifts,minimum_mass,expected_noise,gain,read_noise,workers=1,cache_bytes=67_108_864))]
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn experimental_profile_fit<'py>(
     py: Python<'py>,
@@ -215,14 +216,20 @@ fn experimental_profile_fit<'py>(
     expected_noise: bool,
     gain: f64,
     read_noise: f64,
-) -> PyResult<(Bound<'py, PyArray2<f64>>, Bound<'py, PyArray1<u32>>)> {
+    workers: usize,
+    cache_bytes: usize,
+) -> PyResult<(
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray1<u32>>,
+    Bound<'py, PyDict>,
+)> {
     let owned = Owned::new(observations)?;
     let profiles = profiles.as_slice()?.to_vec();
     let assignments = integers(assignments)?;
     let shifts = rows(shifts)?;
-    let (values, flags) = py
+    let result = py
         .detach(move || {
-            kernel::fit(
+            kernel::fit_with_execution(
                 &owned.borrowed(),
                 &profiles,
                 kernel::Grid { shape, step },
@@ -232,10 +239,34 @@ fn experimental_profile_fit<'py>(
                 expected_noise,
                 gain,
                 read_noise,
+                kernel::Execution {
+                    workers,
+                    geometry_cache_bytes: cache_bytes,
+                },
             )
         })
         .map_err(error)?;
-    Ok((matrix(py, values), flags.into_pyarray(py)))
+    let stats = PyDict::new(py);
+    let e = result.execution;
+    stats.set_item("workers", e.workers)?;
+    stats.set_item("requested_workers", e.requested_workers)?;
+    stats.set_item("cache_budget_bytes", e.cache_budget_bytes)?;
+    stats.set_item(
+        "maximum_reflection_cache_bytes",
+        e.maximum_reflection_cache_bytes,
+    )?;
+    stats.set_item("cache_peak_bound_bytes", e.cache_peak_bound_bytes)?;
+    stats.set_item("cached_reflections", e.cached_reflections)?;
+    stats.set_item("uncached_reflections", e.uncached_reflections)?;
+    stats.set_item(
+        "maximum_exposure_overlap_pixels",
+        e.maximum_exposure_overlap_pixels,
+    )?;
+    Ok((
+        matrix(py, result.values),
+        result.flags.into_pyarray(py),
+        stats,
+    ))
 }
 #[pyfunction]
 #[pyo3(signature=(data,height,width,mask,box_array,gap,margin,minimum,clip,gain,read_noise,saturation=None,variance=None))]

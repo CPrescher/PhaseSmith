@@ -161,6 +161,7 @@ def refine_profiles(
     options=None,
     frozen_parameters=None,
     progress=None,
+    execution=None,
 ):
     """0=fixed, 1=strong x/y/omega+width, 2=strong x/y only.
 
@@ -194,7 +195,7 @@ def refine_profiles(
         frozen.shape != (n, 5) or frozen.dtype.kind not in "fiu" or not np.isfinite(frozen).all()
     ):
         raise ValueError("frozen parameters must be finite real (reflections,5)")
-    baseline = fit_profiles(observations, model)
+    baseline = fit_profiles(observations, model, execution=execution)
     result = _core.experimental_profile_refine(
         observations._native(),
         model.profiles,

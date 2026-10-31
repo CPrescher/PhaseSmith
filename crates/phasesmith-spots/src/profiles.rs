@@ -42,10 +42,10 @@ impl Grid {
         Ok(())
     }
 }
-fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
+pub(super) fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
     a.iter().zip(b).map(|(a, b)| a * b).sum()
 }
-fn mv(a: Matrix, b: [f64; 3]) -> [f64; 3] {
+pub(super) fn mv(a: Matrix, b: [f64; 3]) -> [f64; 3] {
     a.map(|r| dot(r, b))
 }
 pub(super) fn inverse(a: Matrix) -> Option<Matrix> {
@@ -804,6 +804,89 @@ pub fn learn_with_execution(
         reference_centres: centres,
         execution: execution_stats,
     })
+}
+
+/// Actual bounded fixed-profile execution, separate from numerical outputs.
+#[derive(Clone, Copy, Default)]
+pub struct FitExecution {
+    /// Actual pool size.
+    pub workers: usize,
+    /// Requested pool size.
+    pub requested_workers: usize,
+    /// Total extra derivative-cache capacity cap, divided among active workers.
+    pub cache_budget_bytes: usize,
+    /// Largest actual cache vector capacity for any source reflection.
+    pub maximum_reflection_cache_bytes: usize,
+    /// Conservative simultaneous cache-capacity upper bound, not measured RSS.
+    pub cache_peak_bound_bytes: usize,
+    /// Reflections retaining first-pass derivative geometry for reuse.
+    pub cached_reflections: usize,
+    /// Empty/unadmitted reflections evaluated without derivative reuse.
+    pub uncached_reflections: usize,
+    /// Largest live exact-exposure overlap map (unique integer pixel keys).
+    pub maximum_exposure_overlap_pixels: usize,
+}
+/// Fixed-profile rows and their actual execution resources.
+pub struct Fitted {
+    /// Existing ten signed intensity/uncertainty/quality columns.
+    pub values: Vec<[f64; 10]>,
+    /// Existing support/source/overlap quality flags.
+    pub flags: Vec<u32>,
+    /// Performance diagnostics, independent of numerical arrays.
+    pub execution: FitExecution,
+}
+/// Same signed GLS equations with bounded geometry reuse and independent workers.
+/// # Errors
+/// Invalid observations/profile/noise controls or execution parameters.
+#[allow(clippy::too_many_arguments)]
+pub fn fit_with_execution(
+    o: &Observations<'_>,
+    profiles: &[f64],
+    grid: Grid,
+    assignments: &[usize],
+    shifts: &[[f64; 3]],
+    minimum_mass: f64,
+    expected_noise: bool,
+    gain: f64,
+    read_noise: f64,
+    execution: Execution,
+) -> Result<Fitted, SpotError> {
+    execution.validate()?;
+    if execution.workers == 1 && execution.geometry_cache_bytes == 0 {
+        let (values, flags) = fit(
+            o,
+            profiles,
+            grid,
+            assignments,
+            shifts,
+            minimum_mass,
+            expected_noise,
+            gain,
+            read_noise,
+        )?;
+        return Ok(Fitted {
+            values,
+            flags,
+            execution: FitExecution {
+                workers: 1,
+                requested_workers: 1,
+                uncached_reflections: o.centres.len(),
+                ..Default::default()
+            },
+        });
+    }
+    crate::profiles_fit::fit(
+        o,
+        profiles,
+        grid,
+        assignments,
+        shifts,
+        minimum_mass,
+        expected_noise,
+        gain,
+        read_noise,
+        execution,
+    )
 }
 
 /// Fit values: I, sigma, observed mass, chi-square/dof, valid samples, correlation,

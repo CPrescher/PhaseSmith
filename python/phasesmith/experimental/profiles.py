@@ -451,6 +451,7 @@ class ProfileIntegration:
     coefficients: np.ndarray | None = None
     coefficient_covariance: np.ndarray | None = None
     variation_factors: np.ndarray | None = None
+    execution: dict | None = None
     columns: ClassVar = (
         "intensity",
         "sigma",
@@ -511,7 +512,7 @@ def fit_profiles(
         expected_noise = False
     extra = {}
     if variation_factors is None:
-        values, flags = _core.experimental_profile_fit(
+        values, flags, stats = _core.experimental_profile_fit(
             observations._native(),
             model.profiles,
             o.shape,
@@ -522,7 +523,10 @@ def fit_profiles(
             expected_noise,
             float(noise[0]),
             float(noise[1]),
+            execution.workers,
+            execution.geometry_cache_bytes,
         )
+        extra["execution"] = stats
     else:
         factors = np.asarray(variation_factors)
         if (
