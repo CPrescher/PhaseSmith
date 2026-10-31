@@ -37,6 +37,15 @@ commit `c4ee76d` sorts the combined Python extension module declarations. This
 separate review branch leaves both original branches unchanged. It contains no
 committed snapshot of the other checkout's unfinished work.
 
+During the audit, the other branch committed its FFT and row-search increments
+as `7525099` and `297d157`. Integration-review commit `e9475ad` additionally merges
+those exact committed versions, resolving the same three Cargo/status-block
+conflicts described below. Both optional native crates/features and both status
+descriptions survive. The review branch now includes the latest observed other
+committed tip, while its remaining unfinished work stays in the original checkout.
+An additional all-target/all-feature locked Cargo check covers this committed
+integration separately from the fuller captured working snapshot.
+
 Six paths overlap with the other checkout's unfinished changes:
 `Cargo.lock`, `Cargo.toml`, `PROJECT_BRIEF.md`, `THIRD_PARTY_NOTICES.md`,
 `crates/phasesmith-py/Cargo.toml` and `crates/phasesmith-py/src/lib.rs`.
