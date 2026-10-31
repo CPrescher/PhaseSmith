@@ -1,0 +1,68 @@
+{
+  "schema": "phasesmith.repair-evaluation-validation.v1",
+  "timestamp_utc": "2026-10-31T06:16:36.015852+00:00",
+  "holdout_opened": false,
+  "native_sha256": "891cad9dd7f702c8066191b175ab1b29458752e88ccd3dbe373702dccfe96110",
+  "retention_sha256": "d1579124ffa8aba1ef29f8ad5509891d86325182d417705abff924f83df4fdaa",
+  "adapter_lock_sha256": "95a8b592ef90362d2bb74f01401456ac661a2f92770b1cfa72ebc81472385a6e",
+  "independent_reference_sha256": "11f3dbef78e1d22b8b881c959cd6e0967eb62292e1ef078405f870a13d4b4a38",
+  "artifact_sha256": {
+    "structure-solution-repair-evaluation-cache-macos.json": "73f4cc1292974f843e4ac4eebe8fe2395dc21f7326f6ef6b154311fe3528cc26",
+    "structure-solution-repair-evaluation-comparison-macos.json": "828fce02facf81ccbf918d2712c135c1ecfb9a13a906be72b7f8ce91c93d1832",
+    "structure-solution-repair-evaluation-control-macos.json": "eedc0ab3b7d785bffd33564f9401f6fbe1e633dadf51348c5d3e80b0336f4989",
+    "structure-solution-repair-evaluation-kernels-macos.json": "1c363b7a194c8f7075e7c396e1f8aba9399986f4d3fca372192b2337bbf7e576",
+    "structure-solution-repair-evaluation-off-macos.json": "c7149dae35696466385850bad2964b53509be39e7ba3dbfc6192d33ac514cb61",
+    "structure-solution-repair-evaluation-profiles-macos.json": "46b338959edcb5fddb97d8a98f3bf71ac7edbd1e87303bd9fd73a5f9b4d8cd7f",
+    "structure-solution-repair-evaluation-retention-macos.json": "d1579124ffa8aba1ef29f8ad5509891d86325182d417705abff924f83df4fdaa"
+  },
+  "checks": [
+    {
+      "command": "cargo fmt --check",
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0
+    },
+    {
+      "command": "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+      "exit_code": 0,
+      "log_sha256": "c6f45cb16fe53be7f7853af22791376e4ff8d9ed763005bb8aa7e75a259cc2fb"
+    },
+    {
+      "command": "cargo test --workspace --all-features",
+      "exit_code": 0,
+      "passed": 429,
+      "failed": 0,
+      "ignored": 34,
+      "log_sha256": "2f2654d869c932435231b36e5734b69d7b42e0c6b319bd153d2d131a9ae1dc4c"
+    },
+    {
+      "command": ".venv/bin/pytest -q",
+      "exit_code": 0,
+      "passed": 2743,
+      "failed": 0,
+      "skipped": 11,
+      "deselected": 34,
+      "log_sha256": "952717971ed5c62cadebd975efd43f02b6e430da19ed8b5dfe299763cc86c35e"
+    },
+    {
+      "command": ".venv/bin/python benchmarks/solution_repair_cache_verify.py --base runs/repair-evaluation-final",
+      "exit_code": 0,
+      "source_files_verified": 63,
+      "logical_work_mismatches": 0,
+      "all_35_count_vectors_unchanged": true
+    }
+  ],
+  "numerical_evidence": [
+    "Bitwise original/cached scalar objective, analytical gradient and Gauss-Newton curvature under multiple backgrounds and labels",
+    "Bitwise categorical scoring with its distinct norm-squared denominator and final normalization",
+    "Forced zero-byte column-cache fallback and per-move field invalidation",
+    "Exact deterministic beam shifts, objectives, rank, ordering and logical work on six seeds in P1, P-1 and Pm",
+    "Independent NumPy beam equations and existing scalar-shift centered finite differences unchanged",
+    "Synthetic whole-search counts, coordinates and targets retained",
+    "All 210 input-only predictions saved before all three reference barriers; actual single-worker execution, budgets, immutable source/binary snapshots and caps verified",
+    "Exact previous sets of 19 structures, 27 total-count successes, 19 per-element vectors and 15 strict structures retained; no count-vector or logical-work differences"
+  ],
+  "qualification": "Full workspace checks preceded timed kernels and corpus collection. No task-owned tests, builds, kernels or profiles overlap timed corpus jobs. The three-mode one-collection comparison uses all 35 development cases, retaining seven above-cap references and four no-model cases in primary denominators. Isolated kernel improvement is not complete solve speedup; typical paired solve gains remain small. The 65 holdout cases remain unopened."
+}

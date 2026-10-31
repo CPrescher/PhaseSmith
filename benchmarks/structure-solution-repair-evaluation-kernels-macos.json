@@ -1,0 +1,190 @@
+{
+  "schema": "phasesmith.repair-evaluation-kernels.v1",
+  "holdout_opened": false,
+  "qualification": "Same-executable original and exact-reuse categorical repair on eight orbits and 1054 reflections; ten Criterion samples, one-second warmup and target measurement. Raw samples retain actual times. The kernel gain is distinct from complete solve timing. No task-owned tests, builds, profiles or corpus jobs overlap timed kernel collection.",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- repair_evaluation_ --sample-size 10 --measurement-time 1 --warm-up-time 1",
+  "native_sha256": "891cad9dd7f702c8066191b175ab1b29458752e88ccd3dbe373702dccfe96110",
+  "executable_sha256": "4bb0fae8b43d6e6a5ca3015810c2d76454f6843ad68d3690fad9c2b67ae35157",
+  "log_sha256": "a384efa0d111ab6c00aea9144ded93fb4d3540133a6407ec6ca76de0616aaf40",
+  "source_sha256": {
+    "crates/phasesmith-solution/benches/solution.rs": "7bec89ed410ed348ee27386651469497165beea43a2df74b88589732dfec4d2f",
+    "crates/phasesmith-solution/src/joint_assignment.rs": "d40f2d19fc22b5bb95c5a4f699a3e165ccbdf33581812e15194c587a4486b3e9",
+    "crates/phasesmith-solution/src/repair_evaluation.rs": "4503fa67c4ead9d5e9036ebacb18d9bb4ee40e48389896aeb987ece23a34e9e6",
+    "crates/phasesmith-solution/src/shared_assignment_repair.rs": "f78caf0e86fe8c5ab3186ccfe88cde92ae1c14020d863ee37436598c737dd631"
+  },
+  "rows": [
+    {
+      "name": "repair_evaluation_8_orbits_1054_rows_control",
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 34914475.39722222,
+            "upper_bound": 35347314.861666664
+          },
+          "point_estimate": 35115409.44162698,
+          "standard_error": 110741.982412098
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 34868890.625,
+            "upper_bound": 35447680.55555555
+          },
+          "point_estimate": 34915376.95,
+          "standard_error": 160933.99699350924
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 18045.2987871308,
+            "upper_bound": 569341.1519205093
+          },
+          "point_estimate": 164283.36955339342,
+          "standard_error": 158866.38802199584
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 34901211.601626016,
+            "upper_bound": 35395193.874090746
+          },
+          "point_estimate": 35124791.776623376,
+          "standard_error": 127069.79310187747
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 120185.5712195465,
+            "upper_bound": 447671.6112025469
+          },
+          "point_estimate": 368248.4221261455,
+          "standard_error": 74452.29661728327
+        }
+      },
+      "samples": {
+        "sampling_mode": "Linear",
+        "iters": [
+          1.0,
+          2.0,
+          3.0,
+          4.0,
+          5.0,
+          6.0,
+          7.0,
+          8.0,
+          9.0,
+          10.0
+        ],
+        "times": [
+          34746333.0,
+          69875041.0,
+          107349667.0,
+          140373667.0,
+          174466167.0,
+          209176834.0,
+          249441208.0,
+          278951125.0,
+          319029125.0,
+          348865333.0
+        ]
+      },
+      "criterion": {
+        "group_id": "repair_evaluation_8_orbits_1054_rows_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "repair_evaluation_8_orbits_1054_rows_control",
+        "directory_name": "repair_evaluation_8_orbits_1054_rows_control",
+        "title": "repair_evaluation_8_orbits_1054_rows_control"
+      }
+    },
+    {
+      "name": "repair_evaluation_8_orbits_1054_rows_cache",
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 17416506.557375,
+            "upper_bound": 17557093.17632887
+          },
+          "point_estimate": 17483133.399146825,
+          "standard_error": 36016.59821118945
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 17391013.888888888,
+            "upper_bound": 17563503.84375
+          },
+          "point_estimate": 17468271.721428573,
+          "standard_error": 36560.294264184544
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 17491.79391445937,
+            "upper_bound": 207073.59548620787
+          },
+          "point_estimate": 67891.71219468208,
+          "standard_error": 48790.97091195343
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 17444164.615702767,
+            "upper_bound": 17511333.919086333
+          },
+          "point_estimate": 17478685.87272727,
+          "standard_error": 17241.931049442308
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 53214.287644775446,
+            "upper_bound": 157947.97691291955
+          },
+          "point_estimate": 120352.52086499611,
+          "standard_error": 27588.32383338904
+        }
+      },
+      "samples": {
+        "sampling_mode": "Linear",
+        "iters": [
+          2.0,
+          4.0,
+          6.0,
+          8.0,
+          10.0,
+          12.0,
+          14.0,
+          16.0,
+          18.0,
+          20.0
+        ],
+        "times": [
+          34660917.0,
+          70903375.0,
+          104111875.0,
+          141050541.0,
+          174496208.0,
+          209027209.0,
+          244816917.0,
+          279931041.0,
+          313740875.0,
+          350210375.0
+        ]
+      },
+      "criterion": {
+        "group_id": "repair_evaluation_8_orbits_1054_rows_cache",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "repair_evaluation_8_orbits_1054_rows_cache",
+        "directory_name": "repair_evaluation_8_orbits_1054_rows_cache",
+        "title": "repair_evaluation_8_orbits_1054_rows_cache"
+      }
+    }
+  ],
+  "slope_speedup": 2.0095785250898106
+}

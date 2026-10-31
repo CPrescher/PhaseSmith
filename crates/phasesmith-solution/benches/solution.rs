@@ -1865,6 +1865,35 @@ fn benchmark(c: &mut Criterion) {
                 .unwrap()
         });
     });
+    for cached in [false, true] {
+        let label = if cached { "cache" } else { "control" };
+        c.bench_function(
+            &format!("repair_evaluation_8_orbits_1054_rows_{label}"),
+            |b| {
+                b.iter(|| {
+                    joint_plan
+                        .joint_neighbors_with_cache(
+                            &[
+                                Some(0),
+                                Some(0),
+                                Some(0),
+                                Some(1),
+                                Some(1),
+                                Some(2),
+                                Some(0),
+                                Some(0),
+                            ],
+                            &[[-0.01999, 0.18]; 8],
+                            2,
+                            None,
+                            None,
+                            cached,
+                        )
+                        .unwrap()
+                });
+            },
+        );
+    }
     c.bench_function("joint_assignment_coherent_8_orbits_1054_rows", |b| {
         b.iter(|| {
             joint_plan

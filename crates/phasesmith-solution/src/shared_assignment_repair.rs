@@ -175,15 +175,37 @@ fn repair_round(
     .and_then(|p| p.with_tensor_model(&model, &tensors, &context.data.hkl)) else {
         return Ok(());
     };
-    let mut proposals = plan.joint_neighbors(
+    let mut proposals = plan.joint_neighbors_with_cache(
         &labels,
         &limits,
         2,
         Some(local),
         options.cancellation.as_ref(),
+        search.cached_repair_evaluation,
     )?;
+    audit.joint_assignment_field_builds += proposals.profile_builds;
+    audit.joint_assignment_field_reuses += proposals.profile_reuses;
+    audit.joint_assignment_score_only += proposals.score_only_requests;
+    audit.joint_assignment_workspace_bytes = audit
+        .joint_assignment_workspace_bytes
+        .max(proposals.workspace_bytes);
     let mut coherent = Vec::new();
-    for strength in [0.5, 1.] {
+    let expanded = search
+        .cached_repair_evaluation
+        .then(|| {
+            points
+                .iter()
+                .map(|&p| {
+                    group
+                        .expand_sites(&[p], 1e-8)
+                        .map(|v| v.fractional_xyz)
+                        .map_err(|e| error(e.to_string()))
+                })
+                .collect::<Result<Vec<_>, _>>()
+        })
+        .transpose()?;
+    let mut neighbor_medians: Vec<Option<f64>> = vec![None; points.len()];
+    for (strength_index, strength) in [0.5, 1.].into_iter().enumerate() {
         if crate::stopped(Some(local), options.cancellation.as_ref()) {
             break;
         }
@@ -193,6 +215,15 @@ fn repair_round(
                 break;
             }
             let Some(label) = labels[i] else { continue };
+            if search.cached_repair_evaluation && strength_index == 1 {
+                if let Some(median) = neighbor_medians[i] {
+                    let own = (tensors[i][0][0] + tensors[i][1][1] + tensors[i][2][2]) / 3.;
+                    shifts[i] = (strength * (median - own))
+                        .clamp(-0.02, 0.02)
+                        .clamp(limits[i][0], limits[i][1]);
+                }
+                continue;
+            }
             let mut neighbors = Vec::new();
             for j in 0..points.len() {
                 if crate::stopped(Some(local), options.cancellation.as_ref()) {
@@ -202,11 +233,17 @@ fn repair_round(
                 if numbers[label].abs_diff(numbers[other]) > 3 {
                     continue;
                 }
-                for image in group
-                    .expand_sites(&[points[j]], 1e-8)
-                    .map_err(|e| error(e.to_string()))?
-                    .fractional_xyz
-                {
+                let direct;
+                let images = if let Some(cache) = &expanded {
+                    &cache[j]
+                } else {
+                    direct = group
+                        .expand_sites(&[points[j]], 1e-8)
+                        .map_err(|e| error(e.to_string()))?
+                        .fractional_xyz;
+                    &direct
+                };
+                for &image in images {
                     let d = super::distance2(&model.geometry, points[i], image)?;
                     if (0.81..=5.29).contains(&d) {
                         neighbors
@@ -216,6 +253,7 @@ fn repair_round(
             }
             if !neighbors.is_empty() {
                 neighbors.sort_by(f64::total_cmp);
+                neighbor_medians[i] = Some(neighbors[neighbors.len() / 2]);
                 let own = (tensors[i][0][0] + tensors[i][1][1] + tensors[i][2][2]) / 3.;
                 shifts[i] = (strength * (neighbors[neighbors.len() / 2] - own))
                     .clamp(-0.02, 0.02)

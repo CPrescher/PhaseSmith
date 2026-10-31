@@ -25,6 +25,8 @@ pub struct SharedSearchOptions {
     pub workers: usize,
     /// Repair coordinated labels/counts using final anisotropic orbit columns.
     pub joint_assignment_refinement: bool,
+    /// Reuse exact post-search categorical fields and call-local reflection buffers.
+    pub cached_repair_evaluation: bool,
     /// Maximum live states and initial settings, in [1,8].
     pub beam_width: usize,
     /// Maximum edit rounds per phasing start, in [1,16].
@@ -128,6 +130,7 @@ impl Default for SharedSearchOptions {
             maximum_atoms: 128,
             workers: 1,
             joint_assignment_refinement: false,
+            cached_repair_evaluation: false,
             beam_width: 4,
             rounds: 8,
             staged_refinement: true,
@@ -273,6 +276,16 @@ pub struct SharedSearchSummary {
     pub max_active_workers: usize,
     /// Requested bounded post-search categorical repair.
     pub joint_assignment_refinement: bool,
+    /// Requested exact numerical reuse in the repair evaluator.
+    pub cached_repair_evaluation: bool,
+    /// Reflection fields built by the reusable evaluator.
+    pub joint_assignment_field_builds: usize,
+    /// Requests reusing an already prepared reflection field.
+    pub joint_assignment_field_reuses: usize,
+    /// Backtracking requests avoiding final derivative reductions.
+    pub joint_assignment_score_only: usize,
+    /// Maximum call-local cached column and buffer payload bytes.
+    pub joint_assignment_workspace_bytes: usize,
     /// Actual tensor-aware proposal evaluations.
     pub joint_assignment_scores: usize,
     /// Completed categorical beam depths.
@@ -1979,6 +1992,11 @@ fn solve_elements_inner(
     search: &SharedSearchOptions,
 ) -> Result<Solution, SolutionError> {
     crate::solver::validate_options(options)?;
+    if search.cached_repair_evaluation && !search.joint_assignment_refinement {
+        return Err(error(
+            "cached_repair_evaluation requires joint_assignment_refinement",
+        ));
+    }
     if search.joint_assignment_refinement && !search.phase_origin_selection {
         return Err(error(
             "joint_assignment_refinement requires phase_origin_selection",
@@ -2251,6 +2269,7 @@ fn solve_elements_inner(
         tangent_refinement: search.tangent_refinement,
         tangent_in_recycling: search.tangent_in_recycling,
         joint_assignment_refinement: search.joint_assignment_refinement,
+        cached_repair_evaluation: search.cached_repair_evaluation,
         adaptive_counts: search.adaptive_counts,
         wilson_normalization: search.wilson_normalization,
         phase_quality_selection: search.phase_quality_selection,

@@ -13,11 +13,10 @@ from pathlib import Path
         "solution_stopping_interleaved.py",
         "solution_cycle_effort_interleaved.py",
         "solution_joint_interleaved.py",
+        "solution_repair_cache_interleaved.py",
     ],
 )
-def test_runner_saves_all_predictions_before_every_reference_barrier(
-    tmp_path, monkeypatch, runner
-):
+def test_runner_saves_all_predictions_before_every_reference_barrier(tmp_path, monkeypatch, runner):
     benches = Path(__file__).resolve().parents[1] / "benchmarks"
     monkeypatch.syspath_prepend(str(benches))
     spec = importlib.util.spec_from_file_location("stopping_runner", benches / runner)
