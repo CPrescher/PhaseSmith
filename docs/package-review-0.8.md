@@ -17,7 +17,7 @@ explicit follow-up work.
 | Priority | Finding | Action/state |
 | --- | --- | --- |
 | Release | 191 Ruff diagnostics and 41 formatting failures across scripts, references, tests and examples | Fixed repository-wide; no global rule suppression or numerical tolerance changes. |
-| Release | Advertised Rust 1.85.1 was below locked `nalgebra`/`wide`/`safe_arch` requirements | Workspace/docs now declare 1.89.0; the actual 1.89.0 compiler checks the full workspace with all features; added minimum-toolchain CI. |
+| Release | Advertised Rust 1.85.1 was below locked `nalgebra`/`wide`/`safe_arch` requirements | Workspace/docs now declare 1.89.0; the actual 1.89.0 compiler passes the full workspace tests with all features; added minimum-toolchain CI. Updated version-gated Clippy idioms while retaining floating-point reduction order. |
 | High | `validated-v1` inherited unspecified values from the current solver signature | All 51 controls are now literal and immutable. Tests simulate a changed future default and reject wrong scalar types. Existing valid expansion is unchanged. |
 | High | Experimental compatibility imports added a second production namespace | Removed 35 wrappers and the experimental Cargo aliases after updating Dioptas. Ordinary `single_crystal` APIs remain the owner. |
 | High | Independent numerical references were mixed with retired production imports | Retained all 35 references under `single_crystal.reference`; updated tests/tools, without wrapping Rust in reference equations. |
@@ -146,3 +146,39 @@ See the [single-crystal guide](single-crystal.md) and
 Local results and the consumer migration are recorded in the review receipt.
 Remote platform CI and the manual unpublished release workflow remain required
 before a public tag. No publication, tag or push is performed by this review.
+
+
+## Completed local validation
+
+The final native source is `c7f48d0`; `92d69e3` additionally corrects current
+examples and three unavailable-backend messages. All earlier scientific JSON
+results remain unchanged. The small frozen v25 protocol records the new namespace
+and package controls without changing the v24 scientific or execution settings.
+
+| Check | Result |
+| --- | --- |
+| Repository Ruff lint and formatting | Zero diagnostics; 794 files formatted |
+| Full Rust workspace, all features, Rust 1.89.0 | 515 passed, zero failed; 34 ignored |
+| Strict Clippy, all targets/features | Passed |
+| Strict Rust documentation | Passed |
+| Minimal facade and minimal Python binding feature builds on Rust 1.89.0 | Passed |
+| Full installed-wheel Python suite | 3,281 passed; 11 skipped, 34 deselected |
+| Final guide/message follow-up and API tests from rebuilt wheel | 54 passed |
+| Dioptas consumer checks | 335 passed across single-crystal, omega, reciprocal, CrysAlis and integration adapters |
+| Dioptas offline lock check and pre-existing tracked edits | Lock valid; original file hashes unchanged |
+| NumPy-only installed wheel | Detection, search and filtered HDF5 smoke passed with SciPy/Gemmi/h5py/filter-plugin imports blocked |
+| Strict MkDocs and rendered local-link/fragment crawl | Passed; final graph counts are in the receipt |
+| Fresh original-frame MgSiO3 v25, normal installed wheel | 19.06 s process wall time; recovery passed |
+
+The raw replay retains the v11 arrays, complete candidates and phasing histories
+bit for bit. Its best amplitude R1 is 0.04085182070733226; labelled coordinate RMS
+error is 0.00454 angstrom after origin/hand alignment. The measured runtime is
+consistent with the preceding 19.06–19.39 s runs; this maintenance makes no new
+speedup claim. Input and all large products remain outside the repository.
+
+The machine-readable receipt is `validation/results/package-review-0.8.json`.
+Full logs, link graphs, tested distributions and the strict replay comparison
+are retained outside the repository under
+`/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031`.
+Dioptas migration commit: `31d79408`. No remote CI run, publication, tag or push
+is implied by these local checks.
