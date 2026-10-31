@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v4.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v5.json"
 
 
 def digest(path):
@@ -153,6 +153,77 @@ def interior_target_rows(centres, flags, shape):
     if np.any((~inside) & ((np.asarray(flags) & int(IntegrationFlag.EDGE)) == 0)):
         raise ValueError("unflagged reflection center outside scaling mesh domain")
     return inside
+
+
+def dac_aperture_visibility(centres, geometry, recipe):
+    """Example-only centre-ray visibility in an explicitly declared DAC cone.
+
+    The DAC axis is fixed in the sample frame, specified in lab coordinates at
+    omega zero. Rotate incident/outgoing rays by -omega into that frame. Both
+    cones include their boundary (eight float64 epsilons in cosine). This is an exclusion mask, not an absorption
+    or rocking-partiality correction.
+    """
+    from phasesmith.experimental.reduction import profile_geometry
+
+    normal = np.asarray(recipe["axis_at_omega_zero"], dtype=float)
+    opening = recipe["half_opening_degrees"]
+    if (
+        normal.shape != (3,)
+        or not np.isfinite(normal).all()
+        or np.linalg.norm(normal) == 0
+        or not np.isscalar(opening)
+        or not np.isfinite(opening)
+        or not 0 < opening < 90
+    ):
+        raise ValueError("invalid declared DAC aperture")
+    normal = normal / np.linalg.norm(normal)
+    points = np.asarray(centres, dtype=float)
+    if points.ndim != 2 or points.shape[1] != 3 or not np.isfinite(points).all():
+        raise ValueError("DAC visibility requires finite (n,3) centres")
+    outgoing = profile_geometry(points[:, :2], geometry)[0]
+    beam = geometry.vectors[3] / np.linalg.norm(geometry.vectors[3])
+    axis = geometry.vectors[4] / np.linalg.norm(geometry.vectors[4])
+    angle = -np.deg2rad(points[:, 2])
+
+    def cosine(rays):
+        sample = (
+            np.cos(angle)[:, None] * rays
+            + np.sin(angle)[:, None] * np.cross(axis, rays)
+            + (1 - np.cos(angle))[:, None] * (rays @ axis)[:, None] * axis
+        )
+        return np.clip(abs(sample @ normal), 0, 1)
+
+    entry, exit_ = cosine(np.tile(beam, (len(points), 1))), cosine(outgoing)
+    limit = np.cos(np.deg2rad(opening))
+    boundary = limit - 8 * np.finfo(float).eps
+    return (
+        (entry >= boundary) & (exit_ >= boundary),
+        np.rad2deg(np.arccos(entry)),
+        np.rad2deg(np.arccos(exit_)),
+    )
+
+
+def search_observation_mask(flags, values, visible, warning_flags):
+    """Retain signed finite measurements and explicit warning bits unchanged."""
+    from phasesmith.experimental.profiles import ProfileFlag
+
+    if warning_flags != ["MISMATCH"]:
+        raise ValueError("example supports only the explicit MISMATCH warning policy")
+    source = np.asarray(flags)
+    values, visible = np.asarray(values), np.asarray(visible)
+    if (
+        source.ndim != 1
+        or source.dtype.kind not in "iu"
+        or np.any(source < 0)
+        or np.any(source > 0xFFFFFFFF)
+        or values.shape != (len(source), 2)
+        or values.dtype.kind not in "fiu"
+        or visible.shape != source.shape
+        or visible.dtype != bool
+    ):
+        raise ValueError("invalid search measurement arrays")
+    hard = source.astype(np.uint32) & np.uint32(~int(ProfileFlag.MISMATCH) & 0xFFFFFFFF)
+    return (hard == 0) & visible & np.isfinite(values).all(axis=1) & (values[:, 1] > 0)
 
 
 def aligned_setting(candidates, cell, selection, training):
@@ -557,7 +628,20 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes):
             ),
         )
         values = reduced.intensity_sigma
-        valid = (reduced.profile.flags == 0) & np.isfinite(values).all(axis=1) & (values[:, 1] > 0)
+        validity = protocol.get("measurement_validity")
+        visible = np.ones(len(target_hkl), bool)
+        entry = exit_ = np.full(len(target_hkl), np.nan)
+        if validity is None:
+            valid = (
+                (reduced.profile.flags == 0) & np.isfinite(values).all(axis=1) & (values[:, 1] > 0)
+            )
+        else:
+            visible, entry, exit_ = dac_aperture_visibility(
+                observations.centres, fitted.geometry, validity["dac_aperture"]
+            )
+            valid = search_observation_mask(
+                reduced.profile.flags, values, visible, validity["profile_warning_flags"]
+            )
         if valid.sum() < protocol["gates"]["minimum_exported_observations"]:
             raise ValueError("insufficient quality-controlled signed observations")
         np.savez_compressed(
@@ -568,6 +652,9 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes):
             statistical_sigma=reduced.statistical_sigma,
             flags=reduced.profile.flags,
             use=valid,
+            visible=visible,
+            dac_entry_degrees=entry,
+            dac_exit_degrees=exit_,
             aperture=observations.summation.values,
             raw_profiles=reduced.profile.values,
             choices=reduced.choices,
@@ -586,7 +673,11 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes):
                 teachers=len(bank.reference_ids),
                 frame_hashes_equal=True,
                 source_loads=frames.loads,
-                excluded_by_quality_flags=int((~valid).sum()),
+                excluded_from_search=int((~valid).sum()),
+                excluded_by_quality_flags=int(((~valid) & visible).sum()),
+                measurement_validity=validity,
+                excluded_by_dac_aperture=int((~visible).sum()),
+                exported_with_profile_warning=int((valid & (reduced.profile.flags != 0)).sum()),
                 metadata=reduced.metadata,
             ),
         )
