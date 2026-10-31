@@ -2706,3 +2706,14 @@ The isolated categorical kernel improves 35.125-to-17.479 ms (2.01 times).
 All 210 predictions precede grading; seven above-cap references and four no-model
 cases stay in the denominator. Experimental defaults and the closed holdout stay
 unchanged. Provenance is in the `structure-solution-repair-evaluation-*` reports.
+
+The user has now authorized a single frozen evaluation on the 65 holdout cases.
+The numerical implementation and release extension remain fixed at `870d61a`;
+the precommitted protocol pins the accepted cached-repair development controls,
+one worker per program, original inputs/caps/thresholds and 13/15-second budgets.
+All 130 predictions precede grading; source/binary hashes are checked throughout.
+Algorithm attribution cites the published Sheldrick (2015, 1990) methods and
+documents independent PhaseSmith choices. SHELXT is solely an external test
+comparator. See `docs/solution-holdout-freeze.md` and the immutable freeze record.
+Once evaluated, these 65 cases are exposed validation evidence and must not be
+described as an untouched test of future tuning.
