@@ -1,23 +1,39 @@
 use super::measurement::profile_geometry;
-use super::{math::*, *};
+use super::{
+    Error, Measurements, Options, Result, bounds, grains,
+    math::{V3, cross, dot, median, unit},
+};
 use phasesmith_spots::{
     empirical_fit, intensity_model, profile_refinement as refinement, profiles,
 };
 use std::collections::BTreeMap;
 /// Signed corrected intensities and complete source quality/conditional-fit records.
 pub struct Reduced {
+    /// Integer Miller indices in the selected supplied setting.
     pub hkl: Vec<[i32; 3]>,
+    /// Source-ordered numerical measurement rows; units follow the containing record.
     pub values: Vec<[f64; 2]>,
+    /// Conditional counting/background/fitted-shape sigma before equivalent-error inflation.
     pub statistical_sigma: Vec<f64>,
+    /// Explicit Lorentz/polarization correction for every retained row.
     pub physical: Vec<f64>,
+    /// Fitted within-family multiplicative intensity correction.
     pub empirical: Vec<f64>,
+    /// Original quality bits; source rows are retained even when excluded.
     pub flags: Vec<u32>,
+    /// Final search selection; finite signed values are retained without an SNR cut.
     pub use_mask: Vec<bool>,
+    /// Centre eligibility from the same shared original-image mask.
     pub visible: Vec<bool>,
+    /// Ten-column profile amplitude and quality diagnostics.
     pub profiles: Vec<[f64; 10]>,
+    /// Fitted x/y/omega shifts and log spatial/rocking width multipliers.
     pub parameters: Vec<[f64; 5]>,
+    /// Frozen policy: zero fixed shape, one strong full shape, two strong x/y.
     pub choices: Vec<u8>,
+    /// Actual robust within-family fit, including references and convergence history.
     pub scaling: empirical_fit::Fit,
+    /// Nonnegative family-balanced equivalent-pair relative observation-error floor.
     pub error_floor: f64,
 }
 fn harmonics(v: V3) -> [f64; 8] {
@@ -72,15 +88,15 @@ fn design(
     let angles = bounds(o);
     let axis = unit(g.axis);
     let beam = unit(g.beam);
-    let [height, image_width] = [o_shape(m, 0)?, o_shape(m, 1)?];
+    let [height, image_width] = m.detector_shape;
     for (i, &c) in m.data.centres.iter().enumerate() {
         let frame = angles
             .iter()
             .enumerate()
             .min_by(|a, b| {
-                (c[2] - (a.1[0] + a.1[1]) / 2.)
+                (c[2] - f64::midpoint(a.1[0], a.1[1]))
                     .abs()
-                    .total_cmp(&(c[2] - (b.1[0] + b.1[1]) / 2.).abs())
+                    .total_cmp(&(c[2] - f64::midpoint(b.1[0], b.1[1])).abs())
             })
             .unwrap()
             .0;
@@ -216,10 +232,6 @@ fn design(
         widths: [width, 24, 8],
     })
 }
-// Detector dimensions are retained explicitly in measurement records.
-fn o_shape(m: &Measurements, i: usize) -> Result<usize> {
-    Ok(m.detector_shape[i])
-}
 fn error_floor(
     values: &mut [[f64; 2]],
     groups: &[usize],
@@ -278,7 +290,7 @@ fn error_floor(
         for (r, i) in residual {
             sum += pairs[i].3;
             if sum >= 0.5 * total {
-                return r / 0.6744897501960817;
+                return r / 0.674_489_750_196_081_7;
             }
         }
         f64::INFINITY
@@ -293,7 +305,7 @@ fn error_floor(
         hi = 0.;
     } else {
         for _ in 0..60 {
-            let mid = (lo + hi) / 2.;
+            let mid = f64::midpoint(lo, hi);
             if width(mid) > 1. {
                 lo = mid;
             } else {
@@ -301,7 +313,7 @@ fn error_floor(
             }
         }
     }
-    let beta = (lo + hi) / 2.;
+    let beta = f64::midpoint(lo, hi);
     for (i, v) in values.iter_mut().enumerate() {
         if v.iter().all(|x| x.is_finite()) && v[1] > 0. {
             v[1] = v[1].hypot(beta * family_mu[i]);
@@ -445,7 +457,7 @@ pub(super) fn reduce(
         .zip(&fitted.flags)
         .zip(&m.visible)
         .map(|((v, &f), &visible)| {
-            (f & !131072) == 0 && visible && v.iter().all(|x| x.is_finite()) && v[1] > 0.
+            (f & !131_072) == 0 && visible && v.iter().all(|x| x.is_finite()) && v[1] > 0.
         })
         .collect();
     if use_mask.iter().filter(|&&v| v).count() < 1000 {

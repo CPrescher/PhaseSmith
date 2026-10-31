@@ -1,7 +1,16 @@
 //! Typed interpreter-free coordination of original detector counts through structure search.
 //! Kernels retain their own finite supports and analytical derivatives. Source/observer
 //! traits carry no Python objects; file formats and optional grading stay in adapters.
-#![allow(clippy::cast_precision_loss, clippy::many_single_char_names)]
+// Native v1 admits <=1e8 pixels, <=1e5 indexing points and bounded integer HKLs.
+// Coordinate-to-index casts follow explicit footprint/range checks; integer casts
+// preserve the public kernels' u32/i32 storage after admission.
+#![allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_possible_wrap,
+    clippy::many_single_char_names
+)]
 mod grains;
 mod math;
 mod measurement;
@@ -46,66 +55,135 @@ pub trait FrameSource {
     /// Original source shape: frames, rows, columns.
     fn shape(&self) -> [usize; 3];
     /// A new owned original frame; no masking or intensity correction.
+    /// # Errors
+    /// Return an I/O or changed-source error without substituting another frame.
     fn read(&mut self, index: usize) -> Result<Vec<u32>>;
 }
 /// Declared acquisition and independent source identity.
 pub struct Acquisition {
+    /// Inclusive first original source frame index.
     pub first: usize,
+    /// Inclusive last original source frame index.
     pub last: usize,
+    /// Exposure start at original frame zero, in degrees.
     pub omega_zero: f64,
+    /// Positive original-frame spindle increment, in degrees.
     pub omega_step: f64,
+    /// Positive full exposure width, in degrees.
     pub exposure: f64,
+    /// Apply the declared detector vertical reversal exactly once.
     pub vertical_flip: bool,
+    /// Inclusive u32 detector sentinel threshold; excluded counts remain unchanged.
     pub reserved_minimum: u32,
 }
 /// Supplied scientific priors; no source HKLs, atomic counts or atomic model.
 pub struct Priors {
+    /// Explicit supplied unit cell, in angstroms and degrees.
     pub cell: UnitCell,
+    /// Explicit supplied exact symmetry; never inferred from the metric.
     pub group: SpaceGroup,
+    /// Declared neutral element symbols; no atom counts.
     pub elements: Vec<String>,
+    /// Nonempty description of the source and status of supplied priors.
     pub provenance: String,
+}
+/// Explicit original-image mask parameters; they are scientific inputs, not fitted controls.
+#[derive(Clone, Copy)]
+pub struct ShadowOptions {
+    /// Illumination block side in detector pixels.
+    pub illumination_block: usize,
+    /// Original-count illumination-ratio estimator controls.
+    pub illumination: frame_validity::SeatOptions,
+    /// DAC block side in detector pixels; complete footprint/exposure is tested.
+    pub aperture_block: usize,
+    /// Explicit assumed/sample-known symmetric DAC cone in the sample frame.
+    pub aperture: frame_validity::DacOptions,
 }
 /// Explicit resource limits and algorithm controls for the supported native workflow.
 pub struct Options {
+    /// Declared source selection, orientation and angular intervals.
     pub acquisition: Acquisition,
+    /// Initial affine detector calibration in a single laboratory frame.
     pub geometry: Geometry,
+    /// Supplied cell, symmetry and element priors with provenance.
     pub priors: Priors,
+    /// Exactly 64 predeclared rotation matrices for held-out null checks.
     pub null_rotations: Vec<M3>,
+    /// Explicit illumination and whole-exposure aperture assumptions.
+    pub shadows: ShadowOptions,
+    /// Original-image coarse-frame worker budget, 1 through 32.
+    pub mask_workers: usize,
+    /// Maximum owned counts/mask/f64 payload across each frame stage, in bytes.
+    pub max_in_flight_frame_bytes: usize,
+    /// Cooperative stop token checked between bounded stages and numerical work.
     pub cancellation: phasesmith_solution::Cancellation,
+    /// Maximum source-ordered detection tasks in flight, 1 through 32.
     pub detection_workers: usize,
+    /// Private native profile-fitting worker budget, 1 through 32.
     pub profile_workers: usize,
+    /// Private profile-learning worker budget, 1 through 32.
     pub learning_workers: usize,
+    /// Maximum source-ordered integration-frame tasks in flight, 1 through 32.
     pub frame_workers: usize,
+    /// Additional profile geometry-cache cap in bytes; zero disables caching.
     pub geometry_cache_bytes: usize,
+    /// Original-frame preparation payload cap in bytes.
     pub frame_payload_bytes: usize,
+    /// Maximum retained profile samples; at most twenty million.
     pub max_samples: usize,
+    /// Positive complete native structure-search time budget, in seconds.
     pub search_seconds: f64,
+    /// Per controlled search buffer byte limit; independent of profile caches/RSS.
     pub dense_memory_bytes: usize,
+    /// Maximum independent structure phase starts.
     pub search_trials: usize,
+    /// Maximum phasing cycles per start.
     pub search_cycles: usize,
+    /// Deterministic structure-search seed.
     pub seed: u64,
 }
 /// Ordered stage observer; errors/cancellation stop before the next stage. Owned products
 /// may be archived here without allowing an observer to alter numerical decisions.
 pub trait Observer {
+    /// Observe a completed stage and its wall seconds, including synchronous output.
+    /// # Errors
+    /// Return an observer failure to stop before the next stage.
     fn stage(&mut self, _name: &str, _seconds: f64) -> Result<()> {
         Ok(())
     }
+    /// Archive the frozen source-hash and composed block-mask plan.
+    /// # Errors
+    /// Return an observer failure to stop before the next stage.
     fn masks(&mut self, _plan: &frame_input::Plan, _scales: &[f64]) -> Result<()> {
         Ok(())
     }
+    /// Observe original linked tracks after shared-mask support checks.
+    /// # Errors
+    /// Return an observer failure to stop before the next stage.
     fn positions(&mut self, _positions: &Positions) -> Result<()> {
         Ok(())
     }
+    /// Observe frozen discovery, calibration and withheld-position evidence.
+    /// # Errors
+    /// Return an observer failure to stop before the next stage.
     fn indexed(&mut self, _indexed: &Indexed) -> Result<()> {
         Ok(())
     }
+    /// Archive original samples and the independently learned profile bank.
+    /// # Errors
+    /// Return an observer failure to stop before the next stage.
     fn profiles(&mut self, _data: &Measurements) -> Result<()> {
         Ok(())
     }
+    /// Observe signed corrected intensities before any atomic-model access.
+    /// # Errors
+    /// Return an observer failure to stop before the next stage.
     fn reduced(&mut self, _data: &Reduced) -> Result<()> {
         Ok(())
     }
+    /// Save completed search candidates and their actual method audits.
+    /// # Errors
+    /// Return an observer failure to stop before the next stage.
     fn solution(
         &mut self,
         _solution: &phasesmith_solution::Solution,
@@ -119,12 +197,19 @@ pub struct NoObserver;
 impl Observer for NoObserver {}
 /// Complete native products and explicit source/mask provenance.
 pub struct Output {
+    /// Original linked source positions with full quality flags.
     pub positions: Positions,
+    /// Frozen lattice, geometry and withheld-data evidence.
     pub indexed: Indexed,
+    /// Original finite pixel observations and independent learned profile bank.
     pub measurements: Measurements,
+    /// Signed corrected intensities, conditional uncertainties and selection flags.
     pub reduced: Reduced,
+    /// Complete native bounded structure-search result.
     pub solution: phasesmith_solution::Solution,
+    /// Actual count-free search audit.
     pub search: phasesmith_solution::SharedSearchSummary,
+    /// Measured wall seconds for the complete coordinator, including synchronous observers.
     pub seconds: f64,
 }
 impl Options {
@@ -150,6 +235,7 @@ impl Options {
             self.profile_workers,
             self.learning_workers,
             self.frame_workers,
+            self.mask_workers,
         ]
         .iter()
         .any(|w| !(1..=32).contains(w))
@@ -157,6 +243,8 @@ impl Options {
             || self.max_samples > 20_000_000
             || self.frame_payload_bytes > 1024 * 1024 * 1024
             || self.geometry_cache_bytes > 1024 * 1024 * 1024
+            || self.max_in_flight_frame_bytes == 0
+            || self.max_in_flight_frame_bytes > 1024 * 1024 * 1024
         {
             return Err(Error("invalid workflow resource limits".into()));
         }
@@ -173,6 +261,92 @@ impl Options {
                 "explicit prior provenance and 64 predeclared null rotations required".into(),
             ));
         }
+        let pixels = shape[1]
+            .checked_mul(shape[2])
+            .filter(|&n| n <= 100_000_000)
+            .ok_or_else(|| Error("detector pixel budget exceeded".into()))?;
+        for workers in [
+            self.detection_workers,
+            self.frame_workers,
+            self.mask_workers,
+        ] {
+            if pixels
+                .checked_mul(13)
+                .and_then(|n| n.checked_mul(workers))
+                .is_none_or(|n| n > self.max_in_flight_frame_bytes)
+            {
+                return Err(Error("owned frame-stage payload budget exceeded".into()));
+            }
+        }
+        if self.acquisition.last - self.acquisition.first + 1 > 225 || shape[1] < 2 || shape[2] < 2
+        {
+            return Err(Error("native v1 requires 2D detector and at most 225 exposures for its explicit frame design".into()));
+        }
+        let _ = self
+            .priors
+            .cell
+            .geometry()
+            .map_err(|e| Error(e.to_string()))?;
+        if [
+            self.priors.cell.alpha_deg,
+            self.priors.cell.beta_deg,
+            self.priors.cell.gamma_deg,
+        ]
+        .iter()
+        .any(|a| (a - 90.).abs() > 1e-8)
+        {
+            return Err(Error(
+                "native v1 requires an explicit orthorhombic metric prior".into(),
+            ));
+        }
+        if self.priors.elements.is_empty()
+            || self.priors.elements.len() > 16
+            || !self.search_seconds.is_finite()
+            || self.search_seconds <= 0.
+            || self.search_seconds > 3600.
+            || !(1..=128).contains(&self.search_trials)
+            || !(1..=20_000).contains(&self.search_cycles)
+        {
+            return Err(Error("invalid element/search controls".into()));
+        }
+        let _ = phasesmith_solution::DenseMemoryBudget::new(self.dense_memory_bytes)?;
+        let nframes = a.last - a.first + 1;
+        if nframes < 5 {
+            return Err(Error(
+                "illumination masking needs at least five exposures".into(),
+            ));
+        }
+        for block in [self.shadows.illumination_block, self.shadows.aperture_block] {
+            let sh = frame_validity::Shape {
+                height: shape[1],
+                width: shape[2],
+                block,
+            };
+            let [h, w] = sh.coarse()?;
+            if nframes
+                .checked_mul(h * w)
+                .is_none_or(|n| n > frame_validity::MAX_CELLS)
+            {
+                return Err(Error("coarse mask cell budget exceeded".into()));
+            }
+        }
+        if !self.shadows.illumination.threshold.is_finite()
+            || !(0.0..1.0).contains(&self.shadows.illumination.threshold)
+            || self.shadows.illumination.threshold == 0.
+            || self.shadows.illumination.guard_pixels > 4096
+        {
+            return Err(Error("invalid illumination controls".into()));
+        }
+        frame_validity::dac_mask(
+            self.geometry,
+            bounds(self)[0],
+            frame_validity::Shape {
+                height: shape[1],
+                width: shape[2],
+                block: self.shadows.aperture_block,
+            },
+            self.shadows.aperture,
+        )?;
         self.geometry.convert(&[[0., 0., 0.]])?;
         Ok(())
     }
@@ -200,16 +374,16 @@ pub(super) fn image(p: &frame_input::Prepared, shape: [usize; 2]) -> Vec<f64> {
 pub(super) fn prepared(
     s: &mut impl FrameSource,
     plan: &frame_input::Plan,
-    first: usize,
+    options: &Options,
     i: usize,
 ) -> Result<frame_input::Prepared> {
     let r = plan.prepare_batch(
         vec![frame_input::Input {
             index: i,
-            pixels: s.read(first + i)?,
+            pixels: s.read(options.acquisition.first + i)?,
         }],
         1,
-        256 * 1024 * 1024,
+        options.frame_payload_bytes,
     )?;
     r.into_iter()
         .next()
@@ -229,58 +403,9 @@ pub fn run(
     options.check(source.shape())?;
     options.checkpoint()?;
     let shape = [source.shape()[1], source.shape()[2]];
-    let angles = bounds(options);
-    let frames = angles.len();
-    let mut plan = frame_input::Plan {
-        shape,
-        frames,
-        vertical_flip: options.acquisition.vertical_flip,
-        reserved_minimum: options.acquisition.reserved_minimum,
-        expected_hashes: vec![],
-        blocks: vec![],
-        dacs: vec![],
-    };
     let clock = Instant::now();
-    let coarse_shape = frame_validity::Shape {
-        height: shape[0],
-        width: shape[1],
-        block: 16,
-    };
-    let mut coarse = Vec::new();
-    let mut available = Vec::new();
-    let mut hashes = Vec::new();
-    for i in 0..frames {
-        options.checkpoint()?;
-        let p = prepared(source, &plan, options.acquisition.first, i)?;
-        let data = image(&p, shape);
-        let c = frame_validity::coarsen(&data, &p.excluded, coarse_shape)?;
-        coarse.extend(c.values);
-        available.push(c.available);
-        hashes.push(p.digest);
-    }
-    let masks = frame_validity::estimate(
-        &coarse,
-        &available,
-        coarse_shape,
-        frame_validity::SeatOptions::default(),
-    )?;
-    plan.expected_hashes.push(hashes);
-    plan.blocks.push(frame_input::BlockMasks {
-        block: 16,
-        excluded: masks.excluded,
-        fixed: vec![],
-    });
-    plan.dacs.push(frame_input::DacMasks {
-        geometry: options.geometry,
-        bounds: angles.clone(),
-        block: 16,
-        options: frame_validity::DacOptions {
-            axis_at_zero: [0., 0., 1.],
-            half_opening_degrees: 35.,
-        },
-        fixed: vec![],
-    });
-    observer.masks(&plan, &masks.detection_scales)?;
+    let (plan, scales) = prepare_validity(source, options, shape)?;
+    observer.masks(&plan, &scales)?;
     observer.stage("shadow_masks", clock.elapsed().as_secs_f64())?;
     options.checkpoint()?;
     let clock = Instant::now();
@@ -320,6 +445,105 @@ pub fn run(
         seconds: start.elapsed().as_secs_f64(),
     })
 }
+fn prepare_validity(
+    source: &mut impl FrameSource,
+    options: &Options,
+    shape: [usize; 2],
+) -> Result<(frame_input::Plan, Vec<f64>)> {
+    let angles = bounds(options);
+    let frames = angles.len();
+    let mut plan = frame_input::Plan {
+        shape,
+        frames,
+        vertical_flip: options.acquisition.vertical_flip,
+        reserved_minimum: options.acquisition.reserved_minimum,
+        expected_hashes: vec![],
+        blocks: vec![],
+        dacs: vec![],
+    };
+    let coarse_shape = frame_validity::Shape {
+        height: shape[0],
+        width: shape[1],
+        block: options.shadows.illumination_block,
+    };
+    let mut coarse = Vec::new();
+    let mut available = Vec::new();
+    let mut hashes = Vec::new();
+    for first in (0..frames).step_by(options.mask_workers) {
+        options.checkpoint()?;
+        let payloads = (first..(first + options.mask_workers).min(frames))
+            .map(|i| {
+                let p = prepared(source, &plan, options, i)?;
+                let values = image(&p, shape);
+                Ok((p, values))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let rows = std::thread::scope(|scope| {
+            let tasks: Vec<_> = payloads
+                .iter()
+                .map(|(p, values)| {
+                    scope.spawn(move || frame_validity::coarsen(values, &p.excluded, coarse_shape))
+                })
+                .collect();
+            tasks
+                .into_iter()
+                .map(|t| {
+                    t.join()
+                        .map_err(|_| Error("mask worker panicked".into()))?
+                        .map_err(Into::into)
+                })
+                .collect::<Result<Vec<_>>>()
+        })?;
+        for ((p, _), c) in payloads.into_iter().zip(rows) {
+            coarse.extend(c.values);
+            available.push(c.available);
+            hashes.push(p.digest);
+        }
+    }
+    let masks = frame_validity::estimate(
+        &coarse,
+        &available,
+        coarse_shape,
+        options.shadows.illumination,
+    )?;
+    plan.expected_hashes.push(hashes);
+    plan.blocks.push(frame_input::BlockMasks {
+        block: options.shadows.illumination_block,
+        excluded: masks.excluded,
+        fixed: vec![],
+    });
+    let dac_shape = frame_validity::Shape {
+        height: shape[0],
+        width: shape[1],
+        block: options.shadows.aperture_block,
+    };
+    let [ch, cw] = dac_shape.coarse()?;
+    if frames
+        .checked_mul(ch * cw)
+        .is_none_or(|n| n > frame_validity::MAX_CELLS)
+    {
+        return Err(Error("cached aperture mask cell budget exceeded".into()));
+    }
+    let mut dac_excluded = Vec::with_capacity(frames * ch * cw);
+    for angle in &angles {
+        options.checkpoint()?;
+        dac_excluded.extend(
+            frame_validity::dac_mask(
+                options.geometry,
+                *angle,
+                dac_shape,
+                options.shadows.aperture,
+            )?
+            .excluded,
+        );
+    }
+    plan.blocks.push(frame_input::BlockMasks {
+        block: options.shadows.aperture_block,
+        excluded: dac_excluded,
+        fixed: vec![],
+    });
+    Ok((plan, masks.detection_scales))
+}
 fn search(
     r: &Reduced,
     o: &Options,
@@ -327,7 +551,7 @@ fn search(
     phasesmith_solution::Solution,
     phasesmith_solution::SharedSearchSummary,
 )> {
-    use phasesmith_solution::*;
+    use phasesmith_solution::Observation;
     let observations: Vec<_> = r
         .hkl
         .iter()
@@ -341,8 +565,25 @@ fn search(
             })
         })
         .collect();
+    search_observations(&observations, o)
+}
+/// Search supplied signed observations using the same literal validated-v1 strategy.
+/// This stage entry point is useful for independent input/optimizer diagnostics.
+/// # Errors
+/// Invalid observations, priors, resource limits, or a failed native search.
+pub fn search_observations(
+    observations: &[phasesmith_solution::Observation],
+    o: &Options,
+) -> Result<(
+    phasesmith_solution::Solution,
+    phasesmith_solution::SharedSearchSummary,
+)> {
+    use phasesmith_solution::{
+        AdpMode, DenseMemoryBudget, PhasingMethod, SharedSearchOptions, SolveOptions,
+        estimate_solution_memory, solve_elements,
+    };
     let memory = estimate_solution_memory(
-        &observations,
+        observations,
         o.priors.cell,
         &o.priors.group,
         DenseMemoryBudget::new(o.dense_memory_bytes)?,
@@ -422,7 +663,7 @@ fn search(
         resolution_extension: 1.0,
     };
     let solution = solve_elements(
-        &observations,
+        observations,
         o.priors.cell,
         &o.priors.group,
         &o.priors.elements,

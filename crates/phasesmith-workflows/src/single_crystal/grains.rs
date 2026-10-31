@@ -1,37 +1,64 @@
-use super::{math::*, *};
+use super::{
+    Error, Options, Positions, Result, SpaceGroup,
+    math::{M3, V3, condition, det, dot, inv_t, least, mul, norm, row},
+    positions,
+};
 use phasesmith_spots::{
     fft::{Engine, SupportBits},
     geometry_refinement as geometry,
 };
 /// Position-supported competing lattice, with independently withheld ownership.
 pub struct Grain {
+    /// Right-handed direct row basis in angstroms.
     pub direct: M3,
+    /// Integer Miller indices in the selected supplied setting.
     pub hkl: Vec<[i64; 3]>,
+    /// Frozen lattice, geometry and withheld-data evidence.
     pub indexed: Vec<bool>,
+    /// Frozen independent training membership or retained training count.
     pub training: usize,
+    /// Independent withheld position count.
     pub withheld: usize,
+    /// Whether every frozen training, withheld and rotated-null gate passed.
     pub accepted: bool,
+    /// Retained ownership counts for the 64 predeclared null rotations.
     pub null_counts: Vec<usize>,
 }
 /// Frozen discovery/geometry products; competitors are measured crossings only.
 pub struct Indexed {
+    /// All position-supported lattice hypotheses, including failed validations.
     pub grains: Vec<Grain>,
+    /// Index of the training-supported primitive setting matching the explicit prior.
     pub selected: usize,
+    /// Selected original track indices in source order.
     pub track_ids: Vec<usize>,
+    /// Integer Miller indices in the selected supplied setting.
     pub hkl: Vec<[i64; 3]>,
+    /// Observed x/y/omega centroids, in pixels/degrees.
     pub observed: Vec<V3>,
+    /// Frozen independent training membership or retained training count.
     pub training: Vec<bool>,
+    /// Frozen positional eligibility intersected with valid final predictions.
     pub eligible: Vec<bool>,
+    /// Actual native geometry fit, including history and convergence status.
     pub fit: geometry::Fit,
+    /// Independently position-supported measured crossings for exclusion only.
     pub competitors: Vec<Competitor>,
 }
 pub struct Competitor {
+    /// Original lattice hypothesis index.
     pub candidate: usize,
+    /// Fitted reciprocal row basis in inverse angstroms.
     pub basis: M3,
+    /// Integer Miller indices in the selected supplied setting.
     pub hkl: Vec<[i64; 3]>,
+    /// Measured x/y/omega crossings; no speculative full competing lattice.
     pub crossings: Vec<V3>,
+    /// Frozen independent training membership or retained training count.
     pub training: usize,
+    /// Independent withheld position count.
     pub withheld: usize,
+    /// Withheld reciprocal residual RMS in inverse angstroms.
     pub rms: f64,
 }
 fn valid(a: M3) -> bool {
@@ -67,6 +94,7 @@ fn reduce(mut a: M3) -> M3 {
 fn score(e: &Engine, q: &[V3], a: M3) -> Result<Vec<(V3, f64)>> {
     Ok(e.score(q, a, inv_t(a)?))
 }
+#[allow(clippy::float_cmp)] // Integer HKLs and exact zero/signed determinant sentinels.
 fn mask(s: &[(V3, f64)]) -> Vec<bool> {
     s.iter().map(|(h, d)| *d < 0.015 && *h != [0.; 3]).collect()
 }
@@ -77,16 +105,22 @@ fn assign(e: &Engine, q: &[V3], a: &[M3]) -> Result<Vec<i32>> {
         .collect::<Result<Vec<_>>>()?;
     Ok(e.assign(q, &models, 0.015, 0.8).0)
 }
+#[allow(clippy::float_cmp)] // Integer HKLs and exact zero/signed determinant sentinels.
 fn integer_basis(indices: &[V3]) -> Option<M3> {
-    let mut basis: [Option<[i64; 3]>; 3] = [None; 3];
+    let mut basis: [Option<[i128; 3]>; 3] = [None; 3];
     for h in indices {
-        let mut row = h.map(|x| x as i64);
+        if h.iter()
+            .any(|x| !x.is_finite() || x.abs() > 1_000_000. || *x != x.round_ties_even())
+        {
+            return None;
+        }
+        let mut row = h.map(|x| x as i128);
         for col in 0..3 {
             while row[col] != 0 {
                 if let Some(pivot) = basis[col] {
                     let k = row[col].div_euclid(pivot[col]);
                     for j in 0..3 {
-                        row[j] -= k * pivot[j];
+                        row[j] = row[j].checked_sub(k.checked_mul(pivot[j])?)?;
                     }
                     if row[col] != 0 {
                         if row[col] < 0 {
@@ -102,6 +136,14 @@ fn integer_basis(indices: &[V3]) -> Option<M3> {
                 }
             }
         }
+    }
+    if basis
+        .iter()
+        .flatten()
+        .flatten()
+        .any(|x| x.abs() > 9_007_199_254_740_992)
+    {
+        return None;
     }
     Some([
         basis[0]?.map(|x| x as f64),
@@ -174,6 +216,7 @@ fn refine(e: &Engine, q: &[V3], mut a: M3) -> Result<Option<M3>> {
     }
     Ok(Some(best))
 }
+#[allow(clippy::float_cmp)] // Integer HKLs and exact zero/signed determinant sentinels.
 fn joint(e: &Engine, q: &[V3], mut models: Vec<M3>) -> Result<(Vec<M3>, Vec<i32>)> {
     let mut labels = assign(e, q, &models)?;
     for _ in 0..8 {
@@ -350,6 +393,7 @@ fn discover(q: &[V3], o: &Options) -> Result<Vec<M3>> {
     }
     Ok(models)
 }
+#[allow(clippy::float_cmp)] // Integer HKLs and exact zero/signed determinant sentinels.
 fn setting(models: &[Grain], target: [f64; 6]) -> Result<(usize, M3)> {
     let mut choices = Vec::new();
     for (id, g) in models.iter().enumerate() {
@@ -445,6 +489,13 @@ pub(super) fn fold(h: [i64; 3]) -> usize {
 }
 pub(super) fn index(p: &Positions, o: &Options, shape: [usize; 2]) -> Result<Indexed> {
     let (q, rms) = positions::reciprocal(p, o.geometry)?;
+    if q.len() > 100_000
+        || q.iter()
+            .flatten()
+            .any(|x| !x.is_finite() || x.abs() > 1000.)
+    {
+        return Err(Error("indexing point/count bound exceeded".into()));
+    }
     let first = o.acquisition.first;
     let ids: Vec<_> = (0..p.values.len())
         .filter(|&i| {
@@ -458,7 +509,7 @@ pub(super) fn index(p: &Positions, o: &Options, shape: [usize; 2]) -> Result<Ind
     let q: Vec<_> = ids.iter().map(|&i| q[i]).collect();
     let training: Vec<_> = ids
         .iter()
-        .map(|&i| ((p.ranges[i][0] + first) / 5) % 5 != 0)
+        .map(|&i| !((p.ranges[i][0] + first) / 5).is_multiple_of(5))
         .collect();
     let train: Vec<_> = q
         .iter()
@@ -679,4 +730,8 @@ pub(super) fn index(p: &Positions, o: &Options, shape: [usize; 2]) -> Result<Ind
         fit,
         competitors,
     })
+}
+
+fn gcd(a: i32, b: i32) -> i32 {
+    if b == 0 { a.abs() } else { gcd(b, a % b) }
 }

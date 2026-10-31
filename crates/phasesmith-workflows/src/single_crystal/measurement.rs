@@ -1,24 +1,45 @@
-use super::{math::*, *};
+use super::{
+    Error, FrameSource, Indexed, Observer, Options, Result, bounds, grains, image,
+    math::{M3, V3, cross, dot, inv_t, norm, row, unit},
+    prepared,
+};
 use phasesmith_spots::{self as spots, Bounds, frame_input, prediction, profiles};
 /// Owned contiguous profile samples and their exact finite group supports.
 pub struct ProfileData {
+    /// Signed signal, independent variance and fitted background per pixel.
     pub samples: Vec<[f64; 3]>,
+    /// Availability of each retained original pixel sample.
     pub valid: Vec<bool>,
+    /// Pixel-group offsets plus a final sentinel.
     pub offsets: Vec<usize>,
+    /// Half-open detector-pixel rectangles.
     pub boxes: Vec<Bounds>,
+    /// Reflection ID of each source-ordered exposure group.
     pub ids: Vec<usize>,
+    /// Selected original-frame index of each exposure group.
     pub frames: Vec<usize>,
+    /// Increasing full exposure bounds in degrees.
     pub angles: Vec<[f64; 2]>,
+    /// Row-major 3-by-3 fitted background-plane covariance per group.
     pub covariance: Vec<[f64; 9]>,
+    /// Frozen x/y/omega reflection centres, in pixels/degrees.
     pub centres: Vec<V3>,
+    /// Signed local coordinate scales, with rocking zeta in the third component.
     pub scales: Vec<V3>,
+    /// Row-major local angular pixel Jacobian for each reflection.
     pub planar: Vec<[f64; 4]>,
+    /// Original quality bits; source rows are retained even when excluded.
     pub flags: Vec<u32>,
+    /// Per-group flags including the parent reflection angular-truncation bit.
     pub native_flags: Vec<u32>,
+    /// Unchanged eleven-column original aperture measurements per exposure.
     pub frame_values: Vec<[f64; 11]>,
+    /// Twelve-column guarded-plane fit diagnostics per exposure group.
     pub background: Vec<[f64; 12]>,
 }
 impl ProfileData {
+    /// Borrow the same ordered arrays without copying or changing group quality.
+    #[must_use]
     pub fn borrowed(&self) -> profiles::Observations<'_> {
         profiles::Observations {
             samples: &self.samples,
@@ -37,21 +58,37 @@ impl ProfileData {
 }
 /// Predictions, original shoeboxes, unchanged aperture sums, and learned profile bank.
 pub struct Measurements {
+    /// Detector height and width, in pixels.
     pub detector_shape: [usize; 2],
+    /// Owned original pixel observations and finite supports.
     pub data: ProfileData,
+    /// Integer Miller indices in the selected supplied setting.
     pub hkl: Vec<[i32; 3]>,
+    /// Unchanged six-column summed aperture baseline per reflection.
     pub aperture: Vec<[f64; 6]>,
+    /// Original quality bits; source rows are retained even when excluded.
     pub flags: Vec<u32>,
+    /// Learned finite profile bank with independent teacher membership.
     pub bank: profiles::Learned,
+    /// Zero-based local profile region before fallback.
     pub regions: Vec<usize>,
+    /// Final profile bank index, including global fallback zero.
     pub assignments: Vec<usize>,
+    /// Target predictions before pre-flagged edge-centre exclusion.
     pub target_count: usize,
+    /// All target and measured competing crossings.
     pub all_count: usize,
+    /// Retained indices of pre-flagged centres outside the scaling mesh.
     pub excluded_hkl: Vec<[i32; 3]>,
+    /// Retained pre-flagged centres outside the scaling mesh.
     pub excluded_centres: Vec<V3>,
+    /// Unchanged aperture rows for excluded edge centres.
     pub excluded_values: Vec<[f64; 6]>,
+    /// Original quality flags for excluded edge centres.
     pub excluded_flags: Vec<u32>,
+    /// Finite local profile voxel dimensions and widths.
     pub grid: profiles::Grid,
+    /// Centre eligibility from the same shared original-image mask.
     pub visible: Vec<bool>,
 }
 /// Ray, local angular pixel transform and signed rocking zeta in one declared frame.
@@ -103,7 +140,7 @@ fn predictions(
     }
     let lo = angles[0][0];
     let hi = angles.last().unwrap()[1];
-    let hints = vec![(lo + hi) / 2.; h.len()];
+    let hints = vec![f64::midpoint(lo, hi); h.len()];
     let mut records = Vec::new();
     for other in [false, true] {
         let p = prediction::predict(g, b, &h, &hints, other)?;
@@ -194,7 +231,7 @@ pub(super) fn measure(
         o.checkpoint()?;
         let mut payloads = Vec::new();
         for frame in first..(first + o.frame_workers).min(angles.len()) {
-            let p = prepared(source, plan, o.acquisition.first, frame)?;
+            let p = prepared(source, plan, o, frame)?;
             let data = image(&p, plan.shape);
             let ids: Vec<_> = (0..centres.len())
                 .filter(|&i| {
@@ -334,21 +371,6 @@ pub(super) fn measure(
         }
     }
     drop(d);
-    let dac_masks = (0..angles.len())
-        .map(|i| {
-            spots::frame_validity::dac_mask(
-                o.geometry,
-                angles[i],
-                spots::frame_validity::Shape {
-                    height: plan.shape[0],
-                    width: plan.shape[1],
-                    block: 16,
-                },
-                plan.dacs[0].options,
-            )
-            .map(|m| m.excluded)
-        })
-        .collect::<std::result::Result<Vec<_>, _>>()?;
     let mut visible = Vec::new();
     for c in &selected.centres {
         let (_, a, zeta) = profile_geometry([c[0], c[1]], g);
@@ -358,19 +380,20 @@ pub(super) fn measure(
             .iter()
             .enumerate()
             .min_by(|a, b| {
-                (c[2] - (a.1[0] + a.1[1]) / 2.)
+                (c[2] - f64::midpoint(a.1[0], a.1[1]))
                     .abs()
-                    .total_cmp(&(c[2] - (b.1[0] + b.1[1]) / 2.).abs())
+                    .total_cmp(&(c[2] - f64::midpoint(b.1[0], b.1[1])).abs())
             })
             .unwrap()
             .0;
         let x = (c[0] + 0.5).floor() as usize;
         let y = (c[1] + 0.5).floor() as usize;
-        let block = 16;
-        let cw = plan.shape[1].div_ceil(block);
-        let ch = plan.shape[0].div_ceil(block);
-        let mut bad = plan.blocks[0].excluded[nearest * ch * cw + (y / block) * cw + x / block];
-        bad |= dac_masks[nearest][(y / block) * cw + x / block];
+        let mut bad = false;
+        for mask in &plan.blocks {
+            let cw = plan.shape[1].div_ceil(mask.block);
+            let ch = plan.shape[0].div_ceil(mask.block);
+            bad |= mask.excluded[nearest * ch * cw + (y / mask.block) * cw + x / mask.block];
+        }
         visible.push(!bad);
     }
     let h: Vec<_> = keep.iter().map(|&i| hkl[i]).collect();
