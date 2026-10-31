@@ -116,3 +116,11 @@ measured separately. The overlap map now scales with a single exposure.
 The final integration is benchmarked both with one worker and four, before
 fresh full runs for each resource configuration. All science controls, signed
 intensities, covariance propagation, support and quality flags must remain exact.
+
+Stage 3a (v15) measures the serial cache plus per-exposure overlap workspace.
+The three-repeat integration median falls from 17.792 s to 7.971 s (2.23x).
+Fresh raw-to-search worker time is 44.75 s and full CLI time 52.89 s, versus
+53.97/61.82 s after stage 2. Every numerical array, candidate record and phasing
+history is bitwise identical to v11. The largest live reflection cache is
+1,583,672 bytes under the explicit 256 MiB cap; process memory is reported
+separately. Report: `benchmarks/enstatite-profile-execution-stage3a-macos.json`.
