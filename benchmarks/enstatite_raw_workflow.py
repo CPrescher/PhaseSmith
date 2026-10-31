@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v12.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v13.json"
 
 
 def digest(path):
