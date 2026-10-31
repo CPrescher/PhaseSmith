@@ -21,7 +21,7 @@ cargo build --release -p phasesmith --features hdf5 --example single_crystal_wor
 
 target/release/examples/single_crystal_workflow --mgsio3 \
   '/path/to/MgSiO3 Enstatite Calibration Crystal' \
-  validation/enstatite-raw-workflow-v28.json \
+  validation/enstatite-raw-workflow-v29.json \
   /path/outside/the/repository/new-native-run
 ```
 
@@ -44,7 +44,7 @@ saved candidates only after the executable exits:
 ```sh
 python benchmarks/enstatite_native_workflow.py \
   --data-root '/path/to/MgSiO3 Enstatite Calibration Crystal' \
-  --protocol validation/enstatite-raw-workflow-v28.json \
+  --protocol validation/enstatite-raw-workflow-v29.json \
   --executable target/release/examples/single_crystal_workflow \
   --output /path/outside/the/repository/new-observed-run
 ```

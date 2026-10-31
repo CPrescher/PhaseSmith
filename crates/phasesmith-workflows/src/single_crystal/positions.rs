@@ -29,9 +29,17 @@ pub(super) fn validity_mask(plan: &frame_input::Plan, i: usize) -> Result<Vec<bo
     for m in &plan.blocks {
         let ch = h.div_ceil(m.block);
         let cw = w.div_ceil(m.block);
-        for y in 0..h {
-            for x in 0..w {
-                output[y * w + x] |= m.excluded[i * ch * cw + (y / m.block) * cw + x / m.block];
+        for (y, row) in output.chunks_exact_mut(w).enumerate() {
+            let first = i * ch * cw + (y / m.block) * cw;
+            for (pixels, &excluded) in row.chunks_mut(m.block).zip(&m.excluded[first..first + cw]) {
+                if excluded {
+                    pixels.fill(true);
+                }
+            }
+        }
+        if !m.fixed.is_empty() {
+            for (pixel, &excluded) in output.iter_mut().zip(&m.fixed) {
+                *pixel |= excluded;
             }
         }
     }
@@ -260,4 +268,48 @@ fn flag_invalid_tracks(result: &mut Positions, plan: &frame_input::Plan) -> Resu
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn shared_block_union_preserves_partial_detector_edges_and_fixed_pixels() {
+        let shape = [7, 9];
+        let first = frame_input::BlockMasks {
+            block: 3,
+            excluded: (0..18).map(|i| i % 5 == 0).collect(),
+            fixed: vec![],
+        };
+        let mut fixed = vec![false; 63];
+        fixed[62] = true;
+        let second = frame_input::BlockMasks {
+            block: 4,
+            excluded: (0..12).map(|i| i % 4 == 1).collect(),
+            fixed,
+        };
+        let p = frame_input::Plan {
+            shape,
+            frames: 2,
+            vertical_flip: false,
+            reserved_minimum: u32::MAX,
+            expected_hashes: vec![],
+            blocks: vec![first, second],
+            dacs: vec![],
+        };
+        for f in 0..2 {
+            let actual = validity_mask(&p, f).unwrap();
+            for y in 0..7 {
+                for x in 0..9 {
+                    let expected = p.blocks.iter().any(|b| {
+                        let ch = 7usize.div_ceil(b.block);
+                        let cw = 9usize.div_ceil(b.block);
+                        b.excluded[f * ch * cw + (y / b.block) * cw + x / b.block]
+                            || (!b.fixed.is_empty() && b.fixed[y * 9 + x])
+                    });
+                    assert_eq!(actual[y * 9 + x], expected);
+                }
+            }
+        }
+    }
 }
