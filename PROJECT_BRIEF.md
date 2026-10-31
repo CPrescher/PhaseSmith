@@ -27,8 +27,12 @@ include it. It builds HDF5, Bitshuffle/LZ4, zlib and LZF from Cargo sources,
 requiring a C compiler, CMake >=3.26 and Git at build time, with no installed HDF5 or
 Python compression plugins at runtime. The minimum Rust patch version is now
 1.85.1 for the HDF5 bindings. Default Rust facade builds remain HDF5-free.
-The v8 MgSiO3 protocol freezes an unchanged-science full rerun through this
-reader plus native masks; this validates I/O, not a completed Rust-only pipeline.
+The v8 MgSiO3 full rerun passes through this reader plus native masks: Mg16
+Si16 O48, R1 .0411159, maximum/RMS coordinate errors .0065804/.0045658 A in
+95.85 s. Every reduced array and original-frame hash is bitwise identical to v7.
+The clean wheel needs no h5py/hdf5plugin, external HDF5 or dynamic plugins. This
+validates I/O, not a completed Rust-only pipeline. The record is
+`benchmarks/enstatite-bundled-hdf5-macos.json`.
 Existing Python orchestration/experimental optimizers remain explicit pending
 work. Large raw data and full products stay outside Git; only a 10-KiB independent
 compressed interoperability fixture is checked in.

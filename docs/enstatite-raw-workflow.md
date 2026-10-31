@@ -224,3 +224,19 @@ complete worker. This establishes the qualified MgSiO3 example, not general
 mask calibration or public API promotion. The retained v4 summary is now
 `benchmarks/enstatite-raw-workflow-v4-macos.json`; the current successful summary
 is `benchmarks/enstatite-raw-workflow-macos.json`.
+
+## Bundled native HDF5 validation (v8)
+
+The complete v8 run uses the bundled Rust HDF5/Bitshuffle reader and Rust shadow
+kernels, with v7 scientific settings unchanged. In a clean environment without
+h5py/hdf5plugin and with dynamic filter loading disabled, it recovers
+Mg16 Si16 O48 at R1 0.0411159 and maximum/RMS coordinate errors
+0.0065804/0.0045658 A. All reduced arrays, positions and original-frame hashes
+are bitwise identical to v7; all eight source files remain unchanged.
+The full worker takes 95.85 s. See
+`benchmarks/enstatite-bundled-hdf5-macos.json` and
+[native HDF5 input](native-hdf5.md) for the artifact, contracts and validation.
+The earlier v5/v6/v7 outcomes remain retained. This verifies the complete
+existing workflow through native input, while Python orchestration and the
+experimental geometry/profile/scaling optimizers still require native ports
+before a wholly Rust-only raw-to-structure executable can be claimed.

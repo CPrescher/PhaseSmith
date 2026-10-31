@@ -1,0 +1,207 @@
+{
+  "schema": "phasesmith.enstatite-bundled-hdf5-validation.v1",
+  "protocol": "validation/enstatite-raw-workflow-v8.json",
+  "output": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v8",
+  "reader_environment": {
+    "wheel_sha256": "98915ed1e7e333b29f400eaf0b7d879fc6b49ec9a6604e0e0c16b2be2589fef2",
+    "wheel_bytes": 7893961,
+    "core_sha256": "2bde0cd29ea0ba8d7a2c7c96bfdbe77c832bd6e4e39bdf04f94d2fdd88c8bbde",
+    "hdf5_version": [
+      2,
+      2,
+      0
+    ],
+    "h5py_installed": false,
+    "hdf5plugin_installed": false,
+    "plugin_loading_disabled": true,
+    "plugin_path": "/nonexistent/phasesmith-no-plugins",
+    "packages": {
+      "phasesmith": "0.7.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "gemmi": "0.7.5"
+    },
+    "linked_libraries": "/tmp/phasesmith-bundled-hdf5-workflow/lib/python3.13/site-packages/phasesmith/_core.abi3.so:\n\t@rpath/phasesmith._core.abi3.so (compatibility version 0.0.0, current version 0.0.0)\n\t/usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)\n"
+  },
+  "compared_to": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v7",
+  "bitwise_comparison": {
+    "positions.npz": {
+      "original_flags": true,
+      "boxes": true,
+      "frame_ranges": true,
+      "values": true,
+      "flags": true,
+      "observations": true,
+      "omega_bounds": true
+    },
+    "indexed-positions.npz": {
+      "track_ids": true,
+      "hkl": true,
+      "observed": true,
+      "predicted": true,
+      "eligible": true,
+      "training": true
+    },
+    "edge-exclusions.npz": {
+      "hkl": true,
+      "predicted": true,
+      "aperture": true,
+      "flags": true
+    },
+    "reduced-observations.npz": {
+      "hkl": true,
+      "intensity": true,
+      "sigma": true,
+      "statistical_sigma": true,
+      "flags": true,
+      "use": true,
+      "visible": true,
+      "dac_entry_degrees": true,
+      "dac_exit_degrees": true,
+      "aperture": true,
+      "raw_profiles": true,
+      "choices": true,
+      "parameters": true
+    },
+    "illumination_masks_bitwise_equal": true,
+    "all_142_original_frame_hashes_equal": true
+  },
+  "search": {
+    "termination": "r1_target",
+    "target_met": true,
+    "amplitude_r1": 0.041115888830963655,
+    "seconds": 0.6510184579528868,
+    "model_saved_before_reference": true,
+    "resource": {
+      "expanded_reflection_count": 9320,
+      "volume_atom_cap": 105,
+      "memory_atom_cap": 128,
+      "maximum_atoms": 105,
+      "dense_memory_budget_bytes": 134217728
+    },
+    "observation_count": 4125,
+    "rejected_trials": []
+  },
+  "completion": {
+    "stage": "search",
+    "seconds": 95.85283295798581,
+    "reference_model_read": false,
+    "source_hkls_read": false,
+    "archived_arrays_read": false
+  },
+  "outcome": {
+    "schema": "phasesmith.enstatite-raw-workflow-result.v1",
+    "execution_returncode": 0,
+    "source_files_unchanged": true,
+    "through": "search",
+    "raw_to_structure_search_passed": true,
+    "reference_assessment": {
+      "counts_match": true,
+      "rms_error_angstrom": 0.004565780523746207,
+      "maximum_error_angstrom": 0.006580415832804548,
+      "hand": -1,
+      "shift": [
+        0.8347674859185468,
+        0.552447713357026,
+        0.27215279085914457
+      ],
+      "correct": true,
+      "strict_002_angstrom": true,
+      "reference_read_after_worker_stopped": true
+    },
+    "standalone_structure_refinement": "not_implemented"
+  },
+  "standalone_rust_reader": {
+    "three_original_frame_hashes_match_independent_h5py_control": true,
+    "dynamic_plugins_disabled": true,
+    "python_runtime": false
+  },
+  "limits": [
+    "Python orchestration and geometry/profile/scaling optimizers remain in the full driver.",
+    "Cell/symmetry/elements and provisional spindle angles remain supplied priors.",
+    "Declared 35-degree DAC cone is an exposed-data assumption, not independent metrology.",
+    "No standalone structure refinement."
+  ],
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "protocol_sha256": "c9dd068d55fab6e926e44b5b8eab69625b8e32d446df435a3955a6fa1f4255d3",
+  "provenance": {
+    "protocol_sha256": "c9dd068d55fab6e926e44b5b8eab69625b8e32d446df435a3955a6fa1f4255d3",
+    "source_hashes": {
+      "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+      "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+      "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+      "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+      "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+      "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+      "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+      "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+    },
+    "native_sha256": "2bde0cd29ea0ba8d7a2c7c96bfdbe77c832bd6e4e39bdf04f94d2fdd88c8bbde",
+    "implementation_sha256": "9e752c1298ad30f5dbe14b1bd55a97b381983d837825904b6bad3d8584243721",
+    "git_commit": "fae5bd343f6d279f4e65ccc4c7f49ef88ddbb570"
+  },
+  "composition_full_cell": {
+    "Mg": 16,
+    "O": 48,
+    "Si": 16
+  },
+  "reduction": {
+    "used": 4125,
+    "negative_used": 220,
+    "teachers": 246,
+    "frame_hashes_equal": true,
+    "source_loads": 142,
+    "excluded_by_visibility": 2488,
+    "exported_with_profile_warning": 659
+  },
+  "geometry": {
+    "training": 1299,
+    "withheld": 713,
+    "withheld_xy_rms_pixels": 0.33310992501218645,
+    "withheld_omega_rms_degrees": 0.16589313565471886,
+    "gates": {
+      "minimum_training": true,
+      "minimum_withheld": true,
+      "withheld_xy": true,
+      "withheld_omega": true,
+      "optimizer_converged": true,
+      "not_at_bounds": true
+    }
+  },
+  "validation": {
+    "rust_passed": 501,
+    "rust_ignored": 34,
+    "python_passed": 3217,
+    "python_skipped": 11,
+    "python_deselected": 34,
+    "formatting": true,
+    "strict_workspace_clippy": true,
+    "independent_fixture": true
+  },
+  "external_products": {
+    "frame-validity.npz": {
+      "bytes": 36885,
+      "sha256": "a7b9696c4336f26e91314694b50d3b4604c9a1bd9b5494b2824a78b20e138042"
+    },
+    "reduced-observations.npz": {
+      "bytes": 586922,
+      "sha256": "325d562605cc3d6dfdf3b44883637faf2697d49654f97b4f10ec8ad7a7de388c"
+    },
+    "search.json": {
+      "bytes": 407,
+      "sha256": "81e4e64c3f9a2414f9c4b781319abf793a9bd0bce9a4d50d0c374e4d2cf0e63a"
+    },
+    "report.json": {
+      "bytes": 622,
+      "sha256": "81309eab78c471caf85c15eb44dfbd049f05edf2f2b10c3a0583996199988a6c"
+    },
+    "candidate/result.json": {
+      "bytes": 106562,
+      "sha256": "286f15ac0152a67ed484d6dbe22a7656a12c1822a9552ddf175c5df4d623d5bd"
+    },
+    "candidate/candidate.cif": {
+      "bytes": 2502,
+      "sha256": "21142513996814dad0676148dde1d1071eff6df194a0b8a392950dafb78fac4b"
+    }
+  }
+}
