@@ -37,3 +37,11 @@ Three deterministic repeats, explicit execution controls, admitted cache bytes
 and process peak RSS are reported. Fresh full runs use the existing observational
 wall-time wrapper and compare every numerical array and saved candidate with
 retained v11. Timings and correctness are reported separately at each stage.
+
+The first real-case measurement at the 64 MiB library default correctly falls
+back to streaming (38.81 s versus retained 38.78 s). Its result is preserved.
+An admission diagnostic measures 177,855,620 cache-capacity bytes (169.6 MiB),
+506,475 teacher samples and 13,808,351 intersections, with a bitwise-identical
+learned bank. The full v13 example explicitly requests a 256 MiB additional
+cache cap; v12's unadmitted 64 MiB protocol/measurement are retained. This
+resource choice uses geometry capacity, never R1 or an atomic reference.
