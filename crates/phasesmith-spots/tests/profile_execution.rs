@@ -120,6 +120,45 @@ fn learning_cache_is_exact_and_tiny_budgets_fall_back() {
                 assert!(cached.execution.cache_bytes <= budget);
                 assert_eq!(cached.execution.cache_entries > 0, budget > 1);
             }
+            for workers in [2, 4] {
+                let parallel = profiles::learn_with_execution(
+                    &o,
+                    &[0, 1, 0, 1],
+                    &[true; 4],
+                    grid,
+                    3,
+                    2,
+                    20.,
+                    0.,
+                    5,
+                    weighted,
+                    Execution {
+                        workers,
+                        geometry_cache_bytes: 1024 * 1024,
+                    },
+                )
+                .unwrap();
+                let streaming = profiles::learn_with_execution(
+                    &o,
+                    &[0, 1, 0, 1],
+                    &[true; 4],
+                    grid,
+                    3,
+                    2,
+                    20.,
+                    0.,
+                    5,
+                    weighted,
+                    Execution {
+                        workers: 1,
+                        geometry_cache_bytes: 0,
+                    },
+                )
+                .unwrap();
+                assert_eq!(streaming.profiles, parallel.profiles);
+                assert_eq!(parallel.execution.workers, workers.min(3));
+                assert!(parallel.execution.cache_bytes <= 1024 * 1024);
+            }
         }
     }
 }

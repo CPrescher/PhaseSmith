@@ -177,6 +177,7 @@ fn experimental_profile_learn<'py>(
         .map_err(error)?;
     let stats = PyDict::new(py);
     stats.set_item("workers", result.execution.workers)?;
+    stats.set_item("requested_workers", result.execution.requested_workers)?;
     stats.set_item("cache_budget_bytes", result.execution.cache_budget_bytes)?;
     stats.set_item("cache_bytes", result.execution.cache_bytes)?;
     stats.set_item("cache_rows", result.execution.cache_rows)?;

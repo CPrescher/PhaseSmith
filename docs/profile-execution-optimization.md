@@ -56,3 +56,22 @@ are unchanged. Native workspace tests pass 510 cases and Python 3,239, plus
 strict Clippy/formatting. Reports:
 `benchmarks/enstatite-profile-execution-stage1-macos.json` and the cumulative
 `benchmarks/enstatite-profile-execution-macos.json`.
+
+## Stage 2: deterministic parallel banks
+
+Global and local profile banks have independent objectives: a bank's update
+reads only its own previous voxels and fixed teacher data. There is no joint
+normalization between iterations. Run the complete requested iteration sequence
+for each bank as a separate native task, keeping every within-bank sample/voxel
+visit and arithmetic operation in source order. Final support selection and
+normalization are unchanged. This avoids nondeterministic floating reductions
+and requires no duplicated geometry matrix.
+
+A stable local-bank row index is admitted within the same cache cap. A private
+Rayon pool uses up to the requested 1–4 workers (no more than the bank count).
+If geometry/index admission, allocation or pool creation fails, use the serial
+cached/streaming path and report actual versus requested workers. Index bytes
+are included in admitted cache capacity. Per-worker gradient buffers replace
+the serial bank-wide gradient allocation; at most one gradient per active bank
+is live. The global bank contains all teachers, so bank parallelism does not
+imply fourfold speedup. Measurements determine the actual additional gain.

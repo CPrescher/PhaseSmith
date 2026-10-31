@@ -422,8 +422,10 @@ impl Execution {
 /// Actual admitted learning cache; independent of the learned numerical arrays.
 #[derive(Clone, Copy, Default)]
 pub struct LearningExecution {
-    /// Actual native workers (serial cache implementation: one).
+    /// Actual native pool size; one on streaming/cache-admission fallback.
     pub workers: usize,
+    /// Requested native workers.
+    pub requested_workers: usize,
     /// Caller-declared additional-cache cap.
     pub cache_budget_bytes: usize,
     /// Actual admitted vector-capacity bytes, zero on streaming fallback.
@@ -627,8 +629,9 @@ pub fn learn_with_execution(
         &used,
         execution.geometry_cache_bytes,
     );
-    let execution_stats = LearningExecution {
+    let mut execution_stats = LearningExecution {
         workers: 1,
+        requested_workers: execution.workers,
         cache_budget_bytes: execution.geometry_cache_bytes,
         cache_bytes: cache
             .as_ref()
@@ -672,44 +675,65 @@ pub fn learn_with_execution(
     for (p, &d) in profile.iter_mut().zip(&denominator) {
         *p = if d > 0. { (*p / d).max(0.) } else { 0. };
     }
-    for _ in 0..iterations {
-        let mut gradient = vec![0.; models * k];
-        if let Some(cache) = &cache {
-            cache.gradient(
-                o,
-                regions,
-                &total,
-                &reference_weights,
-                k,
-                &profile,
-                &mut gradient,
-            );
-        } else {
-            for g in 0..o.ids.len() {
-                let id = o.ids[g];
-                if !used[id] {
-                    continue;
-                }
-                for i in o.offsets[g]..o.offsets[g + 1] {
-                    let b = o.bounds(g, i);
-                    let value = o.samples[i][0] / total[id];
-                    let mut expected = [0.; 2];
-                    o.weights(grid, b, centres[id], id, |j, w, _| {
-                        expected[0] += w * profile[j];
-                        expected[1] += w * profile[(regions[id] + 1) * k + j];
-                    });
-                    o.weights(grid, b, centres[id], id, |j, w, _| {
-                        for (slot, m) in [0, regions[id] + 1].into_iter().enumerate() {
-                            gradient[m * k + j] +=
-                                reference_weights[id] * w * (value - expected[slot]);
-                        }
-                    });
+    let mut parallel = false;
+    if let Some(cache) = &cache {
+        if let Some((workers, extra)) = cache.iterate_parallel(
+            o,
+            regions,
+            &total,
+            &reference_weights,
+            k,
+            &mut profile,
+            &denominator,
+            iterations,
+            execution.workers,
+            execution.geometry_cache_bytes,
+        ) {
+            execution_stats.workers = workers;
+            execution_stats.cache_bytes += extra;
+            parallel = true;
+        }
+    }
+    if !parallel {
+        for _ in 0..iterations {
+            let mut gradient = vec![0.; models * k];
+            if let Some(cache) = &cache {
+                cache.gradient(
+                    o,
+                    regions,
+                    &total,
+                    &reference_weights,
+                    k,
+                    &profile,
+                    &mut gradient,
+                );
+            } else {
+                for g in 0..o.ids.len() {
+                    let id = o.ids[g];
+                    if !used[id] {
+                        continue;
+                    }
+                    for i in o.offsets[g]..o.offsets[g + 1] {
+                        let b = o.bounds(g, i);
+                        let value = o.samples[i][0] / total[id];
+                        let mut expected = [0.; 2];
+                        o.weights(grid, b, centres[id], id, |j, w, _| {
+                            expected[0] += w * profile[j];
+                            expected[1] += w * profile[(regions[id] + 1) * k + j];
+                        });
+                        o.weights(grid, b, centres[id], id, |j, w, _| {
+                            for (slot, m) in [0, regions[id] + 1].into_iter().enumerate() {
+                                gradient[m * k + j] +=
+                                    reference_weights[id] * w * (value - expected[slot]);
+                            }
+                        });
+                    }
                 }
             }
-        }
-        for ((p, &d), &g) in profile.iter_mut().zip(&denominator).zip(&gradient) {
-            if d > 0. {
-                *p = (*p + 0.9 * g / d).max(0.);
+            for ((p, &d), &g) in profile.iter_mut().zip(&denominator).zip(&gradient) {
+                if d > 0. {
+                    *p = (*p + 0.9 * g / d).max(0.);
+                }
             }
         }
     }

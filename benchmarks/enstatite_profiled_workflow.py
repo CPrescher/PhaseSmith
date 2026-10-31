@@ -10,6 +10,7 @@ its owning stage. Search subprocess startup is distinguished from solver time.
 import functools
 import importlib
 import json
+import resource
 import subprocess
 import sys
 import time
@@ -58,6 +59,7 @@ class Timings:
         return dict(
             schema="phasesmith.enstatite-wall-timings.v1",
             wall_seconds=elapsed,
+            maximum_resident_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
             accounted_exclusive_seconds=sum(categories.values()),
             exclusive_by_name=categories,
             events=self.events,
