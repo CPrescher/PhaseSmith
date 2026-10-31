@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v19.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v20.json"
 
 
 def digest(path):
@@ -380,7 +380,7 @@ def stage_positions(packet, out, protocol, validity=None):
             spot_options=SpotOptions(**protocol["detection"]),
             rotation_options=RotationOptions(**protocol["linking"]),
             saturation=None,
-            workers=protocol["acquisition"]["workers"],
+            workers=protocol.get("detection_workers", protocol["acquisition"]["workers"]),
             gain=protocol["acquisition"]["gain"],
             read_noise=protocol["acquisition"]["read_noise"],
             progress=lambda n, total: (
@@ -418,6 +418,9 @@ def stage_positions(packet, out, protocol, validity=None):
             out / "positions.json",
             dict(
                 frame_hashes=positions.frame_hashes,
+                detection_workers=protocol.get(
+                    "detection_workers", protocol["acquisition"]["workers"]
+                ),
                 raw_frame_hashes=hashes,
                 original_frame_indices=frames.indices.tolist(),
                 selected_frames=len(frames.indices),

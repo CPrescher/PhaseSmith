@@ -58,7 +58,7 @@ def main():
             )
             lock = threading.Lock()
 
-            def timer(name, function):
+            def timer(name, function, stats=stats, lock=lock):
                 def call(*a, **kw):
                     start = time.perf_counter()
                     try:
@@ -69,12 +69,12 @@ def main():
 
                 return call
 
-            def detect(*a, **kw):
+            def detect(*a, _stats=stats, **kw):
                 start = time.perf_counter()
                 try:
                     yield from original_detect(*a, **kw)
                 finally:
-                    stats["ordered_detection_wall_seconds"] = time.perf_counter() - start
+                    _stats["ordered_detection_wall_seconds"] = time.perf_counter() - start
 
             rotation._detect_frames = detect
             rotation._measure_frame = timer("frame_measurement_thread_seconds", original_measure)
@@ -141,7 +141,12 @@ def main():
         schema="phasesmith.detection-execution.v1",
         records=records,
         maximum_resident_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
-        interpretation="Three sequential repeats per worker count. All raw frames reread; frozen masks reused only in isolated benchmark. Serial load times overlap worker tasks; thread seconds overlap each other. Ordered detection, linking and track assembly partition total wall time.",
+        interpretation=(
+            "Three sequential repeats per worker count. All raw frames reread; frozen masks "
+            "reused only in isolated benchmark. Serial load times overlap worker tasks; "
+            "thread seconds overlap each other. Ordered detection, linking and track "
+            "assembly partition total wall time."
+        ),
     )
     with args.output.open("x") as stream:
         json.dump(output, stream, indent=2)
