@@ -245,7 +245,8 @@ impl ScaleProfileBasis {
                 .derivatives
                 .local
                 .values
-                .chunks_exact_mut(2)
+                .as_chunks_mut::<2>()
+                .0
             {
                 row[1] *= scale;
             }

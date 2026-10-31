@@ -100,7 +100,12 @@ impl NativeCompletion {
         if raw.len() % 3 != 0 {
             return Err(invalid("points must be flattened triples"));
         }
-        let points: Vec<_> = raw.chunks_exact(3).map(|p| [p[0], p[1], p[2]]).collect();
+        let points: Vec<_> = raw
+            .as_chunks::<3>()
+            .0
+            .iter()
+            .map(|p| [p[0], p[1], p[2]])
+            .collect();
         let hkl = hkl_rows(&hkl)?;
         let observed = observed.as_slice()?.to_vec();
         py.detach(move || {
@@ -596,7 +601,12 @@ fn chemical_scales<'py>(
     if raw.len() % 3 != 0 {
         return Err(invalid("chemical points must be flattened triples"));
     }
-    let points: Vec<_> = raw.chunks_exact(3).map(|p| [p[0], p[1], p[2]]).collect();
+    let points: Vec<_> = raw
+        .as_chunks::<3>()
+        .0
+        .iter()
+        .map(|p| [p[0], p[1], p[2]])
+        .collect();
     let masses = masses.as_slice()?.to_vec();
     let proposals = py
         .detach(|| {
@@ -642,10 +652,14 @@ fn model_agreement(
     b: PyReadonlyArray1<'_, f64>,
 ) -> PyResult<Option<f64>> {
     let rows = |v: &[f64]| -> PyResult<Vec<[f64; 3]>> {
-        if v.len() % 3 != 0 {
+        if !v.len().is_multiple_of(3) {
             return Err(invalid("coordinates need three columns"));
         }
-        Ok(v.chunks_exact(3).map(|x| [x[0], x[1], x[2]]).collect())
+        Ok(v.as_chunks::<3>()
+            .0
+            .iter()
+            .map(|x| [x[0], x[1], x[2]])
+            .collect())
     };
     phasesmith_solution::model_agreement_distance(
         super::cell(&cell_parameters)?,

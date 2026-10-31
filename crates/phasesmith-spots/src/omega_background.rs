@@ -96,7 +96,7 @@ impl Engine {
     ) -> Result<ResultArrays, String> {
         p.validate()?;
         if frames < 3
-            || data.len() % frames != 0
+            || !data.len().is_multiple_of(frames)
             || minimum_frames < 3
             || excluded.is_some_and(|m| m.len() != data.len())
         {

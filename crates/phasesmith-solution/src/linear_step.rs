@@ -38,15 +38,15 @@ const NORMAL_CACHE_BYTES: usize = 8 * 1024 * 1024;
 // Fixed eight-lane reduction allows vectorization without fast-math or FMA.
 fn lane_dot(a: &[f64], b: &[f64]) -> f64 {
     let mut sums = [0.; 8];
-    let mut aa = a.chunks_exact(8);
-    let mut bb = b.chunks_exact(8);
-    for (x, y) in aa.by_ref().zip(bb.by_ref()) {
+    let (aa, a_tail) = a.as_chunks::<8>();
+    let (bb, b_tail) = b.as_chunks::<8>();
+    for (x, y) in aa.iter().zip(bb) {
         for i in 0..8 {
             sums[i] += x[i] * y[i];
         }
     }
     let mut result = sums.into_iter().sum::<f64>();
-    for (x, y) in aa.remainder().iter().zip(bb.remainder()) {
+    for (x, y) in a_tail.iter().zip(b_tail) {
         result += x * y;
     }
     result
@@ -86,17 +86,16 @@ pub(crate) fn cached_normal_step_with_memory_budget(
     validate(jacobian, residual, damping)?;
     let n = jacobian.len() / residual.len();
     let eligible = cache_shape(n, residual.len());
-    if eligible {
-        if let Ok((step, iterations)) =
+    if eligible
+        && let Ok((step, iterations)) =
             cached_solve(jacobian, residual, damping, deadline, cancellation)
-        {
-            return Ok(CachedNormalStep {
-                step,
-                iterations,
-                used_cache: true,
-                fell_back: false,
-            });
-        }
+    {
+        return Ok(CachedNormalStep {
+            step,
+            iterations,
+            used_cache: true,
+            fell_back: false,
+        });
     }
     let (step, iterations) = iterative_normal_step_with_memory_budget(
         jacobian,
@@ -338,17 +337,16 @@ impl NormalReuse {
                 self.builds += 1;
                 self.blocked_builds += usize::from(self.blocked);
             }
-            if let Some(p) = &self.prepared {
-                if let Ok((step, iterations)) =
+            if let Some(p) = &self.prepared
+                && let Ok((step, iterations)) =
                     p.solve(jacobian, residual, damping, deadline, cancellation)
-                {
-                    return Ok(CachedNormalStep {
-                        step,
-                        iterations,
-                        used_cache: true,
-                        fell_back: false,
-                    });
-                }
+            {
+                return Ok(CachedNormalStep {
+                    step,
+                    iterations,
+                    used_cache: true,
+                    fell_back: false,
+                });
             }
         }
         // A changed Gram summation order must still satisfy the original J
@@ -360,17 +358,16 @@ impl NormalReuse {
             self.prepared =
                 PreparedNormalSystem::new(jacobian, residual, deadline, cancellation).ok();
             self.builds += usize::from(self.prepared.is_some());
-            if let Some(p) = &self.prepared {
-                if let Ok((step, iterations)) =
+            if let Some(p) = &self.prepared
+                && let Ok((step, iterations)) =
                     p.solve(jacobian, residual, damping, deadline, cancellation)
-                {
-                    return Ok(CachedNormalStep {
-                        step,
-                        iterations,
-                        used_cache: true,
-                        fell_back: false,
-                    });
-                }
+            {
+                return Ok(CachedNormalStep {
+                    step,
+                    iterations,
+                    used_cache: true,
+                    fell_back: false,
+                });
             }
         }
         let (step, iterations) = iterative_normal_step_with_memory_budget(
@@ -551,7 +548,7 @@ fn validate(jacobian: &[f64], residual: &[f64], damping: f64) -> Result<(), Solu
     let m = residual.len();
     if m == 0
         || jacobian.is_empty()
-        || jacobian.len() % m != 0
+        || !jacobian.len().is_multiple_of(m)
         || !damping.is_finite()
         || damping <= 0.
         || residual.iter().chain(jacobian).any(|x| !x.is_finite())

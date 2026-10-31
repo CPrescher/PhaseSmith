@@ -181,14 +181,13 @@ impl CachedReader {
         let bytes = frame.pixels.capacity().checked_mul(size_of::<u32>());
         if !state.frames.contains_key(&index)
             && bytes.is_some_and(|n| n <= budget.saturating_sub(state.stats.payload_bytes))
+            && let Ok(cached) = copy_frame(&frame)
         {
-            if let Ok(cached) = copy_frame(&frame) {
-                let actual = cached.pixels.capacity() * size_of::<u32>();
-                if actual <= budget.saturating_sub(state.stats.payload_bytes) {
-                    state.stats.payload_bytes += actual;
-                    state.stats.frames += 1;
-                    state.frames.insert(index, Arc::new(cached));
-                }
+            let actual = cached.pixels.capacity() * size_of::<u32>();
+            if actual <= budget.saturating_sub(state.stats.payload_bytes) {
+                state.stats.payload_bytes += actual;
+                state.stats.frames += 1;
+                state.frames.insert(index, Arc::new(cached));
             }
         }
         Ok(frame)

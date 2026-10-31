@@ -336,10 +336,10 @@ pub fn decode_tof_pawley_project(
     if w.format != "phasesmith-tof-pawley" || w.version != 1 {
         return Err(err("unsupported TOF Pawley format/version"));
     }
-    if let Some(cp) = &w.checkpoint {
-        if cp.request_sha256 != digest(&w.input, &w.options)? {
-            return Err(err("TOF Pawley checkpoint request digest mismatch"));
-        }
+    if let Some(cp) = &w.checkpoint
+        && cp.request_sha256 != digest(&w.input, &w.options)?
+    {
+        return Err(err("TOF Pawley checkpoint request digest mismatch"));
     }
     let input = decode_input(w.input)?;
     let options = decode_options(&w.options)?;

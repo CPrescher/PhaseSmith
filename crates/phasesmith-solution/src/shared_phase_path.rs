@@ -202,13 +202,10 @@ fn peak_orbits(
             point,
             &independent,
             options.symmetry_tolerance_angstrom,
-        )? {
-            if near.iter().all(|op| {
-                distance2(&geometry, projected, op.apply_fractional(projected))
-                    .is_ok_and(|d| d < 1e-12)
-            }) {
-                point = projected;
-            }
+        )? && near.iter().all(|op| {
+            distance2(&geometry, projected, op.apply_fractional(projected)).is_ok_and(|d| d < 1e-12)
+        }) {
+            point = projected;
         }
         let images = group
             .expand_sites(&[point], 1e-8)
@@ -562,14 +559,12 @@ pub(super) fn search(
                         String::new(),
                         audit,
                         FitPass::ScreenSeed(&seed.site_u, search.screening_iterations.min(4)),
-                    ) {
-                        if next.score < state.score - 1e-8
-                            && improved
-                                .as_ref()
-                                .is_none_or(|old: &State| next.score < old.score)
-                        {
-                            improved = Some(next);
-                        }
+                    ) && next.score < state.score - 1e-8
+                        && improved
+                            .as_ref()
+                            .is_none_or(|old: &State| next.score < old.score)
+                    {
+                        improved = Some(next);
                     }
                 }
                 if let Some(next) = improved {

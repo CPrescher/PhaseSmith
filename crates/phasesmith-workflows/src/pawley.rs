@@ -273,12 +273,11 @@ impl PawleyInput {
                     return Err(err("invalid or duplicate reflection identity"));
                 }
             }
-            if let Some(domain) = &p.lattice {
-                if domain.wavelength_angstrom().to_bits()
+            if let Some(domain) = &p.lattice
+                && domain.wavelength_angstrom().to_bits()
                     != self.instrument.wavelength_angstrom.to_bits()
-                {
-                    return Err(err("Pawley lattice wavelength differs from instrument"));
-                }
+            {
+                return Err(err("Pawley lattice wavelength differs from instrument"));
             }
             CwReflectionBatchView::new(&p.two_theta_deg, &p.intensities).map_err(err)?;
         }

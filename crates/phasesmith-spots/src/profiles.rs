@@ -453,7 +453,7 @@ pub struct Learned {
 }
 fn median(mut a: Vec<f64>) -> f64 {
     a.sort_by(f64::total_cmp);
-    if a.len() % 2 == 0 {
+    if a.len().is_multiple_of(2) {
         a[a.len() / 2 - 1].midpoint(a[a.len() / 2])
     } else {
         a[a.len() / 2]
@@ -676,8 +676,8 @@ pub fn learn_with_execution(
         *p = if d > 0. { (*p / d).max(0.) } else { 0. };
     }
     let mut parallel = false;
-    if let Some(cache) = &cache {
-        if let Some((workers, extra)) = cache.iterate_parallel(
+    if let Some(cache) = &cache
+        && let Some((workers, extra)) = cache.iterate_parallel(
             o,
             regions,
             &total,
@@ -688,11 +688,11 @@ pub fn learn_with_execution(
             iterations,
             execution.workers,
             execution.geometry_cache_bytes,
-        ) {
-            execution_stats.workers = workers;
-            execution_stats.cache_bytes += extra;
-            parallel = true;
-        }
+        )
+    {
+        execution_stats.workers = workers;
+        execution_stats.cache_bytes += extra;
+        parallel = true;
     }
     if !parallel {
         for _ in 0..iterations {

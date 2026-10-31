@@ -155,16 +155,15 @@ pub fn fit(
             "variation factors require 2..4 finite triples in [0.5,2.5], starting with ones",
         ));
     }
-    if let Some(fixed) = fixed_fractions {
-        if fixed.len() != n
+    if let Some(fixed) = fixed_fractions
+        && (fixed.len() != n
             || fixed.iter().any(|f| {
                 f.iter().any(|v| !v.is_finite() || *v < 0.)
                     || (f[..k].iter().sum::<f64>() - 1.).abs() > 1e-10
                     || f[k..].iter().any(|v| *v != 0.)
-            })
-        {
-            return Err(invalid("fixed fractions must be nonnegative unit-sum rows"));
-        }
+            }))
+    {
+        return Err(invalid("fixed fractions must be nonnegative unit-sum rows"));
     }
     let grids: Vec<_> = factors
         .iter()

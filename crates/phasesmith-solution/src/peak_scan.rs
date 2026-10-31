@@ -215,15 +215,15 @@ fn scalar_rms(density: &[f64], maximum: f64) -> f64 {
 #[allow(clippy::cast_precision_loss)]
 fn lane_rms(density: &[f64], maximum: f64) -> f64 {
     let mut sums = [0.; 8];
-    let mut chunks = density.chunks_exact(8);
-    for chunk in chunks.by_ref() {
+    let (chunks, tail) = density.as_chunks::<8>();
+    for chunk in chunks {
         for i in 0..8 {
             let value = chunk[i] / maximum;
             sums[i] += value * value;
         }
     }
     let mut sum = sums.into_iter().sum::<f64>();
-    for &value in chunks.remainder() {
+    for &value in tail {
         sum += (value / maximum).powi(2);
     }
     maximum * (sum / density.len() as f64).sqrt()
@@ -242,7 +242,7 @@ fn rms_bounds(rms: f64, sigma: f64, count: usize) -> Option<[f64; 2]> {
         return None;
     }
     // Positive IEEE-754 values have monotone bit patterns. Step outward by one
-    // ULP, retaining the project's Rust 1.85 minimum (before next_up/next_down).
+    // ULP, preserving the reviewed bit-level stepping convention.
     let lo = f64::from_bits(lower.to_bits() - 1);
     let hi = f64::from_bits(upper.to_bits() + 1);
     (lo.is_normal() && hi.is_finite()).then_some([lo, hi])

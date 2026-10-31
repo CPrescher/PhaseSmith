@@ -189,14 +189,13 @@ pub fn normalize_wilson(
             .reflection_orbit(h, true)
             .map_err(|e| error(e.to_string()))?
         {
-            if let Some(&j) = by_hkl.get(&mate) {
-                if (intensity[j] - intensity[index]).abs()
+            if let Some(&j) = by_hkl.get(&mate)
+                && (intensity[j] - intensity[index]).abs()
                     > 1e-10 * intensity[j].abs().max(intensity[index].abs()).max(1e-100)
-                {
-                    return Err(error(
-                        "normalization requires merged symmetry-equivalent intensities",
-                    ));
-                }
+            {
+                return Err(error(
+                    "normalization requires merged symmetry-equivalent intensities",
+                ));
             }
             remaining.remove(&mate);
         }

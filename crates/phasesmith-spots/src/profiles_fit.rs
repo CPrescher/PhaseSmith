@@ -170,10 +170,11 @@ fn row(c: &Context<'_, '_>, id: usize, groups: &[usize], budget: usize) -> Row {
                     o.weights(c.grid, o.bounds(g, i), centre, id, |j, _, dp| {
                         let v = std::array::from_fn(|a| c.profiles[model * k + j] * dp[a]);
                         accumulate(v);
-                        if iteration == 0 && !overflow {
-                            if let Some(cache) = &mut cache {
-                                overflow = !cache.push(v);
-                            }
+                        if iteration == 0
+                            && !overflow
+                            && let Some(cache) = &mut cache
+                        {
+                            overflow = !cache.push(v);
                         }
                     });
                     if iteration == 0 {

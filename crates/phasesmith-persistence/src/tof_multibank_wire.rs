@@ -594,7 +594,9 @@ fn decode_phase(
     let count = wire.reflection_ids.len();
     let flat_hkl = take_i32(arrays, &wire.hkl, Some(&[count, 3]))?;
     let hkl = flat_hkl
-        .chunks_exact(3)
+        .as_chunks::<3>()
+        .0
+        .iter()
         .map(|row| [row[0], row[1], row[2]])
         .collect();
     TofLeBailPhase::new(

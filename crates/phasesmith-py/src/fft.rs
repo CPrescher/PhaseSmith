@@ -529,7 +529,7 @@ impl PyEngine {
         positive(step, "step")?;
         let a = values.as_array();
         let n = a.shape()[0];
-        if !(16..=256).contains(&n) || n % 2 != 0 || a.shape() != [n, n, n / 2 + 1] {
+        if !(16..=256).contains(&n) || !n.is_multiple_of(2) || a.shape() != [n, n, n / 2 + 1] {
             return Err(invalid(
                 "Expected real FFT field shape (N,N,N/2+1), N even and >=16",
             ));

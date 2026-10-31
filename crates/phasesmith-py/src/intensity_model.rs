@@ -132,12 +132,16 @@ fn experimental_profile_normal<'py>(
     let w = weights.as_slice()?.to_vec();
     let x: Vec<[f64; 3]> = basis
         .as_slice()?
-        .chunks_exact(3)
+        .as_chunks::<3>()
+        .0
+        .iter()
         .map(|r| [r[0], r[1], r[2]])
         .collect();
     let c: Vec<[f64; 9]> = covariance
         .as_slice()?
-        .chunks_exact(9)
+        .as_chunks::<9>()
+        .0
+        .iter()
         .map(|r| std::array::from_fn(|i| r[i]))
         .collect();
     let o: Vec<usize> = offsets
@@ -176,12 +180,16 @@ fn experimental_fixed_profile<'py>(
     let p = mass.as_slice()?.to_vec();
     let x: Vec<[f64; 3]> = basis
         .as_slice()?
-        .chunks_exact(3)
+        .as_chunks::<3>()
+        .0
+        .iter()
         .map(|r| [r[0], r[1], r[2]])
         .collect();
     let c: Vec<[f64; 9]> = covariance
         .as_slice()?
-        .chunks_exact(9)
+        .as_chunks::<9>()
+        .0
+        .iter()
         .map(|r| std::array::from_fn(|i| r[i]))
         .collect();
     let o: Vec<usize> = offsets

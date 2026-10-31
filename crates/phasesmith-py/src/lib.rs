@@ -3420,7 +3420,9 @@ fn hkl_rows(array: &PyReadonlyArray1<'_, i64>) -> PyResult<Vec<[i32; 3]>> {
         ));
     }
     values
-        .chunks_exact(3)
+        .as_chunks::<3>()
+        .0
+        .iter()
         .map(|row| {
             Ok([
                 i32::try_from(row[0])
@@ -3544,7 +3546,9 @@ fn xyz_rows(array: &PyReadonlyArray1<'_, f64>) -> PyResult<Vec<[f64; 3]>> {
         ));
     }
     Ok(values
-        .chunks_exact(3)
+        .as_chunks::<3>()
+        .0
+        .iter()
         .map(|row| [row[0], row[1], row[2]])
         .collect())
 }
@@ -3557,7 +3561,9 @@ fn tensor_rows(array: &PyReadonlyArray1<'_, f64>) -> PyResult<Vec<[f64; 6]>> {
         ));
     }
     Ok(values
-        .chunks_exact(6)
+        .as_chunks::<6>()
+        .0
+        .iter()
         .map(|row| [row[0], row[1], row[2], row[3], row[4], row[5]])
         .collect())
 }

@@ -688,7 +688,7 @@ mod inversion_seed_tests {
         let labels = vec!["Si".into(), "Si".into()];
         let seeds = inversion_origin_seeds(&group, &points, &labels, 0);
         assert_eq!(seeds.len(), 16);
-        for (j, branch) in seeds.chunks_exact(8).enumerate() {
+        for (j, branch) in seeds.as_chunks::<8>().0.iter().enumerate() {
             for &shift in branch {
                 let image = inversion.apply_fractional(add(points[0], shift));
                 for axis in 0..3 {

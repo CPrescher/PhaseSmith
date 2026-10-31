@@ -1558,8 +1558,8 @@ fn search_phase_map(
         };
         let mut expanded = beam.clone();
         for parent in &beam {
-            if let Some(context) = &recycling[parent.lineage % search.beam_width] {
-                if let Some(batch) = recycled_batch(
+            if let Some(context) = &recycling[parent.lineage % search.beam_width]
+                && let Some(batch) = recycled_batch(
                     cell,
                     group,
                     &result.data,
@@ -1570,9 +1570,9 @@ fn search_phase_map(
                     options,
                     deadline,
                     audit,
-                )? {
-                    expanded.push(batch);
-                }
+                )?
+            {
+                expanded.push(batch);
             }
         }
         beam = retain(expanded, search.beam_width);
@@ -1889,10 +1889,9 @@ fn search_phase_map(
                         edit.element.clone(),
                         audit,
                         FitPass::Promote(&seed.site_u),
-                    ) {
-                        if full.score < parent.score - 1e-7 {
-                            next.push(full);
-                        }
+                    ) && full.score < parent.score - 1e-7
+                    {
+                        next.push(full);
                     }
                 }
             }
@@ -1927,10 +1926,9 @@ fn search_phase_map(
                         .first()
                         .is_some_and(|best| best.lineage == lineage && best.score >= score - 1e-7)
             })
+            && let Some(best) = winners.first_mut()
         {
-            if let Some(best) = winners.first_mut() {
-                best.recycling_validated = true;
-            }
+            best.recycling_validated = true;
         }
         if winners.first().is_some_and(|s| {
             complete(s, elements) && s.recycling_validated && s.candidate.r1 <= options.r1_target

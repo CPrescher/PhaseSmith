@@ -95,8 +95,8 @@ fn repair_round(
     let base = sites.len();
     let mut tensors = summary.u_cartesian.clone();
     // The residual map proposes locations only; tensor-aware full-data fits decide acceptance.
-    if parent.candidate.species.len() < search.maximum_atoms {
-        if let Ok(pool) = crate::PreparedElementPool::new(
+    if parent.candidate.species.len() < search.maximum_atoms
+        && let Ok(pool) = crate::PreparedElementPool::new(
             cell,
             group,
             &parent.candidate.species,
@@ -105,27 +105,24 @@ fn repair_round(
             &result.data.hkl,
             &result.data.amplitudes,
             parent.candidate.u_iso.clamp(0., 0.2),
-        ) {
-            if let Ok(map) = pool.parent.difference_map(shape) {
-                if let Ok(seeds) = extract_peaks(&map.density, shape, 16) {
-                    if let Ok(points) = super::super::proposals(
-                        group,
-                        &cell.geometry().map_err(|e| error(e.to_string()))?,
-                        &seeds,
-                        &parent.aligned,
-                        search.maximum_atoms,
-                        options.symmetry_tolerance_angstrom,
-                        options,
-                        local,
-                    ) {
-                        for point in points.into_iter().take(2) {
-                            sites.push((elements.last().expect("elements").clone(), point));
-                            let u = parent.candidate.u_iso.clamp(1e-5, 0.2);
-                            tensors.push([[u, 0., 0.], [0., u, 0.], [0., 0., u]]);
-                        }
-                    }
-                }
-            }
+        )
+        && let Ok(map) = pool.parent.difference_map(shape)
+        && let Ok(seeds) = extract_peaks(&map.density, shape, 16)
+        && let Ok(points) = super::super::proposals(
+            group,
+            &cell.geometry().map_err(|e| error(e.to_string()))?,
+            &seeds,
+            &parent.aligned,
+            search.maximum_atoms,
+            options.symmetry_tolerance_angstrom,
+            options,
+            local,
+        )
+    {
+        for point in points.into_iter().take(2) {
+            sites.push((elements.last().expect("elements").clone(), point));
+            let u = parent.candidate.u_iso.clamp(1e-5, 0.2);
+            tensors.push([[u, 0., 0.], [0., u, 0.], [0., 0., u]]);
         }
     }
     let Ok(model) = crate::symmetry_model::model_in_setting(cell, group, &sites) else {

@@ -164,7 +164,9 @@ impl NativeModel {
             return Err(invalid("coordinate/species lengths differ"));
         }
         let points: Vec<_> = coordinates
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .map(|p| [p[0], p[1], p[2]])
             .collect();
         let hkl = hkl_rows(&hkl)?;
@@ -233,7 +235,9 @@ impl NativeModel {
             return Err(invalid("tensors must contain 3x3 matrices"));
         }
         let values: Vec<_> = raw
-            .chunks_exact(9)
+            .as_chunks::<9>()
+            .0
+            .iter()
             .map(|s| std::array::from_fn(|i| std::array::from_fn(|j| s[3 * i + j])))
             .collect();
         Ok(self

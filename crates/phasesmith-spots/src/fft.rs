@@ -193,7 +193,7 @@ impl FourierCloud {
 
 /// Original offset/point-ordered cloud-in-cell deposition, shared by both FFT paths.
 fn deposit(q: &[V3], n: usize, step: f64) -> Result<Vec<f32>, String> {
-    if !(16..=256).contains(&n) || n % 2 != 0 || !step.is_finite() || step <= 0. {
+    if !(16..=256).contains(&n) || !n.is_multiple_of(2) || !step.is_finite() || step <= 0. {
         return Err("grid size must be even in 16..=256, step positive and finite".into());
     }
     if q.is_empty()
@@ -234,7 +234,7 @@ struct Columns {
 }
 
 fn deposit_columns(q: &[V3], n: usize, step: f64) -> Result<Columns, String> {
-    if !(16..=256).contains(&n) || n % 2 != 0 || !step.is_finite() || step <= 0. {
+    if !(16..=256).contains(&n) || !n.is_multiple_of(2) || !step.is_finite() || step <= 0. {
         return Err("grid size must be even in 16..=256, step positive and finite".into());
     }
     if q.is_empty()

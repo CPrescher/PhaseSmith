@@ -435,12 +435,12 @@ fn validate_histograms(histograms: &[JointRietveldHistogram]) -> Result<(), Join
                 &definition.u_aniso_cif_angstrom2,
                 definition.coordinate_tolerance.to_bits(),
             );
-            if let Some(previous) = phases.insert(phase.phase_id().clone(), contract) {
-                if previous != contract {
-                    return Err(JointRietveldError::SharedPhaseMismatch {
-                        phase_id: phase.phase_id().clone(),
-                    });
-                }
+            if let Some(previous) = phases.insert(phase.phase_id().clone(), contract)
+                && previous != contract
+            {
+                return Err(JointRietveldError::SharedPhaseMismatch {
+                    phase_id: phase.phase_id().clone(),
+                });
             }
         }
     }

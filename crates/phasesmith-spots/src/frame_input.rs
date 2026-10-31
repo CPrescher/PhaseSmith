@@ -158,7 +158,7 @@ impl Plan {
         let mut hash = Sha256::new();
         let mut bytes = [0_u8; 4096];
         for chunk in input.pixels.chunks(1024) {
-            for (value, out) in chunk.iter().zip(bytes.chunks_exact_mut(4)) {
+            for (value, out) in chunk.iter().zip(bytes.as_chunks_mut::<4>().0.iter_mut()) {
                 out.copy_from_slice(&value.to_ne_bytes());
             }
             hash.update(&bytes[..chunk.len() * 4]);

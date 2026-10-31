@@ -78,7 +78,9 @@ impl NativeFramePreparation {
                 }
                 let v: Vec<[f64; 3]> = vectors
                     .as_slice()?
-                    .chunks_exact(3)
+                    .as_chunks::<3>()
+                    .0
+                    .iter()
                     .map(|r| [r[0], r[1], r[2]])
                     .collect();
                 Ok(kernel::DacMasks {
@@ -92,7 +94,9 @@ impl NativeFramePreparation {
                     },
                     bounds: bounds
                         .as_slice()?
-                        .chunks_exact(2)
+                        .as_chunks::<2>()
+                        .0
+                        .iter()
                         .map(|r| [r[0], r[1]])
                         .collect(),
                     block,

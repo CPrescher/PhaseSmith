@@ -676,13 +676,13 @@ fn experimental_profile_refine<'py>(
             },
             shape_options(options),
             |done, total| {
-                if let Some(cb) = &progress {
-                    if let Err(e) = Python::attach(|py| cb.call1(py, (done, total))) {
-                        callback_error = Some(e);
-                        return Err(phasesmith_spots::SpotError(
-                            "profile refinement cancelled".into(),
-                        ));
-                    }
+                if let Some(cb) = &progress
+                    && let Err(e) = Python::attach(|py| cb.call1(py, (done, total)))
+                {
+                    callback_error = Some(e);
+                    return Err(phasesmith_spots::SpotError(
+                        "profile refinement cancelled".into(),
+                    ));
                 }
                 Ok(())
             },

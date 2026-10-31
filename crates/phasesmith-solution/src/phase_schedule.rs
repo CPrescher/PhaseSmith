@@ -66,7 +66,7 @@ pub fn late_phase_plateau_ready(scores: &[f64], omit_every_third: bool) -> bool 
 
 fn phase_plateau(scores: &[f64], omit_every_third: bool, minimum: usize, window: usize) -> bool {
     let n = scores.len();
-    if n < minimum || n % 32 != 0 || scores.iter().any(|x| !x.is_finite()) {
+    if n < minimum || !n.is_multiple_of(32) || scores.iter().any(|x| !x.is_finite()) {
         return false;
     }
     let best = |end| {

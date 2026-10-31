@@ -130,10 +130,10 @@ fn plan(
                         "recycling reciprocal support/families are not symmetry closed",
                     ));
                 }
-                if let (Some(a), Some(b)) = (target[index], target[idx]) {
-                    if (a - b).abs() > 1e-10 * (1. + a) {
-                        return Err(error("inconsistent symmetry-equivalent amplitudes"));
-                    }
+                if let (Some(a), Some(b)) = (target[index], target[idx])
+                    && (a - b).abs() > 1e-10 * (1. + a)
+                {
+                    return Err(error("inconsistent symmetry-equivalent amplitudes"));
                 }
                 let term = Member {
                     index: idx,

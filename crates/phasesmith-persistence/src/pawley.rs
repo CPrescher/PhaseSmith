@@ -390,13 +390,12 @@ fn decode_input(i: WireInput) -> Result<PawleyInput, PawleyError> {
                 && p.two_theta_deg.is_empty()
                 && p.intensities.is_empty()
                 && p.hkl.is_empty()
+                && let Some(domain) = lattice
             {
-                if let Some(domain) = lattice {
-                    return match &fixed_spectrum {
-                        Some(s) => PawleyPhase::from_spectrum_domain(p.id, domain, s),
-                        None => PawleyPhase::from_domain(p.id, domain),
-                    };
-                }
+                return match &fixed_spectrum {
+                    Some(s) => PawleyPhase::from_spectrum_domain(p.id, domain, s),
+                    None => PawleyPhase::from_domain(p.id, domain),
+                };
             }
             Ok(PawleyPhase {
                 id: p.id,

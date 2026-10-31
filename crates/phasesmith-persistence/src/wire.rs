@@ -885,7 +885,9 @@ fn decode_phase(
     }
     let reflection_count = hkl_values.len() / 3;
     let hkl = hkl_values
-        .chunks_exact(3)
+        .as_chunks::<3>()
+        .0
+        .iter()
         .map(|value| [value[0], value[1], value[2]])
         .collect();
     let multiplicity = take_u64(arrays, &definition.multiplicity, &[reflection_count])?
@@ -898,7 +900,9 @@ fn decode_phase(
     let site_count = definition.scattering_species.len();
     let fractional = take_f64(arrays, &definition.fractional_xyz, Some(&[site_count, 3]))?;
     let fractional_xyz = fractional
-        .chunks_exact(3)
+        .as_chunks::<3>()
+        .0
+        .iter()
         .map(|value| [value[0], value[1], value[2]])
         .collect();
     let occupancy = take_f64(arrays, &definition.occupancy, Some(&[site_count]))?;
@@ -910,7 +914,9 @@ fn decode_phase(
         Some(&[site_count, 6]),
     )?;
     let u_aniso_cif_angstrom2 = u_aniso
-        .chunks_exact(6)
+        .as_chunks::<6>()
+        .0
+        .iter()
         .map(|value| [value[0], value[1], value[2], value[3], value[4], value[5]])
         .collect();
     let scattering_real_offset = definition
