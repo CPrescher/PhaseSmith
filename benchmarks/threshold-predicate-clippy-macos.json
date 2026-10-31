@@ -1,0 +1,96 @@
+{
+  "schema": "phasesmith.threshold-predicate-comparison.v1",
+  "qualification": "Sequential isolated builds, one warmup and eight measured calls per noise path. Counterbalanced path order, complete record equality, multi-spot 768x1024 images. Local observations, not a general speed guarantee.",
+  "rows": [
+    {
+      "baseline": {
+        "native_sha256": "ae315fe753c8c636ef342dec76753119d08ccb78146670f364eaced105a07762",
+        "supplied_variance": false,
+        "dimensions": [
+          768,
+          1024
+        ],
+        "spots": 300,
+        "complete_record_sha256": "107a650b19015fb3a247386a8616f778743a62c6303f91a8d3c9306eea662233",
+        "samples_seconds": [
+          0.009122332965489477,
+          0.0089609160204418,
+          0.00897854199865833,
+          0.008771541994065046,
+          0.00883216701913625,
+          0.00996658398071304,
+          0.009792583994567394,
+          0.009372458036523312
+        ],
+        "median_seconds": 0.009050437482073903
+      },
+      "candidate": {
+        "native_sha256": "b87827edcb699a17fc16805504a629a5bc652dea1a16e00973571599e95ad0a7",
+        "supplied_variance": false,
+        "dimensions": [
+          768,
+          1024
+        ],
+        "spots": 300,
+        "complete_record_sha256": "107a650b19015fb3a247386a8616f778743a62c6303f91a8d3c9306eea662233",
+        "samples_seconds": [
+          0.008920541033148766,
+          0.009252874995581806,
+          0.008743291022256017,
+          0.008749625005293638,
+          0.008828375022858381,
+          0.008731417008675635,
+          0.008682959014549851,
+          0.00876333296764642
+        ],
+        "median_seconds": 0.008756478986470029
+      },
+      "candidate_over_baseline": 0.9675199683787535
+    },
+    {
+      "candidate": {
+        "native_sha256": "b87827edcb699a17fc16805504a629a5bc652dea1a16e00973571599e95ad0a7",
+        "supplied_variance": true,
+        "dimensions": [
+          768,
+          1024
+        ],
+        "spots": 300,
+        "complete_record_sha256": "0f051ec707b23a62ccf59c7265386ffcb45f6ee32559b831c2d254b78bd562b0",
+        "samples_seconds": [
+          0.009220833017025143,
+          0.009258624981157482,
+          0.009273750009015203,
+          0.009277333039790392,
+          0.009276791999582201,
+          0.009245082968845963,
+          0.009352458000648767,
+          0.00930674996925518
+        ],
+        "median_seconds": 0.009275271004298702
+      },
+      "baseline": {
+        "native_sha256": "ae315fe753c8c636ef342dec76753119d08ccb78146670f364eaced105a07762",
+        "supplied_variance": true,
+        "dimensions": [
+          768,
+          1024
+        ],
+        "spots": 300,
+        "complete_record_sha256": "0f051ec707b23a62ccf59c7265386ffcb45f6ee32559b831c2d254b78bd562b0",
+        "samples_seconds": [
+          0.009639875032007694,
+          0.009573416959028691,
+          0.00933629198698327,
+          0.009348415944259614,
+          0.009957708010915667,
+          0.009140459005720913,
+          0.009256042016204447,
+          0.009421082970220596
+        ],
+        "median_seconds": 0.009384749457240105
+      },
+      "candidate_over_baseline": 0.9883344298704807
+    }
+  ]
+}

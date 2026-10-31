@@ -1,0 +1,13 @@
+--- a/crates/phasesmith-spots/src/lib.rs
++++ b/crates/phasesmith-spots/src/lib.rs
+@@ -294,4 +294,8 @@
+         let threshold = options.threshold_sigma * (pixel_variance + v.max(0.0) / (nf * nf)).sqrt();
+-        *dst =
+-            !masked & (n >= minimum) & (excess > options.threshold_absolute) & (excess > threshold);
++        // Integer masks preserve eager predicate evaluation for independent lanes.
++        *dst = (u8::from(!masked)
++            & u8::from(n >= minimum)
++            & u8::from(excess > options.threshold_absolute)
++            & u8::from(excess > threshold))
++            != 0;
+     }
