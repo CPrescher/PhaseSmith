@@ -1,0 +1,80 @@
+[
+  {
+    "tag": "dataset-1-C",
+    "fixture_sha256": "df5bced75a4a2104569967b08f755275715fcbb0eccbb111cb80c72da05022e3",
+    "frozen_result_sha256": "325eeb7ecdf82b7a020f678ad12ee948859b2a147a50468a87c983be554c1eaa",
+    "work": {
+      "centers_completed": 644,
+      "occupied_directions": 153492,
+      "evaluations_completed": 150000,
+      "budget_exhausted": false,
+      "cancelled": false,
+      "group_cap_reached": false,
+      "duplicate_observations": 0,
+      "effective_smart": false,
+      "cache_payload_bytes": 16911880,
+      "cached_directions": 50000,
+      "cached_point_entries": 44411,
+      "stage2_cache_hits": 100000,
+      "stage2_preparations": 50000,
+      "stage2_cache_evictions": 0,
+      "cached_candidate_directions": 0,
+      "cached_candidate_point_entries": 0,
+      "cached_bitset_directions": 0,
+      "cached_bitset_bytes": 0
+    },
+    "scope": "frozen training coordinates and own Rust results only"
+  },
+  {
+    "tag": "dataset-2-A",
+    "fixture_sha256": "51d28966aad587f090f98da80de9e39338d43e69685d76db5b50a8e41c9b76c7",
+    "frozen_result_sha256": "caca8c18ba0879603c878033abaa14734149295152cd9ec35204140ee86eba30",
+    "work": {
+      "centers_completed": 1026,
+      "occupied_directions": 288413,
+      "evaluations_completed": 250000,
+      "budget_exhausted": false,
+      "cancelled": false,
+      "group_cap_reached": false,
+      "duplicate_observations": 0,
+      "effective_smart": false,
+      "cache_payload_bytes": 17430542,
+      "cached_directions": 50000,
+      "cached_point_entries": 246842,
+      "stage2_cache_hits": 200000,
+      "stage2_preparations": 50000,
+      "stage2_cache_evictions": 0,
+      "cached_candidate_directions": 0,
+      "cached_candidate_point_entries": 0,
+      "cached_bitset_directions": 0,
+      "cached_bitset_bytes": 0
+    },
+    "scope": "frozen training coordinates and own Rust results only"
+  },
+  {
+    "tag": "dataset-2-C",
+    "fixture_sha256": "492cc20ba2e8d0ffb2b5d919b364c25873b7563722db7c8b9609f2e7b7abdbbb",
+    "frozen_result_sha256": "7432f9f30b95a33c1713d4d2f6c85c63ce8e576497660cc62c64e9d282d68ff3",
+    "work": {
+      "centers_completed": 696,
+      "occupied_directions": 172647,
+      "evaluations_completed": 250000,
+      "budget_exhausted": false,
+      "cancelled": false,
+      "group_cap_reached": false,
+      "duplicate_observations": 0,
+      "effective_smart": false,
+      "cache_payload_bytes": 16934892,
+      "cached_directions": 50000,
+      "cached_point_entries": 53604,
+      "stage2_cache_hits": 200000,
+      "stage2_preparations": 50000,
+      "stage2_cache_evictions": 0,
+      "cached_candidate_directions": 0,
+      "cached_candidate_point_entries": 0,
+      "cached_bitset_directions": 0,
+      "cached_bitset_bytes": 0
+    },
+    "scope": "frozen training coordinates and own Rust results only"
+  }
+]

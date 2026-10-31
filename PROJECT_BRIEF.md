@@ -252,6 +252,218 @@ Eight predeclared seeds recover all three structures and exact non-H counts
 Thiourea still spans 0.654–7.302 s across seeds: the slow seeds also have long
 searches with recycling alone. Both options remain opt-in, and these reused
 development cases are not a general solve-coverage claim.
+Experimental grain search now additionally offers **Row search (DAFi-based)**
+through `find_grains(..., method="rows", row_options=RowSearchOptions(...))`.
+The selected independent published-algorithm kernel is imported verbatim into
+the separate `phasesmith-row-search` crate; the existing FFT path stays default.
+The exact ordered training grouping is retained separately from subsequent
+per-group lattice inference, training-only consolidation and unchanged reserved
+validation. `group_rows` exposes the exact grouping without indexing. The
+selected wrapper enables the sparse naive/smart crossover at 2,048 unique
+points, four projection offsets, relative gaps, eight workers and 512 MiB total
+cache. Kernel defaults and arithmetic are unchanged. No original DAFi source
+or executable, external checkout, SciPy or spglib is used at runtime. See
+`docs/experimental-row-search.md` and `docs/row-search-provenance.json` for the
+source hashes, equations, integration boundary and frozen parity checks.
+
+The same opt-in pool now parallelizes independent polishing/trimmed fits,
+observation/alias/simultaneous-update fits, final training-only forward fits,
+reciprocal-branch work and coherent-parent recovery. Each task has one native
+worker and single-thread numerical-library limits; dependent competition stays
+ordered. Frozen inputs, original RNG order, alias-entry barriers, original
+admission and global deduplication preserve every fit and assignment byte in
+all four arms, including all 28 original hypotheses, the 66.30562768 Å³ example4
+lattice and both example5 orientations. Direct eight-process before/after cold
+pairs take 9.9–11.8 s versus 8.9–10.8 s, about 10% less aggregate wall time.
+Raw example5 is slightly slower in that pair; no universal speedup is claimed.
+Total CPU rises about 4%; speculative unused fits and transfer are included.
+Recovery is faster in every arm, but the one-second target remains unmet.
+See the local `fft-parallel-fitting-recovery` report and the expanded parallel
+control benchmark. No numerical kernel, search budget, or validation change.
+
+Experimental ensemble discovery now has opt-in ordered process scheduling.
+Eight spawned processes run independent geometric configurations, Fourier
+conditioning preparation, subset searches and paired recovery with one native
+worker per search and inherited single-thread numerical-library settings.
+Models, cohort budgets and deduplication are consumed in the original order;
+validation and numerical kernels are unchanged. Full cold four-arm paired
+runs preserve all 28 original hypotheses, the compact example4raw lattice,
+both targeted example5 orientations, all model/fit diagnostics and every
+assignment byte. Wall times fall from 15.2–17.3 s to 8.8–10.6 s (about 40%
+aggregate less wall time), with more total CPU time and worker-local caches.
+The one-second target remains unmet. Serial remains the default. The new
+standard-library scheduler uses spawn, requires numerical thread limits at
+startup, keeps callbacks/competition in the parent, and tears down workers
+on success or failure. No dependency, approximation or validation change.
+See `benchmarks/grain_parallel.py`, `docs/experimental-grain-search.md`, and
+the local `fft-parallel-ensemble` report, including rejected scheduling probes.
+
+The next exact fitting checkpoint owns reciprocal point snapshots once per
+proposal cloud and returns only selected rows, preserving the original NumPy
+least-squares solver, reciprocal arithmetic and every fit/validation gate.
+Native Fourier ascent also replaces per-vector hash tables with fixed exact
+memo storage derived from its existing 81-query bound; scalar fused moments
+and query sequences are unchanged. Final four-arm paired inverses preserve all
+28 original hypotheses, both targeted example5 orientations, the compact
+example4raw lattice, all model/fit diagnostics and every assignment byte.
+Full wall times fall from 17.0–17.4 s to 15.9–16.6 s (about 5% aggregate),
+while isolated complete 80-proposal fits improve about 23%. Ascent-only gains
+are around one percent and close to timing noise. The one-second target
+remains unmet. No production dependency, approximation, search budget or
+validation threshold changes. See `benchmarks/grain_fitting.py`,
+`docs/experimental-grain-search.md`, and the local `fft-ascent-fitting-speed`
+report, including negative prototypes and exact-parity provenance.
+
+The next exact Fourier checkpoint reuses invariant native moment factors and
+FFT plans, deposits only occupied XY columns in one contiguous float32 block,
+skips X lines outside the spherical window, and precomputes maxima adjacency.
+Fresh four-arm before/after inverses preserve all 28 original hypotheses, the
+compact example4raw target, both targeted example5 orientations, every model
+and fit diagnostic, and all assignment archive bytes. Final paired wall times
+are 17.0–18.9 s versus 17.9–24.3 s at task start, about 10% aggregate less wall
+time under variable host load; corrected example4 is essentially flat. One
+second remains unmet. Isolated realistic conditional FFTs improve by about
+32%; native ascent improves modestly. No search/validation setting, public
+Python API, default native-ascent option or dependency changes. A paired-ascent
+prototype provided no benefit and was removed. See `benchmarks/grain_fourier.py`,
+`docs/experimental-grain-search.md`, and the local `fft-fourier-kernel-speed`
+report for exact before/after sources, controls and limitations.
+
+The next experimental FFT speed checkpoint preserves all 28 original retained
+hypotheses and the requested example4/5 targets in fresh paired before/after
+runs. Native exact triplet enumeration/ranking, batched first-cycle support,
+scalar-volume reuse and bounded within-inverse Fourier reuse reduce work
+without changing validation. An explicit `native_fourier_refinement=True`
+option additionally moves the unchanged bounded ascent to a per-vector Rust
+loop with fused moments and exact-trial reuse. Its small-matrix arithmetic is
+numerically compared to the independent NumPy reference; it remains off by
+default. Original 28 basis matrices and all accepted owners are preserved;
+some supplementary example4 corrected candidates change slightly. Paired full
+times on the final build fall from 28.2–30.0 s to 17.7–19.5 s, still above one
+second. Both scalar
+and native paths pass the strict two-component control. See
+`benchmarks/grain_remaining.py`, `docs/experimental-grain-search.md`, and the
+local `fft-remaining-bottlenecks` report. No new dependency or profile term is
+introduced; geometry, masks, saturation policy and physical interpretation
+remain unchanged.
+
+Broad experimental FFT discovery now computes only the spectrum needed by the
+requested direct-radius window, reusing the actual transform of empty deposited
+lines. Retained FFT lines keep their original length, axis order, float32
+deposition, maxima boundary semantics and stable tie order. An owned Fourier
+cloud reuses invariant derivative coefficients and small moment batches bypass
+thread dispatch, preserving ordered fused values/gradients/Hessians. Fresh
+example4/5 replays retain all 28 prior hypotheses, the compact example4raw
+target and both targeted example5 orientations with unchanged validation.
+The one-second complete-inverse target remains unmet; full timings and CPU-load
+caveats are in the local `fft-broad-discovery-speed` report. Aggressive Newton
+termination lost hypotheses and was removed from production, as was a
+trigonometric approximation without a measured speed benefit. See
+`benchmarks/grain_broad_discovery.py` and `docs/experimental-grain-search.md`.
+
+The latest opt-in FFT retention experiment restores all 28 prior accepted
+example4/5 hypotheses across matched raw and arPLS arms, while retaining the
+compact example4raw target and both targeted example5 orientations. A fresh
+conservative training-only branch retains every fitted incumbent (including
+later rejected ones); a separately fitted repair branch can add models only
+through training-null, rank and protected-ownership checks. Final validation
+and completed fits are reused unchanged. Cohort-aware fitting budgets distinguish
+nearby matrices which actually fit different observations or HKLs. Native fused
+physical fields accelerate one ranking stage; the complete cold inverse still
+takes roughly 50–58 seconds, not one second. This examined-data recovery is not
+a general recall or physical-grain guarantee and does not change defaults.
+See `docs/experimental-grain-search.md`, `benchmarks/grain_retention.py`, and
+the local `fft-hypothesis-retention` development report for the exact audit.
+
+Earlier experimental conditional-search options rank seed directions by sharp
+integer-phase population, reuse within-call directions, and fit deterministic
+trimmed forward proposals. Already eligible input proposals can be preserved
+before geometry fitting mutates them. Lazy valid-triplet prefixes and small
+native point-score batches reduce cost while preserving their numerical
+contracts. All options default off; final tight-core, ownership, rank/count,
+null and reserved-validation criteria are unchanged. A common examined-data
+setting recovers the compact example4 target and the two targeted example5 DAFi orientation
+matches, but loses other prior hypotheses and remains above the one-second
+budget. This is a partial development result, not a regression-free default;
+see `docs/experimental-grain-search.md` and `benchmarks/grain_conditional.py`.
+
+The experimental FFT direction kernel now shares fused Fourier moments during
+bounded Newton ascent and parallelizes directions while preserving ordered
+point reductions. Exact packed phase intersections accelerate triplet ranking;
+a separate bounded proposal scorer shares three explicit reciprocal cutoffs.
+These numerical accelerations preserve the measured full-run candidate bases
+and ownership in the example4raw/5raw replays. Analysis-only fast portfolios
+have not preserved all previous lattices or established a common one-second
+validated search. Defaults and final acceptance gates remain unchanged; see
+`docs/experimental-grain-search.md` and `benchmarks/grain_fft_speed.py`.
+
+A further experimental recovery path adds distinct fitting budgets, competitive
+training evidence, optional paired FFT directions and bounded coherent local
+fits. Final forward fitting has an explicitly unvalidated training-only API;
+training-ineligible competitors can be removed before the fixed global
+validation pool is frozen. The forward fit is reused once, not run twice.
+The4raw66.4cell and the missing raw5DAFi orientation can be recovered in different
+explicit settings, but the added search can lose other prior matches. No common
+regression-free setting was established; existing defaults remain unchanged.
+See `docs/experimental-grain-search.md` for budgets, phase boundaries and limits.
+A conservative training-only subcell-alternative check also prevents a sampled
+index5subset from being counted as another synthetic component. Both bases and
+exact integer maps remain audited. The original strict two-component control
+passes without changing its assertion; physical grain counts in measured data
+remain unresolved.
+
+An additional opt-in observation-aware FFT ownership path uses native reciprocal
+Jacobians, physical eligibility before competition, and shared training-only
+responsibilities while retaining hard final ownership. Independent reciprocal-
+and observation-fitting branches preserve useful compact-cell trajectories;
+integer parent/child training evidence and all alternatives remain audited.
+The count/rank/null/retention thresholds are unchanged, and nulls rotate both
+coordinates and local error charts. Discovery never consumes DAFi cells or
+labels. The extra fitting budget and changed ownership decisions require matched
+comparators. Defaults and UI remain unchanged; see
+`docs/experimental-grain-search.md` for equations, budgets and validation limits.
+The complete examined-data pipeline with the existing final forward fit now
+recovers both prior DAFi orientations in corrected example5, but still misses
+the second raw-arm orientation and loses a prior example4raw hypothesis. This
+mixed outcome remains opt-in. Ablations also prevent attributing recovery solely
+to soft responsibilities or preserved branches.
+
+Further opt-in FFT proposal experiments retain multiple conditional alternatives
+and enumerate exact homogeneous HKL congruences on detector-consistent training
+positions to propose smaller cells. Parent hypotheses are retained; congruence
+support does not establish crystallographic primitivity. Existing final
+tight-core, competition, positional and rotated-control criteria are unchanged.
+No comparator cells or labels enter the inverse. Bounds and independent residue
+tests are documented in `docs/experimental-grain-search.md`.
+The earlier expanded/congruence development experiment remains off by default after
+mixed example4/5 results, including example4 regressions. A second example5
+orientation can be reconstructed in late training-only diagnostics but is not
+admitted by that checkpoint's criteria. The newer ownership pipeline and its
+identical final forward fit are a separate opt-in investigation, documented
+below; do not generalize an examined-data recovery to blind accuracy.
+
+The experimental FFT ensemble additionally exposes opt-in diverse training
+resamples and early training-only positional proposal refinement. Original
+proposals remain in the pool; final tight-core, ownership, rank/support and
+rotated-control gates are unchanged. Detector observations and fixed geometry
+are required only for positional polishing. Defaults and the Dioptas UI remain
+unchanged. See `docs/experimental-grain-search.md` for bounds and development
+validation on the frozen, mask-matched example4/5 populations.
+
+The opt-in FFT ensemble additionally supports training-only Fourier-plane
+conditioning for sparse lattice proposals. A promising single translation
+selects an integer-phase subset before another bounded FFT/triplet search;
+smaller exact integer cores can propose removal of noise-contaminated supercell
+aliases. These proposals enter the existing consolidated ownership and unchanged
+null/rank/support validation. DAFi is only an external diagnostic comparator;
+no comparator cells/groups, chemistry or held-out coordinates enter discovery.
+The original search and ensemble defaults remain unchanged. Examples4/5 are
+development evidence, with provisional geometry and recorded mask departures;
+conditioning alone left the earlier example4 background arm negative. The newer
+mask-matched stability/polishing campaign improves positional support but does
+not establish all DAFi primitive cells or physical grain counts. See
+`docs/experimental-grain-search.md` for bounds, equations and limitations.
+
 The opt-in rotation package now has a portable intensity-reduction coordinator.
 Rust owns exact profile masses with fused centre/width derivatives, conditional
 GLS/fixed weak filters, slab response, and empirical value/Jacobian passes.
@@ -265,6 +477,18 @@ Strong covariance near sharp finite-grid boundaries remains conditional and
 can differ from historical finite-difference estimates. Models and correction
 choices are experimental; no atomic/U target selects them. See
 `docs/experimental-intensity-reduction.md` for equations, contracts and replay.
+
+
+An opt-in FFT ensemble now pools bounded geometric searches before training-only
+candidate consolidation and joint grain reassignment. Short-vector and smaller-
+volume searches can recover proposals suppressed by a single long-vector search.
+A positional evidence rank accounts for reciprocal-lattice density; symmetric
+core overlap avoids deleting a compact candidate merely because a larger cell
+contains its points. The original single-search API and native ownership kernels
+are retained. Validation still uses a frozen pool and the same support, null-
+rotation and positional gates. No DAFi labels, supplied material/cell or intensity
+reference enters discovery. See `docs/experimental-grain-search.md` for the fixed
+parameter grid, equations, budgets and measured limitations.
 
 The experimental panel adapter now accepts an optional application-owned batch
 pixel coordinate map. Measured coordinates are mapped before native reciprocal

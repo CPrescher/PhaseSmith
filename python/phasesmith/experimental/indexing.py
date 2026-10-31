@@ -84,6 +84,7 @@ class IndexingResult:
     method: str = "compact_fft"
     labels: np.ndarray | None = None  # one-based model ID; zero residual/ambiguous
     diagnostics: tuple = ()
+    row_grouping: object | None = None  # exact training-only RowSearchResult, when requested
 
 
 def cell_parameters(basis):

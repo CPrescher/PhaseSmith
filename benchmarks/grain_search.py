@@ -8,10 +8,16 @@ from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental.grains import GrainSearchOptions, find_grains
+from phasesmith.experimental.grains import (
+    GrainConditioningOptions,
+    GrainSearchOptions,
+    find_grains,
+    find_grains_ensemble,
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--output", required=True)
+parser.add_argument("--mode", choices=("single", "ensemble", "conditioned"), default="single")
 a = parser.parse_args()
 rng = np.random.default_rng(33)
 parts = []
@@ -23,13 +29,15 @@ for edges in ([4.3, 5.1, 7.7], [5.2, 6.2, 8.3]):
     parts.append(h @ np.linalg.inv(basis).T + rng.normal(0, 0.0005, h.shape))
 q = np.concatenate([*parts, rng.uniform(-1, 1, (600, 3))])
 options = GrainSearchOptions(max_length=15, grid_size=192, max_grains=4)
+search = find_grains if a.mode == "single" else find_grains_ensemble
 times = []
 cpus = []
 previous = None
 for _ in range(3):
     start = time.perf_counter()
     cpu = time.process_time()
-    result = find_grains(q, options=options)
+    extra = dict(conditioning=GrainConditioningOptions()) if a.mode == "conditioned" else {}
+    result = search(q, options=options, **extra)
     times.append(time.perf_counter() - start)
     cpus.append(time.process_time() - cpu)
     assert sum(c.accepted for c in result.candidates) == 2
@@ -46,6 +54,7 @@ record = dict(
     cpu_seconds=cpus,
     exact_repeat=True,
     accepted=2,
+    mode=a.mode,
 )
 Path(a.output).write_text(json.dumps(record, indent=2) + "\n")
 print(json.dumps(record, indent=2))
