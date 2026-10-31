@@ -73,7 +73,7 @@ known difficult K[BrF4] case and keep reference coordinates out of all searches.
 
 ## Use and recorded comparison, 28 October 2026
 
-Build with `maturin develop --release --features experimental-solution`, then set
+Build with `maturin develop --release --features solution`, then set
 `SolutionOptions(phasing="dual_space")` or CLI `--phasing dual_space`.
 `--phasing portfolio` is also available. Keep using externally corrected HKLF 4
 and supplied cell, symmetry and complete-cell composition.

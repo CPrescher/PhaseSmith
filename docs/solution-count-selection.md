@@ -182,7 +182,7 @@ qualification. A multicore comparison would be a separately declared experiment.
 
 ## Reproduce
 
-Build the release `experimental-solution` feature, then use a new directory
+Build the release `solution` feature, then use a new directory
 (this campaign used adapter seal revision 5; the current adapter is revision 9,
 adding the opt-in [normalization/phase-quality ablations](solution-phase-ablation.md)):
 

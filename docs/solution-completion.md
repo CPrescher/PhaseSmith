@@ -96,7 +96,7 @@ benchmark covers the new scoring loop.
 The optional native build remains:
 
 ```sh
-maturin develop --release --features experimental-solution
+maturin develop --release --features solution
 ```
 
 `SolutionOptions(completion=True)` is the experimental default; use

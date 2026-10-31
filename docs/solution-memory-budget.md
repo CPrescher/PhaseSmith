@@ -46,7 +46,7 @@ preserve numerical values and deterministic fixed-work search results exactly.
 ## Python and Rust use
 
 ```python
-from phasesmith.experimental.solution import (
+from phasesmith.single_crystal.solution import (
     SolutionOptions,
     estimate_solution_memory,
     solve_structure_elements,

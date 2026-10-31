@@ -208,7 +208,7 @@ data, not machine-learning training data. No learned model is introduced.
 
 ## Commands
 
-Use a release build with the `experimental-solution` feature (see
+Use a release build with the `solution` feature (see
 [build instructions](experimental-structure-solution.md)), Gemmi 0.7.5 and the
 optional SciPy refinement dependency. The core package still imports without
 these benchmark-only tools.

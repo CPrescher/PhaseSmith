@@ -60,7 +60,7 @@ disorder, twinning, or anomalous scattering.
 ## API, controls and provenance
 
 ```python
-from phasesmith.experimental.solution import solve_structure_elements, write_solution
+from phasesmith.single_crystal.solution import solve_structure_elements, write_solution
 
 result = solve_structure_elements(
     observations,

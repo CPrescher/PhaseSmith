@@ -99,12 +99,12 @@ preserve source provenance and keep archived coordinates out of solver inputs.
 SHELXT is an optional black-box comparison; GSAS-II does not cover this phasing
 algorithm. Its powder oracle fixtures are therefore unchanged.
 
-The numerical crate and binding use the explicit `experimental-solution` feature.
-The default powder build and stable public API remain unchanged.
+The numerical crate and binding use the `solution` capability, included in
+ordinary Python wheels and the Rust facade default `single-crystal` feature.
 
 ## Use
 
-Build the experimental feature in a development environment:
+Build the native capabilities in a development environment:
 
 ```sh
 maturin develop --release --features solution

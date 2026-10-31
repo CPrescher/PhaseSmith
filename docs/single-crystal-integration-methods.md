@@ -101,8 +101,7 @@ Outputs and parameters are under `runs/dials-tiff-integration-20261025/`.
    crystallographic corrections/scaling separately. The older MAR/CrysAlis archive
    remains set aside at the user's request.
 
-A first empirical three-dimensional profile fitter is now implemented behind
-`experimental-spots`, with signed zeta-normalised rocking coordinates, local
+The empirical three-dimensional profile fitter is included in ordinary builds, with signed zeta-normalised rocking coordinates, local
 profile banks, a global fallback and exact pixel/exposure overlap integration.
 It retains the guarded rectangular background ring and flags actual learned
 foreground overlaps; joint domain fitting remains open. The frozen-geometry

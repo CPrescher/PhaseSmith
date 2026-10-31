@@ -264,7 +264,7 @@ has been regenerated or replaced.
 
 ## Commands
 
-Use a release build with `experimental-solution` and a fresh output directory:
+Use a release build with `solution` and a fresh output directory:
 
 ```sh
 .venv/bin/python benchmarks/solution_corpus_benchmark.py run \

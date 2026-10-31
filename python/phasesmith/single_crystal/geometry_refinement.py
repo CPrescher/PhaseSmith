@@ -50,7 +50,7 @@ def reference_basis(basis, cell):
 def predict_with_detector(hkl, basis, geometry, hints):
     """Values, B partials, detector-vector partials and flags (owned arrays)."""
     if not hasattr(_core, "experimental_predict_spots_with_detector"):
-        raise RuntimeError("rebuild PhaseSmith with experimental-spots geometry derivatives")
+        raise RuntimeError("rebuild PhaseSmith with single-crystal geometry derivatives")
     h, b = _hkl(hkl), _basis(basis)
     if not isinstance(geometry, PanelGeometry):
         raise TypeError("geometry must be PanelGeometry")

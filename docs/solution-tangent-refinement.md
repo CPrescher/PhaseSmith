@@ -78,7 +78,7 @@ complete steps and phase finite differences provide the numerical reference.
 ## API and observable work
 
 ```python
-from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
 
 result = solve_structure_elements(
     observations,
