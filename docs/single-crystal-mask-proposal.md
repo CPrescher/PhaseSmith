@@ -1,6 +1,9 @@
 # Proposed shared single-crystal frame validity
 
-Status: proposal, not an implemented public API. The MgSiO3 example currently
+Status: implemented as an experimental array/loader API; Dioptas consumer
+migration and public namespace promotion remain follow-ups. See
+[shared frame validity](single-crystal-frame-validity.md). The text below retains
+the original proposal and ownership rationale. The MgSiO3 example currently
 uses an explicit centre-ray DAC cone; PhaseSmith already consumes per-frame pixel
 masks. A common frame-validity layer should now own shadow meaning across callers.
 
@@ -25,8 +28,8 @@ inspected, not modified or transplanted by this diagnosis.
 
 PhaseSmith's `locate_series`, `integrate_series` and `prepare_profiles` already
 accept per-frame `mask_loader`. Integration applies masks to foreground and
-background pixels and retains source/mask fingerprints. However, there is no
-shared frame-validity snapshot or seat-shadow estimator in the current package.
+background pixels and retains source/mask fingerprints. However, the implementation now supplies
+shared validity snapshots and a portable seat-shadow estimator.
 
 ## Proposed ownership and interface
 
@@ -70,6 +73,7 @@ identity, worker determinism and memory bounds. Compare its estimated mask with
 the MgSiO3 aperture diagnostic using original counts and held-out equivalents;
 retain any disagreement instead of choosing masks using structural R1.
 
-This is the next architectural follow-up. The current change deliberately
-implements only the diagnosed MgSiO3 example validity policy and preserves all
-negative runs; it does not yet migrate Dioptas or publish this proposed API.
+The shared backend is now implemented experimentally. It preserves the existing
+Dioptas numerical behavior on the documented compatibility fixture, adds full
+exposure/pixel support for geometric masks, and leaves all Dioptas files unchanged.
+Public API promotion and switching Dioptas to consume it remain follow-ups.

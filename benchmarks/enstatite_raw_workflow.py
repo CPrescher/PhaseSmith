@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v5.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v6.json"
 
 
 def digest(path):
@@ -46,7 +46,7 @@ def log(message):
 class RawFrames:
     """Read-only one-frame HDF5 loader with explicit orientation and mask policy."""
 
-    def __init__(self, path, acquisition, expected):
+    def __init__(self, path, acquisition, expected, validity=None):
         import h5py
         import hdf5plugin  # noqa: F401 -- register compression filters
 
@@ -62,6 +62,13 @@ class RawFrames:
         if not len(self.indices) or self.indices[-1] >= len(self.data):
             raise ValueError("frame selection outside source array")
         self.bounds = exposure_bounds(self.indices, acquisition)
+        self.validity = validity
+        if validity is not None:
+            validity.validate(
+                tuple(f"{Path(path).name}#{i}" for i in self.indices),
+                self.data.shape[1:],
+                self.bounds,
+            )
         detector = self.data.parent
         self.pixel1 = float(detector["detector_information/pixel_size/ysize"][()])
         self.pixel2 = float(detector["detector_information/pixel_size/xsize"][()])
@@ -74,6 +81,8 @@ class RawFrames:
         if self.acquisition["vertical_flip"]:
             image = image[::-1]
         image = np.ascontiguousarray(image)
+        if self.validity is not None:
+            self.validity.verify_frame(index, image)
         mask = image >= self.acquisition["mask_minimum_reserved_uint32"]
         self.pending_masks[index] = mask
         self.hashes[index] = hashlib.sha256(image.tobytes()).hexdigest()
@@ -81,7 +90,10 @@ class RawFrames:
         return image
 
     def mask(self, index):
-        return self.pending_masks.pop(index)
+        mask = self.pending_masks.pop(index)
+        if self.validity is not None:
+            mask |= self.validity.mask(index)
+        return mask
 
     def close(self):
         self.file.close()
@@ -265,11 +277,77 @@ def aligned_setting(candidates, cell, selection, training):
     return index, a, cell_parameters(a)
 
 
-def stage_positions(packet, out, protocol):
+def stage_validity(packet, out, protocol):
+    """Freeze one shared original-count mask before detection or integration."""
+    from phasesmith.experimental import frame_validity as masking
+
+    config = protocol.get("shadow_mask")
+    if config is None:
+        return None
+    started = time.perf_counter()
+    frames = RawFrames(packet["raw_path"], protocol["acquisition"], packet["raw_array"])
+    try:
+        providers = []
+        ids = tuple(f"{Path(packet['raw_path']).name}#{i}" for i in frames.indices)
+        if config["mode"] in ("illumination", "combined"):
+            estimate = masking.estimate_seat_shadows(
+                frames.load,
+                len(frames.indices),
+                mask_loader=frames.mask,
+                frame_ids=ids,
+                omega_bounds=frames.bounds,
+                options=masking.SeatShadowOptions(**config["illumination"]),
+                workers=protocol["acquisition"]["workers"],
+                progress=lambda n, total: (
+                    log(f"shadow masks {n}/{total}") if n % 20 == 0 or n == total else None
+                ),
+            )
+            if estimate.provenance["image_sha256"] != [
+                frames.hashes[i] for i in range(len(frames.indices))
+            ]:
+                raise ValueError("mask estimator source hashes differ from original frames")
+            estimate.save(out / "frame-validity.npz")
+            providers.append(estimate)
+        if config["mode"] in ("geometric", "combined"):
+            geometry = poni_geometry(
+                packet["poni_path"], frames.pixel1, frames.pixel2, protocol["acquisition"]["axis"]
+            )
+            providers.append(
+                masking.DacApertureMask(
+                    geometry,
+                    frames.bounds,
+                    packet["raw_array"]["shape"][1:],
+                    frame_ids=ids,
+                    **config["geometric"],
+                )
+            )
+        if not providers:
+            raise ValueError("unknown explicit shadow-mask mode")
+        validity = (
+            providers[0] if len(providers) == 1 else masking.CombinedValidity(tuple(providers))
+        )
+        save_json(
+            out / "frame-validity.json",
+            dict(
+                config=config,
+                fingerprint=validity.fingerprint(),
+                providers=[p.metadata() for p in providers],
+                implementation_sha256=digest(masking.__file__),
+                seconds=time.perf_counter() - started,
+                scope="one original-frame mask shared by all stages; no vendor/atomic inputs",
+            ),
+        )
+        return validity
+    finally:
+        frames.close()
+
+
+def stage_positions(packet, out, protocol, validity=None):
+    from phasesmith.experimental.frame_validity import flag_invalid_tracks
     from phasesmith.experimental.rotation import RotationOptions, locate_series
     from phasesmith.experimental.spots import SpotOptions
 
-    frames = RawFrames(packet["raw_path"], protocol["acquisition"], packet["raw_array"])
+    frames = RawFrames(packet["raw_path"], protocol["acquisition"], packet["raw_array"], validity)
     try:
         geometry = poni_geometry(
             packet["poni_path"], frames.pixel1, frames.pixel2, protocol["acquisition"]["axis"]
@@ -288,8 +366,19 @@ def stage_positions(packet, out, protocol):
                 log(f"detect {n}/{total}") if n % 20 == 0 or n == total else None
             ),
         )
+        original_flags = positions.flags
+        if validity is not None:
+            positions = flag_invalid_tracks(positions, validity)
+            providers = getattr(validity, "providers", (validity,))
+            for provider in providers:
+                hashes = getattr(provider, "provenance", {}).get("image_sha256")
+                if hashes is not None and hashes != [
+                    frames.hashes[i] for i in range(len(frames.indices))
+                ]:
+                    raise ValueError("source frame bytes changed after mask estimation")
         np.savez_compressed(
             out / "positions.npz",
+            original_flags=original_flags,
             **{
                 name: getattr(positions, name)
                 for name in (
@@ -317,6 +406,8 @@ def stage_positions(packet, out, protocol):
                 wavelength_angstrom=geometry.wavelength,
                 pixel_sizes_m=[frames.pixel1, frames.pixel2],
                 source_loads=frames.loads,
+                frame_validity_fingerprint=None if validity is None else validity.fingerprint(),
+                shadow_incomplete_tracks=int((positions.flags != original_flags).sum()),
             ),
         )
         return positions, geometry, hashes
@@ -482,7 +573,7 @@ def stage_indexing(positions, geometry, packet, out, protocol):
     return fitted, competitors
 
 
-def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes):
+def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes, frame_validity=None):
     from phasesmith.experimental.integration import IntegrationOptions
     from phasesmith.experimental.prediction import ScanPredictions, predict_scan
     from phasesmith.experimental.profile_refinement import ShapeFitOptions
@@ -500,7 +591,9 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes):
     from phasesmith.experimental.reduction_io import save_case
     from phasesmith.io.space_groups import space_group_by_number
 
-    frames = RawFrames(packet["raw_path"], protocol["acquisition"], packet["raw_array"])
+    frames = RawFrames(
+        packet["raw_path"], protocol["acquisition"], packet["raw_array"], frame_validity
+    )
     try:
         shape = tuple(packet["raw_array"]["shape"][1:])
         p = predict_scan(
@@ -636,9 +729,15 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes):
                 (reduced.profile.flags == 0) & np.isfinite(values).all(axis=1) & (values[:, 1] > 0)
             )
         else:
-            visible, entry, exit_ = dac_aperture_visibility(
-                observations.centres, fitted.geometry, validity["dac_aperture"]
-            )
+            if "dac_aperture" in validity:
+                visible, entry, exit_ = dac_aperture_visibility(
+                    observations.centres, fitted.geometry, validity["dac_aperture"]
+                )
+            if frame_validity is not None:
+                nearest = np.argmin(
+                    abs(observations.centres[:, 2, None] - frames.bounds.mean(axis=1)), axis=1
+                )
+                visible &= frame_validity.valid_points(nearest, observations.centres[:, :2])
             valid = search_observation_mask(
                 reduced.profile.flags, values, visible, validity["profile_warning_flags"]
             )
@@ -676,6 +775,9 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes):
                 excluded_from_search=int((~valid).sum()),
                 excluded_by_quality_flags=int(((~valid) & visible).sum()),
                 measurement_validity=validity,
+                frame_validity_fingerprint=None
+                if frame_validity is None
+                else frame_validity.fingerprint(),
                 excluded_by_dac_aperture=int((~visible).sum()),
                 exported_with_profile_warning=int((valid & (reduced.profile.flags != 0)).sum()),
                 metadata=reduced.metadata,
@@ -787,10 +889,11 @@ def numerical_worker(packet_path):
     out = Path(packet["output"])
     protocol = packet["protocol"]
     started = time.perf_counter()
-    positions, geometry, hashes = stage_positions(packet, out, protocol)
+    validity = stage_validity(packet, out, protocol)
+    positions, geometry, hashes = stage_positions(packet, out, protocol, validity)
     fitted, competitors = stage_indexing(positions, geometry, packet, out, protocol)
     if packet["through"] != "geometry":
-        stage_integrate(packet, out, protocol, fitted, competitors, hashes)
+        stage_integrate(packet, out, protocol, fitted, competitors, hashes, validity)
         subprocess.run(
             [sys.executable, str(Path(__file__).resolve()), "--search-only", str(packet_path)],
             timeout=protocol["search"]["hard_seconds"],
