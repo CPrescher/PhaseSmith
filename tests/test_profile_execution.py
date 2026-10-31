@@ -50,3 +50,37 @@ def test_learning_cache_preserves_order_and_bounded_fallback(affine, weighted):
     for workers, cache in [(0, 1), (5, 1), (1, -1), (1, 2**30 + 1)]:
         with pytest.raises(ValueError):
             ProfileExecution(workers, cache)
+
+
+@pytest.mark.parametrize("workers", [2, 4])
+def test_parallel_learning_banks_preserve_every_scalar_sum(workers):
+    obs = observations((5000.0, 6000.0, 7000.0, 8000.0), covariance=True)
+    obs = replace(
+        obs,
+        scales=np.tile([0.8, 1.1, -0.9], (4, 1)),
+        planar_transforms=np.tile([[0.9, -0.2], [0.1, 1.05]], (4, 1, 1)),
+    )
+    options = ProfileOptions(
+        shape=(5, 5, 5),
+        regions=(2, 1, 1),
+        min_references=2,
+        iterations=7,
+        cutoff=0.0,
+        reference_weighting="inverse_variance",
+    )
+
+    def run(n, budget):
+        return learn_profiles(
+            obs,
+            np.ones(4, bool),
+            detector_shape=(50, 100),
+            options=options,
+            execution=ProfileExecution(n, budget),
+        )
+
+    baseline, parallel = run(1, 0), run(workers, 1024**2)
+    for name in ["profiles", "counts", "shifts", "reference_ids", "reference_centres"]:
+        np.testing.assert_array_equal(getattr(baseline, name), getattr(parallel, name))
+    assert parallel.execution["workers"] == min(workers, 3)
+    assert parallel.execution["cache_bytes"] <= 1024**2
+    assert run(workers, 1).execution["workers"] == 1

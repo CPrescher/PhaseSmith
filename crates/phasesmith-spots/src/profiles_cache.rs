@@ -156,3 +156,102 @@ impl LearningGeometry {
         }
     }
 }
+
+impl LearningGeometry {
+    // Banks have no cross-bank terms or per-iteration joint normalization. Each
+    // complete bank solve can run independently while retaining its exact source
+    // order for every scalar sum, across both iterations and worker counts.
+    #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+    pub(super) fn iterate_parallel(
+        &self,
+        o: &Observations<'_>,
+        regions: &[usize],
+        total: &[f64],
+        reference_weights: &[f64],
+        k: usize,
+        profile: &mut [f64],
+        denominator: &[f64],
+        iterations: usize,
+        workers: usize,
+        budget: usize,
+    ) -> Option<(usize, usize)> {
+        use rayon::prelude::*;
+        if workers <= 1 {
+            return None;
+        }
+        let models = profile.len() / k;
+        let extra = (self.rows() + models + 1).checked_mul(size_of::<usize>())?;
+        if self.bytes().checked_add(extra)? > budget {
+            return None;
+        }
+        let mut offsets = Vec::new();
+        offsets.try_reserve_exact(models + 1).ok()?;
+        offsets.resize(models + 1, 0_usize);
+        for &id in &self.ids {
+            offsets[regions[id] + 2] += 1;
+        }
+        for i in 0..models {
+            offsets[i + 1] += offsets[i];
+        }
+        let mut rows = Vec::new();
+        rows.try_reserve_exact(self.rows()).ok()?;
+        rows.resize(self.rows(), 0_usize);
+        let extra = (offsets.capacity() + rows.capacity()) * size_of::<usize>();
+        if self.bytes().checked_add(extra)? > budget {
+            return None;
+        }
+        let mut cursor = [0_usize; 65];
+        cursor[..models].copy_from_slice(&offsets[..models]);
+        for (r, &id) in self.ids.iter().enumerate() {
+            let bank = regions[id] + 1;
+            rows[cursor[bank]] = r;
+            cursor[bank] += 1;
+        }
+        let workers = workers.min(models);
+        let pool = rayon::ThreadPoolBuilder::new()
+            .num_threads(workers)
+            .build()
+            .ok()?;
+        pool.install(|| {
+            profile.par_chunks_mut(k).enumerate().for_each(|(bank, p)| {
+                let count = if bank == 0 {
+                    self.rows()
+                } else {
+                    offsets[bank + 1] - offsets[bank]
+                };
+                let mut gradient = vec![0.; k];
+                for _ in 0..iterations {
+                    gradient.fill(0.);
+                    for index in 0..count {
+                        let r = if bank == 0 {
+                            index
+                        } else {
+                            rows[offsets[bank] + index]
+                        };
+                        let id = self.ids[r];
+                        let value = o.samples[self.samples[r]][0] / total[id];
+                        let range = self.offsets[r]..self.offsets[r + 1];
+                        let mut expected = 0.;
+                        for e in range.clone() {
+                            expected += self.weights[e] * p[self.voxels[e] as usize];
+                        }
+                        for e in range {
+                            gradient[self.voxels[e] as usize] +=
+                                reference_weights[id] * self.weights[e] * (value - expected);
+                        }
+                    }
+                    for ((p, &d), &g) in p
+                        .iter_mut()
+                        .zip(&denominator[bank * k..(bank + 1) * k])
+                        .zip(&gradient)
+                    {
+                        if d > 0. {
+                            *p = (*p + 0.9 * g / d).max(0.);
+                        }
+                    }
+                }
+            });
+        });
+        Some((workers, extra))
+    }
+}
