@@ -26,6 +26,7 @@ def main():
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--workers", nargs="+", type=int, default=[4, 6, 8, 10])
     p.add_argument("--repeats", type=int, default=3)
+    p.add_argument("--reuse-verified-digest", action="store_true")
     args = p.parse_args()
     packet = json.loads((args.run / "worker-input.json").read_text())
     protocol = packet["protocol"]
@@ -80,7 +81,11 @@ def main():
             rotation._measure_frame = timer("frame_measurement_thread_seconds", original_measure)
             rotation.link_spots = timer("linking_wall_seconds", original_link)
             frames = RawFrames(
-                packet["raw_path"], protocol["acquisition"], packet["raw_array"], validity
+                packet["raw_path"],
+                protocol["acquisition"],
+                packet["raw_array"],
+                validity,
+                execution={"reuse_verified_digest": args.reuse_verified_digest},
             )
             start = time.perf_counter()
             try:

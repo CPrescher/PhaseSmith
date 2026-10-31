@@ -12,6 +12,14 @@ not part of the numerical library.
 
 ## Current implementation status
 
+The next frame-input pass starts with verified-digest reuse: every mask provider
+still checks current original counts and layout; verify_frame now returns its
+fresh digest when provenance is present, and the example can reuse that value
+for its raw-source record. Geometric-only providers return None and keep the
+ordinary digest path. No unchecked digest is accepted from a caller. Numeric
+kernels, finite support and scientific controls remain unchanged. The pass will
+measure hashing, bounded native preparation and decoded-frame reuse separately.
+
 The detection/linking worker study measures the unchanged detector at 4/6/8/10
 workers: median 6.568/5.041/5.003/5.048 s on all 142 original MgSiO3 frames.
 All positions and source fingerprints match bitwise. Eight workers are selected
