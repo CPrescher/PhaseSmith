@@ -227,11 +227,12 @@ Five fine geometric masks take 0.1525 s; conservative block-16 masks take
 0.001592 s. These include Python boundary/loader overhead and are not pure Rust
 kernel timings. See `benchmarks/frame-validity-rust-macos.json`.
 
-The raw MgSiO3 driver still uses Python orchestration and other experimental
-Python optimizers. Native shadow masking alone does not establish that the
-complete raw-to-structure workflow is available as a Rust executable. HDF5 I/O
-should be an optional adapter using the standard HDF5 library and required
-native filters, outside the dependency-light numerical crate.
+At the masking checkpoint the raw driver still used other Python optimizers.
+Subsequent [native HDF5](native-hdf5.md), geometry and
+[profile/scaling fits](native-profile-scaling-fitting.md) remove those specific
+numerical dependencies. Python orchestration and design construction remain, so
+the complete raw-to-structure workflow is not yet a standalone Rust executable.
+HDF5 stays in its optional adapter, outside the dependency-light numerical crate.
 
 On all 142 original MgSiO3 frames, native illumination exclusions are bitwise
 identical to the retained v7 snapshot, with identical original-image hashes.

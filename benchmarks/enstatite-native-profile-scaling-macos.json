@@ -1,0 +1,333 @@
+{
+  "schema": "phasesmith.enstatite-native-profile-scaling-comparison.v1",
+  "baseline": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v9",
+  "output": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v11",
+  "targets": {
+    "baseline_output": "enstatite-raw-workflow-20261031-v9",
+    "source_and_position_arrays": "bitwise identical",
+    "exported_hkl_and_use_mask": "identical",
+    "maximum_prediction_xy_difference_pixels": 0.0001,
+    "maximum_prediction_omega_difference_degrees": 1e-06,
+    "intensity_relative_l2_difference": 0.0001,
+    "sigma_relative_l2_difference": 0.0001,
+    "maximum_intensity_difference_in_baseline_sigma": 0.1,
+    "percentile95_intensity_difference_in_baseline_sigma": 0.01,
+    "maximum_amplitude_r1_difference": 0.0001,
+    "maximum_candidate_coordinate_difference_angstrom": 0.001,
+    "counts": "identical",
+    "note": "Unchanged strict equivalence targets inherited from v10/v9. Compare v11 with preserved v9; preserve v10 and every earlier failure. No selection of configurations or solver tolerances by source HKLs, atomic-reference score or R1. The optimizer follows the prior algorithm family to remove the independently diagnosed shape-trajectory drift."
+  },
+  "passed": false,
+  "gates": {
+    "baseline_structure_recovery": true,
+    "primary_structure_recovery": true,
+    "source_files_unchanged": true,
+    "same_source_manifest": true,
+    "frozen_positions_partitions_and_edges": true,
+    "prediction_xy": true,
+    "prediction_omega": true,
+    "exported_hkl_and_use_mask": true,
+    "intensity_relative_l2": true,
+    "sigma_relative_l2": true,
+    "maximum_intensity_difference_in_baseline_sigma": true,
+    "percentile95_intensity_difference_in_baseline_sigma": true,
+    "r1_target": true,
+    "amplitude_r1_difference": false,
+    "composition": true,
+    "candidate_coordinates": false,
+    "worker_isolation": true,
+    "native_worker_python_import_guard": true,
+    "native_fitting_backends": true
+  },
+  "frozen_array_identity": {
+    "positions.npz": {
+      "original_flags": true,
+      "boxes": true,
+      "frame_ranges": true,
+      "values": true,
+      "flags": true,
+      "observations": true,
+      "omega_bounds": true
+    },
+    "indexed-positions.npz": {
+      "hkl": true,
+      "observed": true,
+      "training": true,
+      "eligible": true,
+      "track_ids": true
+    },
+    "edge-exclusions.npz": {
+      "hkl": true,
+      "flags": true
+    }
+  },
+  "geometry": {
+    "rows": 2012,
+    "maximum_xy_pixels": 0.0,
+    "maximum_omega_degrees": 0.0,
+    "native_metadata": {
+      "chosen_candidate": 0,
+      "initial_cell": [
+        8.813137094981082,
+        5.182626554991265,
+        18.236483760291843,
+        90.0089793719541,
+        89.99322844218115,
+        90.05782098737714
+      ],
+      "reciprocal_basis": [
+        [
+          -0.10639073945902107,
+          0.03831860101617036,
+          -0.009814670152226498
+        ],
+        [
+          -0.014426996957183637,
+          0.009173082738848167,
+          0.1922019326933897
+        ],
+        [
+          0.018672300946120386,
+          0.05157178765512811,
+          -0.0010597554528363438
+        ]
+      ],
+      "geometry_vectors": [
+        [
+          -0.07886852512701127,
+          -0.07895465251925689,
+          0.15189971434537525
+        ],
+        [
+          1.3599822753104974e-07,
+          7.499961670541047e-05,
+          1.9748043857978737e-07
+        ],
+        [
+          7.499975344150797e-05,
+          -1.356395091103191e-07,
+          -1.363291479423853e-07
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          -1.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "wavelength_angstrom": 0.28457,
+      "priors": {
+        "cell_angstrom_degrees": [
+          8.8101,
+          5.1824,
+          18.2288,
+          90,
+          90,
+          90
+        ],
+        "space_group_number": 61,
+        "space_group_symbol": "P b c a",
+        "wavelength_angstrom": 0.2846,
+        "elements": [
+          "Mg",
+          "Si",
+          "O"
+        ],
+        "provenance": "Cell, symmetry and wavelength transcribed from supplied source CIF; elements from declared sample. These are supplied priors, not blind indexing results. Coordinates, ADPs and atom counts are forbidden search inputs."
+      },
+      "training": 1299,
+      "withheld": 713,
+      "withheld_xy_rms_pixels": 0.33310992493459823,
+      "withheld_omega_rms_degrees": 0.1658931358776097,
+      "parameters": [
+        0.00023264893924995476,
+        0.0006959461931123847,
+        -0.0017409033578537376,
+        0.005704741794678652,
+        0.0028672573398896193,
+        -0.059802046299420285,
+        -0.000635920392313348,
+        -0.00206042624229081,
+        -0.0018060645694232705
+      ],
+      "condition": 17.64957668902138,
+      "fitting_backend": "phasesmith-spots Rust",
+      "fitting_evaluations": 7,
+      "fitting_objective_history": [
+        2367.0551193641118,
+        1306.7512751061806,
+        714.9216122785964,
+        678.6914660231191,
+        678.6293754198854,
+        678.629374479125,
+        678.6293744791019
+      ],
+      "gates": {
+        "minimum_training": true,
+        "minimum_withheld": true,
+        "withheld_xy": true,
+        "withheld_omega": true,
+        "optimizer_converged": true,
+        "not_at_bounds": true
+      },
+      "reference_coordinates_used": false
+    }
+  },
+  "reduction": {
+    "observations": 4125,
+    "negative_observations": 220,
+    "identity": {
+      "hkl": true,
+      "use": true,
+      "flags": false
+    },
+    "intensity_relative_l2": 2.4214796427294975e-05,
+    "sigma_relative_l2": 2.1473744881060756e-05,
+    "maximum_intensity_difference_in_baseline_sigma": 0.021527456483848736,
+    "percentile95_intensity_difference_in_baseline_sigma": 1.023513694207703e-05
+  },
+  "search": {
+    "termination": "r1_target",
+    "target_met": true,
+    "amplitude_r1": 0.04085182070733226,
+    "seconds": 0.5689524579793215,
+    "model_saved_before_reference": true,
+    "resource": {
+      "expanded_reflection_count": 9320,
+      "volume_atom_cap": 105,
+      "memory_atom_cap": 128,
+      "maximum_atoms": 105,
+      "dense_memory_budget_bytes": 134217728
+    },
+    "observation_count": 4125,
+    "rejected_trials": []
+  },
+  "amplitude_r1_difference": 0.00020038044683579753,
+  "composition": {
+    "Mg": 16,
+    "O": 48,
+    "Si": 16
+  },
+  "candidate_coordinate_difference": {
+    "counts_match": true,
+    "rms_error_angstrom": 0.0008117403002790874,
+    "maximum_error_angstrom": 0.0017992914427427203,
+    "hand": 1,
+    "shift": [
+      0.5001863975740883,
+      0.8636794562814116,
+      0.052254100190574165
+    ],
+    "correct": true,
+    "strict_002_angstrom": true
+  },
+  "reference_assessment": {
+    "counts_match": true,
+    "rms_error_angstrom": 0.004538501994491189,
+    "maximum_error_angstrom": 0.007523594148997598,
+    "hand": -1,
+    "shift": [
+      0.836137362336214,
+      0.31599369727651205,
+      0.47339919140711983
+    ],
+    "correct": true,
+    "strict_002_angstrom": true,
+    "reference_read_after_worker_stopped": true
+  },
+  "completion": {
+    "stage": "search",
+    "seconds": 95.23998675000621,
+    "reference_model_read": false,
+    "source_hkls_read": false,
+    "archived_arrays_read": false,
+    "blocked_python_packages": [
+      "scipy",
+      "h5py",
+      "hdf5plugin"
+    ],
+    "loaded_blocked_python_packages": []
+  },
+  "protocol_provenance": {
+    "protocol_sha256": "874f4deb98b94a2ab587795f348af2a4479986a332c928542716283d284f4232",
+    "source_hashes": {
+      "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+      "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+      "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+      "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+      "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+      "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+      "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+      "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+    },
+    "native_sha256": "41fa85897d2574f3206eff098afb14493e0bbdc6d5a5fd9b3843e47c8941dff5",
+    "implementation_sha256": "b41564756e6f0557425f4c1e0cb58de7bd10dc690534309e3cdab0e0ffac1563",
+    "git_commit": "7dfd3c1ef9628040fcea23ec491584b134a1a7fb"
+  },
+  "numerical_backends": {
+    "profile_fitting_backend": "phasesmith-spots native bounded L-BFGS-B",
+    "empirical_scaling_backend": "phasesmith-spots native bounded least squares and IRLS"
+  },
+  "scientific_structure_recovery_passed": true,
+  "all_reduction_equivalence_gates_passed": true,
+  "strict_end_to_end_equivalence_passed": false,
+  "quality_flag_changes": [
+    {
+      "row": 4514,
+      "old": 0,
+      "new": 131072,
+      "flag": "MISMATCH",
+      "retained_by_unchanged_warning_policy": true
+    }
+  ],
+  "interpretation": "Native profile/scaling ports pass independent controls and every frozen reduction-equivalence limit. Full raw run recovers the same composition/labelled structure. Both searches terminate at the existing R1 target; their candidate R1/coordinates differ beyond two strict migration limits. Those limits are retained and the overall strict-parity result remains false; this is not a claim of bitwise-equivalent full search.",
+  "validation": {
+    "cargo_tests_passed": 509,
+    "cargo_tests_ignored": 34,
+    "pytest_passed": 3235,
+    "pytest_skipped": 11,
+    "pytest_deselected": 34,
+    "formatting": true,
+    "strict_workspace_all_targets_all_features_clippy": true,
+    "independent_references": "NumPy/SciPy only in reference modules; production fits native Rust",
+    "no_new_cargo_dependency": true
+  },
+  "prior_failed_outcome": "benchmarks/enstatite-native-profile-scaling-v10-macos.json",
+  "frozen_shape_control": {
+    "schema": "phasesmith.enstatite-frozen-profile-backend-control.v1",
+    "baseline": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v9",
+    "archived_arrays_read": true,
+    "atomic_reference_read": false,
+    "structure_search_executed": false,
+    "frozen_legacy_shape_parameters": true,
+    "observations": 4125,
+    "flags_identical": true,
+    "intensity_relative_l2": 2.9059202452582693e-09,
+    "sigma_relative_l2": 1.4908588400853642e-07,
+    "raw_profile_intensity_relative_l2": 0.0,
+    "raw_profile_sigma_relative_l2": 3.332636705669945e-16,
+    "maximum_intensity_difference_in_baseline_sigma": 3.413026835352616e-07,
+    "percentile95_intensity_difference_in_baseline_sigma": 1.0536585430356322e-07,
+    "interpretation": "Diagnostic only: fixed legacy shapes isolate native GLS, joint sigma and scaling from independent shape-optimizer trajectories.",
+    "passed_strict_reduction_targets": true
+  },
+  "performance_report": "benchmarks/profile-scaling-fit-rust-macos.json",
+  "numpy_only_wheel": {
+    "path": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-native-profile-scaling-validation-20261031/v11/wheels/phasesmith-0.7.0-cp311-abi3-macosx_11_0_arm64.whl",
+    "sha256": "aad8a856604949341b3d89f596e3ef05176d76033b23ca39c3581bc43edd0348",
+    "only_installed_packages": [
+      "numpy==2.5.4",
+      "phasesmith==0.7.0"
+    ]
+  },
+  "numpy_only_optional_packages_available": {
+    "scipy": false,
+    "h5py": false,
+    "hdf5plugin": false
+  },
+  "numpy_only_loaded_optional_packages": []
+}

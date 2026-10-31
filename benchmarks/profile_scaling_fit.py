@@ -7,7 +7,9 @@ optional external case provides original multi-exposure shoeboxes and a learned
 
 import argparse
 import hashlib
+import importlib.util
 import json
+import sys
 import time
 from dataclasses import replace
 from pathlib import Path
@@ -33,6 +35,11 @@ def main():
         schema="phasesmith.native-profile-scaling-benchmark.v1",
         native=hasattr(_core, "experimental_profile_refine"),
         numpy=np.__version__,
+        native_module_sha256=hashlib.sha256(Path(_core.__file__).read_bytes()).hexdigest(),
+        optional_packages_available={
+            name: importlib.util.find_spec(name) is not None
+            for name in ("scipy", "h5py", "hdf5plugin")
+        },
     )
     if args.case:
         obs, model = load_case(args.case)
@@ -124,6 +131,9 @@ def main():
         coefficients=fit.coefficients.tolist(),
         correction=fit.correction.tolist(),
     )
+    record["loaded_optional_packages"] = [
+        name for name in ("scipy", "h5py", "hdf5plugin") if name in sys.modules
+    ]
     with args.output.open("x") as stream:
         json.dump(record, stream, indent=2, allow_nan=False)
         stream.write("\n")

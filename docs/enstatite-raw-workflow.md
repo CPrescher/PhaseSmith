@@ -4,9 +4,12 @@ This explicit example coordinates PhaseSmith's existing detector, reciprocal,
 indexing, position-refinement, integration, profile, scaling and structure-search
 APIs. It reads original HDF5 counts and generates new measurements throughout.
 The first protocol is `validation/enstatite-raw-workflow-v1.json`, committed
-before executing the measured workflow. The current default is version 9, which adds native geometry fitting after
-version 8 validated bundled native HDF5 input and Rust shadow masks. The
-scientific geometry model and downstream settings remain unchanged. Earlier versions and
+before executing the measured workflow. The current default is version 11,
+which adds native profile and empirical-scaling fits after version 9 validated
+native geometry and version 8 validated bundled HDF5 input and Rust shadow masks.
+The scientific models and downstream settings remain unchanged. Version 10
+recovers the structure but fails strict numerical equivalence; its first outcome
+is retained, and version 11 restores the previous bounded-BFGS optimizer family. Earlier versions and
 failures are retained as described below. Version 5 first passed complete labelled recovery; see the
 [reduction diagnosis](enstatite-reduction-diagnosis.md). This is exposed
 development/regression data with declared cell and symmetry priors, not a new blind holdout.
@@ -31,7 +34,8 @@ result summaries only. No input file is modified, downloaded or uploaded.
 Original input identities are pinned in `enstatite-mgsio3-local-v1.json`. The
 frame reader now uses bundled native HDF5 and Bitshuffle/LZ4, with no h5py or
 hdf5plugin dependency. See [native HDF5 input](native-hdf5.md) for build/runtime
-contracts and the remaining Python orchestration/optimizer scope.
+contracts. See [native profile/scaling fits](native-profile-scaling-fitting.md)
+for the numerical ports and remaining Python orchestration/design scope.
 
 The script uses no Dioptas/Qt, vendor HKL/peak table, archived intensity/profile
 array, atomic starting model, SHELXT or SHELXL. Supplied cell, group and element
@@ -239,8 +243,10 @@ The full worker takes 95.85 s. See
 [native HDF5 input](native-hdf5.md) for the artifact, contracts and validation.
 The earlier v5/v6/v7 outcomes remain retained. This verifies the complete
 existing workflow through native input, while Python orchestration and the
-experimental geometry/profile/scaling optimizers still require native ports
-before a wholly Rust-only raw-to-structure executable can be claimed.
+experimental geometry/profile/scaling optimizers still required native ports
+at that checkpoint. Their later migrations are described below; Python
+orchestration and design construction remain before a standalone Rust
+raw-to-structure executable can be claimed.
 
 ## Native single-crystal geometry fitting (v9)
 
@@ -255,8 +261,49 @@ origin/hand-aligned coordinate change from v8 is .0005351 A. Full time is 94.53 
 
 Geometry fitting now runs without SciPy; standalone Rust and clean NumPy-only
 wheel tests cover that contract. All source hashes remain unchanged and large
-products stay outside Git. The remaining Python numerical optimizers are
-profile fitting and empirical scaling, alongside Python raw-workflow
-orchestration. See [native geometry calibration](experimental-crystal-geometry.md)
+products stay outside Git. At v9, profile fitting and empirical scaling
+remained Python numerical optimizers; the subsequent native migration is
+described in [native profile/scaling fits](native-profile-scaling-fitting.md).
+Python raw-workflow orchestration remains. See [native geometry calibration](experimental-crystal-geometry.md)
 and `benchmarks/enstatite-native-geometry-macos.json` for methods, tolerances,
 artifact identities and the full comparison.
+
+## Native profile fitting and empirical scaling (v10/v11)
+
+Version 10 first migrated these numerical paths but its simplified projected
+quasi-Newton optimizer missed strict reduction equivalence. It still recovered
+the correct structure. The complete first outcome is retained in
+`benchmarks/enstatite-native-profile-scaling-v10-macos.json`. A separate
+frozen-v9-shape diagnostic matches raw GLS intensities exactly, joint sigma to
+3.4e-16 relative L2, and final scaled intensity/sigma to 2.91e-9/1.49e-7.
+That diagnostic intentionally reads archived arrays and is not a fresh raw run.
+It isolates the difference to optimizer trajectories.
+
+Version 11 uses native limited-memory BFGS generalized Cauchy/free-subspace
+steps and a safeguarded More–Thuente search. Its fresh full raw run passes
+structure recovery: Mg16 Si16 O48, 246 teachers, 4,125 exported signed
+observations including 220 negative, R1 .0408518207, and maximum/RMS labelled
+reference errors .0075236/.0045385 A. The worker takes 95.24 s. All source files
+remain unchanged; geometry/positions, exported HKLs and use mask match v9.
+The reduction passes every inherited numerical tolerance: intensity/sigma
+relative L2 differences 2.42e-5/2.15e-5, maximum intensity change .02153
+baseline sigma, 95th percentile 1.024e-5 sigma. One MISMATCH warning changes;
+the existing warning policy retains that row and the export mask is unchanged.
+
+Overall strict end-to-end equivalence remains **false**: search R1 changes by
+.00020038 (limit .0001), and the maximum aligned candidate-coordinate change
+is .0017993 A (limit .001). Both searches stop at the existing R1 target and
+recover the same labelled structure well inside the scientific recovery gates.
+These two stricter migration limits are preserved, not loosened or hidden.
+No search seed, effort, scientific threshold or optimizer tolerance was chosen
+by atomic-reference score or R1. The final record is
+`benchmarks/enstatite-native-profile-scaling-macos.json`.
+
+Both reduction and search workers reject SciPy, h5py and hdf5plugin imports.
+A clean wheel also runs the profile/scaling benchmark with only NumPy installed.
+Rust entry points own profile objectives/optimization, expected-count updates,
+joint sigma, frozen weak filters, family elimination, bounded empirical solves
+and Huber IRLS. Python still orchestrates the example and constructs designs;
+a standalone Rust raw-to-structure executable and standalone structural
+refinement remain outside this change. Methods and independent validation are
+in [native profile/scaling fitting](native-profile-scaling-fitting.md).

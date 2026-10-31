@@ -104,5 +104,28 @@ workflow provide the controls instead.
 
 `benchmarks/profile_scaling_fit.py` measures 64 real multi-exposure profiles on
 the 31x31x23 bank and a 4,096-row, 173-parameter empirical design. Full raw-run
-v10 is frozen before execution and compared with retained v9 through the same
-strict gates. All large inputs and measured products remain outside Git.
+v10 is preserved as a failed strict-parity checkpoint. The corrected v11
+optimizer protocol is frozen before its fresh raw run and compared with retained
+v9 through unchanged strict gates. All large inputs and measured products remain outside Git.
+
+The v11 raw run passes scientific structure recovery and all reduction parity
+gates, with intensity/sigma relative L2 changes 2.42e-5/2.15e-5 versus v9.
+Overall strict search parity still fails its R1-delta and coordinate-delta
+limits (.00020038 versus .0001; .0017993 A versus .001). Those limits remain
+unchanged. The same Mg16 Si16 O48 structure is recovered, with maximum labelled
+reference error .0075236 A. See
+`benchmarks/enstatite-native-profile-scaling-macos.json` and the qualified
+[v10/v11 raw-run account](enstatite-raw-workflow.md).
+
+The final sequential one-thread benchmark measures 64 real profiles (130,725
+samples, 31x31x23 grid) at 6.885 s versus 7.371 s for the previous Python/SciPy
+optimizer, about 1.07x faster. All 64 converge with no failures and identical
+repeat hashes. The 4,096-row/173-parameter scaling benchmark takes .0940 s
+versus .4063 s, about 4.32x faster. Its largest coefficient/correction differences
+from the independent previous path are 1.10e-10/1.45e-10. The native benchmark
+wheel has only NumPy and PhaseSmith installed and imports no SciPy, h5py or
+hdf5plugin. Timings include the Python array boundary, not only Rust kernels.
+See `benchmarks/profile-scaling-fit-rust-macos.json` for versions, binary/wheel
+hashes, measured repeats and the exact benchmark shapes. Full validation passes
+509 Rust tests (34 ignored) and 3,235 Python tests (11 skipped, 34 deselected),
+plus strict all-target/all-feature Clippy and formatting.
