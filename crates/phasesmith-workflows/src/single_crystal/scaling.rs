@@ -316,7 +316,7 @@ pub(super) fn reduce(
 ) -> Result<Reduced> {
     let n = m.hkl.len();
     let borrowed = m.data.borrowed();
-    let base = profiles::fit_with_execution(
+    let mut base = profiles::fit_with_execution(
         &borrowed,
         &m.bank.profiles,
         m.grid,
@@ -331,6 +331,9 @@ pub(super) fn reduce(
             geometry_cache_bytes: o.geometry_cache_bytes,
         },
     )?;
+    for (flag, &source) in base.flags.iter_mut().zip(&m.flags) {
+        *flag |= source & 1024;
+    }
     let choices: Vec<u8> = m
         .aperture
         .iter()
@@ -383,7 +386,7 @@ pub(super) fn reduce(
         .iter()
         .map(|c| {
             let ray = profile_geometry([c[0], c[1]], *g).0;
-            let p = 0.98 * (1. - dot(ray, e).powi(2)) + 0.02 * (1. - dot(ray, orth).powi(2));
+            let p = 0.98 * (1. - dot(ray, e).powi(2)) + (1. - 0.98) * (1. - dot(ray, orth).powi(2));
             dot(cross(ray, beam), axis).abs() / p
         })
         .collect();
