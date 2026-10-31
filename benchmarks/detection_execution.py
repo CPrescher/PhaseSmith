@@ -106,6 +106,7 @@ def main():
                     workers=workers,
                 )
                 stats["total_wall_seconds"] = time.perf_counter() - start
+                stats["native_preparation_wall_seconds"] = frames.native_preparation_seconds
                 stats["track_assembly_wall_seconds"] = (
                     stats["total_wall_seconds"]
                     - stats["ordered_detection_wall_seconds"]

@@ -188,7 +188,23 @@ impl Reader {
             return Err(Error("HDF5 frame index outside dataset".into()));
         }
         let values = self.dataset.read_slice_2d::<u32, _>((index, .., ..))?;
-        let pixels = values.iter().copied().collect();
+        // Native HDF5 returns a C-order owned array. Transfer that buffer directly;
+        // retain a logical-order fallback for any nonstandard upstream layout.
+        let pixels = if values.is_standard_layout() {
+            let count = values.len();
+            let (pixels, offset) = values.into_raw_vec_and_offset();
+            let offset = offset.unwrap_or(0);
+            if offset == 0 && pixels.len() == count {
+                pixels
+            } else {
+                pixels
+                    .get(offset..offset + count)
+                    .ok_or_else(|| Error("invalid HDF5 array storage offset".into()))?
+                    .to_vec()
+            }
+        } else {
+            values.iter().copied().collect()
+        };
         Ok(Frame {
             shape: [self.shape[1], self.shape[2]],
             pixels,
