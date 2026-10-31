@@ -26,6 +26,7 @@ in the repository archive, outside the documentation search index.
 - [Fit evidence and advisory review](fit-report.md)
 - [Measured original-frame input optimization](frame-input-optimization.md)
 - [Native single-crystal profile and empirical-scale fitting](native-profile-scaling-fitting.md)
+- [Rust-only workflow coordinator: MgSiO3 validation and timing](single-crystal-native-validation.md)
 - [Pawley feasibility at small steps](pawley-boundary-feasibility.md)
 - [Pawley consolidation review, 2026-09-21](pawley-consolidation-review.md)
 - [Pawley repair and promotion review, 2026-09-21](pawley-repair-20260921.md)
