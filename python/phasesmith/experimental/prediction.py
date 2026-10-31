@@ -186,6 +186,61 @@ def refine_crystal(
     progress=None,
     symmetry="triclinic",
 ):
+    """Refine a fixed crystal with required independent held-out diagnostics."""
+    return _refine_crystal(
+        observed,
+        hkl,
+        reciprocal_basis,
+        geometry,
+        training=training,
+        eligible=eligible,
+        options=options,
+        progress=progress,
+        symmetry=symmetry,
+    )
+
+
+@dataclass(frozen=True)
+class CrystalProposalFit:
+    """Unvalidated training fit; deliberately contains no validation metrics."""
+
+    reciprocal_basis: np.ndarray
+    history: np.ndarray
+    fit_mask: np.ndarray
+    converged: bool
+
+    def __post_init__(self):
+        for name in ("reciprocal_basis", "history", "fit_mask"):
+            object.__setattr__(self, name, _readonly(getattr(self, name)))
+
+
+def fit_crystal_proposal(observed, hkl, reciprocal_basis, geometry, *, eligible=None, options=None):
+    """Fit global training observations only; this does not validate a lattice."""
+    return _refine_crystal(
+        observed,
+        hkl,
+        reciprocal_basis,
+        geometry,
+        training=np.ones(len(observed), dtype=bool),
+        eligible=eligible,
+        options=options,
+        _require_validation=False,
+    )
+
+
+def _refine_crystal(
+    observed,
+    hkl,
+    reciprocal_basis,
+    geometry,
+    *,
+    training,
+    eligible=None,
+    options=None,
+    progress=None,
+    symmetry="triclinic",
+    _require_validation=True,
+):
     """Robust, training-only refinement of nine reciprocal-basis coefficients.
 
     symmetry="orthorhombic" constrains the metric to three perpendicular axes
@@ -224,7 +279,7 @@ def refine_crystal(
         & (abs(differences[:, 2]) < options.initial_omega_gate)
     )
     fit = eligible & training
-    if fit.sum() < 12 or (eligible & ~training).sum() < 5:
+    if fit.sum() < 12 or (_require_validation and (eligible & ~training).sum() < 5):
         raise ValueError("need >=12 training and >=5 held-out eligible centroids")
     if np.linalg.matrix_rank(h[fit]) < 3:
         raise ValueError("training HKLs do not span three dimensions")
@@ -294,6 +349,8 @@ def refine_crystal(
         if damping > 1e14:
             break
     final = predict_spots(h, b, geometry, observed[:, 2])
+    if not _require_validation:
+        return CrystalProposalFit(b, np.asarray(history), fit, converged)
     # No invalid validation predictions are dropped after fitting: failure is
     # visible as infinite validation metrics, rather than improved selection.
     metrics = _statistics(observed, initial.values, final.values, training, eligible, scale)

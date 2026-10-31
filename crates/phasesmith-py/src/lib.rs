@@ -72,6 +72,8 @@ mod profiles;
 mod project_bundle;
 mod rietveld;
 #[cfg(feature = "experimental-spots")]
+mod rows;
+#[cfg(feature = "experimental-spots")]
 mod scan_scaling;
 #[cfg(feature = "experimental-solution")]
 mod solution;
@@ -4289,6 +4291,8 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     omega_background::register(module)?;
     #[cfg(feature = "experimental-spots")]
     fft::register(module)?;
+    #[cfg(feature = "experimental-spots")]
+    rows::register(module)?;
     module.add_class::<NativeExecutionPolicy>()?;
     module.add_class::<NativePreparedXrayScattering>()?;
     module.add_class::<NativePreparedNeutronScattering>()?;

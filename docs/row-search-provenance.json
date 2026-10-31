@@ -1,0 +1,18 @@
+{
+  "source_artifact": "/Users/clemens/Codex/2026-10-30/dafi-rust-algorithm/outputs/dafi-sparse-grouping",
+  "source_sha256": "e6ffdeaa3717dd451d1d3d6752aa069484e2e82585c9d0d10d5eacc49c9f1915",
+  "selected_options": {
+    "relative_gap": true,
+    "directions": 50000,
+    "min_row": 4,
+    "workers": 8,
+    "groups": 40,
+    "seconds": 300,
+    "projection_grids": 4,
+    "phase_min_row": 3,
+    "profile_stage2": false,
+    "naive_max_points": 2048
+  },
+  "original_DAFi_source_used": false,
+  "unchanged_kernel": true
+}
