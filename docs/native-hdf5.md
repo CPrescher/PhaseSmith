@@ -77,3 +77,23 @@ optimizers: success establishes native HDF5 integration, not an entirely
 Rust-only raw-to-structure executable. Standalone structure refinement remains
 outside the implemented search workflow. Raw inputs and large products stay
 outside Git.
+
+The v8 complete run passes: 142 original frames, 246 profile teachers, 4,125
+signed search observations (220 negative), inferred Mg16 Si16 O48, amplitude
+R1 0.04111588883. Maximum/RMS labelled-coordinate errors are
+0.0065804/0.0045658 A. Full worker time is 95.85 s on this machine. Original
+frame hashes, linked/indexed positions, edge exclusions and every reduced array
+are bitwise identical to the v7 run. Input source files remain unchanged.
+Reference coordinates are assessed only after the worker saves its candidate
+and exits; source HKLs and archived arrays are not read by the worker.
+
+The installed native wheel and a standalone Rust executable both decode the
+original data with dynamic plugin loading disabled and a nonexistent plugin
+path. The wheel environment has no h5py/hdf5plugin. The macOS binary inspection
+shows only system-library dynamic dependencies. Three standalone Rust frame
+hashes match the independent h5py control exactly. The small checked-in report
+is `benchmarks/enstatite-bundled-hdf5-macos.json`; all raw data and complete
+products remain in the external output directory recorded there. Workspace
+verification passes 501 Rust tests (34 ignored), 3,217 Python tests (11 skipped,
+34 deselected), formatting and strict all-feature/all-target Clippy. Linux and
+Windows builds are configured in CI but have not been executed locally.
