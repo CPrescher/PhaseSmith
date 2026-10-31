@@ -205,3 +205,8 @@ Serial baseline is 8.964 s; new serial/4-worker/10-worker medians are
 8.849/5.039/5.072 s, all hashes identical. Four workers are selected using time
 and lower queued memory, not scientific agreement. Their charged payload is
 411,333,472 bytes, so the full example requests a 512 MiB cap.
+
+The full all-domain v18 run also passes every bitwise identity gate. Frame
+preparation takes 5.132 s versus 9.350 s in v17. The numerical worker falls
+from 33.91 s to 29.41 s; CLI from 42.49 s to 37.80 s, with the same cold-parent
+qualification. Report: `benchmarks/enstatite-next-execution-stage2-macos.json`.
