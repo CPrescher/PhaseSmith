@@ -53,7 +53,31 @@ pub fn evaluate_model(
     xyz: &[[f64; 3]],
     u: f64,
 ) -> Result<ModelEvaluation, SolutionError> {
-    let scattering = prepare_scattering(cell, hkl, species)?;
+    evaluate_model_with_memory_budget(
+        cell,
+        hkl,
+        observed,
+        species,
+        xyz,
+        u,
+        crate::DenseMemoryBudget::default(),
+    )
+}
+
+/// Evaluate the same fused model with an explicit per-buffer byte budget.
+/// # Errors
+/// Applies `evaluate_model` input validation and the supplied dense allocation limit.
+#[allow(clippy::too_many_arguments)]
+pub fn evaluate_model_with_memory_budget(
+    cell: UnitCell,
+    hkl: &[[i32; 3]],
+    observed: &[f64],
+    species: &[String],
+    xyz: &[[f64; 3]],
+    u: f64,
+    memory: crate::DenseMemoryBudget,
+) -> Result<ModelEvaluation, SolutionError> {
+    let scattering = prepare_scattering(cell, hkl, species, memory)?;
     evaluate_prepared(cell, hkl, observed, xyz, u, &scattering)
 }
 
@@ -61,17 +85,14 @@ fn prepare_scattering(
     cell: UnitCell,
     hkl: &[[i32; 3]],
     species: &[String],
+    memory: crate::DenseMemoryBudget,
 ) -> Result<Vec<f64>, SolutionError> {
-    if species.is_empty()
-        || species.len() > 128
-        || hkl.is_empty()
-        || hkl.len() > 100_000
-        || (5 * species.len() + 7) * hkl.len() > 2_000_000
-    {
+    if species.is_empty() || species.len() > 128 || hkl.is_empty() || hkl.len() > 100_000 {
         return Err(error(
             "model exceeds atom/reflection/dense-derivative limits",
         ));
     }
+    memory.check_model(species.len(), hkl.len())?;
     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
     let s: Vec<_> = hkl
         .iter()
@@ -210,10 +231,40 @@ pub fn polish_model(
     deadline: Option<Instant>,
     cancellation: Option<&crate::Cancellation>,
 ) -> Result<PolishedModel, SolutionError> {
+    polish_model_with_memory_budget(
+        cell,
+        hkl,
+        observed,
+        species,
+        initial,
+        initial_u,
+        iterations,
+        deadline,
+        cancellation,
+        crate::DenseMemoryBudget::default(),
+    )
+}
+
+/// Apply the same polishing equations with an explicit dense-buffer budget.
+/// # Errors
+/// Applies `polish_model` validation and checks allocations before preparation.
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+pub fn polish_model_with_memory_budget(
+    cell: UnitCell,
+    hkl: &[[i32; 3]],
+    observed: &[f64],
+    species: &[String],
+    initial: &[[f64; 3]],
+    initial_u: f64,
+    iterations: usize,
+    deadline: Option<Instant>,
+    cancellation: Option<&crate::Cancellation>,
+    memory: crate::DenseMemoryBudget,
+) -> Result<PolishedModel, SolutionError> {
     if initial.len() != species.len() || iterations > 200 {
         return Err(error("invalid model shape or polishing budget"));
     }
-    let scattering = prepare_scattering(cell, hkl, species)?;
+    let scattering = prepare_scattering(cell, hkl, species, memory)?;
     let mut xyz = initial.to_vec();
     let mut u = initial_u;
     let mut state = evaluate_prepared(cell, hkl, observed, &xyz, u, &scattering)?;
@@ -336,6 +387,60 @@ pub(crate) fn cholesky_solve(matrix: &[f64], rhs: &[f64]) -> Option<Vec<f64>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn explicit_budget_admits_larger_model_without_changing_values() {
+        let cell = UnitCell {
+            a_angstrom: 20.,
+            b_angstrom: 21.,
+            c_angstrom: 22.,
+            alpha_deg: 90.,
+            beta_deg: 90.,
+            gamma_deg: 90.,
+        };
+        let hkl: Vec<_> = (0_i32..6400)
+            .map(|i| [1 + i % 16, (i / 16) % 16, i / 256])
+            .collect();
+        let labels = vec!["O".into(); 64];
+        let xyz: Vec<_> = (0..64)
+            .map(|i| {
+                let x = f64::from(i);
+                [
+                    (x * 0.137).fract(),
+                    (x * 0.241).fract(),
+                    (x * 0.319).fract(),
+                ]
+            })
+            .collect();
+        let observed = vec![1.; hkl.len()];
+        assert!(
+            evaluate_model(cell, &hkl, &observed, &labels, &xyz, 0.01)
+                .unwrap_err()
+                .0
+                .contains("dense memory budget")
+        );
+        let memory = crate::DenseMemoryBudget::new(64 * 1024 * 1024).unwrap();
+        let out =
+            evaluate_model_with_memory_budget(cell, &hkl, &observed, &labels, &xyz, 0.01, memory)
+                .unwrap();
+        assert_eq!(out.jacobian.len(), (3 * 63 + 1) * 6400);
+        assert!(out.jacobian.iter().all(|x| x.is_finite()));
+        let old = evaluate_model(cell, &hkl[..500], &observed[..500], &labels, &xyz, 0.01).unwrap();
+        let explicit = evaluate_model_with_memory_budget(
+            cell,
+            &hkl[..500],
+            &observed[..500],
+            &labels,
+            &xyz,
+            0.01,
+            memory,
+        )
+        .unwrap();
+        assert_eq!(old.objective.to_bits(), explicit.objective.to_bits());
+        assert_eq!(old.r1.to_bits(), explicit.r1.to_bits());
+        assert_eq!(old.jacobian, explicit.jacobian);
+        assert_eq!(old.residual, explicit.residual);
+    }
+
     #[test]
     fn profiled_scale_jacobian_matches_centered_differences() {
         let cell = UnitCell {

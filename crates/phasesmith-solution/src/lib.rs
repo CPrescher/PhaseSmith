@@ -15,6 +15,11 @@ mod fourier;
 pub use execution::{WorkerStats, with_solution_workers};
 mod linear_step;
 mod math3;
+mod memory;
+pub use memory::{
+    DEFAULT_DENSE_MEMORY_BUDGET_BYTES, DenseMemoryBudget, MAX_DENSE_MEMORY_BUDGET_BYTES,
+    SolutionMemoryEstimate, estimate_solution_memory,
+};
 mod model;
 mod model_consensus;
 pub use model_consensus::model_agreement_distance;
@@ -67,7 +72,10 @@ pub use fourier::{
 pub use linear_step::{
     CachedNormalStep, blocked_normal_step, cached_normal_step, iterative_normal_step,
 };
-pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
+pub use model::{
+    ModelEvaluation, PolishedModel, evaluate_model, evaluate_model_with_memory_budget,
+    polish_model, polish_model_with_memory_budget,
+};
 pub use peak_completion::{
     AssignmentAlternative, AssignmentAlternatives, ChemicalScale, JointAssignment,
     JointAssignments, PeakCompletionCandidate, PeakCompletionResult, PreparedPeakCompletion,

@@ -7,6 +7,11 @@ SHELXT-level coverage. No external solver is a runtime dependency.
 
 ## Contract and conventions
 
+Dense reflection-buffer admission has a configurable byte policy with an
+unchanged 16,000,000-byte default. See the [memory budget contract](solution-memory-budget.md)
+for input-only capacity preflight, larger explicitly budgeted searches and its
+scope separate from total process memory.
+
 The input is a SHELX HKLF 4 table (`h k l I sigma(I)`, optionally a positive
 batch number), a cell in angstrom/degrees, a known space group, and **non-hydrogen
 atom counts in the complete conventional cell**. Twinned HKLF 5 observations,

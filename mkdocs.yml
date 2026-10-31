@@ -114,6 +114,7 @@ nav:
   - Validation and development:
       - Single-crystal promotion audit: single-crystal-promotion.md
       - Single-crystal API proposal: single-crystal-api-proposal.md
+      - Structure-search memory budget: solution-memory-budget.md
       - Enstatite external-data workflow: enstatite-workflow.md
       - CW Pawley refinement: pawley.md
       - TOF Pawley refinement: tof-pawley.md

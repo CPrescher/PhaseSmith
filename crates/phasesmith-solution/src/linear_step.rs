@@ -64,6 +64,25 @@ pub fn cached_normal_step(
     deadline: Option<Instant>,
     cancellation: Option<&Cancellation>,
 ) -> Result<CachedNormalStep, SolutionError> {
+    cached_normal_step_with_memory_budget(
+        jacobian,
+        residual,
+        damping,
+        deadline,
+        cancellation,
+        crate::DenseMemoryBudget::default(),
+    )
+}
+
+pub(crate) fn cached_normal_step_with_memory_budget(
+    jacobian: &[f64],
+    residual: &[f64],
+    damping: f64,
+    deadline: Option<Instant>,
+    cancellation: Option<&Cancellation>,
+    memory: crate::DenseMemoryBudget,
+) -> Result<CachedNormalStep, SolutionError> {
+    memory.check(1, jacobian.len())?;
     validate(jacobian, residual, damping)?;
     let n = jacobian.len() / residual.len();
     let eligible = cache_shape(n, residual.len());
@@ -79,8 +98,14 @@ pub fn cached_normal_step(
             });
         }
     }
-    let (step, iterations) =
-        iterative_normal_step(jacobian, residual, damping, deadline, cancellation)?;
+    let (step, iterations) = iterative_normal_step_with_memory_budget(
+        jacobian,
+        residual,
+        damping,
+        deadline,
+        cancellation,
+        memory,
+    )?;
     Ok(CachedNormalStep {
         step,
         iterations,
@@ -276,6 +301,7 @@ impl PreparedNormalSystem {
 /// A single fit's linearization cache; never shared between candidates or fits.
 #[derive(Default)]
 pub(crate) struct NormalReuse {
+    pub(crate) memory_budget: crate::DenseMemoryBudget,
     prepared: Option<PreparedNormalSystem>,
     pub(crate) builds: usize,
     pub(crate) reuses: usize,
@@ -295,6 +321,7 @@ impl NormalReuse {
         deadline: Option<Instant>,
         cancellation: Option<&Cancellation>,
     ) -> Result<CachedNormalStep, SolutionError> {
+        self.memory_budget.check(1, jacobian.len())?;
         validate(jacobian, residual, damping)?;
         let eligible = cache_shape(jacobian.len() / residual.len(), residual.len());
         if eligible {
@@ -346,8 +373,14 @@ impl NormalReuse {
                 }
             }
         }
-        let (step, iterations) =
-            iterative_normal_step(jacobian, residual, damping, deadline, cancellation)?;
+        let (step, iterations) = iterative_normal_step_with_memory_budget(
+            jacobian,
+            residual,
+            damping,
+            deadline,
+            cancellation,
+            self.memory_budget,
+        )?;
         Ok(CachedNormalStep {
             step,
             iterations,
@@ -416,7 +449,9 @@ pub(crate) fn cached_dense_step(
     damping: f64,
     deadline: Option<Instant>,
     cancellation: Option<&Cancellation>,
+    memory: crate::DenseMemoryBudget,
 ) -> Result<CachedNormalStep, SolutionError> {
+    memory.check(1, jacobian.len())?;
     validate(jacobian, residual, damping)?;
     let reflections = residual.len();
     let count = jacobian.len() / reflections;
@@ -517,7 +552,6 @@ fn validate(jacobian: &[f64], residual: &[f64], damping: f64) -> Result<(), Solu
     if m == 0
         || jacobian.is_empty()
         || jacobian.len() % m != 0
-        || jacobian.len() > 2_000_000
         || !damping.is_finite()
         || damping <= 0.
         || residual.iter().chain(jacobian).any(|x| !x.is_finite())
@@ -525,6 +559,62 @@ fn validate(jacobian: &[f64], residual: &[f64], damping: f64) -> Result<(), Solu
         return Err(error("invalid iterative normal system"));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod memory_tests {
+    use super::*;
+
+    #[test]
+    fn explicit_linear_budget_reaches_all_operator_paths() {
+        let rows = 62_501;
+        let parameters = 32;
+        let jacobian = vec![1.; rows * parameters];
+        let residual = vec![0.; rows];
+        let memory = crate::DenseMemoryBudget::new(64 * 1024 * 1024).unwrap();
+        assert!(iterative_normal_step(&jacobian, &residual, 0.1, None, None).is_err());
+        assert!(cached_normal_step(&jacobian, &residual, 0.1, None, None).is_err());
+        assert!(blocked_normal_step(&jacobian, &residual, 0.1, None, None).is_err());
+        let (step, _) =
+            iterative_normal_step_with_memory_budget(&jacobian, &residual, 0.1, None, None, memory)
+                .unwrap();
+        assert_eq!(step, vec![0.; parameters]);
+        let step =
+            cached_normal_step_with_memory_budget(&jacobian, &residual, 0.1, None, None, memory)
+                .unwrap();
+        assert_eq!(step.step, vec![0.; parameters]);
+        let mut reuse = NormalReuse {
+            memory_budget: memory,
+            blocked: true,
+            ..Default::default()
+        };
+        assert_eq!(
+            reuse
+                .step(&jacobian, &residual, 0.1, None, None)
+                .unwrap()
+                .step,
+            vec![0.; parameters]
+        );
+        // Small-model dense/Cholesky path has the same explicit buffer admission.
+        let dense = vec![1.; 15 * 140_000];
+        assert!(
+            cached_dense_step(
+                &dense,
+                &vec![0.; 140_000],
+                0.1,
+                None,
+                None,
+                crate::DenseMemoryBudget::default()
+            )
+            .is_err()
+        );
+        assert_eq!(
+            cached_dense_step(&dense, &vec![0.; 140_000], 0.1, None, None, memory)
+                .unwrap()
+                .step,
+            vec![0.; 15]
+        );
+    }
 }
 
 /// Solve `(JᵀJ + damping*D) step = -Jᵀr`, `D=max(diag(JᵀJ),1e-8)`.
@@ -540,6 +630,25 @@ pub fn iterative_normal_step(
     deadline: Option<Instant>,
     cancellation: Option<&Cancellation>,
 ) -> Result<(Vec<f64>, usize), SolutionError> {
+    iterative_normal_step_with_memory_budget(
+        jacobian,
+        residual,
+        damping,
+        deadline,
+        cancellation,
+        crate::DenseMemoryBudget::default(),
+    )
+}
+
+pub(crate) fn iterative_normal_step_with_memory_budget(
+    jacobian: &[f64],
+    residual: &[f64],
+    damping: f64,
+    deadline: Option<Instant>,
+    cancellation: Option<&Cancellation>,
+    memory: crate::DenseMemoryBudget,
+) -> Result<(Vec<f64>, usize), SolutionError> {
+    memory.check(1, jacobian.len())?;
     let m = residual.len();
     validate(jacobian, residual, damping)?;
     let n = jacobian.len() / m;
@@ -673,7 +782,15 @@ mod tests {
             })
             .collect();
         let residual = vec![0.21; rows];
-        let out = cached_dense_step(&jacobian, &residual, 0.1, None, None).unwrap();
+        let out = cached_dense_step(
+            &jacobian,
+            &residual,
+            0.1,
+            None,
+            None,
+            crate::DenseMemoryBudget::default(),
+        )
+        .unwrap();
         assert!(out.used_cache);
         let scales: Vec<_> = jacobian
             .chunks_exact(rows)
@@ -681,7 +798,17 @@ mod tests {
             .collect();
         let x: Vec<_> = out.step.iter().zip(&scales).map(|(v, s)| v / s).collect();
         assert!(original_residual_squared(&jacobian, &residual, 0.1, &scales, &x) < 1e-20);
-        assert!(cached_dense_step(&jacobian, &residual, 0.1, Some(Instant::now()), None).is_err());
+        assert!(
+            cached_dense_step(
+                &jacobian,
+                &residual,
+                0.1,
+                Some(Instant::now()),
+                None,
+                crate::DenseMemoryBudget::default()
+            )
+            .is_err()
+        );
     }
     #[test]
     fn cache_limits_and_original_operator_guard() {

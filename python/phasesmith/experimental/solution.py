@@ -72,6 +72,7 @@ class SolutionOptions:
     symmetry_tolerance_angstrom: float = 0.15
     symmetry_iterations: int = 80
     completion: bool = True
+    dense_memory_budget_bytes: int = 16_000_000
 
     def __post_init__(self) -> None:
         for name, low, high in (
@@ -82,6 +83,7 @@ class SolutionOptions:
             ("polish_iterations", 0, 200),
             ("assignment_rounds", 0, 8),
             ("symmetry_iterations", 0, 200),
+            ("dense_memory_budget_bytes", 8, 1_073_741_824),
         ):
             value = getattr(self, name)
             if not isinstance(value, int) or isinstance(value, bool) or not low <= value <= high:
@@ -562,7 +564,7 @@ class SharedSearchAudit:
     max_active_workers: int = 1
     model_consensus_checks: int = 0
     model_consensus_stops: int = 0
-    model_consensus_trials: tuple[int,int] | None = None
+    model_consensus_trials: tuple[int, int] | None = None
     model_consensus_distance: float | None = None
     assignment_convergence_stops: int = 0
     reuse_normal_matrices: bool = False
@@ -763,6 +765,54 @@ class SolutionResult:
                 item for item in record["limitations"] if "composition" not in item.lower()
             ] + ["Bounded shared orbit search with supplied exact symmetry; no uniqueness proof."]
         return record
+
+
+@dataclass(frozen=True, slots=True)
+class SolutionMemoryEstimate:
+    """Input-only admission; per dense f64 buffer, separate from caches/FFT/RSS."""
+
+    expanded_reflection_count: int
+    volume_atom_cap: int
+    memory_atom_cap: int
+    maximum_atoms: int
+    dense_memory_budget_bytes: int
+
+
+def estimate_solution_memory(
+    observations: HklData,
+    *,
+    cell: UnitCell,
+    space_group: SpaceGroup | None = None,
+    dense_memory_budget_bytes: int = 16_000_000,
+) -> SolutionMemoryEstimate:
+    """Estimate a full-cell atom cap without coordinates, composition or count priors.
+
+    Uses unique allowed symmetry/Friedel-expanded rows M and the conservative
+    envelope ``(5*N+7)*M*8 <= dense_memory_budget_bytes``. The result also retains
+    the existing ``ceil(V/8)`` and 128-atom caps. Zero means no atom fits.
+    """
+    if not isinstance(observations, HklData) or not isinstance(cell, UnitCell):
+        raise TypeError("observations and cell must be HklData and UnitCell")
+    if (
+        type(dense_memory_budget_bytes) is not int
+        or not 8 <= dense_memory_budget_bytes <= 1_073_741_824
+    ):
+        raise ValueError("dense_memory_budget_bytes must be an integer in [8,1073741824]")
+    group = SpaceGroup.p1() if space_group is None else space_group
+    if not isinstance(group, SpaceGroup):
+        raise TypeError("space_group must be SpaceGroup")
+    if not hasattr(_core, "_solution_memory_estimate"):
+        raise ImportError("memory preflight requires the updated experimental-solution feature")
+    return SolutionMemoryEstimate(
+        **_core._solution_memory_estimate(
+            observations.hkl.reshape(-1),
+            observations.intensity,
+            observations.sigma,
+            list(cell.as_tuple()),
+            group._native,
+            dense_memory_budget_bytes,
+        )
+    )
 
 
 def solve_structure(
@@ -978,7 +1028,9 @@ def solve_structure_elements(
     ``tangent_in_recycling=False`` retains the earlier unconstrained placement.
     Recycling remains opt-in because easy cases
     can become slower. Counts returned in ``composition`` are inferred, never inputs. The default
-    atom cap is ceil(cell volume/8 A³), at most 128; it is a search bound.
+    atom cap is the minimum of ceil(cell volume/8 A³), 128 and the input-only
+    dense-memory cap; it is a search bound. ``SolutionOptions`` controls the
+    explicit per-buffer byte ceiling, defaulting to the historical 16,000,000.
     ``joint_assignment_refinement=True`` tries bounded post-search tensor-informed
     relabels and whole-orbit count edits, including neighbor-derived displacement
     seeds. At most six full fits share two seconds and the original deadline.
@@ -1064,15 +1116,21 @@ def solve_structure_elements(
     if fused_phase_workspace and not reusable_fourier_workspaces:
         raise ValueError("fused_phase_workspace requires reusable_fourier_workspaces")
     if late_phase_plateau_stopping and (not work_sliced_phasing or adaptive_checkpoints):
-        raise ValueError("late_phase_plateau_stopping requires work_sliced_phasing without adaptive_checkpoints")
+        raise ValueError(
+            "late_phase_plateau_stopping requires work_sliced_phasing without adaptive_checkpoints"
+        )
     if cached_repair_evaluation and not joint_assignment_refinement:
         raise ValueError("cached_repair_evaluation requires joint_assignment_refinement")
     if joint_assignment_refinement and not phase_origin_selection:
         raise ValueError("joint_assignment_refinement requires phase_origin_selection")
     if model_consensus_stopping and (not phase_origin_selection or not ambiguous_assignments):
-        raise ValueError("model_consensus_stopping requires phase_origin_selection and ambiguous_assignments")
+        raise ValueError(
+            "model_consensus_stopping requires phase_origin_selection and ambiguous_assignments"
+        )
     if phase_plateau_stopping and (not work_sliced_phasing or adaptive_checkpoints):
-        raise ValueError("phase_plateau_stopping requires work_sliced_phasing without adaptive_checkpoints")
+        raise ValueError(
+            "phase_plateau_stopping requires work_sliced_phasing without adaptive_checkpoints"
+        )
     if assignment_convergence_stopping and not isotropic_assignment_refinement:
         raise ValueError("assignment_convergence_stopping requires isotropic_assignment_refinement")
     if blocked_normal_matrices and not reuse_normal_matrices:
@@ -1160,7 +1218,19 @@ def solve_structure_elements(
     ):
         raise ValueError("dual_peak_sigma must be finite in [0.1,10]")
     if maximum_atoms is None:
-        maximum_atoms = min(128, int(np.ceil(cell.geometry().volume_angstrom3 / 8)))
+        memory_options = SolutionOptions() if options is None else options
+        if not isinstance(memory_options, SolutionOptions):
+            raise TypeError("options must be SolutionOptions")
+        maximum_atoms = estimate_solution_memory(
+            observations,
+            cell=cell,
+            space_group=space_group,
+            dense_memory_budget_bytes=memory_options.dense_memory_budget_bytes,
+        ).maximum_atoms
+        if maximum_atoms == 0:
+            raise ValueError(
+                "dense memory budget cannot fit one atom for the expanded observations"
+            )
     for name, value, high in (
         ("maximum_atoms", maximum_atoms, 128),
         ("beam_width", beam_width, 8),
@@ -1238,7 +1308,17 @@ def solve_structure_elements(
                     specialized_isotropic_refinement,
                     streamed_peak_search,
                     reuse_normal_matrices,
-                    (short_phase_starts, blocked_normal_matrices, phase_plateau_stopping, assignment_convergence_stopping, late_phase_plateau_stopping, model_consensus_stopping, workers, joint_assignment_refinement, cached_repair_evaluation),
+                    (
+                        short_phase_starts,
+                        blocked_normal_matrices,
+                        phase_plateau_stopping,
+                        assignment_convergence_stopping,
+                        late_phase_plateau_stopping,
+                        model_consensus_stopping,
+                        workers,
+                        joint_assignment_refinement,
+                        cached_repair_evaluation,
+                    ),
                 ),
             ),
         ),
@@ -1381,6 +1461,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--phasing", choices=("charge_flip", "dual_space", "portfolio"), default="charge_flip"
     )
     parser.add_argument("--max-seconds", type=float, default=60)
+    parser.add_argument("--dense-memory-budget-bytes", type=int, default=16_000_000)
     parser.add_argument("--r1-target", type=float, default=0.1)
     parser.add_argument(
         "--refinement", choices=("none", "isotropic", "anisotropic"), default="anisotropic"
@@ -1412,6 +1493,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 max_seconds=args.max_seconds,
                 r1_target=args.r1_target,
                 refinement=args.refinement,
+                dense_memory_budget_bytes=args.dense_memory_budget_bytes,
             ),
         )
         write_solution(result, args.output)

@@ -40,6 +40,7 @@ pub struct PreparedSymmetricModel {
     specialized_isotropic_evaluation: bool,
     blocked_normal_matrices: bool,
     assignment_convergence_stopping: bool,
+    dense_memory_budget: crate::DenseMemoryBudget,
 }
 
 // Cached reciprocal/image geometry, in reflection/site/image order.
@@ -419,6 +420,35 @@ impl PreparedSymmetricModel {
         cache_geometry: bool,
         weight_families: bool,
     ) -> Result<Self, SolutionError> {
+        Self::new_with_memory_budget(
+            symmetry,
+            hkl,
+            observed,
+            mode,
+            cache_geometry,
+            weight_families,
+            crate::DenseMemoryBudget::default(),
+        )
+    }
+
+    /// Prepare the identical model with an explicit per-dense-buffer byte bound.
+    /// Original-row admission is checked before optional family reduction.
+    /// # Errors
+    /// Applies the same data/symmetry validation and rejects excess dense allocations.
+    #[allow(
+        clippy::cast_precision_loss,
+        clippy::too_many_lines,
+        clippy::too_many_arguments
+    )]
+    pub fn new_with_memory_budget(
+        symmetry: SymmetryModel,
+        hkl: &[[i32; 3]],
+        observed: &[f64],
+        mode: AdpMode,
+        cache_geometry: bool,
+        weight_families: bool,
+        dense_memory_budget: crate::DenseMemoryBudget,
+    ) -> Result<Self, SolutionError> {
         if hkl.is_empty()
             || hkl.len() != observed.len()
             || hkl.len() > 100_000
@@ -448,11 +478,16 @@ impl PreparedSymmetricModel {
             count += basis.len();
             offsets.push((coordinate, tensor));
         }
-        if count == 0 || count * hkl.len() > 2_000_000 {
+        if count == 0 {
             return Err(error(
                 "symmetric refinement exceeds the dense Jacobian memory budget",
             ));
         }
+        dense_memory_budget.check(count, hkl.len()).map_err(|e| {
+            error(format!(
+                "symmetric refinement exceeds the dense Jacobian memory budget: {e}"
+            ))
+        })?;
         let families = weight_families
             .then(|| {
                 crate::refinement_families::ReflectionFamilies::new(&symmetry.group, hkl, observed)
@@ -489,6 +524,7 @@ impl PreparedSymmetricModel {
             .then(|| prepare_geometry(&symmetry, hkl, &reciprocal, GEOMETRY_CACHE_BYTES))
             .flatten();
         Ok(Self {
+            dense_memory_budget,
             families,
             specialized_isotropic_evaluation: false,
             blocked_normal_matrices: false,
@@ -1067,6 +1103,7 @@ impl PreparedSymmetricModel {
         let mut cached_normal_solves = 0;
         let mut normal_cache_fallbacks = 0;
         let mut linear_cache = crate::linear_step::NormalReuse::default();
+        linear_cache.memory_budget = self.dense_memory_budget;
         linear_cache.blocked = self.blocked_normal_matrices;
         let mut small_improvements = 0;
         for iteration in 0..iterations {
@@ -1130,12 +1167,13 @@ impl PreparedSymmetricModel {
                         cancellation,
                     )
                 } else if use_iterative {
-                    crate::cached_normal_step(
+                    crate::linear_step::cached_normal_step_with_memory_budget(
                         &evaluation.jacobian,
                         &evaluation.residual,
                         damping,
                         deadline,
                         cancellation,
+                        self.dense_memory_budget,
                     )
                 } else {
                     crate::linear_step::cached_dense_step(
@@ -1144,6 +1182,7 @@ impl PreparedSymmetricModel {
                         damping,
                         deadline,
                         cancellation,
+                        self.dense_memory_budget,
                     )
                 };
                 linear.ok().map(|v| {
@@ -1152,12 +1191,13 @@ impl PreparedSymmetricModel {
                     v.step
                 })
             } else if use_iterative {
-                crate::iterative_normal_step(
+                crate::linear_step::iterative_normal_step_with_memory_budget(
                     &evaluation.jacobian,
                     &evaluation.residual,
                     damping,
                     deadline,
                     cancellation,
+                    self.dense_memory_budget,
                 )
                 .ok()
                 .map(|v| v.0)
@@ -1301,6 +1341,58 @@ mod tests {
 mod geometry_tests {
     use super::*;
     use phasesmith_crystallography::{SpaceGroup, SymmetryOperation, UnitCell};
+    #[test]
+    fn explicit_budget_prepares_jacobian_above_old_limit() {
+        let cell = UnitCell {
+            a_angstrom: 20.,
+            b_angstrom: 21.,
+            c_angstrom: 22.,
+            alpha_deg: 90.,
+            beta_deg: 90.,
+            gamma_deg: 90.,
+        };
+        let group = SpaceGroup::new(vec![SymmetryOperation::identity()]).unwrap();
+        let labels = vec!["O".into(); 16];
+        let points: Vec<_> = (0..16)
+            .map(|i| {
+                let x = f64::from(i);
+                [
+                    (x * 0.137).fract(),
+                    (x * 0.241).fract(),
+                    (x * 0.319).fract(),
+                ]
+            })
+            .collect();
+        let symmetry =
+            crate::recover_symmetry(cell, &group, &labels, &points, 0.01, None, None).unwrap();
+        let hkl: Vec<_> = (0_i32..16000)
+            .map(|i| [1 + i % 25, (i / 25) % 25, i / 625])
+            .collect();
+        let observed = vec![1.; hkl.len()];
+        assert!(
+            PreparedSymmetricModel::new(symmetry.clone(), &hkl, &observed, AdpMode::Anisotropic)
+                .unwrap_err()
+                .0
+                .contains("dense memory budget")
+        );
+        let prepared = PreparedSymmetricModel::new_with_memory_budget(
+            symmetry,
+            &hkl,
+            &observed,
+            AdpMode::Anisotropic,
+            false,
+            false,
+            crate::DenseMemoryBudget::new(64 * 1024 * 1024).unwrap(),
+        )
+        .unwrap();
+        let out = prepared
+            .evaluate(&prepared.initial_parameters(0.01).unwrap())
+            .unwrap();
+        assert!(out.jacobian.len() > 2_000_000);
+        assert_eq!(out.jacobian.len(), prepared.parameter_count * hkl.len());
+        assert!(out.jacobian.iter().all(|x| x.is_finite()));
+    }
+
     #[test]
     fn cache_budget_boundary_and_inconsistent_topology() {
         let cell = UnitCell {
