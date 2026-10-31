@@ -1,0 +1,203 @@
+{
+  "schema": "phasesmith.joint-assignment-diagnosis.v1",
+  "holdout_opened": false,
+  "qualification": "Oracle-assisted diagnostic only. Development reference labels mapped to already saved predicted geometries ignoring element identities, then refit for diagnosis. No reference labels, counts, or coordinates enter any blind production solve or benchmark selection. The recorded native baseline is the pre-change version. These are not new solved structures.",
+  "source_report_sha256": "bc107c15555ce4e24b595a6a6f792ac3f5b277b9a55fb4532d5bc83d19e20ca9",
+  "native_sha256": "162c713ed6a30285b4e249f529b9c4ca4b6846b00b976b891a0d50d7f1292ede",
+  "rows": [
+    {
+      "id": "cod-2021292",
+      "geometry_max": 0.026417228483936503,
+      "old_counts": {
+        "Cl": 4,
+        "O": 10,
+        "N": 14,
+        "C": 10
+      },
+      "reference_counts": {
+        "N": 4,
+        "C": 22,
+        "O": 8,
+        "Cl": 4
+      },
+      "isotropic_predicted": {
+        "r1": 0.10911640718558722,
+        "objective": 0.010275264658682991
+      },
+      "isotropic_oracle_labels": {
+        "r1": 0.10605796501388653,
+        "objective": 0.009868243745077889
+      },
+      "anisotropic_predicted": {
+        "r1": 0.06314685907580983,
+        "objective": 0.004201391995330449
+      },
+      "anisotropic_oracle_labels": {
+        "r1": 0.05567764854752651,
+        "objective": 0.003766628289166847
+      }
+    },
+    {
+      "id": "cod-2021310",
+      "geometry_max": 0.021559519435330944,
+      "old_counts": {
+        "Br": 3,
+        "O": 6,
+        "N": 6,
+        "C": 30
+      },
+      "reference_counts": {
+        "Br": 3,
+        "N": 3,
+        "O": 6,
+        "C": 33
+      },
+      "isotropic_predicted": {
+        "r1": 0.05208376272568554,
+        "objective": 0.0035850833108914642
+      },
+      "isotropic_oracle_labels": {
+        "r1": 0.05179161924622599,
+        "objective": 0.003635225158649155
+      },
+      "anisotropic_predicted": {
+        "r1": 0.031232151196160546,
+        "objective": 0.0017890254197178916
+      },
+      "anisotropic_oracle_labels": {
+        "r1": 0.030241111903596483,
+        "objective": 0.0018256667078226456
+      }
+    },
+    {
+      "id": "cod-2021316",
+      "geometry_max": 0.023450828381035283,
+      "old_counts": {
+        "Br": 4,
+        "O": 10,
+        "N": 8,
+        "C": 22
+      },
+      "reference_counts": {
+        "Br": 4,
+        "O": 8,
+        "N": 8,
+        "C": 24
+      },
+      "isotropic_predicted": {
+        "r1": 0.11739823850563195,
+        "objective": 0.014075563303215372
+      },
+      "isotropic_oracle_labels": {
+        "r1": 0.11736768367830772,
+        "objective": 0.014110166040607466
+      },
+      "anisotropic_predicted": {
+        "r1": 0.056007973825932984,
+        "objective": 0.0034357231113259826
+      },
+      "anisotropic_oracle_labels": {
+        "r1": 0.0558409639937897,
+        "objective": 0.003446751622803505
+      }
+    },
+    {
+      "id": "cod-2010543",
+      "geometry_max": 0.023252632562960944,
+      "old_counts": {
+        "O": 6,
+        "F": 4,
+        "N": 6,
+        "C": 12
+      },
+      "reference_counts": {
+        "O": 4,
+        "N": 8,
+        "C": 12,
+        "F": 4
+      },
+      "isotropic_predicted": {
+        "r1": 0.11923141260004065,
+        "objective": 0.012439831378549033
+      },
+      "isotropic_oracle_labels": {
+        "r1": 0.11973747685433699,
+        "objective": 0.012648463597047993
+      },
+      "anisotropic_predicted": {
+        "r1": 0.07694420178983419,
+        "objective": 0.006073283327376569
+      },
+      "anisotropic_oracle_labels": {
+        "r1": 0.07593801170629594,
+        "objective": 0.006227904943319806
+      }
+    },
+    {
+      "id": "cod-2242589",
+      "geometry_max": 0.0996814969577423,
+      "old_counts": {
+        "S": 2,
+        "O": 4,
+        "N": 10,
+        "C": 17
+      },
+      "reference_counts": {
+        "S": 2,
+        "O": 6,
+        "N": 3,
+        "C": 22
+      },
+      "isotropic_predicted": {
+        "r1": 0.1301005683945224,
+        "objective": 0.014696929301686508
+      },
+      "isotropic_oracle_labels": {
+        "r1": 0.13111310962179884,
+        "objective": 0.015514383064619289
+      },
+      "anisotropic_predicted": {
+        "r1": 0.1017693961533233,
+        "objective": 0.010574445716541805
+      },
+      "anisotropic_oracle_labels": {
+        "r1": 0.0964040879718178,
+        "objective": 0.010217798377454868
+      }
+    },
+    {
+      "id": "cod-2011393",
+      "geometry_max": 0.0249125099350956,
+      "old_counts": {
+        "S": 2,
+        "O": 8,
+        "N": 8,
+        "C": 20
+      },
+      "reference_counts": {
+        "S": 2,
+        "N": 4,
+        "O": 8,
+        "C": 24
+      },
+      "isotropic_predicted": {
+        "r1": 0.15643811070981897,
+        "objective": 0.019621412667165983
+      },
+      "isotropic_oracle_labels": {
+        "r1": 0.15867771420900703,
+        "objective": 0.020210897352928223
+      },
+      "anisotropic_predicted": {
+        "r1": 0.06831986844303928,
+        "objective": 0.004584972905780172
+      },
+      "anisotropic_oracle_labels": {
+        "r1": 0.06536889867650685,
+        "objective": 0.0051275388998421375
+      }
+    }
+  ],
+  "skipped_geometry_case": "cod-2010825",
+  "conclusion": "Both search and objective gaps are present: some many-label corrections improve full anisotropic SSE, while several true assignments have worse SSE despite better R1. Repair can improve search without resolving all physical identifiability."
+}

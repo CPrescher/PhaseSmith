@@ -2661,3 +2661,25 @@ lower residual is accompanied by a 1.65 degree maximum instrument Gaussian
 FWHM and is not treated as physical superiority. Residual and parameter-
 plausibility evidence remain separate. No production numerical behavior or
 GSAS-II runtime boundary changes.
+
+An opt-in `joint_assignment_refinement` experiment adds bounded post-search
+categorical repair using the fitted Cartesian tensors, bounded scalar-shift
+optimization and neighbor-derived displacement seeds, whole-orbit vacancies and
+up to two difference-map orbit locations. A width-four discrete beam and at most
+three two-fit rounds share a two-second safeguard and the original deadline.
+Physical tensors seed the existing invariant log-SPD refiner; only candidates
+with non-worse final rank/R1 and at least one-percent lower amplitude objective
+can replace the retained original. Counts remain inferred and original atom/data
+caps stay unchanged. Equations, independent references and the development-only
+protocol are documented in `docs/solution-joint-assignment.md`; holdout remains
+closed and this feature remains off by default.
+The complete matched all-35 comparison retains the exact previous 19 structures,
+26 formerly correct total-count cases, 19 per-element-count cases and 15 strict
+structures. Correct total counts increase to 27 through a missing four-atom orbit;
+three incorrect element-count vectors move closer to their references. Exact
+per-element and full labelled-structure recovery remain 19. Across 31 returned
+models, full-cell count-vector L1 error falls 210-to-182. The new stage adds 5.193
+seconds, 18 full fits and five accepted rounds; summed library solve time rises
+41.741-to-46.620 seconds (11.69%), typical paired time 4.25%. All 140 predictions
+precede development grading; seven above-cap references remain in the denominator.
+The option stays experimental/off by default, and the 65 holdout cases stay closed.

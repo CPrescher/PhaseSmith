@@ -69,8 +69,9 @@ pub use linear_step::{
 };
 pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
 pub use peak_completion::{
-    AssignmentAlternative, AssignmentAlternatives, ChemicalScale, PeakCompletionCandidate,
-    PeakCompletionResult, PreparedPeakCompletion, chemical_density_scales,
+    AssignmentAlternative, AssignmentAlternatives, ChemicalScale, JointAssignment,
+    JointAssignments, PeakCompletionCandidate, PeakCompletionResult, PreparedPeakCompletion,
+    chemical_density_scales,
 };
 pub use peak_density::{IntegratedPeakDensity, PeakIntegral, ball_transform, density_label_mask};
 pub use phase_origin::{

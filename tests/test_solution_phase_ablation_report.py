@@ -61,6 +61,7 @@ def test_pair_labels_are_distinct_from_prediction_case_pairs():
         "phase_stopping_flag",
         "assignment_stopping_flag",
         "late_phase_flag",
+        "joint_assignment_flag",
         "consensus_flag",
     ],
 )
@@ -97,6 +98,7 @@ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corrup
             "phase_stopping_flag": "phase_plateau_stopping",
             "assignment_stopping_flag": "assignment_convergence_stopping",
             "late_phase_flag": "late_phase_plateau_stopping",
+            "joint_assignment_flag": "joint_assignment_refinement",
             "consensus_flag": "model_consensus_stopping",
         }[corruption]
         report[key] = 1.2 if corruption == "extension_flag" else True

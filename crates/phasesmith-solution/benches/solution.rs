@@ -1842,6 +1842,51 @@ fn benchmark(c: &mut Criterion) {
             .unwrap()
         });
     });
+    let joint_plan = plan.clone().with_site_displacements(&[0.02; 8]).unwrap();
+    c.bench_function("joint_assignment_proposals_8_orbits_1054_rows", |b| {
+        b.iter(|| {
+            joint_plan
+                .joint_neighbors(
+                    &[
+                        Some(0),
+                        Some(0),
+                        Some(0),
+                        Some(1),
+                        Some(1),
+                        Some(2),
+                        Some(0),
+                        Some(0),
+                    ],
+                    &[[-0.01999, 0.18]; 8],
+                    2,
+                    None,
+                    None,
+                )
+                .unwrap()
+        });
+    });
+    c.bench_function("joint_assignment_coherent_8_orbits_1054_rows", |b| {
+        b.iter(|| {
+            joint_plan
+                .coherent_reassign(
+                    &[
+                        Some(0),
+                        Some(0),
+                        Some(0),
+                        Some(1),
+                        Some(1),
+                        Some(2),
+                        Some(0),
+                        Some(0),
+                    ],
+                    &[0.001, -0.001, 0.002, -0.002, 0.001, 0.001, 0., 0.],
+                    &[[-0.01999, 0.18]; 8],
+                    None,
+                    None,
+                )
+                .unwrap()
+        });
+    });
     // Heavy anchors make this separate whole-search example reach assignment.
     let search_species = ["Fe", "Fe", "C", "N", "N", "O", "O", "C"].map(str::to_owned);
     let truth =

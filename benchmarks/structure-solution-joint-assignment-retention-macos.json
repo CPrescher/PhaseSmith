@@ -1,0 +1,398 @@
+{
+  "schema": "phasesmith.joint-assignment-retention.v1",
+  "development_cases": 35,
+  "holdout_opened": false,
+  "qualification": "One balanced serial, same-native, one-worker comparison. No task-owned test/build/kernel jobs overlap timed corpus collection. All 140 predictions precede both reference barriers. Original observations, count caps, physical objectives, coordinate tolerances, seeds and 13/15-second budgets retained. Pilot and oracle-assisted diagnostics are not blind benchmark outcomes.",
+  "previous_report_sha256": "bc107c15555ce4e24b595a6a6f792ac3f5b277b9a55fb4532d5bc83d19e20ca9",
+  "native_sha256": "f02e749f23e832d4359fb9f6e00efcb31711956bb8bcaeeb079cb545a3fa0996",
+  "source_files_verified": 62,
+  "schedule_sha256": "5fde22b80ead195edb03d7451a457a790a436d51344480354ae36230edddbc74",
+  "report_sha256": {
+    "control": "09ad9ed47f2f1fa0fa17d2f5f721fb5c2d9eb0920effcf77a23372a426593694",
+    "repair": "2b929ef6132e98ccc243acdd5aa0b3254d3dd29087691837f23ea27a3a40b2b5"
+  },
+  "modes": {
+    "control": {
+      "case_sets": {
+        "structures": [
+          "cod-1549173",
+          "cod-1550276",
+          "cod-2010705",
+          "cod-2010746",
+          "cod-2010901",
+          "cod-2011038",
+          "cod-2011241",
+          "cod-2011451",
+          "cod-2011590",
+          "cod-2021199",
+          "cod-2107296",
+          "cod-2108342",
+          "cod-2203173",
+          "cod-2232654",
+          "cod-2241796",
+          "cod-2242657",
+          "cod-2243197",
+          "cod-2243618",
+          "cod-4326074"
+        ],
+        "total_counts": [
+          "cod-1549173",
+          "cod-1550276",
+          "cod-2010543",
+          "cod-2010705",
+          "cod-2010746",
+          "cod-2010825",
+          "cod-2010901",
+          "cod-2011038",
+          "cod-2011241",
+          "cod-2011393",
+          "cod-2011451",
+          "cod-2011590",
+          "cod-2021199",
+          "cod-2021292",
+          "cod-2021310",
+          "cod-2021316",
+          "cod-2107296",
+          "cod-2108342",
+          "cod-2203173",
+          "cod-2232654",
+          "cod-2241796",
+          "cod-2242589",
+          "cod-2242657",
+          "cod-2243197",
+          "cod-2243618",
+          "cod-4326074"
+        ],
+        "element_counts": [
+          "cod-1549173",
+          "cod-1550276",
+          "cod-2010705",
+          "cod-2010746",
+          "cod-2010901",
+          "cod-2011038",
+          "cod-2011241",
+          "cod-2011451",
+          "cod-2011590",
+          "cod-2021199",
+          "cod-2107296",
+          "cod-2108342",
+          "cod-2203173",
+          "cod-2232654",
+          "cod-2241796",
+          "cod-2242657",
+          "cod-2243197",
+          "cod-2243618",
+          "cod-4326074"
+        ],
+        "strict": [
+          "cod-1550276",
+          "cod-2010705",
+          "cod-2010746",
+          "cod-2011038",
+          "cod-2011241",
+          "cod-2011451",
+          "cod-2021199",
+          "cod-2107296",
+          "cod-2203173",
+          "cod-2232654",
+          "cod-2241796",
+          "cod-2242657",
+          "cod-2243197",
+          "cod-2243618",
+          "cod-4326074"
+        ]
+      },
+      "summary": {
+        "phasesmith": {
+          "cases": 35,
+          "correct": 19,
+          "total_non_h_count_correct": 26,
+          "strict_002_angstrom": 15,
+          "hard_timeouts": 0,
+          "median_wall_seconds_all_outcomes": 0.9710552920005284,
+          "p95_wall_seconds_all_outcomes": 3.7842335163149983,
+          "failure_classes": {
+            "correct": 19,
+            "wrong_non_h_counts_or_labels": 12,
+            "no_model": 4
+          },
+          "cases_within_native_resource_cap": 28,
+          "correct_within_native_resource_cap": 19
+        },
+        "shelxt": {
+          "cases": 35,
+          "correct": 13,
+          "total_non_h_count_correct": 29,
+          "strict_002_angstrom": 10,
+          "hard_timeouts": 1,
+          "median_wall_seconds_all_outcomes": 1.0025225830031559,
+          "p95_wall_seconds_all_outcomes": 2.6103017785062548,
+          "failure_classes": {
+            "correct": 13,
+            "wrong_non_h_counts_or_labels": 20,
+            "no_model": 1,
+            "coordinate_mismatch": 1
+          },
+          "cases_within_native_resource_cap": 28,
+          "correct_within_native_resource_cap": 11
+        }
+      },
+      "per_element_counts_correct": 19,
+      "lost_previous": {
+        "structures": [],
+        "total_counts": [],
+        "element_counts": [],
+        "strict": []
+      },
+      "gained_structures": [],
+      "summed_solver_seconds": 41.74060066608945,
+      "summed_wall_seconds": 50.946573622873984,
+      "median_paired_solver_control_over_run": 1.0,
+      "median_paired_wall_control_over_run": 1.0,
+      "repair_work": {
+        "joint_assignment_scores": 0,
+        "joint_assignment_depths": 0,
+        "joint_assignment_fits": 0,
+        "joint_assignment_accepted": 0,
+        "joint_assignment_seconds": 0.0
+      },
+      "repaired_cases": []
+    },
+    "repair": {
+      "case_sets": {
+        "structures": [
+          "cod-1549173",
+          "cod-1550276",
+          "cod-2010705",
+          "cod-2010746",
+          "cod-2010901",
+          "cod-2011038",
+          "cod-2011241",
+          "cod-2011451",
+          "cod-2011590",
+          "cod-2021199",
+          "cod-2107296",
+          "cod-2108342",
+          "cod-2203173",
+          "cod-2232654",
+          "cod-2241796",
+          "cod-2242657",
+          "cod-2243197",
+          "cod-2243618",
+          "cod-4326074"
+        ],
+        "total_counts": [
+          "cod-1549173",
+          "cod-1550276",
+          "cod-2010543",
+          "cod-2010705",
+          "cod-2010746",
+          "cod-2010825",
+          "cod-2010901",
+          "cod-2011038",
+          "cod-2011241",
+          "cod-2011393",
+          "cod-2011426",
+          "cod-2011451",
+          "cod-2011590",
+          "cod-2021199",
+          "cod-2021292",
+          "cod-2021310",
+          "cod-2021316",
+          "cod-2107296",
+          "cod-2108342",
+          "cod-2203173",
+          "cod-2232654",
+          "cod-2241796",
+          "cod-2242589",
+          "cod-2242657",
+          "cod-2243197",
+          "cod-2243618",
+          "cod-4326074"
+        ],
+        "element_counts": [
+          "cod-1549173",
+          "cod-1550276",
+          "cod-2010705",
+          "cod-2010746",
+          "cod-2010901",
+          "cod-2011038",
+          "cod-2011241",
+          "cod-2011451",
+          "cod-2011590",
+          "cod-2021199",
+          "cod-2107296",
+          "cod-2108342",
+          "cod-2203173",
+          "cod-2232654",
+          "cod-2241796",
+          "cod-2242657",
+          "cod-2243197",
+          "cod-2243618",
+          "cod-4326074"
+        ],
+        "strict": [
+          "cod-1550276",
+          "cod-2010705",
+          "cod-2010746",
+          "cod-2011038",
+          "cod-2011241",
+          "cod-2011451",
+          "cod-2021199",
+          "cod-2107296",
+          "cod-2203173",
+          "cod-2232654",
+          "cod-2241796",
+          "cod-2242657",
+          "cod-2243197",
+          "cod-2243618",
+          "cod-4326074"
+        ]
+      },
+      "summary": {
+        "phasesmith": {
+          "cases": 35,
+          "correct": 19,
+          "total_non_h_count_correct": 27,
+          "strict_002_angstrom": 15,
+          "hard_timeouts": 0,
+          "median_wall_seconds_all_outcomes": 1.1260351249948144,
+          "p95_wall_seconds_all_outcomes": 3.8084081578825133,
+          "failure_classes": {
+            "correct": 19,
+            "wrong_non_h_counts_or_labels": 12,
+            "no_model": 4
+          },
+          "cases_within_native_resource_cap": 28,
+          "correct_within_native_resource_cap": 19
+        },
+        "shelxt": {
+          "cases": 35,
+          "correct": 13,
+          "total_non_h_count_correct": 29,
+          "strict_002_angstrom": 10,
+          "hard_timeouts": 1,
+          "median_wall_seconds_all_outcomes": 1.0069024590193294,
+          "p95_wall_seconds_all_outcomes": 2.2576975203759484,
+          "failure_classes": {
+            "correct": 13,
+            "wrong_non_h_counts_or_labels": 20,
+            "no_model": 1,
+            "coordinate_mismatch": 1
+          },
+          "cases_within_native_resource_cap": 28,
+          "correct_within_native_resource_cap": 11
+        }
+      },
+      "per_element_counts_correct": 19,
+      "lost_previous": {
+        "structures": [],
+        "total_counts": [],
+        "element_counts": [],
+        "strict": []
+      },
+      "gained_structures": [],
+      "summed_solver_seconds": 46.619705170043744,
+      "summed_wall_seconds": 55.81950212205993,
+      "median_paired_solver_control_over_run": 0.9592408558858703,
+      "median_paired_wall_control_over_run": 0.9832700715984651,
+      "repair_work": {
+        "joint_assignment_scores": 184318,
+        "joint_assignment_depths": 188,
+        "joint_assignment_fits": 18,
+        "joint_assignment_accepted": 5,
+        "joint_assignment_seconds": 5.192756958
+      },
+      "repaired_cases": [
+        "cod-2021292",
+        "cod-2011426",
+        "cod-2242589"
+      ]
+    }
+  },
+  "count_vector_changes": [
+    {
+      "id": "cod-2011426",
+      "control": {
+        "Br": 16,
+        "Ti": 4,
+        "N": 12,
+        "C": 16
+      },
+      "repair": {
+        "Br": 16,
+        "Ti": 4,
+        "N": 8,
+        "C": 24
+      },
+      "reference": {
+        "Ti": 4,
+        "Br": 16,
+        "N": 4,
+        "C": 28
+      },
+      "old_l1_count_error": 20,
+      "new_l1_count_error": 8,
+      "old_r1": 0.05974847298262502,
+      "new_r1": 0.05016159657275834
+    },
+    {
+      "id": "cod-2021292",
+      "control": {
+        "Cl": 4,
+        "O": 10,
+        "N": 14,
+        "C": 10
+      },
+      "repair": {
+        "Cl": 4,
+        "O": 10,
+        "N": 10,
+        "C": 14
+      },
+      "reference": {
+        "N": 4,
+        "C": 22,
+        "O": 8,
+        "Cl": 4
+      },
+      "old_l1_count_error": 24,
+      "new_l1_count_error": 16,
+      "old_r1": 0.0631468590494645,
+      "new_r1": 0.06070768952282047
+    },
+    {
+      "id": "cod-2242589",
+      "control": {
+        "S": 2,
+        "O": 4,
+        "N": 10,
+        "C": 17
+      },
+      "repair": {
+        "S": 2,
+        "O": 5,
+        "N": 6,
+        "C": 20
+      },
+      "reference": {
+        "S": 2,
+        "O": 6,
+        "N": 3,
+        "C": 22
+      },
+      "old_l1_count_error": 14,
+      "new_l1_count_error": 6,
+      "old_r1": 0.13029980528488433,
+      "new_r1": 0.10395808455087409
+    }
+  ],
+  "paired_models_for_count_error": 31,
+  "paired_model_l1_count_error": {
+    "control": 210,
+    "repair": 182
+  },
+  "all19_retained": true,
+  "all_previous_success_sets_retained": true,
+  "verifier_sha256": "03ba765ba9245179eb421abbcec344575cde8a67de64a39650d6d7dda41d93a0"
+}
