@@ -10,6 +10,11 @@ development versions.
 
 Development release candidate; not yet published.
 
+- Add a typed Rust-only original-frame-to-structure-search coordinator and native
+  HDF5/NPZ/CIF example. Preserve independent Python comparisons and explicit
+  source, resource, callback and cancellation contracts. The MgSiO3 replay
+  recovers the labelled structure; its final R1 differs beyond the frozen parity
+  gate, retained and diagnosed in the native coordinator validation report.
 - Clear repository-wide Ruff lint and formatting; preserve numerical golden data.
 - Correct the Rust minimum to 1.89.0 to match the locked dependency graph and
   add an actual minimum-toolchain CI check. Freeze every named v1 search control

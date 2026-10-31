@@ -128,6 +128,15 @@ errors .0075236/.0045385 Å. The full measured workflow is about 19 s on the
 recorded M4 Pro, not a platform-independent guarantee. The example uses at most
 ten workers per concurrent stage and explicit independent memory budgets.
 
+The [fully Rust coordinator replay](docs/single-crystal-native-validation.md)
+uses the same priors and scientific controls, with all I/O/output native. It
+recovers Mg16 Si16 O48 and passes reduction tolerances in 16.24–16.57 s observed
+full-process time. Small native matrix roundoff changes the retained internal
+polish trajectory: R1 .041128354912261904; the original R1-difference and
+maximum-candidate-coordinate parity gates fail. Keep that qualification separate
+from labelled structure recovery; the existing ADP-bound limitation is not fixed
+by this orchestration change.
+
 Candidate polishing has a documented ADP-bound stagnation limitation; do not
 call every polish converged. The 65-case corpus is now exposed regression data,
 not an untouched holdout. New generalization claims need new untouched evidence.

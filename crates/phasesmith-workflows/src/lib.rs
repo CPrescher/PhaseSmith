@@ -17,6 +17,9 @@
 //! - **Rietveld:** calculation, prepared objective products, structural and
 //!   general refinement, staged recipes, and joint multi-histogram refinement.
 //! - **Quantitative analysis:** validated Hill–Howard phase fractions.
+//! - **Single crystal** (`single-crystal` feature): typed original-count source
+//!   and ordered observer contracts coordinating shared masks, detection,
+//!   indexing/geometry, profiles, scaling and structure search without Python.
 //! - **Infrastructure:** typed parameters, bounds, constraints, residuals,
 //!   cancellation, limits, events, clocks, diagnostics, and checkpoints.
 //!
@@ -32,6 +35,11 @@
 //! state. Result/checkpoint records and structured event diagnostics are the
 //! stable programmatic output; human-readable event messages should not be
 //! parsed.
+//! With `single-crystal`, use `single_crystal::run` for the complete supplied
+//! orthorhombic recipe, a `single_crystal::FrameSource` for original counts and a
+//! `single_crystal::Observer` for immutable stage products. File adapters and
+//! serialization stay in the host; the facade's `single_crystal_workflow`
+//! example supplies bundled HDF5 and native numeric/CIF output.
 //!
 //! # Application integration
 //!

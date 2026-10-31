@@ -36,7 +36,9 @@ The `hdf5` feature bundles the same native filters as the
 Rust/C/CMake toolchain; running the resulting executable needs no Python or
 installed HDF5/filter package. The small controls, source-identity and null-rotation
 assets are bundled with the Cargo example and checked against their frozen
-repository counterparts by packaging tests.
+repository counterparts by packaging tests. Build this example from the Git
+checkout/source archive or the Rust facade's crate source. The Python source
+distribution contains its extension dependencies and omits the Rust facade.
 
 An optional benchmark observer verifies all registered source files and grades
 saved candidates only after the executable exits:
@@ -149,7 +151,7 @@ lower bound. The frozen R1-difference gate remains failed; no tolerance, phasing
 seed, scientific control or input was tuned to remove that failure.
 
 The measured timing, strict gate results, stage breakdown and source/artifact
-provenance are recorded in the native coordinator validation report. A numerical
+provenance are recorded in the [native coordinator validation report](single-crystal-native-validation.md). A numerical
 R1 target does not establish uniqueness, absolute intensity accuracy or a
 converged structural refinement. The endpoint remains structure search and
 candidate assessment.
