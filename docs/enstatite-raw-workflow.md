@@ -135,3 +135,11 @@ cap for potentially broader new q<=2 coverage without a reference count. Seed,
 cycle/time budgets and scientific gate thresholds are unchanged. The frozen
 version-1 protocol/run are retained; the small record is
 `benchmarks/enstatite-raw-workflow-attempts-macos.json`.
+
+Version 2 completed integration of 7,286 target crossings and learned 278
+training profiles, then stopped before scaling/search: nine already EDGE-flagged
+centers were within the predictor's half-pixel footprint but outside the scaling
+mesh's pixel-center rectangle. Version 3 retains those rows in edge diagnostics
+and omits only those pre-flagged centers from profile learning/reduction. No
+unflagged measurement, mesh bound, scientific threshold or atomic target selects
+this repair. Earlier outcomes and both immutable protocols are retained.

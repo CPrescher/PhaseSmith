@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v2.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v3.json"
 
 
 def digest(path):
@@ -137,6 +137,22 @@ def family_partition(hkl, rotations):
     )
     _, groups = np.unique(canonical, axis=0, return_inverse=True)
     return canonical, groups, folds
+
+
+def interior_target_rows(centres, flags, shape):
+    """Bridge a flagged detector footprint to the scaling mesh's center domain.
+
+    The predictor supports half-pixel edges; the mesh is defined on pixel
+    centers. Only pre-existing EDGE rows may be omitted by this adapter.
+    """
+    from phasesmith.experimental.integration import IntegrationFlag
+
+    xy = np.asarray(centres)[:, :2]
+    height, width = shape
+    inside = (xy[:, 0] >= 0) & (xy[:, 0] <= width - 1) & (xy[:, 1] >= 0) & (xy[:, 1] <= height - 1)
+    if np.any((~inside) & ((np.asarray(flags) & int(IntegrationFlag.EDGE)) == 0)):
+        raise ValueError("unflagged reflection center outside scaling mesh domain")
+    return inside
 
 
 def aligned_setting(candidates, cell, selection, training):
@@ -485,7 +501,18 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes):
             raise ValueError("source frame bytes changed between detection and integration")
         # All predicted domains have already excluded each other's backgrounds
         # and flagged overlapping apertures. Reduce only the target domain.
-        observations = select_observations(observations, np.arange(target_count, dtype=np.int64))
+        interior = interior_target_rows(
+            p.values[:target_count], observations.summation.flags[:target_count], shape
+        )
+        outside_ids = np.flatnonzero(~interior)
+        np.savez_compressed(
+            out / "edge-exclusions.npz",
+            hkl=p.hkl[outside_ids],
+            predicted=p.values[outside_ids],
+            aperture=observations.summation.values[outside_ids],
+            flags=observations.summation.flags[outside_ids],
+        )
+        observations = select_observations(observations, np.flatnonzero(interior))
         target_hkl = observations.summation.hkl
         _, _, folds = family_partition(target_hkl, packet["rotations"])
         refs = folds != 0
@@ -550,6 +577,8 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes):
             out / "reduction.json",
             dict(
                 predictions=target_count,
+                reduction_predictions=len(target_hkl),
+                flagged_edge_centres_excluded=len(outside_ids),
                 all_domain_predictions=len(p.hkl),
                 competing_domains=len(competitors),
                 used=int(valid.sum()),

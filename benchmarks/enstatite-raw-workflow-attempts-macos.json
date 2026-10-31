@@ -36,6 +36,17 @@
       },
       "reference_assessment": "not_executed",
       "policy": "Retained unchanged; no raw intensity or atomic comparison selected the follow-up."
+    },
+    {
+      "protocol": "validation/enstatite-raw-workflow-v2.json",
+      "implementation_commit": "4989c34",
+      "outcome": "raw integration and profile learning complete; stopped before empirical scaling/search",
+      "reason": "nine already EDGE-flagged predicted centres lie in the half-pixel footprint outside the scaling mesh pixel-centre domain",
+      "target_predictions": 7286,
+      "profile_teachers": 278,
+      "flagged_edge_centres": 9,
+      "frame_hashes_equal": true,
+      "reference_assessment": "not_executed"
     }
   ]
 }
