@@ -395,7 +395,7 @@
   },
   "cli_wall_seconds": 37.8,
   "previous_cli_wall_seconds": 42.49,
-  "previous_worker_seconds": 33.905202791967895,
+  "previous_worker_seconds": 33.905235290993005,
   "frame_execution": {
     "requested_workers": 4,
     "maximum_in_flight_frames": 4,
