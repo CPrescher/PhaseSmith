@@ -12,6 +12,20 @@ not part of the numerical library.
 
 ## Current implementation status
 
+Experimental grain search now additionally offers **Row search (DAFi-based)**
+through `find_grains(..., method="rows", row_options=RowSearchOptions(...))`.
+The selected independent published-algorithm kernel is imported verbatim into
+the separate `phasesmith-row-search` crate; the existing FFT path stays default.
+The exact ordered training grouping is retained separately from subsequent
+per-group lattice inference, training-only consolidation and unchanged reserved
+validation. `group_rows` exposes the exact grouping without indexing. The
+selected wrapper enables the sparse naive/smart crossover at 2,048 unique
+points, four projection offsets, relative gaps, eight workers and 512 MiB total
+cache. Kernel defaults and arithmetic are unchanged. No original DAFi source
+or executable, external checkout, SciPy or spglib is used at runtime. See
+`docs/experimental-row-search.md` and `docs/row-search-provenance.json` for the
+source hashes, equations, integration boundary and frozen parity checks.
+
 The same opt-in pool now parallelizes independent polishing/trimmed fits,
 observation/alias/simultaneous-update fits, final training-only forward fits,
 reciprocal-branch work and coherent-parent recovery. Each task has one native

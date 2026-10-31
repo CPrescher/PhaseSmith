@@ -693,10 +693,20 @@ dependencies = [
  "phasesmith-io",
  "phasesmith-model",
  "phasesmith-persistence",
+ "phasesmith-row-search",
  "phasesmith-spots",
  "phasesmith-validation",
  "phasesmith-workflows",
  "pyo3",
+ "serde_json",
+]
+
+[[package]]
+name = "phasesmith-row-search"
+version = "0.7.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

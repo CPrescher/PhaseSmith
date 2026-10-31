@@ -750,7 +750,9 @@ def _finish(
     )
 
 
-def find_grains(points, *, training=None, options=None, progress=None):
+def find_grains(
+    points, *, training=None, options=None, progress=None, method="fft", row_options=None
+):
     """Discover up to max_grains competing lattices; validate a frozen pool.
 
     Labels are one-based candidate IDs; zero means residual or ambiguous.
@@ -758,7 +760,15 @@ def find_grains(points, *, training=None, options=None, progress=None):
     All discovery, HKL inference, refinement and selection use training only.
     `progress(done, total)` is a synchronous observer between discovery rounds;
     exceptions propagate, allowing cancellation without GUI dependencies.
+    method="rows" selects Row search (DAFi-based) grouping before per-group
+    lattice inference and the existing frozen-pool validation. Its exact raw
+    grouping is retained in result.row_grouping; final lattice ownership is
+    separate. The default FFT path is unchanged.
     """
+    if method not in ("fft", "rows"):
+        raise ValueError("method must be 'fft' or 'rows'")
+    if method == "fft" and row_options is not None:
+        raise ValueError("row_options requires method='rows'")
     o = GrainSearchOptions() if options is None else options
     if not isinstance(o, GrainSearchOptions):
         raise TypeError("options must be GrainSearchOptions")
@@ -776,6 +786,17 @@ def find_grains(points, *, training=None, options=None, progress=None):
         raise ValueError("insufficient training or held-out positions")
     if not hasattr(_core, "ExperimentalLatticeEngine"):
         raise RuntimeError("FFT grain search requires a PhaseSmith experimental-spots build")
+    if method == "rows":
+        from .row_grains import discover_rows
+
+        models, labels, vectors, scores, diagnostics, grouping = discover_rows(
+            fit, o, row_options, progress
+        )
+        result = _finish(
+            q, train, models, labels, vectors, scores, diagnostics, o, progress,
+            method="row_grains",
+        )
+        return replace(result, row_grouping=grouping)
     models, labels, vectors, scores, diagnostics = _discover(fit, o, progress)
     return _finish(q, train, models, labels, vectors, scores, diagnostics, o, progress)
 
