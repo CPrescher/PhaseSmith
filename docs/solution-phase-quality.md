@@ -225,9 +225,9 @@ does not by itself establish coordinate recovery.
 
 Retained reports:
 
-- [Complete new campaign](../benchmarks/structure-solution-phase-quality-macos.json)
-- [Complete same-build control](../benchmarks/structure-solution-phase-control-macos.json)
-- [Verified case-by-case comparison](../benchmarks/structure-solution-phase-comparison-macos.json)
+- [Complete new campaign](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-phase-quality-macos.json)
+- [Complete same-build control](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-phase-control-macos.json)
+- [Verified case-by-case comparison](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-phase-comparison-macos.json)
 
 The implementation is therefore retained as an explicit experimental option,
 **not promoted to the default or described as a recovery/performance gain**.
@@ -258,7 +258,7 @@ and 7.463 microseconds for a fused quality value/gradient evaluation. Their
 95% estimate intervals are 604.06–606.84 and 7.428–7.508 microseconds. These
 small kernel costs do not predict the whole-search speed: the phase-first
 schedule demonstrably spends more time before successful model recovery.
-[Raw kernel samples and provenance](../benchmarks/structure-solution-phase-kernels-macos.json)
+[Raw kernel samples and provenance](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-phase-kernels-macos.json)
 are retained with the full campaigns. No older golden data or benchmark result
 has been regenerated or replaced.
 

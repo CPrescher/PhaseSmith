@@ -1,5 +1,12 @@
 # Experimental rotation-series positions
 
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
 This is a position-first peak hunt, before cell finding or intensity integration.
 It is private branch work under the existing `experimental-spots` feature, with
 no change to standard builds, powder APIs or release dependencies. The UI and file
@@ -8,7 +15,7 @@ loaders; the dependency-free spot crate owns the linking and centroid kernels.
 
 ## Input and angle conventions
 
-`phasesmith.experimental.rotation.locate_series(loader, omega_bounds)` reads each
+`phasesmith.single_crystal.rotation.locate_series(loader, omega_bounds)` reads each
 frame once. Images/masks obey the existing experimental spot contract. The caller
 supplies an explicit floating array of exposure start/end bounds in degrees,
 shape `(n_frames,2)`. Both forward and reverse monotonic scans are supported.

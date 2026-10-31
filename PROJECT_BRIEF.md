@@ -2,7 +2,7 @@
 
 ## Purpose
 
-PhaseSmith is a modern, open-source powder-diffraction computation
+PhaseSmith is a modern, open-source powder and single-crystal diffraction computation
 library. Its numerical kernels are written in Rust and exposed through a small,
 typed Python API. The first product layer is a trustworthy and fast
 powder-profile calculator. Refinement orchestration follows only after the
@@ -11,6 +11,25 @@ refinement workflow. Project-file management and graphical user interfaces are
 not part of the numerical library.
 
 ## Current implementation status
+
+Single-crystal analysis is promoted for the 0.8 development release. Canonical
+Python implementations live in `phasesmith.single_crystal` with explicit exports
+and lazy submodule ownership. Old experimental imports are warning-backed aliases
+to the exact same module/classes until 1.0; validation references remain independent.
+Ordinary Python builds include spots, rows, solution and bundled HDF5. The Rust
+facade defaults to `single-crystal` with focused `spots`, `solution`, `row-search`,
+a tested minimal opt-out, optional `hdf5` and legacy feature aliases. Implementation
+crates now have public release metadata/notices, outside phasesmith-core.
+A named, immutable `ElementSearchConfig.validated_v1` explicitly expands the
+reviewed controls; low-level defaults and arithmetic remain unchanged. New solution
+summaries use a versioned supported schema with explicit v4/v5 metadata migration
+and optional legacy output. Existing profile/reduction formats remain readable;
+implementation hashes intentionally invalidate old numerical caches. Python
+orchestration still exists; promotion does not complete a Rust-only CLI or add
+standalone structure refinement. Supplied priors, bounded coverage, conditional
+uncertainties and ADP-bound candidate-polishing stagnation remain documented.
+See `docs/single-crystal.md` and `docs/release-candidate-0.8.md`. Frozen v24 compares
+the ordinary installed package against v11/v23 without changing scientific inputs.
 
 Frame preparation now has a native original-u32 batch API: in-place declared
 orientation, one native-endian SHA256, verification against every inferred

@@ -1,5 +1,12 @@
 # Experimental FFT grain search
 
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
 An opt-in alternative is now available as **Row search (DAFi-based)**:
 `find_grains(q, training=mask, method="rows", row_options=RowSearchOptions(...))`.
 It groups training reflections before per-group lattice inference and the same
@@ -8,7 +15,7 @@ frozen-pool validation. `result.row_grouping` retains its exact raw output;
 searches remain FFT. See [Row search](experimental-row-search.md) for settings,
 attribution and the distinction between grouping and final indexed ownership.
 
-`phasesmith.experimental.grains.find_grains(q, training=mask, options=...)`
+`phasesmith.single_crystal.grains.find_grains(q, training=mask, options=...)`
 uses **unindexed reciprocal peak positions** (NumPy `(N,3)`, inverse Å, no
 2π factor). It infers integer HKLs, direct lattice bases and competing grain
 orientations. It accepts no input cell, HKLs, material, composition or symmetry.
@@ -181,7 +188,7 @@ The independent NumPy `grains_reference.ensemble_evidence` checks the equations.
 No GSAS-II oracle covers positional multigrain discovery.
 
 ```python
-from phasesmith.experimental.grains import GrainSearchOptions, find_grains_ensemble
+from phasesmith.single_crystal.grains import GrainSearchOptions, find_grains_ensemble
 
 result = find_grains_ensemble(
     q, training=training,
@@ -303,7 +310,7 @@ derivatives, and their independent NumPy references are unchanged; no new
 profile value/Jacobian or GSAS-II oracle boundary is involved.
 
 ```python
-from phasesmith.experimental.grains import (
+from phasesmith.single_crystal.grains import (
     GrainConditioningOptions, GrainSearchOptions, find_grains_ensemble,
 )
 
@@ -924,7 +931,7 @@ intensity normalization/moment or GSAS-II profile-oracle tests are inapplicable.
 
 ## Retaining fitted training branches
 
-An opt-in `phasesmith.experimental.retention.merge_fitted_training_pools`
+An opt-in `phasesmith.single_crystal.retention.merge_fitted_training_pools`
 combines **already qualified and fitted global-training pools**. It accepts
 NumPy q positions, fitted direct bases and observation charts, with no chemistry,
 reference cells, acceptance flags or reserved coordinates. The caller must first
@@ -1332,7 +1339,7 @@ guard. `spawn` starts fresh interpreters without forking existing Rayon/native
 worker pools. The standard library is the only scheduling dependency.
 
 ```python
-from phasesmith.experimental.grains import find_grains_ensemble
+from phasesmith.single_crystal.grains import find_grains_ensemble
 
 if __name__ == "__main__":
     result = find_grains_ensemble(points, ensemble_workers=8, **fixed_search_inputs)

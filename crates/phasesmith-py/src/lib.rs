@@ -58,37 +58,37 @@ use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
-#[cfg(feature = "experimental-spots")]
+#[cfg(feature = "spots")]
 mod empirical_fit;
+#[cfg(feature = "spots")]
 mod fft;
 mod fit_diagnostics;
-#[cfg(feature = "experimental-spots")]
+#[cfg(feature = "spots")]
 mod frame_input;
-#[cfg(feature = "experimental-spots")]
+#[cfg(feature = "spots")]
 mod frame_validity;
-#[cfg(feature = "experimental-spots")]
+#[cfg(feature = "spots")]
 mod geometry_refinement;
-#[cfg(feature = "experimental-spots")]
 #[cfg(feature = "hdf5")]
 mod hdf5;
-#[cfg(feature = "experimental-spots")]
+#[cfg(feature = "spots")]
 mod intensity_model;
 mod numeric_archive;
-#[cfg(feature = "experimental-spots")]
+#[cfg(feature = "spots")]
 mod omega_background;
 mod pawley;
 mod profile_estimation;
-#[cfg(feature = "experimental-spots")]
+#[cfg(feature = "spots")]
 mod profiles;
 mod project_bundle;
 mod rietveld;
-#[cfg(feature = "experimental-spots")]
+#[cfg(feature = "row-search")]
 mod rows;
-#[cfg(feature = "experimental-spots")]
+#[cfg(feature = "spots")]
 mod scan_scaling;
-#[cfg(feature = "experimental-solution")]
+#[cfg(feature = "solution")]
 mod solution;
-#[cfg(feature = "experimental-spots")]
+#[cfg(feature = "spots")]
 mod spots;
 mod tof_lebail;
 mod tof_multibank;
@@ -4288,31 +4288,31 @@ fn run_native_validation(py: Python<'_>, runner: String, directory: String) -> P
 #[pymodule]
 #[allow(clippy::too_many_lines)] // Explicit registration of the extension's independent modules.
 fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
-    #[cfg(feature = "experimental-solution")]
+    #[cfg(feature = "solution")]
     solution::register(module)?;
-    #[cfg(feature = "experimental-spots")]
+    #[cfg(feature = "spots")]
     spots::register(module)?;
-    #[cfg(feature = "experimental-spots")]
+    #[cfg(feature = "spots")]
     frame_validity::register(module)?;
-    #[cfg(feature = "experimental-spots")]
+    #[cfg(feature = "spots")]
     frame_input::register(module)?;
-    #[cfg(feature = "experimental-spots")]
+    #[cfg(feature = "spots")]
     geometry_refinement::register(module)?;
     #[cfg(feature = "hdf5")]
     hdf5::register(module)?;
-    #[cfg(feature = "experimental-spots")]
+    #[cfg(feature = "spots")]
     profiles::register(module)?;
-    #[cfg(feature = "experimental-spots")]
+    #[cfg(feature = "spots")]
     intensity_model::register(module)?;
-    #[cfg(feature = "experimental-spots")]
+    #[cfg(feature = "spots")]
     empirical_fit::register(module)?;
-    #[cfg(feature = "experimental-spots")]
+    #[cfg(feature = "spots")]
     scan_scaling::register(module)?;
-    #[cfg(feature = "experimental-spots")]
+    #[cfg(feature = "spots")]
     omega_background::register(module)?;
-    #[cfg(feature = "experimental-spots")]
+    #[cfg(feature = "spots")]
     fft::register(module)?;
-    #[cfg(feature = "experimental-spots")]
+    #[cfg(feature = "row-search")]
     rows::register(module)?;
     module.add_class::<NativeExecutionPolicy>()?;
     module.add_class::<NativePreparedXrayScattering>()?;

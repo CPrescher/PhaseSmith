@@ -1,6 +1,13 @@
 # Experimental primitive and Bravais comparison
 
-`phasesmith.experimental.cell_comparison.compare_cells(q, inferred_basis,
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
+`phasesmith.single_crystal.cell_comparison.compare_cells(q, inferred_basis,
 training=mask, ...)` follows blind lattice discovery. It accepts a **previously
 inferred, training-derived** direct basis, not a supplied material cell, and
 unindexed Cartesian reciprocal positions (NumPy N×3, inverse Å, no 2π). Optional
@@ -9,7 +16,7 @@ fits. Intensity, chemical identity, space group and reference HKLs are absent.
 This is opt-in under `experimental-spots`; no standard release or powder API changes.
 
 ```python
-from phasesmith.experimental.cell_comparison import compare_cells, CellComparisonOptions
+from phasesmith.single_crystal.cell_comparison import compare_cells, CellComparisonOptions
 
 result = compare_cells(
     q,

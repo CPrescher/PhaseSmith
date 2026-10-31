@@ -6,6 +6,35 @@ development versions.
 
 ## Unreleased
 
+## 0.8.0
+
+Development release candidate; not yet published.
+
+- Promote single-crystal diffraction to the normal package. Ordinary Python
+  builds include native spot detection, masking, lattice/grain search, geometry,
+  learned profile integration, empirical scaling and structure search. The
+  canonical Python API is `phasesmith.single_crystal`, with explicit submodules
+  and exports. Old experimental imports forward to the same objects with
+  deprecation warnings until 1.0; module CLIs continue to delegate.
+- Enable the Rust facade's `single-crystal` capability by default. Keep focused
+  `spots`, `solution`, `row-search` features, `--no-default-features`, optional
+  bundled `hdf5`, and old experimental feature aliases. Prepare the implementation
+  crates for publication alongside the facade.
+- Add an explicit versioned element-search configuration. Preserve low-level
+  algorithm defaults and record the named configuration's complete expansion.
+  New solution summaries use `phasesmith.single-crystal-solution.v1`, with explicit
+  v4/v5 migration and legacy summary output. Existing profile-case and reduction
+  archive schemas remain readable and keep their historical identifiers.
+- Include the measured external-data MgSiO3 raw-frame-to-search example with
+  bounded native frame preparation and optional source-bound decoded caching.
+  Large data remain external. The validated v23 workflow takes 18.56–18.65 s
+  on the measured Apple M4 Pro and reproduces the v11 numerical results bitwise.
+
+Structure search uses supplied cell/symmetry/element priors and reports bounded
+coverage and termination. Candidate polishing is internal to search and retains
+its documented ADP-bound stagnation limitation. No standalone single-crystal
+structure-refinement workflow or universal structure-recovery claim is added.
+
 ## 0.7.0
 
 - Make the independent Python FCJ and wavelength-component reference use scalar

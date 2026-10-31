@@ -222,7 +222,7 @@ def test_portfolio_metadata_output_and_cancellation(tmp_path):
     assert all(t.completed_cycles == 8 for t in result.phasing_trials)
     out = write_solution(result, tmp_path / "portfolio")
     record = json.loads((out / "result.json").read_text())
-    assert record["schema"] == "phasesmith.experimental-solution.v4"
+    assert record["schema"] == "phasesmith.single-crystal-solution.v1"
     assert record["phasing_trials"][1]["hybrid_m"] == 3
     token = SolutionCancellation()
     token.cancel()

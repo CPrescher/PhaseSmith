@@ -1,19 +1,25 @@
 # Row search (DAFi-based)
 
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
 This opt-in experimental alternative groups unindexed reciprocal reflections
 using equidistant rows. Algorithm credit belongs to Aslandukov et al. (2022),
 [DOI 10.1107/S1600576722008081](https://doi.org/10.1107/S1600576722008081).
 The implementation follows the cited publication.
 
-Build with `maturin develop --release --features experimental-spots`. The
+Build with `maturin develop --release --features spots`. The
 normal package build remains feature-gated. No external checkout, executable,
 file format, SciPy, spglib or process-global thread setting is required.
 
 ## API and ownership
 
 ```python
-from phasesmith.experimental.grains import GrainSearchOptions, find_grains
-from phasesmith.experimental.rows import RowSearchOptions, group_rows
+from phasesmith.single_crystal.grains import GrainSearchOptions, find_grains
+from phasesmith.single_crystal.rows import RowSearchOptions, group_rows
 
 # Exact grouping of every supplied coordinate, without cell inference.
 grouping = group_rows(q, options=RowSearchOptions(workers=8))
@@ -83,7 +89,7 @@ Both naive pair voting and smart row nomination are published methods. The
 size crossover is an engineering policy. The fixed histogram and independent
 projection/gap interpretations remain documented limitations, not recovered
 private DAFi behavior. The independent readable NumPy reference is
-`phasesmith.experimental.rows_reference`; it never calls Rust.
+`phasesmith.single_crystal.rows_reference`; it never calls Rust.
 
 `cache_megabytes` is the total retained-payload budget in binary MiB, not RSS
 and not a per-worker amount. Zero disables it. `cache_unlimited=True` removes

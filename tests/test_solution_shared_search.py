@@ -198,7 +198,7 @@ def test_infers_counts_and_multiple_orbits_without_composition(symbol, counts, t
             best = min(best, max(errors))
     assert best < 1e-5
     record = result.to_record()
-    assert record["schema"] == "phasesmith.experimental-solution.v5"
+    assert record["schema"] == "phasesmith.single-crystal-solution.v1"
     assert record["composition_source"] == "inferred_shared_orbit_search"
     assert record["input_elements"] == ["Fe", "O"]
     write_solution(result, tmp_path / "output")

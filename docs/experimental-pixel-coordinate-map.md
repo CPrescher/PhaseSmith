@@ -1,5 +1,12 @@
 # Experimental pixel coordinate maps
 
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
 `PanelGeometry` retains the native affine source plane and optionally accepts
 an application-owned `pixel_map`. The native Rust reciprocal, Ewald projection
 and fused analytical derivative kernels are unchanged. Camera interpretation,

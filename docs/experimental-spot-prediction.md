@@ -1,5 +1,12 @@
 # Experimental rotation prediction and positional refinement
 
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
 This adds no material/structure prior, space-group assignment, intensity model or
 standard-release API. It consumes the **blindly inferred** lattice and tentative
 HKLs from `experimental.indexing`. Instrument geometry, wavelength, omega-zero

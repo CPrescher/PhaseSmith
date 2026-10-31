@@ -1,5 +1,12 @@
 # Experimental structure solution from integrated HKL data
 
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
 This opt-in capability accepts **externally integrated and corrected single-crystal
 X-ray intensities**, independently of PhaseSmith's detector workflow. It is a
 first implementation of published charge-flipping methods, not a claim of
@@ -100,8 +107,8 @@ The default powder build and stable public API remain unchanged.
 Build the experimental feature in a development environment:
 
 ```sh
-maturin develop --release --features experimental-solution
-python -m phasesmith.experimental.solution sample.hkl \
+maturin develop --release --features solution
+python -m phasesmith.single_crystal.solution sample.hkl \
   --cell 4.913 4.913 5.405 90 90 120 \
   --space-group 'P 31 2 1' --composition Si=3 O=6 \
   --output runs/sample-solution
@@ -127,7 +134,7 @@ candidate diagnostics. The input HKL file is never overwritten.
 from phasesmith.crystallography import UnitCell
 from phasesmith.io.hkl import read_hkl
 from phasesmith.io.space_groups import space_group_by_symbol
-from phasesmith.experimental.solution import SolutionOptions, solve_structure
+from phasesmith.single_crystal.solution import SolutionOptions, solve_structure
 
 result = solve_structure(
     read_hkl("sample.hkl"),
@@ -169,7 +176,7 @@ phasing. Cell, supplied symmetry and composition are still required. See
 [equations and measured comparison](solution-dual-space.md).
 
 ```sh
-python -m phasesmith.experimental.solution sample.hkl \
+python -m phasesmith.single_crystal.solution sample.hkl \
   --cell 4.913 4.913 5.405 90 90 120 \
   --space-group 'P 31 2 1' --composition Si=3 O=6 \
   --phasing dual_space --output runs/sample-dual-space

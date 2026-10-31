@@ -4,8 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "phasesmith"
-version = "0.7.0"
-description = "Fast, validated powder-diffraction profile calculations"
+version = "0.8.0"
+description = "Powder and single-crystal diffraction calculations in Rust and Python"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "PhaseSmith contributors" }]
@@ -36,8 +36,8 @@ Issues = "https://github.com/CPrescher/PhaseSmith/issues"
 phasesmith = "phasesmith.cli:main"
 
 [project.optional-dependencies]
-test = ["pytest>=8", "jsonschema>=4.18", "gemmi>=0.7.5,<0.8", "mpmath>=1.3,<2"]
-dev = ["pytest>=8", "jsonschema>=4.18", "ruff>=0.12", "gemmi>=0.7.5,<0.8", "mpmath>=1.3,<2"]
+test = ["scipy>=1.11", "pytest>=8", "jsonschema>=4.18", "gemmi>=0.7.5,<0.8", "mpmath>=1.3,<2"]
+dev = ["scipy>=1.11", "pytest>=8", "jsonschema>=4.18", "ruff>=0.12", "gemmi>=0.7.5,<0.8", "mpmath>=1.3,<2"]
 refinement = ["scipy>=1.11"]
 masking = []  # Native Rust masking; no numerical Python dependency.
 cif = ["gemmi>=0.7.5,<0.8"]
@@ -47,7 +47,7 @@ single-crystal-example = ["scipy>=1.11", "gemmi>=0.7.5,<0.8"]
 manifest-path = "crates/phasesmith-py/Cargo.toml"
 python-source = "python"
 module-name = "phasesmith._core"
-features = ["pyo3/extension-module"]
+features = ["pyo3/extension-module", "hdf5"]
 include = [{ path = "skills/phasesmith-ai-workflows/**/*", format = "sdist" }]
 
 [tool.pytest.ini_options]

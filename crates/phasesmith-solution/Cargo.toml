@@ -1,15 +1,18 @@
 [package]
 name = "phasesmith-solution"
-description = "Experimental single-crystal structure solution from corrected intensities"
+description = "single-crystal structure solution from corrected intensities"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-publish = false
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+readme.workspace = true
 
 [dependencies]
-phasesmith-execution = { version = "0.7.0", path = "../phasesmith-execution" }
-phasesmith-crystallography = { version = "0.7.0", path = "../phasesmith-crystallography" }
+phasesmith-execution = { version = "0.8.0", path = "../phasesmith-execution" }
+phasesmith-crystallography = { version = "0.8.0", path = "../phasesmith-crystallography" }
 rustfft = "=6.4.1"
 ndarray = { version = "=0.17.2", default-features = false, features = ["std"] }
 

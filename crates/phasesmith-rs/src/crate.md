@@ -1,7 +1,7 @@
 # `PhaseSmith`
 
 `PhaseSmith` is a native Rust library for powder-diffraction profile calculation,
-crystallography, Le Bail extraction, Rietveld refinement, and versioned project
+single-crystal detection/integration/structure search, crystallography, Le Bail extraction, Rietveld refinement, and versioned project
 persistence. This facade is the recommended dependency for applications. It
 exposes the focused implementation crates under one version without embedding
 Python, `PyO3`, a GUI toolkit, or a process runtime.
@@ -22,6 +22,9 @@ and does not need a Python interpreter or sidecar.
 | Run Le Bail, Rietveld, or quantitative workflows | [`workflows`] |
 | Save native projects and write stable reports | [`persistence`] |
 | Bound worker threads for application integration | [`execution`] |
+| Analyze single-crystal detector data | `spots` (default capability) |
+| Group equidistant reciprocal rows | `row_search` (default capability) |
+| Search structures from corrected intensities | `solution` (default capability) |
 
 The [`guide`] module adds task-oriented explanations that span those crate
 boundaries:
@@ -114,3 +117,10 @@ refinements build on the same kernels rather than reproducing their formulas.
 intentional, but Rust type names and composition APIs may still evolve between
 minor releases. Commit `Cargo.lock` in applications and consult the versioned
 [PhaseSmith documentation](https://phasesmith.readthedocs.io/) when upgrading.
+
+
+Single-crystal capabilities are enabled by default. `default-features = false`
+retains a minimal facade; `spots`, `solution`, `row-search` can be selected
+individually. `hdf5` is optional and builds bundled detector-frame input.
+The pre-0.8 experimental feature names remain aliases. Candidate polishing is
+internal to search; there is no standalone single-crystal refinement workflow.

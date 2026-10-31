@@ -1,5 +1,11 @@
 # Proposed single-crystal public API
 
+**Historical preparation record.** The 0.8 implementation now follows the
+[supported single-crystal guide](single-crystal.md). The evidence, blockers and
+proposals below describe their recorded baseline; current implementation and
+validation are tracked in the [0.8 release candidate](release-candidate-0.8.md).
+
+
 Status: promotion proposal, 31 October 2026. These imports do not exist yet.
 The reviewed implementation baseline is `54784c5`. See the
 [promotion audit](single-crystal-promotion.md) for evidence and release gates.

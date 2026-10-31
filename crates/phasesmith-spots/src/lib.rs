@@ -1,4 +1,4 @@
-//! Experimental, structure-independent detector spot measurements.
+//! Structure-independent single-crystal detector and profile measurements.
 //!
 //! Native and deterministic; detector kernels are single-threaded. The opt-in
 //! FFT grain search uses a bounded private Rayon pool and `RustFFT`. No file

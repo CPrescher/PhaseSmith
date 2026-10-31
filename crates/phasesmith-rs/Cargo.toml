@@ -1,6 +1,6 @@
 [package]
 name = "phasesmith"
-description = "Validated powder-diffraction calculation and refinement library"
+description = "Powder and single-crystal diffraction calculation and analysis library"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -13,22 +13,29 @@ keywords = ["diffraction", "rietveld", "crystallography", "powder", "science"]
 categories = ["science"]
 
 [dependencies]
-phasesmith-hdf5 = { version = "0.7.0", path = "../phasesmith-hdf5", optional = true }
-phasesmith-solution = { version = "0.7.0", path = "../phasesmith-solution", optional = true }
-phasesmith-spots = { version = "0.7.0", path = "../phasesmith-spots", optional = true }
-phasesmith-core = { version = "0.7.0", path = "../phasesmith-core" }
-phasesmith-crystallography = { version = "0.7.0", path = "../phasesmith-crystallography" }
-phasesmith-engine = { version = "0.7.0", path = "../phasesmith-engine" }
-phasesmith-execution = { version = "0.7.0", path = "../phasesmith-execution" }
-phasesmith-io = { version = "0.7.0", path = "../phasesmith-io" }
-phasesmith-model = { version = "0.7.0", path = "../phasesmith-model" }
-phasesmith-persistence = { version = "0.7.0", path = "../phasesmith-persistence" }
-phasesmith-workflows = { version = "0.7.0", path = "../phasesmith-workflows" }
+phasesmith-row-search = { version = "0.8.0", path = "../phasesmith-row-search", optional = true }
+phasesmith-hdf5 = { version = "0.8.0", path = "../phasesmith-hdf5", optional = true }
+phasesmith-solution = { version = "0.8.0", path = "../phasesmith-solution", optional = true }
+phasesmith-spots = { version = "0.8.0", path = "../phasesmith-spots", optional = true }
+phasesmith-core = { version = "0.8.0", path = "../phasesmith-core" }
+phasesmith-crystallography = { version = "0.8.0", path = "../phasesmith-crystallography" }
+phasesmith-engine = { version = "0.8.0", path = "../phasesmith-engine" }
+phasesmith-execution = { version = "0.8.0", path = "../phasesmith-execution" }
+phasesmith-io = { version = "0.8.0", path = "../phasesmith-io" }
+phasesmith-model = { version = "0.8.0", path = "../phasesmith-model" }
+phasesmith-persistence = { version = "0.8.0", path = "../phasesmith-persistence" }
+phasesmith-workflows = { version = "0.8.0", path = "../phasesmith-workflows" }
 
 [lints]
 workspace = true
 
 [features]
+default = ["single-crystal"]
+single-crystal = ["spots", "solution", "row-search"]
 hdf5 = ["dep:phasesmith-hdf5"]
-experimental-solution = ["dep:phasesmith-solution"]
-experimental-spots = ["dep:phasesmith-spots"]
+spots = ["dep:phasesmith-spots"]
+solution = ["dep:phasesmith-solution"]
+row-search = ["dep:phasesmith-row-search"]
+# Pre-0.8 build commands remain valid; use capability names in new consumers.
+experimental-spots = ["spots", "row-search"]
+experimental-solution = ["solution"]

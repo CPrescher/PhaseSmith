@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import inspect
 import itertools
 import json
 import os
@@ -25,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v23.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v24.json"
 
 
 def digest(path):
@@ -109,7 +108,7 @@ class RawFrames:
         self.native_preparation_seconds = 0.0
         workers = self.execution.get("native_preparation_workers", 0)
         if workers:
-            from phasesmith.experimental.frame_input import preparation_plan
+            from phasesmith.single_crystal.frame_input import preparation_plan
 
             self.native_plan = preparation_plan(
                 self.reader.shape[1:],
@@ -198,7 +197,7 @@ def exposure_bounds(indices, acquisition):
 
 def poni_geometry(path, pixel1, pixel2, axis):
     """Use the existing validated undistorted PONI-plane conversion."""
-    from phasesmith.experimental.reciprocal import PanelGeometry
+    from phasesmith.single_crystal.reciprocal import PanelGeometry
 
     values = {}
     for line in Path(path).read_text().splitlines():
@@ -246,7 +245,7 @@ def interior_target_rows(centres, flags, shape):
     The predictor supports half-pixel edges; the mesh is defined on pixel
     centers. Only pre-existing EDGE rows may be omitted by this adapter.
     """
-    from phasesmith.experimental.integration import IntegrationFlag
+    from phasesmith.single_crystal.integration import IntegrationFlag
 
     xy = np.asarray(centres)[:, :2]
     height, width = shape
@@ -264,7 +263,7 @@ def dac_aperture_visibility(centres, geometry, recipe):
     cones include their boundary (eight float64 epsilons in cosine). This is an
     exclusion mask, not an absorption or rocking-partiality correction.
     """
-    from phasesmith.experimental.reduction import profile_geometry
+    from phasesmith.single_crystal.reduction import profile_geometry
 
     normal = np.asarray(recipe["axis_at_omega_zero"], dtype=float)
     opening = recipe["half_opening_degrees"]
@@ -306,7 +305,7 @@ def dac_aperture_visibility(centres, geometry, recipe):
 
 def search_observation_mask(flags, values, visible, warning_flags):
     """Retain signed finite measurements and explicit warning bits unchanged."""
-    from phasesmith.experimental.profiles import ProfileFlag
+    from phasesmith.single_crystal.profiles import ProfileFlag
 
     if warning_flags != ["MISMATCH"]:
         raise ValueError("example supports only the explicit MISMATCH warning policy")
@@ -329,8 +328,8 @@ def search_observation_mask(flags, values, visible, warning_flags):
 
 def aligned_setting(candidates, cell, selection, training):
     """Select from training-supported cells by an explicit supplied metric prior."""
-    from phasesmith.experimental.indexing import cell_parameters
-    from phasesmith.experimental.orthorhombic import find_orthorhombic_settings
+    from phasesmith.single_crystal.indexing import cell_parameters
+    from phasesmith.single_crystal.orthorhombic import find_orthorhombic_settings
 
     target = np.asarray(cell[:3])
     choices = []
@@ -368,7 +367,7 @@ def aligned_setting(candidates, cell, selection, training):
 
 def stage_validity(packet, out, protocol, shared_reader=None):
     """Freeze one shared original-count mask before detection or integration."""
-    from phasesmith.experimental import frame_validity as masking
+    from phasesmith.single_crystal import frame_validity as masking
 
     config = protocol.get("shadow_mask")
     if config is None:
@@ -444,9 +443,9 @@ def stage_validity(packet, out, protocol, shared_reader=None):
 
 
 def stage_positions(packet, out, protocol, validity=None, shared_reader=None):
-    from phasesmith.experimental.frame_validity import flag_invalid_tracks
-    from phasesmith.experimental.rotation import RotationOptions, locate_series
-    from phasesmith.experimental.spots import SpotOptions
+    from phasesmith.single_crystal.frame_validity import flag_invalid_tracks
+    from phasesmith.single_crystal.rotation import RotationOptions, locate_series
+    from phasesmith.single_crystal.spots import SpotOptions
 
     frames = RawFrames(
         packet["raw_path"],
@@ -532,10 +531,10 @@ def stage_positions(packet, out, protocol, validity=None, shared_reader=None):
 
 
 def stage_indexing(positions, geometry, packet, out, protocol):
-    from phasesmith.experimental.geometry_refinement import GeometryOptions, refine_geometry
-    from phasesmith.experimental.grains import GrainSearchOptions, find_grains
-    from phasesmith.experimental.prediction import predict_spots
-    from phasesmith.experimental.reciprocal import correct_positions
+    from phasesmith.single_crystal.geometry_refinement import GeometryOptions, refine_geometry
+    from phasesmith.single_crystal.grains import GrainSearchOptions, find_grains
+    from phasesmith.single_crystal.prediction import predict_spots
+    from phasesmith.single_crystal.reciprocal import correct_positions
 
     selection = protocol["selection"]
     reciprocal = correct_positions(positions, geometry)
@@ -703,23 +702,23 @@ def stage_integrate(
     frame_validity=None,
     shared_reader=None,
 ):
-    from phasesmith.experimental.integration import FrameExecution, IntegrationOptions
-    from phasesmith.experimental.prediction import ScanPredictions, predict_scan
-    from phasesmith.experimental.profile_refinement import ShapeFitOptions
-    from phasesmith.experimental.profiles import (
+    from phasesmith.io.space_groups import space_group_by_number
+    from phasesmith.single_crystal.integration import FrameExecution, IntegrationOptions
+    from phasesmith.single_crystal.prediction import ScanPredictions, predict_scan
+    from phasesmith.single_crystal.profile_refinement import ShapeFitOptions
+    from phasesmith.single_crystal.profiles import (
         ProfileExecution,
         ProfileOptions,
         learn_profiles,
         prepare_profiles,
         select_observations,
     )
-    from phasesmith.experimental.reduction import (
+    from phasesmith.single_crystal.reduction import (
         ReductionConfig,
         profile_geometry,
         reduce_observations,
     )
-    from phasesmith.experimental.reduction_io import save_case
-    from phasesmith.io.space_groups import space_group_by_number
+    from phasesmith.single_crystal.reduction_io import save_case
 
     frames = RawFrames(
         packet["raw_path"],
@@ -942,14 +941,14 @@ def stage_integrate(
 
 def run_search(packet, out, protocol, hkl, values):
     from phasesmith.crystallography import UnitCell
-    from phasesmith.experimental.solution import (
-        SolutionOptions,
-        estimate_solution_memory,
-        solve_structure_elements,
-        write_solution,
-    )
     from phasesmith.io.hkl import HklData
     from phasesmith.io.space_groups import space_group_by_number
+    from phasesmith.single_crystal.search import ElementSearchConfig, search_structure_elements
+    from phasesmith.single_crystal.solution import (
+        SolutionOptions,
+        estimate_solution_memory,
+        write_solution,
+    )
 
     data = HklData(hkl, values[:, 0], values[:, 1])
     cell = UnitCell(*packet["priors"]["cell_angstrom_degrees"])
@@ -961,10 +960,6 @@ def run_search(packet, out, protocol, hkl, values):
         space_group=group,
         dense_memory_budget_bytes=search["dense_memory_budget_bytes"],
     )
-    frozen = json.loads((ROOT / "validation/solution-holdout-freeze-v1.json").read_text())
-    allowed = inspect.signature(solve_structure_elements).parameters
-    controls = {k: v for k, v in frozen["controls"].items() if k in allowed}
-    controls.update(symmetry_recycling=True, tangent_refinement=True)
     options = SolutionOptions(
         phasing="dual_space",
         seed=search["seed"],
@@ -975,6 +970,8 @@ def run_search(packet, out, protocol, hkl, values):
         completion=False,
         dense_memory_budget_bytes=search["dense_memory_budget_bytes"],
     )
+    configuration = ElementSearchConfig.validated_v1(options=options)
+    controls = dict(configuration.controls)
     save_json(
         out / "search-input.json",
         dict(
@@ -986,14 +983,13 @@ def run_search(packet, out, protocol, hkl, values):
         ),
     )
     started = time.perf_counter()
-    result = solve_structure_elements(
+    result = search_structure_elements(
         data,
         cell=cell,
         space_group=group,
         elements=packet["priors"]["elements"],
         maximum_atoms=estimate.maximum_atoms,
-        options=options,
-        **controls,
+        configuration=configuration,
     )
     elapsed = time.perf_counter() - started
     write_solution(result, out / "candidate")
@@ -1111,6 +1107,7 @@ def main():
     parser.add_argument("--data-root", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--through", choices=("geometry", "search"), default="search")
+    parser.add_argument("--protocol", type=Path, default=PROTOCOL)
     parser.add_argument("--worker", type=Path, help=argparse.SUPPRESS)
     parser.add_argument("--search-only", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
@@ -1136,7 +1133,7 @@ def main():
     out = args.output.resolve()
     if out.is_relative_to(ROOT):
         parser.error("large workflow products must be outside the repository checkout")
-    protocol = json.loads(PROTOCOL.read_text())
+    protocol = json.loads(args.protocol.read_text())
     manifest = json.loads((ROOT / protocol["dataset_manifest"]).read_text())
     verify_dataset(manifest, args.data_root)
     from phasesmith import _core
@@ -1158,7 +1155,7 @@ def main():
     save_json(
         out / "provenance.json",
         dict(
-            protocol_sha256=digest(PROTOCOL),
+            protocol_sha256=digest(args.protocol),
             source_hashes={r["path"]: r["sha256"] for r in manifest["files"]},
             native_sha256=digest(_core.__file__),
             implementation_sha256=digest(__file__),

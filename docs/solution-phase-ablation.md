@@ -166,12 +166,12 @@ references remain larger than the unchanged native input-derived model cap.
 
 Retained full reports and the source/hash-checked comparison:
 
-- [Observed normalization only](../benchmarks/structure-solution-phase-normalization-only-macos.json)
-- [Original quality only](../benchmarks/structure-solution-phase-quality-only-macos.json)
-- [Same-build old score](../benchmarks/structure-solution-phase-legacy-score-control-macos.json)
-- [Corrected score, phase-first](../benchmarks/structure-solution-phase-repaired-score-macos.json)
-- [Corrected score, checkpoint alternative](../benchmarks/structure-solution-phase-repaired-checkpoint-macos.json)
-- [All comparisons and per-case results](../benchmarks/structure-solution-phase-ablation-macos.json)
+- [Observed normalization only](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-phase-normalization-only-macos.json)
+- [Original quality only](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-phase-quality-only-macos.json)
+- [Same-build old score](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-phase-legacy-score-control-macos.json)
+- [Corrected score, phase-first](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-phase-repaired-score-macos.json)
+- [Corrected score, checkpoint alternative](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-phase-repaired-checkpoint-macos.json)
+- [All comparisons and per-case results](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-phase-ablation-macos.json)
 
 After these complete explicit-mode comparisons, the public default is set to
 retain phase-first ordering when quality is requested. The checkpoint alternative
@@ -211,7 +211,7 @@ With the same 16-cycle and one-round limits, the full schedule benchmark takes
 451.5 milliseconds for phase-first and 880.0 milliseconds for checkpoints
 (95% estimate intervals 438.8–464.7 and 828.4–956.9 milliseconds). Different
 handoff/model work is intentionally included; these are not isolated FFT times.
-[Raw samples and exact fixture/source provenance](../benchmarks/structure-solution-phase-ablation-kernels-macos.json)
+[Raw samples and exact fixture/source provenance](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/structure-solution-phase-ablation-kernels-macos.json)
 are retained. The full-panel coverage/count outcomes take precedence over this
 small fixture's timing result.
 

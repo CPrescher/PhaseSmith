@@ -1,6 +1,13 @@
 # Indexed single-crystal geometry calibration
 
-The opt-in `phasesmith.experimental.geometry_refinement` API refines detector
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
+The opt-in `phasesmith.single_crystal.geometry_refinement` API refines detector
 pose and crystal orientation against confirmed indexed spot centroids. The
 scientific basis is centroid refinement as described by [Waterman et al. (2016),
 sections 2--4](https://journals.iucr.org/d/issues/2016/04/00/gm5043/index.html).

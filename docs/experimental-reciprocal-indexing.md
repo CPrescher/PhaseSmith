@@ -1,6 +1,13 @@
 # Experimental geometry correction and blind cell proposals
 
-Only `codex/experimental-spots`, with `--features experimental-spots`. No default
+**Supported namespace:** this method is included in the 0.8 single-crystal
+capability. Use `phasesmith.single_crystal`; ordinary builds include the native
+kernels. The historical filename is retained for existing links. See the
+[supported guide](single-crystal.md) for scope and migration. Numerical equations,
+finite support and the specific limitations below remain unchanged.
+
+
+Only `codex/experimental-spots`, with `--features spots`. No default
 API, runtime dependency, release, GUI or GSAS-II coupling is added. This slice
 uses first-principles vector geometry and the published Fourier indexing idea;
 it does not reuse indexing implementation code from another package.

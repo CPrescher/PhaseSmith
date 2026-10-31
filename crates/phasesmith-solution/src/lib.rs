@@ -1,4 +1,4 @@
-//! Experimental, bounded, file-independent X-ray structure solution.
+//! Bounded, file-independent single-crystal X-ray structure search.
 //!
 //! Equations and scope: `docs/experimental-structure-solution.md`.
 //! Supplied symmetry also constrains optional site/ADP refinement after P1 phasing.
