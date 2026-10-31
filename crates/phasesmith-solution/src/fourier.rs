@@ -509,7 +509,7 @@ fn constrain(
 /// Select periodic strict/local maxima, with index-stable plateau ties.
 ///
 /// # Errors
-/// Rejects malformed/nonfinite maps or atom budgets outside [1,128]. Returns
+/// Rejects malformed/nonfinite maps or atom budgets outside `[1,128]`. Returns
 /// fewer than `count` points when the map has too few positive local maxima.
 #[allow(
     clippy::cast_precision_loss,

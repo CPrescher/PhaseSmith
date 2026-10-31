@@ -323,7 +323,7 @@ impl PreparedPeakCompletion {
     /// Beam-search coordinated labels and orbit vacancies/births with bounded tensor shifts.
     /// The cached phases already contain physical displacement. Bounds must contain zero.
     /// # Errors
-    /// Rejects uncovered labels, invalid bounds, or maximum outside [1,4].
+    /// Rejects uncovered labels, invalid bounds, or maximum outside `[1,4]`.
     /// # Panics
     /// Only if public element metadata was mutated after preparation.
     #[allow(clippy::too_many_lines, clippy::too_many_arguments)]

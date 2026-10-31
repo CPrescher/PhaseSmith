@@ -551,7 +551,7 @@ pub(crate) fn model_in_setting(
 /// supplied group are deduplicated, while inequivalent heavy-site settings survive.
 ///
 /// # Errors
-/// The same boundary as `recover_symmetry`, with a hypothesis budget in [1,16].
+/// The same boundary as `recover_symmetry`, with a hypothesis budget in `[1,16]`.
 #[allow(clippy::too_many_arguments)]
 pub fn recover_symmetry_hypotheses(
     cell: UnitCell,

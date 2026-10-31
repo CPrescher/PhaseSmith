@@ -181,7 +181,7 @@ impl PreparedPeakCompletion {
     /// Unlike `reassign`, alternatives need not improve at fixed geometry/displacement.
     /// The explicit proposal band is `J <= 1.25*J_parent + 1e-4`; it is not an error bar.
     /// # Errors
-    /// Rejects incomplete labels or a maximum outside [1,8].
+    /// Rejects incomplete labels or a maximum outside `[1,8]`.
     #[allow(clippy::too_many_lines)]
     pub fn assignment_neighbors(
         &self,
