@@ -7,23 +7,52 @@ Input/resource preparation and reference grading are outside every timing.
 """
 
 from __future__ import annotations
+
 import argparse
-from concurrent.futures import ThreadPoolExecutor
 import json
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from types import SimpleNamespace
 
-from solution_corpus.run import collect_jobs, launch, ROOT
 from solution_corpus.audit import shelxt_candidate
 from solution_corpus.data import sha
+from solution_corpus.run import ROOT, collect_jobs, launch
 
 COUNTS = (1, 2, 4, 8)
-ENABLED = "wilson_normalization phase_quality_selection phase_origin_selection chemical_assignment iterative_refinement isotropic_assignment_refinement filtered_peak_search batched_fft real_fft fused_phase_workspace cached_normal_refinement multiplicity_weighted_refinement ambiguous_assignments cached_assignment_refinement specialized_isotropic_refinement streamed_peak_search reuse_normal_matrices short_phase_starts blocked_normal_matrices phase_plateau_stopping assignment_convergence_stopping late_phase_plateau_stopping model_consensus_stopping work_sliced_phasing phase_first_selection score_only_evaluation reusable_fourier_workspaces".split()
+ENABLED = [
+    "wilson_normalization",
+    "phase_quality_selection",
+    "phase_origin_selection",
+    "chemical_assignment",
+    "iterative_refinement",
+    "isotropic_assignment_refinement",
+    "filtered_peak_search",
+    "batched_fft",
+    "real_fft",
+    "fused_phase_workspace",
+    "cached_normal_refinement",
+    "multiplicity_weighted_refinement",
+    "ambiguous_assignments",
+    "cached_assignment_refinement",
+    "specialized_isotropic_refinement",
+    "streamed_peak_search",
+    "reuse_normal_matrices",
+    "short_phase_starts",
+    "blocked_normal_matrices",
+    "phase_plateau_stopping",
+    "assignment_convergence_stopping",
+    "late_phase_plateau_stopping",
+    "model_consensus_stopping",
+    "work_sliced_phasing",
+    "phase_first_selection",
+    "score_only_evaluation",
+    "reusable_fourier_workspaces",
+]
 
 
 def controls(args, n):
@@ -45,7 +74,9 @@ def controls(args, n):
             legacy_quality_normalization=False,
             workers=n,
             shelxt_threads=n,
-            collection_schedule="balanced serial latency followed by bounded independent-process batches",
+            collection_schedule=(
+                "balanced serial latency followed by bounded independent-process batches"
+            ),
             collection_scheduler_source="benchmarks/solution_multicore.py",
         )
     )
@@ -128,7 +159,10 @@ def batch_panel(args, n, base):
             "cases_per_second": len(results) / elapsed,
             "outer_workers": n,
             "inner_workers": 1,
-            "timing": "cold independent processes; includes import, startup, parsing and serialization; excludes input preparation and grading",
+            "timing": (
+                "cold independent processes; includes import, startup, parsing "
+                "and serialization; excludes input preparation and grading"
+            ),
         }
         records.extend(results)
         (panel / "before-reference-audit.json").write_text(

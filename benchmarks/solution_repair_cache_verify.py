@@ -1,16 +1,17 @@
 """Verify exact repair reuse, retained development cases and matched overhead timings."""
 
 from __future__ import annotations
+
 import argparse
-from collections import Counter
 import hashlib
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
+
 import numpy as np
 from phasesmith import _core
-from solution_phase_ablation import compare
 from solution_joint_verify import counts, sets
+from solution_phase_ablation import compare
 
 ROOT = Path(__file__).resolve().parents[1]
 MODES = ("off", "control", "cache")
@@ -191,7 +192,17 @@ def main():
         schema="phasesmith.repair-evaluation-retention.v1",
         development_cases=35,
         holdout_opened=False,
-        qualification="One balanced serial same-binary three-mode development comparison. Off is a no-repair overhead reference (26 correct total counts); control/cache both request the preceding repair (27). All 210 predictions precede all three reference barriers. Source snapshots, unchanged inputs/caps/seed/refinement/tolerances/budgets, actual workers and feature flags verified. No task-owned tests/builds/kernels/profiles overlap timed collection. Single-collection timings remain host sensitive.",
+        qualification=(
+            "One balanced serial same-binary three-mode development "
+            "comparison. Off is a no-repair overhead reference (26 correct "
+            "total counts); control/cache both request the preceding repair "
+            "(27). All 210 predictions precede all three reference barriers. "
+            "Source snapshots, unchanged "
+            "inputs/caps/seed/refinement/tolerances/budgets, actual workers "
+            "and feature flags verified. No task-owned "
+            "tests/builds/kernels/profiles overlap timed collection. "
+            "Single-collection timings remain host sensitive."
+        ),
         previous_sha256=sha(previous_path),
         native_sha256=sha(_core.__file__),
         source_files_verified=len(reports["control"]["implementation_sha256"]),

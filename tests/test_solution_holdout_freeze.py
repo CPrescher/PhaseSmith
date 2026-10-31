@@ -2,15 +2,15 @@
 
 import hashlib
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "benchmarks"))
-import solution_holdout_frozen as frozen
+import solution_holdout_frozen as frozen  # noqa: E402 - repository-only benchmark helper
 
 
 def test_frozen_controls_are_the_accepted_development_configuration():
@@ -22,10 +22,17 @@ def test_frozen_controls_are_the_accepted_development_configuration():
     assert freeze["controls"]["split"] == "holdout"
     assert freeze["controls"]["seconds"] == dev["seconds_per_job"] == 15
     assert not freeze["controls"]["legacy_counts"] and dev["adaptive_counts"]
-    assert not freeze["controls"]["legacy_quality_normalization"] and dev["calculated_shell_normalization"]
+    assert (
+        not freeze["controls"]["legacy_quality_normalization"]
+        and dev["calculated_shell_normalization"]
+    )
     assert freeze["solver_options"] == {
-        "cycles": 800, "trials": 4, "seed": 0, "max_seconds": 13.0,
-        "refinement": "anisotropic", "completion": False,
+        "cycles": 800,
+        "trials": 4,
+        "seed": 0,
+        "max_seconds": 13.0,
+        "refinement": "anisotropic",
+        "completion": False,
     }
     manifest = frozen.load(ROOT / freeze["controls"]["manifest"])
     assert set(freeze["holdout_ids"]) == {
@@ -39,7 +46,8 @@ def test_frozen_controls_are_the_accepted_development_configuration():
     assert freeze["native_sha256"] == result["native_sha256"]
     available = subprocess.run(
         ["git", "cat-file", "-e", result["protocol_commit"] + "^{commit}"],
-        cwd=ROOT, capture_output=True,
+        cwd=ROOT,
+        capture_output=True,
     )
     if available.returncode:
         pytest.skip("historical source proof requires the recorded commit in Git history")
@@ -67,7 +75,9 @@ def test_source_mutation_is_rejected_before_any_reference_access(monkeypatch):
     freeze = frozen.load(frozen.FREEZE)
     original = frozen.sha
     name = next(iter(freeze["source_sha256"]))
-    monkeypatch.setattr(frozen, "sha", lambda p: "changed" if Path(p) == ROOT / name else original(p))
+    monkeypatch.setattr(
+        frozen, "sha", lambda p: "changed" if Path(p) == ROOT / name else original(p)
+    )
     with pytest.raises(ValueError, match="frozen source changed"):
         frozen.verify_freeze(freeze)
 

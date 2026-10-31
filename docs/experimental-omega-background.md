@@ -15,11 +15,13 @@ Dioptas owns those application concerns and signed frame export.
 
 ```python
 from phasesmith.single_crystal.omega_background import (
-    ArPLSParameters, arpls_masked_rows,
+    ArPLSParameters,
+    arpls_masked_rows,
 )
 
 baseline, iterations, converged = arpls_masked_rows(
-    rows, excluded,  # equal (pixels, frames) arrays; true means unavailable
+    rows,
+    excluded,  # equal (pixels, frames) arrays; true means unavailable
     ArPLSParameters(smoothness=10000, tolerance=0.001, max_iterations=30),
     workers=4,
     minimum_frames=12,

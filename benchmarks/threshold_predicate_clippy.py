@@ -6,10 +6,10 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 
 def worker(site, supplied):
@@ -82,14 +82,30 @@ def main():
                 command.append("--supplied-variance")
             env = dict(os.environ, OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1")
             pair[mode] = json.loads(subprocess.check_output(command, env=env, text=True))
-        assert pair["baseline"]["complete_record_sha256"] == pair["candidate"]["complete_record_sha256"]
-        pair["candidate_over_baseline"] = pair["candidate"]["median_seconds"] / pair["baseline"]["median_seconds"]
+        assert (
+            pair["baseline"]["complete_record_sha256"]
+            == pair["candidate"]["complete_record_sha256"]
+        )
+        pair["candidate_over_baseline"] = (
+            pair["candidate"]["median_seconds"] / pair["baseline"]["median_seconds"]
+        )
         rows.append(pair)
-    args.output.write_text(json.dumps(dict(
-        schema="phasesmith.threshold-predicate-comparison.v1",
-        qualification="Sequential isolated builds, one warmup and eight measured calls per noise path. Counterbalanced path order, complete record equality, multi-spot 768x1024 images. Local observations, not a general speed guarantee.",
-        rows=rows,
-    ), indent=2) + "\n")
+    args.output.write_text(
+        json.dumps(
+            dict(
+                schema="phasesmith.threshold-predicate-comparison.v1",
+                qualification=(
+                    "Sequential isolated builds, one warmup and eight measured calls "
+                    "per noise path. Counterbalanced path order, complete record "
+                    "equality, multi-spot 768x1024 images. Local observations, not a "
+                    "general speed guarantee."
+                ),
+                rows=rows,
+            ),
+            indent=2,
+        )
+        + "\n"
+    )
 
 
 if __name__ == "__main__":

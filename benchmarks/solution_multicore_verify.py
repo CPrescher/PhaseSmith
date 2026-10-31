@@ -1,19 +1,21 @@
 """Verify bounded execution provenance and report latency, throughput and recovery."""
 
 from __future__ import annotations
+
 import argparse
-from collections import Counter
 import hashlib
 import json
 import os
-import sys
-from pathlib import Path
 import shutil
 import subprocess
+import sys
+from collections import Counter
+from pathlib import Path
+
 import numpy as np
 from phasesmith import _core
-from solution_multicore import COUNTS, ENABLED
 from solution_corpus.run import INPUT_KEYS, instructions
+from solution_multicore import COUNTS, ENABLED
 from solution_shelxt_effort import compare as shelxt_effort
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,7 +81,7 @@ def main():
     assert all(e.get("reference_audit_barrier") for e in events[280:])
     seal = load(a.base / "all-predictions-before-reference.json")
     assert seal["predictions"] == 560 and not seal["holdout_opened"] and len(seal["panels"]) == 8
-    for name, item in seal["panels"].items():
+    for item in seal["panels"].values():
         assert sha(a.base / item["path"]) == item["sha256"]
         snapshot = load(a.base / item["path"])
         assert len(snapshot["runs"]) == 70
@@ -149,7 +151,6 @@ def main():
                 for method in ["phasesmith", "shelxt"]:
                     b = report["batches"][method]
                     assert b["outer_workers"] == n and b["inner_workers"] == 1
-                    changes = []
                     # Sweep all interval endpoints, with finishes preceding ties at starts.
                     points = []
                     for r in rows[method].values():
@@ -323,7 +324,15 @@ def main():
         development_cases=35,
         holdout_opened=False,
         machine=machine_info(),
-        qualification="One 1/2/4/8 collection on a shared host. Serial case-interleaved latency; cold independent-process batch throughput. Fixed 13-second native/15-second process safeguards. Pool budget is an upper bound; small kernels stay serial. PhaseSmith ARM native vs supplied SHELXT 2018/2 x86 compatibility. Internal endpoints differ. All 560 predictions saved before development grading. No holdout files opened.",
+        qualification=(
+            "One 1/2/4/8 collection on a shared host. Serial "
+            "case-interleaved latency; cold independent-process batch "
+            "throughput. Fixed 13-second native/15-second process "
+            "safeguards. Pool budget is an upper bound; small kernels stay "
+            "serial. PhaseSmith ARM native vs supplied SHELXT 2018/2 x86 "
+            "compatibility. Internal endpoints differ. All 560 predictions "
+            "saved before development grading. No holdout files opened."
+        ),
         baseline_sha256=sha(baseline_path),
         source_files_verified=len(snapshots[0]),
         native_sha256=sha(_core.__file__),

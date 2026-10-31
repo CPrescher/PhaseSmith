@@ -47,16 +47,23 @@ preserve numerical values and deterministic fixed-work search results exactly.
 
 ```python
 from phasesmith.experimental.solution import (
-    SolutionOptions, estimate_solution_memory, solve_structure_elements,
+    SolutionOptions,
+    estimate_solution_memory,
+    solve_structure_elements,
 )
 
 budget = 64 * 1024**2
 estimate = estimate_solution_memory(
-    observations, cell=cell, space_group=group,
+    observations,
+    cell=cell,
+    space_group=group,
     dense_memory_budget_bytes=budget,
 )
 result = solve_structure_elements(
-    observations, cell=cell, space_group=group, elements=("Mg", "Si", "O"),
+    observations,
+    cell=cell,
+    space_group=group,
+    elements=("Mg", "Si", "O"),
     options=SolutionOptions(dense_memory_budget_bytes=budget),
 )
 ```

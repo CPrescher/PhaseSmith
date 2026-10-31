@@ -62,10 +62,11 @@ def test_cached_beam_keeps_every_candidate_float_bit_and_logical_score(seed, sym
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
 def test_full_search_keeps_solutions_and_validates_cache_request(symbol):
-    from phasesmith.experimental.solution import solve_structure_elements, SolutionOptions
-    from test_solution_shared_search import synthetic
     import sys
     from pathlib import Path
+
+    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from test_solution_shared_search import synthetic
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "benchmarks"))
     from solution_multicore import ENABLED

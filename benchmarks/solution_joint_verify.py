@@ -1,12 +1,14 @@
 """Verify a complete matched development comparison and exact previous-case retention."""
 
 from __future__ import annotations
+
 import argparse
-from collections import Counter
 import hashlib
 import json
-from pathlib import Path
 import shutil
+from collections import Counter
+from pathlib import Path
+
 import numpy as np
 from phasesmith import _core
 from solution_phase_ablation import compare
@@ -134,9 +136,13 @@ def main():
             ref = (new.get("reference_audit") or old.get("reference_audit") or {})[
                 "reference_counts"
             ]
-            error = lambda r: sum(
-                abs(counts(r).get(e, 0) - ref.get(e, 0)) for e in set(counts(r)) | set(ref)
-            )
+
+            def error(r, reference=ref):
+                return sum(
+                    abs(counts(r).get(e, 0) - reference.get(e, 0))
+                    for e in set(counts(r)) | set(reference)
+                )
+
             changes.append(
                 dict(
                     id=i,
@@ -211,7 +217,15 @@ def main():
         schema="phasesmith.joint-assignment-retention.v1",
         development_cases=35,
         holdout_opened=False,
-        qualification="One balanced serial, same-native, one-worker comparison. No task-owned test/build/kernel jobs overlap timed corpus collection. All 140 predictions precede both reference barriers. Original observations, count caps, physical objectives, coordinate tolerances, seeds and 13/15-second budgets retained. Pilot and oracle-assisted diagnostics are not blind benchmark outcomes.",
+        qualification=(
+            "One balanced serial, same-native, one-worker comparison. No "
+            "task-owned test/build/kernel jobs overlap timed corpus "
+            "collection. All 140 predictions precede both reference "
+            "barriers. Original observations, count caps, physical "
+            "objectives, coordinate tolerances, seeds and 13/15-second "
+            "budgets retained. Pilot and oracle-assisted diagnostics are not "
+            "blind benchmark outcomes."
+        ),
         previous_report_sha256=sha(oldpath),
         native_sha256=sha(_core.__file__),
         source_files_verified=len(reports["control"]["implementation_sha256"]),

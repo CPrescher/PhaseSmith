@@ -17,6 +17,7 @@ def phase_cycle_quotas(cycles, trials, *, short=False):
 def phase_plateau_ready(scores, *, omit_every_third=True):
     """Pure Python early-map plateau heuristic; no native calculation."""
     import math
+
     values = list(scores)
     n = len(values)
     if n < 128 or n % 32 or any(not math.isfinite(x) for x in values):
@@ -30,8 +31,12 @@ def phase_plateau_ready(scores, *, omit_every_third=True):
 def late_phase_plateau_ready(scores, *, omit_every_third=True):
     """Independent longer-window predicate for intermediate later starts."""
     import math
-    v=list(scores);n=len(v)
-    if n<256 or n%32 or any(not math.isfinite(x) for x in v):return False
-    eligible=[(i,x) for i,x in enumerate(v) if not omit_every_third or i%3!=2]
-    best=max(x for _,x in eligible);past=max(x for i,x in eligible if i<n-128)
-    return best>=.8 and best-past<=.002
+
+    v = list(scores)
+    n = len(v)
+    if n < 256 or n % 32 or any(not math.isfinite(x) for x in v):
+        return False
+    eligible = [(i, x) for i, x in enumerate(v) if not omit_every_third or i % 3 != 2]
+    best = max(x for _, x in eligible)
+    past = max(x for i, x in eligible if i < n - 128)
+    return best >= 0.8 and best - past <= 0.002

@@ -28,7 +28,9 @@ grouping = group_rows(q, options=RowSearchOptions(workers=8))
 # Grain workflow: training-only row groups, per-group cell inference,
 # training consolidation, then the existing frozen reserved-data validation.
 result = find_grains(
-    q, training=training, method="rows",
+    q,
+    training=training,
+    method="rows",
     options=GrainSearchOptions(grid_size=256),
     row_options=RowSearchOptions(workers=8),
 )

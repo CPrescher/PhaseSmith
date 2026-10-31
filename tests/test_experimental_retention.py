@@ -119,8 +119,10 @@ def test_fit_budget_compares_actual_rows_hkls_and_internal_training_splits():
     second = (0.0, 120.0, 1, hkl.copy(), error.copy(), eligible.copy())
     search = GrainSearchOptions()
     trim = GrainProposalRefinementOptions(
-        distinct_budget=True, cohort_aware_budget=True,
-        trim_fractions=(0.9,), retain_split_fit=False,
+        distinct_budget=True,
+        cohort_aware_budget=True,
+        trim_fractions=(0.9,),
+        retain_split_fit=False,
     )
     assert _same_fit_start(models, first, second, search, trim)
     changed_rows = list(second)
@@ -134,8 +136,9 @@ def test_fit_budget_compares_actual_rows_hkls_and_internal_training_splits():
     # Legacy internal splits depend on pool index even for identical cohorts.
     assert not _same_fit_start(models, first, second, search, replace(trim, retain_split_fit=True))
     # Default matrix-only budget and an identical start remain unchanged.
-    assert _same_fit_start(models, first, changed_rows, search,
-                           replace(trim, cohort_aware_budget=False))
+    assert _same_fit_start(
+        models, first, changed_rows, search, replace(trim, cohort_aware_budget=False)
+    )
     assert _same_fit_start(models, first, first, search, replace(trim, retain_split_fit=True))
     with pytest.raises(ValueError, match="boolean"):
         GrainProposalRefinementOptions(cohort_aware_budget=1)

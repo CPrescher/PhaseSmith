@@ -51,7 +51,7 @@ def main():
             expected = None
             # Alternate order; each inverse/kernel owns its own worker budget.
             for repeat in range(args.repeats):
-                for j in ([0, 1] if repeat % 2 == 0 else [1, 0]):
+                for j in [0, 1] if repeat % 2 == 0 else [1, 0]:
                     start = time.perf_counter()
                     result = engines[j].windowed_maxima(q, n, step, 1.5, 15, 400)
                     elapsed = time.perf_counter() - start
@@ -60,11 +60,20 @@ def main():
                     for x, y in zip(expected[:2], result[:2], strict=True):
                         np.testing.assert_array_equal(x.view(np.uint8), y.view(np.uint8))
                     assert expected[2] == result[2]
-                    records.append(dict(stage="fft", cloud=kind, points=len(q), grid=n,
-                                        repeat=repeat, engine=j, seconds=elapsed))
+                    records.append(
+                        dict(
+                            stage="fft",
+                            cloud=kind,
+                            points=len(q),
+                            grid=n,
+                            repeat=repeat,
+                            engine=j,
+                            seconds=elapsed,
+                        )
+                    )
             expected = None
             for repeat in range(args.repeats):
-                for j in ([0, 1] if repeat % 2 == 0 else [1, 0]):
+                for j in [0, 1] if repeat % 2 == 0 else [1, 0]:
                     initial = result[0]
                     start = time.perf_counter()
                     refined = engines[j].refine_fourier(q, initial, radius)
@@ -73,13 +82,29 @@ def main():
                         expected = refined
                     for x, y in zip(expected, refined, strict=True):
                         np.testing.assert_array_equal(x.view(np.uint8), y.view(np.uint8))
-                    records.append(dict(stage="ascent", cloud=kind, points=len(q), grid=n,
-                                        repeat=repeat, engine=j, seconds=elapsed))
-    args.output.write_text(json.dumps(dict(
-        exact_all_outputs=True, legacy_binary=str(args.legacy_binary.resolve()),
-        points=str(args.points.resolve()) if args.points else "deterministic synthetic",
-        records=records,
-    ), indent=2) + "\n")
+                    records.append(
+                        dict(
+                            stage="ascent",
+                            cloud=kind,
+                            points=len(q),
+                            grid=n,
+                            repeat=repeat,
+                            engine=j,
+                            seconds=elapsed,
+                        )
+                    )
+    args.output.write_text(
+        json.dumps(
+            dict(
+                exact_all_outputs=True,
+                legacy_binary=str(args.legacy_binary.resolve()),
+                points=str(args.points.resolve()) if args.points else "deterministic synthetic",
+                records=records,
+            ),
+            indent=2,
+        )
+        + "\n"
+    )
 
 
 if __name__ == "__main__":

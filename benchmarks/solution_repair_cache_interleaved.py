@@ -1,4 +1,7 @@
-"""Balanced serial repair evaluator comparison, with a no-repair overhead reference; development only."""
+"""Balanced serial repair evaluator comparison for development.
+
+Includes a no-repair overhead reference.
+"""
 
 from __future__ import annotations
 

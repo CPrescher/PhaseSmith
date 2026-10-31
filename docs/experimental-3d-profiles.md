@@ -66,23 +66,34 @@ The extension is explicit and leaves the original fixed-profile default intact:
 
 ```python
 from phasesmith.single_crystal.profiles import (
-    scattering_transforms, ProfileOptions, prepare_profiles, learn_profiles,
-    learn_profile_variations, fit_learned_profiles,
+    scattering_transforms,
+    ProfileOptions,
+    prepare_profiles,
+    learn_profiles,
+    learn_profile_variations,
+    fit_learned_profiles,
 )
 
 A, zeta = scattering_transforms(predictions.values[:, :2], geometry)
 # First exclude near-spindle predictions consistently from predictions/A/zeta.
 observations = prepare_profiles(
-    load_frame, omega_bounds, predictions,
-    mask_loader=load_mask, saturation=65535, options=integration_options,
+    load_frame,
+    omega_bounds,
+    predictions,
+    mask_loader=load_mask,
+    saturation=65535,
+    options=integration_options,
     planar_transforms=A,
     scales=np.column_stack([np.ones((len(zeta), 2)), zeta]),
-    angular_half_widths=np.minimum(10., 2.6 / abs(zeta) + .5),
+    angular_half_widths=np.minimum(10.0, 2.6 / abs(zeta) + 0.5),
 )
 base = learn_profiles(
-    observations, training_mask, detector_shape=(height, width),
-    options=ProfileOptions(shape=(19, 19, 13), step=(.025, .025, .25),
-                           regions=(1, 1, 1), cutoff=0.),
+    observations,
+    training_mask,
+    detector_shape=(height, width),
+    options=ProfileOptions(
+        shape=(19, 19, 13), step=(0.025, 0.025, 0.25), regions=(1, 1, 1), cutoff=0.0
+    ),
 )
 shapes = learn_profile_variations(observations, base)
 result = fit_learned_profiles(observations, base, shapes)
@@ -175,23 +186,37 @@ known counts, mass/moment checks and a black-box DIALS comparison supply evidenc
 import numpy as np
 from phasesmith.single_crystal.integration import IntegrationOptions
 from phasesmith.single_crystal.profiles import (
-    ProfileOptions, rotation_factors, prepare_profiles, learn_profiles, fit_profiles,
+    ProfileOptions,
+    rotation_factors,
+    prepare_profiles,
+    learn_profiles,
+    fit_profiles,
 )
 
 # predictions is a ScanPredictions table for the frozen crystal and scan.
 # Select |zeta|>=0.05 predictions before preparing this normalised model.
 zeta = rotation_factors(predictions.values[:, :2], geometry)
 scales = np.column_stack([np.ones((len(zeta), 2)), zeta])
-profile_options = ProfileOptions(shape=(19, 19, 13), step=(1., 1., .25))
+profile_options = ProfileOptions(shape=(19, 19, 13), step=(1.0, 1.0, 0.25))
 observations = prepare_profiles(
-    load_frame, omega_bounds, predictions,
-    mask_loader=load_mask, saturation=65535,
-    options=IntegrationOptions(pixel_radius=11, omega_half_width=4.5,
-        background_model="plane", background_gap=3, background_margin=6),
-    scales=scales, angular_half_widths=np.minimum(10., 1.625 / abs(zeta) + .5),
+    load_frame,
+    omega_bounds,
+    predictions,
+    mask_loader=load_mask,
+    saturation=65535,
+    options=IntegrationOptions(
+        pixel_radius=11,
+        omega_half_width=4.5,
+        background_model="plane",
+        background_gap=3,
+        background_margin=6,
+    ),
+    scales=scales,
+    angular_half_widths=np.minimum(10.0, 1.625 / abs(zeta) + 0.5),
 )
-model = learn_profiles(observations, training_mask,
-    detector_shape=(height, width), options=profile_options)
+model = learn_profiles(
+    observations, training_mask, detector_shape=(height, width), options=profile_options
+)
 result = fit_profiles(observations, model)
 # result.values: I, sigma, observed_mass, reduced_chi2, foreground_samples,
 # correlation, and four conditional objective derivatives (I,x,y,omega).

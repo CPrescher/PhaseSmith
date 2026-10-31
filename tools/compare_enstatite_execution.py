@@ -30,8 +30,10 @@ def compare(baseline, candidate):
                 and old[key].tobytes() == new[key].tobytes()
                 for key in sorted(keys)
             }
+
     def read(root, name):
         return json.loads((root / name).read_text())
+
     old, new = read(baseline, "candidate/result.json"), read(candidate, "candidate/result.json")
     report = read(candidate, "report.json")
     complete = read(candidate, "worker-complete.json")

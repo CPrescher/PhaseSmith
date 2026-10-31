@@ -270,7 +270,11 @@ def joint_assignment_beam_reference(
                     assignment = tuple(assignment)
                     if (
                         set(e for e in assignment if e is not None) != set(range(width))
-                        or sum(m for m, e in zip(multiplicities, assignment) if e is not None)
+                        or sum(
+                            m
+                            for m, e in zip(multiplicities, assignment, strict=False)
+                            if e is not None
+                        )
                         > maximum_atoms
                         or assignment in visited
                     ):
@@ -344,7 +348,7 @@ def joint_assignment_beam_reference(
     signatures = set()
     for state in retained:
         signature = tuple(
-            sum(m for m, label in zip(multiplicities, state["labels"]) if label == e)
+            sum(m for m, label in zip(multiplicities, state["labels"], strict=False) if label == e)
             for e in range(width)
         )
         if signature not in signatures:

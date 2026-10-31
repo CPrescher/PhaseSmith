@@ -7,8 +7,8 @@ import json
 from pathlib import Path
 
 import numpy as np
-from solution_holdout_frozen import FREEZE, ROOT, load, validate_prediction_barrier, verify_freeze
 from solution_corpus.data import sha
+from solution_holdout_frozen import FREEZE, ROOT, load, validate_prediction_barrier, verify_freeze
 
 
 def summarize(base):
@@ -76,12 +76,18 @@ def summarize(base):
     common = {
         "cases": len(both),
         "ids": both,
-        "qualification": "Secondary common-success subset; all 65 remain in primary timing/quality totals.",
+        "qualification": (
+            "Secondary common-success subset; all 65 remain in primary timing/quality totals."
+        ),
     }
     if both:
         common["median_paired_wall_ratio_phasesmith_over_comparator"] = float(
             np.median(
-                [ps[i]["wall_seconds_including_startup"] / ext[i]["wall_seconds_including_startup"] for i in both]
+                [
+                    ps[i]["wall_seconds_including_startup"]
+                    / ext[i]["wall_seconds_including_startup"]
+                    for i in both
+                ]
             )
         )
     result = {
@@ -97,13 +103,30 @@ def summarize(base):
         "no_tuning": True,
         "summary": summaries,
         "paired_outcomes": report["paired_outcomes"],
-        "median_paired_wall_ratio_phasesmith_over_comparator_all65": float(np.median(paired_ratios)),
+        "median_paired_wall_ratio_phasesmith_over_comparator_all65": float(
+            np.median(paired_ratios)
+        ),
         "common_success_timing": common,
-        "correct_cases": {m: sorted(i for i, r in rows.items() if r["correct"]) for m, rows in records.items()},
-        "failure_cases": {m: {i: r["failure_class"] for i, r in rows.items() if not r["correct"]} for m, rows in records.items()},
+        "correct_cases": {
+            m: sorted(i for i, r in rows.items() if r["correct"]) for m, rows in records.items()
+        },
+        "failure_cases": {
+            m: {i: r["failure_class"] for i, r in rows.items() if not r["correct"]}
+            for m, rows in records.items()
+        },
         "algorithm_source": freeze["algorithm_sources"],
         "external_test_comparator": freeze["external_test_comparator"],
-        "qualification": "One frozen seed-0 comparison, one worker per program, alternating serial program order, identical measured input HKLF4/cell/symmetry/element types and original input-only caps. All 130 predictions precede reference grading. Unmatched successes and failures are retained; timing is final-model-at-stop, not time to a correct structure. PhaseSmith is native arm64; the external comparator uses the host x86_64 compatibility runtime. This holdout is now exposed and cannot validate subsequent tuning as untouched data.",
+        "qualification": (
+            "One frozen seed-0 comparison, one worker per program, "
+            "alternating serial program order, identical measured input "
+            "HKLF4/cell/symmetry/element types and original input-only caps. "
+            "All 130 predictions precede reference grading. Unmatched "
+            "successes and failures are retained; timing is "
+            "final-model-at-stop, not time to a correct structure. "
+            "PhaseSmith is native arm64; the external comparator uses the "
+            "host x86_64 compatibility runtime. This holdout is now exposed "
+            "and cannot validate subsequent tuning as untouched data."
+        ),
     }
     return report, result
 

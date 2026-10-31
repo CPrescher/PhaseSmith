@@ -87,12 +87,15 @@ measured workflow/sensitivity example, not absolute-intensity truth.
 from phasesmith.single_crystal.prediction import predict_scan
 from phasesmith.single_crystal.integration import IntegrationOptions, integrate_series
 
-predictions = predict_scan(reciprocal_basis, geometry, omega_bounds,
-                           image_shape, qmax=qmax)
+predictions = predict_scan(reciprocal_basis, geometry, omega_bounds, image_shape, qmax=qmax)
 reflections = integrate_series(
-    frame_loader, omega_bounds, predictions, mask_loader=mask_loader,
+    frame_loader,
+    omega_bounds,
+    predictions,
+    mask_loader=mask_loader,
     options=IntegrationOptions(pixel_radius=5, omega_half_width=1.0),
-    gain=1.0, read_noise=0.0,
+    gain=1.0,
+    read_noise=0.0,
 )
 intensities = reflections.column("intensity")
 errors = reflections.column("sigma")

@@ -37,8 +37,13 @@ def test_native_count_volume_key_rank_preserves_duplicates_and_ties_and_validate
         range(len(keys)), key=lambda i: (-expected[i], volumes[i], tuple(keys[i]), i)
     )
     assert bits.rank_triplets(np.empty((0, 3), np.int64), np.empty(0))[0].size == 0
-    for k, v in [(keys[:, :2], volumes), (keys, volumes[:-1]), (keys - 18, volumes),
-                 (keys, np.zeros(5)), (keys, np.full(5, np.nan))]:
+    for k, v in [
+        (keys[:, :2], volumes),
+        (keys, volumes[:-1]),
+        (keys - 18, volumes),
+        (keys, np.zeros(5)),
+        (keys, np.full(5, np.nan)),
+    ]:
         with pytest.raises(ValueError):
             bits.rank_triplets(k, v)
     for budget in (0, 257):
@@ -99,9 +104,14 @@ def test_native_newton_constant_cloud_exact_cache_and_invalid_inputs():
     # Exact keys distinguish -0.0 from +0.0 even in this constant objective.
     assert counts.tolist() == [[1, 4], [2, 3]]
     assert engine.refine_fourier(q, np.empty((0, 3)), 0.5)[0].shape == (0, 3)
-    for points, vectors, radius in [(q[:0], initial, 0.5), (q, initial, 0.0),
-                                    (q, initial, np.inf), (q, np.full((2, 3), np.nan), 0.5),
-                                    (q, np.zeros((401, 3)), 0.5), (q + 1001, initial, 0.5)]:
+    for points, vectors, radius in [
+        (q[:0], initial, 0.5),
+        (q, initial, 0.0),
+        (q, initial, np.inf),
+        (q, np.full((2, 3), np.nan), 0.5),
+        (q, np.zeros((401, 3)), 0.5),
+        (q + 1001, initial, 0.5),
+    ]:
         with pytest.raises(ValueError):
             engine.refine_fourier(points, vectors, radius)
 
@@ -112,8 +122,15 @@ def test_batched_first_support_matches_scalar_rounding_zero_exclusion_and_strict
     rng = np.random.default_rng(82021)
     bases = np.array([np.eye(3), [[4, 1, 0], [0, 5, 1], [1, 0, 6]]], dtype=float)
     q = rng.uniform(-1, 1, (301, 3))
-    q[:7] = [[0, 0, 0], [1, 0, 0], [1, 0.125, 0], [1, 0.25, 0],
-             [1, 0.5, 0], [-1.5, 0, 0], [-0.5, 0, 0]]
+    q[:7] = [
+        [0, 0, 0],
+        [1, 0, 0],
+        [1, 0.125, 0],
+        [1, 0.25, 0],
+        [1, 0.5, 0],
+        [-1.5, 0, 0],
+        [-0.5, 0, 0],
+    ]
     reciprocal = np.array([np.linalg.inv(a).T for a in bases])
     for workers in (1, 4):
         engine = _core.ExperimentalLatticeEngine(workers)
@@ -133,8 +150,12 @@ def test_batched_first_support_matches_scalar_rounding_zero_exclusion_and_strict
                 assert actual is None
             else:
                 np.testing.assert_array_equal(actual, expected)
-        for rows, b, tol in [(bases[:, :2], reciprocal, 0.1), (bases, reciprocal[:1], 0.1),
-                              (bases, reciprocal, 0.0), (bases, reciprocal, np.nan)]:
+        for rows, b, tol in [
+            (bases[:, :2], reciprocal, 0.1),
+            (bases, reciprocal[:1], 0.1),
+            (bases, reciprocal, 0.0),
+            (bases, reciprocal, np.nan),
+        ]:
             with pytest.raises(ValueError):
                 engine.initial_support(q, rows, b, tol)
 

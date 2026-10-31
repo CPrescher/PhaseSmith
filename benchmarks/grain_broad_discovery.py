@@ -40,9 +40,18 @@ def main(args):
                 np.testing.assert_array_equal(old[0], new[0])
                 np.testing.assert_array_equal(old[1], new[1])
                 assert old[2] == new[2]
-                rows.append(dict(repeat=repeat, scope="field + maxima", cloud=label,
-                                 points=len(points), grid=n, dense=dense, windowed=windowed,
-                                 exact_values_vectors_total=True))
+                rows.append(
+                    dict(
+                        repeat=repeat,
+                        scope="field + maxima",
+                        cloud=label,
+                        points=len(points),
+                        grid=n,
+                        dense=dense,
+                        windowed=windowed,
+                        exact_values_vectors_total=True,
+                    )
+                )
         start = perf_counter()
         prepared = engine.prepare_fourier(conditional)
         prepare_seconds = perf_counter() - start
@@ -63,12 +72,26 @@ def main(args):
                 hybrid = mixed(vectors)
             mixed_seconds = (perf_counter() - start) / 20
             np.testing.assert_array_equal(old, hybrid)
-            rows.append(dict(repeat=repeat, scope="fused moments", points=len(conditional),
-                             vectors=count, ordinary=regular, prepared=reuse,
-                             hybrid=mixed_seconds, one_time_prepare=prepare_seconds,
-                             exact_all_13_moments=True))
-    result = dict(platform=platform.platform(), workers=4, seed=842027, runs=rows,
-                  scope="Kernel stages only; excludes search, ownership, fits and validation.")
+            rows.append(
+                dict(
+                    repeat=repeat,
+                    scope="fused moments",
+                    points=len(conditional),
+                    vectors=count,
+                    ordinary=regular,
+                    prepared=reuse,
+                    hybrid=mixed_seconds,
+                    one_time_prepare=prepare_seconds,
+                    exact_all_13_moments=True,
+                )
+            )
+    result = dict(
+        platform=platform.platform(),
+        workers=4,
+        seed=842027,
+        runs=rows,
+        scope="Kernel stages only; excludes search, ownership, fits and validation.",
+    )
     Path(args.output).write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))
 

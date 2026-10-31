@@ -1,6 +1,7 @@
 """Tensor-informed categorical repair against independent Fourier and beam equations."""
 
 import itertools
+
 import numpy as np
 import pytest
 from phasesmith import _core
@@ -51,7 +52,6 @@ def test_beam_matches_independent_equations_with_unequal_site_displacements(seed
 
 
 def direct_columns(meta, cell, hkl, points, tensors):
-    import gemmi
 
     matrix = cell.geometry().direct_basis
     reciprocal = hkl @ np.linalg.inv(matrix)
@@ -248,10 +248,11 @@ def test_joint_search_recovers_whole_orbit_counts_without_count_inputs(kind):
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
 def test_full_search_preserves_clean_solution_and_rejects_invalid_feature_controls(symbol):
-    from phasesmith.experimental.solution import solve_structure_elements, SolutionOptions
-    from test_solution_shared_search import synthetic
     import sys
     from pathlib import Path
+
+    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from test_solution_shared_search import synthetic
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "benchmarks"))
     from solution_multicore import ENABLED
@@ -329,8 +330,8 @@ def test_diagonal_shift_derivative_matches_independent_finite_differences(seed):
 
 @pytest.mark.parametrize("seed", range(6))
 def test_coherent_displacement_proposals_match_independent_sweeps(seed):
-    from test_solution_ambiguity import setup
     from phasesmith.experimental.solution_assignment_reference import coherent_assignment_reference
+    from test_solution_ambiguity import setup
 
     plan, phase, factors, obs, labels, u, s2, m = setup(seed, "Pm")
     shifts = np.random.default_rng(seed + 317).uniform(-0.004, 0.004, len(u))
