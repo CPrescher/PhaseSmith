@@ -25,3 +25,7 @@ pub use phasesmith_solution as solution;
 pub use phasesmith_spots as spots;
 /// Le Bail, Rietveld, quantitative, residual, and validation workflows.
 pub use phasesmith_workflows as workflows;
+
+/// Optional bundled native HDF5 detector-frame input.
+#[cfg(feature = "hdf5")]
+pub use phasesmith_hdf5 as hdf5;

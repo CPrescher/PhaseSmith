@@ -58,11 +58,13 @@ use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
-#[cfg(feature = "experimental-spots")]
 mod fft;
 mod fit_diagnostics;
 #[cfg(feature = "experimental-spots")]
 mod frame_validity;
+#[cfg(feature = "experimental-spots")]
+#[cfg(feature = "hdf5")]
+mod hdf5;
 #[cfg(feature = "experimental-spots")]
 mod intensity_model;
 #[cfg(feature = "experimental-spots")]
@@ -4285,6 +4287,8 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     spots::register(module)?;
     #[cfg(feature = "experimental-spots")]
     frame_validity::register(module)?;
+    #[cfg(feature = "hdf5")]
+    hdf5::register(module)?;
     #[cfg(feature = "experimental-spots")]
     profiles::register(module)?;
     #[cfg(feature = "experimental-spots")]

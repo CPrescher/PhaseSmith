@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "crates/phasesmith-hdf5",
   "crates/phasesmith-solution",
   "crates/phasesmith-rs",
   "crates/phasesmith-spots",
@@ -20,7 +21,7 @@ resolver = "2"
 [workspace.package]
 version = "0.7.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.85.1"
 authors = ["PhaseSmith contributors"]
 license = "MIT"
 homepage = "https://github.com/CPrescher/PhaseSmith"

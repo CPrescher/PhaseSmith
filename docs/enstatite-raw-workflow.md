@@ -4,9 +4,9 @@ This explicit example coordinates PhaseSmith's existing detector, reciprocal,
 indexing, position-refinement, integration, profile, scaling and structure-search
 APIs. It reads original HDF5 counts and generates new measurements throughout.
 The first protocol is `validation/enstatite-raw-workflow-v1.json`, committed
-before executing the measured workflow. The current default is version 5;
-earlier versions and failures are retained as described below. Version 5 passes
-complete labelled recovery; see the
+before executing the measured workflow. The current default is version 8, which validates bundled native HDF5 input
+and Rust shadow masks with version 7 scientific settings. Earlier versions and
+failures are retained as described below. Version 5 first passed complete labelled recovery; see the
 [reduction diagnosis](enstatite-reduction-diagnosis.md). This is exposed
 development/regression data with declared cell and symmetry priors, not a new blind holdout.
 
@@ -17,7 +17,7 @@ Install a feature-enabled PhaseSmith build and the optional dependencies:
 ```sh
 python -m pip install 'phasesmith[single-crystal-example]'
 # Development build, until single-crystal features join ordinary wheels:
-maturin develop --release --features experimental-spots,experimental-solution
+maturin develop --release --features experimental-spots,experimental-solution,hdf5
 python benchmarks/enstatite_raw_workflow.py \
   --data-root /path/to/MgSiO3-files \
   --output /path/outside/the/repository/enstatite-raw-run
@@ -27,7 +27,10 @@ The output directory must be new and outside the checkout. All large observation
 arrays, shoeboxes, profiles, detector positions, maps and candidate CIFs are
 written there. The repository contains code, input/protocol hashes, and small
 result summaries only. No input file is modified, downloaded or uploaded.
-Original input identities are pinned in `enstatite-mgsio3-local-v1.json`.
+Original input identities are pinned in `enstatite-mgsio3-local-v1.json`. The
+frame reader now uses bundled native HDF5 and Bitshuffle/LZ4, with no h5py or
+hdf5plugin dependency. See [native HDF5 input](native-hdf5.md) for build/runtime
+contracts and the remaining Python orchestration/optimizer scope.
 
 The script uses no Dioptas/Qt, vendor HKL/peak table, archived intensity/profile
 array, atomic starting model, SHELXT or SHELXL. Supplied cell, group and element

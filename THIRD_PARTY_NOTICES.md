@@ -177,3 +177,21 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Optional bundled HDF5 input
+
+The `hdf5` feature links the native HDF5 library, Bitshuffle/LZ4, LZF and zlib.
+It does not include or require h5py or hdf5plugin. Cargo.lock pins source versions
+and checksums: hdf5-metno 0.15.1, hdf5-metno-sys 0.12.5,
+hdf5-metno-src 0.10.4, hdf5-bitshuffle 1.0.0, lzf-sys 0.1.1 and libz-sys 1.1.31.
+The Bitshuffle binding builds its included upstream C sources with its published
+filter-parameter guard patch. PhaseSmith makes no changes to those sources.
+
+Upstream sources: https://github.com/metno/hdf5-rust,
+https://git.3lp.cx/dyadkin/cryiorust,
+https://github.com/kiyo-masui/bitshuffle,
+https://github.com/rust-lang/libz-sys. Rust bindings are MIT/Apache-2.0 or MIT;
+the bundled native licenses and copyright notices are reproduced in
+`licenses/hdf5/` and included as wheel license files. HDF5/LZ4 use BSD licenses,
+Bitshuffle uses MIT, zlib uses its zlib license; the BSD alternative is selected
+for LZF. These notices apply only when those components are distributed.

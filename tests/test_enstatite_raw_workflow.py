@@ -15,16 +15,14 @@ workflow = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(workflow)
 
 
-def test_raw_loader_preserves_zero_high_counts_reserved_mask_and_orientation(tmp_path):
-    h5py = pytest.importorskip("h5py")
-    pytest.importorskip("hdf5plugin")
-    path = tmp_path / "raw.h5"
+def test_raw_loader_preserves_zero_high_counts_reserved_mask_and_orientation():
+    from phasesmith import _core
+
+    if not hasattr(_core, "NativeHdf5Frames"):
+        pytest.skip("bundled HDF5 feature build")
+    path = ROOT / "crates/phasesmith-hdf5/tests/data/counts-bitshuffle-lz4.h5"
     data = np.arange(24, dtype=np.uint32).reshape(2, 3, 4)
-    data[0, 0, :3] = [0, 70000, 2**32 - 2]
-    with h5py.File(path, "w") as f:
-        f.create_dataset("detector/data", data=data)
-        f.create_dataset("detector/detector_information/pixel_size/xsize", data=75e-6)
-        f.create_dataset("detector/detector_information/pixel_size/ysize", data=75e-6)
+    data[0, 0, :4] = [0, 70000, 2**32 - 2, 2**32 - 1]
     acquisition = dict(
         first_frame=0,
         last_frame_inclusive=1,

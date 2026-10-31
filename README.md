@@ -40,7 +40,7 @@ GitHub/PyPI/crates.io process is documented in
 
 ## Development
 
-Requires Rust 1.85 or newer, Python 3.11 or newer, `uv`, and `maturin`.
+Requires Rust 1.85.1 or newer, Python 3.11 or newer, `uv`, and `maturin`.
 
 ```shell
 uv venv
@@ -49,6 +49,10 @@ maturin develop --uv
 cargo test --workspace --all-features
 uv run pytest
 ```
+
+The workspace HDF5 adapter builds bundled native libraries and also needs a C
+compiler, CMake >=3.26 and Git. Ordinary Rust facade builds keep HDF5 optional.
+See [native HDF5 input](docs/native-hdf5.md) for features and distribution.
 
 Editable environments retain the absolute checkout location. After moving or
 renaming the repository, recreate `.venv`, repeat the three setup commands

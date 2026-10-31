@@ -21,9 +21,17 @@ connectivity/morphology and full-exposure DAC visibility. Geometry, strong-profi
 and empirical-scaling experimental optimizers still need a separate native port;
 do not claim the complete raw workflow is Rust-only until those paths and
 orchestration have Rust entry points. Do not introduce further production SciPy
-algorithms. HDF5 I/O belongs in an optional adapter outside the numerical core; a Rust
-frontend can use the standard C HDF5 library and native filter plugins without
-requiring a Python runtime.
+algorithms. HDF5 I/O now lives in the separate optional `phasesmith-hdf5` adapter.
+The facade and Python extension enable it with feature `hdf5`; release wheels
+include it. It builds HDF5, Bitshuffle/LZ4, zlib and LZF from Cargo sources,
+requiring a C compiler, CMake >=3.26 and Git at build time, with no installed HDF5 or
+Python compression plugins at runtime. The minimum Rust patch version is now
+1.85.1 for the HDF5 bindings. Default Rust facade builds remain HDF5-free.
+The v8 MgSiO3 protocol freezes an unchanged-science full rerun through this
+reader plus native masks; this validates I/O, not a completed Rust-only pipeline.
+Existing Python orchestration/experimental optimizers remain explicit pending
+work. Large raw data and full products stay outside Git; only a 10-KiB independent
+compressed interoperability fixture is checked in.
 
 The script-first MgSiO3 workflow now passes from original HDF5 frames through
 PhaseSmith structure search and post-search labelled-coordinate assessment.
