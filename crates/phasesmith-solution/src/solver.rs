@@ -53,21 +53,21 @@ pub struct PhasingTrial {
 pub struct SolveOptions {
     /// Reproducible `SplitMix64` starting seed.
     pub seed: u64,
-    /// Maximum independent phase starts, in [1,128].
+    /// Maximum independent phase starts, in `[1,128]`.
     pub trials: usize,
-    /// Phasing cycles per trial, in [1,20000].
+    /// Phasing cycles per trial, in `[1,20000]`.
     pub cycles: usize,
     /// Charge flipping, atomic dual-space, or an alternating portfolio.
     pub phasing: PhasingMethod,
     /// Base threshold; successive starts cycle through 1,1.1,1.2 times this value.
     pub delta_sigma: f64,
-    /// Weak-reflection perturbation fraction, in [0,0.5].
+    /// Weak-reflection perturbation fraction, in `[0,0.5]`.
     pub weak_fraction: f64,
-    /// Final low-density-elimination cycles, in [0,100].
+    /// Final low-density-elimination cycles, in `[0,100]`.
     pub cleanup_cycles: usize,
-    /// Coordinate/U polishing iteration budget, in [0,200].
+    /// Coordinate/U polishing iteration budget, in `[0,200]`.
     pub polish_iterations: usize,
-    /// Greedy unlike-element swap/refinement rounds, in [0,8]; counts stay fixed.
+    /// Greedy unlike-element swap/refinement rounds, in `[0,8]`; counts stay fixed.
     pub assignment_rounds: usize,
     /// Wall-clock budget for the complete native solve, in (0,3600] seconds.
     pub max_seconds: f64,
@@ -81,7 +81,7 @@ pub struct SolveOptions {
     pub refinement: Option<crate::AdpMode>,
     /// Maximum accepted same-element matching displacement, in angstrom.
     pub symmetry_tolerance_angstrom: f64,
-    /// Maximum constrained-polishing iterations, in [0,200].
+    /// Maximum constrained-polishing iterations, in `[0,200]`.
     pub symmetry_iterations: usize,
     /// Attempt one weakest-species orbit completion from stronger symmetry orbits.
     pub completion: bool,

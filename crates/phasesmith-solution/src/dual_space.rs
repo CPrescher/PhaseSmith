@@ -38,15 +38,15 @@ pub struct AdaptivePeakHistory {
 /// Explicit controls for the independently implemented published dual-space mechanisms.
 #[derive(Clone, Debug)]
 pub struct DualSpaceOptions {
-    /// Maximum cycles, in [1,20000].
+    /// Maximum cycles, in `[1,20000]`.
     pub cycles: usize,
     /// Fixed-count or data-adaptive atomicity selection.
     pub peak_selection: PeakSelection,
     /// Cartesian Gaussian mask sigma in angstrom, strictly positive.
     pub mask_sigma: f64,
-    /// Hybrid difference multiplier, in [1,4].
+    /// Hybrid difference multiplier, in `[1,4]`.
     pub hybrid_m: f64,
-    /// Fraction of mask peaks omitted every third cycle, in [0,0.3].
+    /// Fraction of mask peaks omitted every third cycle, in `[0,0.3]`.
     pub omit_fraction: f64,
     /// Stateless omission seed.
     pub seed: u64,

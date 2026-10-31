@@ -54,7 +54,7 @@ impl PreparedPeakCompletion {
     /// Propose one/two coordinated near-element relabels without fixing stoichiometry.
     /// The plan must contain bare orbit phases; `site_u` supplies attenuation once.
     /// # Errors
-    /// Rejects incomplete labels, invalid displacements or a maximum outside [1,8].
+    /// Rejects incomplete labels, invalid displacements or a maximum outside `[1,8]`.
     /// # Panics
     /// Only if public plan metadata has been mutated inconsistently with its cached arrays.
     #[allow(clippy::too_many_lines, clippy::cast_precision_loss)]

@@ -12,7 +12,7 @@ pub struct PreparedAdaptivePeaks {
     streamed_calls: usize,
 }
 impl PreparedAdaptivePeaks {
-    /// Prepare the existing even-axis [8,128], at-most-2097152-voxel domain.
+    /// Prepare the existing even-axis `[8,128]`, at-most-2097152-voxel domain.
     /// # Errors
     /// Rejects the same grid boundaries as the original Fourier routines.
     pub fn new(shape: [usize; 3]) -> Result<Self, SolutionError> {

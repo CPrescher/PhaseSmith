@@ -123,7 +123,7 @@ fn median(values: &mut [f64]) -> f64 {
 
 /// Compute medians directly from original count arrays without changing pixels.
 /// # Errors
-/// Rejects malformed input or available counts outside [0,1e30]. Nonfinite or
+/// Rejects malformed input or available counts outside `[0,1e30]`. Nonfinite or
 /// explicitly masked samples do not contribute. Real zeros remain available.
 pub fn coarsen(image: &[f64], excluded: &[bool], shape: Shape) -> Result<CoarseFrame, Error> {
     let [h, w] = shape.coarse()?;

@@ -19,31 +19,31 @@ pub use phase_path::{PhaseOriginAudit, PhaseSettingAudit};
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug)]
 pub struct SharedSearchOptions {
-    /// Maximum full-cell atoms, in [1,128].
+    /// Maximum full-cell atoms, in `[1,128]`.
     pub maximum_atoms: usize,
-    /// Bounded worker budget for independent numerical work, in [1,64].
+    /// Bounded worker budget for independent numerical work, in `[1,64]`.
     pub workers: usize,
     /// Repair coordinated labels/counts using final anisotropic orbit columns.
     pub joint_assignment_refinement: bool,
     /// Reuse exact post-search categorical fields and call-local reflection buffers.
     pub cached_repair_evaluation: bool,
-    /// Maximum live states and initial settings, in [1,8].
+    /// Maximum live states and initial settings, in `[1,8]`.
     pub beam_width: usize,
-    /// Maximum edit rounds per phasing start, in [1,16].
+    /// Maximum edit rounds per phasing start, in `[1,16]`.
     pub rounds: usize,
     /// Screen edits isotropically before requested anisotropic fits.
     pub staged_refinement: bool,
-    /// Maximum isotropic screening iterations, in [1,40].
+    /// Maximum isotropic screening iterations, in `[1,40]`.
     pub screening_iterations: usize,
-    /// Minimum number shortlisted per parent, in [1,16], plus ties/rescues.
+    /// Minimum number shortlisted per parent, in `[1,16]`, plus ties/rescues.
     pub refinement_shortlist: usize,
     /// Guide element edits using relative integrated measured-amplitude density.
     pub integrated_peak_density: bool,
-    /// Cartesian integration radius, in [1e-4,2] angstrom.
+    /// Cartesian integration radius, in `[1e-4,2]` angstrom.
     pub peak_density_radius_angstrom: f64,
-    /// Count-free atomicity map RMS threshold, in [0.1,10].
+    /// Count-free atomicity map RMS threshold, in `[0.1,10]`.
     pub dual_peak_sigma: f64,
-    /// Count-free atomicity resource cap, in [1,128].
+    /// Count-free atomicity resource cap, in `[1,128]`.
     pub dual_peak_cap: usize,
     /// Test window maps with complete shared refinement before the cycle ceiling.
     pub dual_checkpoints: bool,
@@ -51,7 +51,7 @@ pub struct SharedSearchOptions {
     pub cached_refinement: bool,
     /// Recycle each supplied-symmetry setting before weak-peak assignment.
     pub symmetry_recycling: bool,
-    /// Positivity/phase-projection cycles, in [1,50].
+    /// Positivity/phase-projection cycles, in `[1,50]`.
     pub recycling_cycles: usize,
     /// Add measured-only tangent phases, annealing and negative-quartet checks.
     pub tangent_refinement: bool,
@@ -121,7 +121,7 @@ pub struct SharedSearchOptions {
     pub model_consensus_stopping: bool,
     /// Regularize allowed unmeasured coefficients using the observed Wilson envelope.
     pub missing_reflections: bool,
-    /// Reciprocal-radius extension multiplier, in [1,1.5].
+    /// Reciprocal-radius extension multiplier, in `[1,1.5]`.
     pub resolution_extension: f64,
 }
 impl Default for SharedSearchOptions {
