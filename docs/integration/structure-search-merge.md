@@ -65,3 +65,9 @@ The user-authorized merge targets `codex/hkl-structure-solution`. It does not
 overwrite the active experimental checkout or publish any branch. Detailed
 check logs and preservation snapshots are retained under
 `/tmp/phasesmith-integration-merge-20261031/`.
+
+The merge completed by fast-forward to `63bb354`. The destination's own editable
+native extension was rebuilt, and its full Python suite again passed all 3,158
+tests. Post-merge formatting and strict Clippy pass. Its Rust tree is identical
+to the integration tree that passed all 485 Rust tests. Final file/hash, archived
+binary and check evidence is in `structure-search-merge-validation.json`.
