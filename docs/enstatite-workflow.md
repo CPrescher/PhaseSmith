@@ -2,7 +2,8 @@
 
 MgSiO3 enstatite is the first exposed measured development case for the proposed
 raw-images-to-PhaseSmith-structure-search workflow. The
-[complete runner](enstatite-raw-workflow.md) is implemented and has executed all stages, but fresh raw-frame structure recovery has not passed. See the
+[complete runner](enstatite-raw-workflow.md) executes all stages; frozen v5
+passes fresh raw-frame structure recovery after explicit DAC visibility and profile-warning policy repairs. See the
 [promotion audit](single-crystal-promotion.md).
 
 ## Storage
@@ -96,7 +97,7 @@ O=48. Post-search reference matching gives maximum/RMS coordinate errors of
 0.00920/0.00536 A for the PhaseSmith reduction and 0.01200/0.00682 A for the source
 integration. Both pass the strict 0.02 A maximum criterion. This establishes
 structure search from these existing intensities. The fresh raw-frame runner
-now executes all stages but produces no candidate with its frozen recipe; no standalone structure-refinement workflow is claimed.
+now passes complete recovery with its frozen v5 recipe; no standalone structure-refinement workflow is claimed.
 
 The exact records are `benchmarks/enstatite-memory-budget-search-macos.json`.
 Local recovered structures are `runs/enstatite-memory-64mib-phasesmith/candidate/candidate.cif`

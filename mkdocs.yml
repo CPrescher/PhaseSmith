@@ -117,6 +117,8 @@ nav:
       - Structure-search memory budget: solution-memory-budget.md
       - Enstatite external-data workflow: enstatite-workflow.md
       - Enstatite raw-frame workflow: enstatite-raw-workflow.md
+      - MgSiO3 reduction diagnosis: enstatite-reduction-diagnosis.md
+      - Shared frame-mask proposal: single-crystal-mask-proposal.md
       - CW Pawley refinement: pawley.md
       - TOF Pawley refinement: tof-pawley.md
       - Pawley validation: pawley-validation.md

@@ -12,35 +12,36 @@ not part of the numerical library.
 
 ## Current implementation status
 
-The script-first MgSiO3 workflow is implemented and has run from original HDF5
-frames through PhaseSmith structure search in
-`benchmarks/enstatite_raw_workflow.py`. Version 4's complete external-data run
-processes 142 frames, passes prior-assisted positional gates (0.3342 pixel /
-0.16395-degree withheld RMS), learns 278 profiles and exports 5,708 signed
-quality-controlled observations. All four phase starts fail the existing origin
-check; no atomic candidate or reference assessment is produced. A longer-time
-run completes every scheduled cycle and preserves bitwise-identical reduction
-arrays. This is complete pipeline execution, not passed structure recovery or
-public API promotion. Small results and all prior outcomes are retained in
-`benchmarks/enstatite-raw-workflow-macos.json` and
-`benchmarks/enstatite-raw-workflow-attempts-macos.json`.
+The script-first MgSiO3 workflow now passes from original HDF5 frames through
+PhaseSmith structure search and post-search labelled-coordinate assessment.
+Frozen v5 processes 142 frames, learns 278 profiles and exports 4,310 signed
+observations, including 233 negative intensities. It infers Mg16 Si16 O48 at
+R1=0.0413175, with maximum/RMS reference errors 0.0078273/0.0050056 A. All raw
+sources and large products remain outside Git; references are read only after
+the numerical worker saves its candidate and exits. No source HKLs/peak table,
+archived reduction, atomic count or coordinate enters that worker.
 
-The numerical worker receives no atomic model, source HKLs/peak table or archived
-reduction arrays. Large products require an external output directory; references
-are graded only after a candidate is saved. New optional grain IDs and selected
-shoebox adapters preserve existing integration/background behavior. No Rust
-equation, finite support or hot loop changed. See
-`docs/enstatite-raw-workflow.md` for the frozen protocols, command and assumptions.
+The retained v1--v4 failures led to two example-level validity repairs: a declared
+35-degree DAC cone excludes occulted rays, and profile MISMATCH remains a visible
+warning rather than an unconditional export veto. Both are needed in the tested
+two-factor diagnostic. Every integrated amplitude, sigma and flag remains
+bitwise identical to v4; only explicit search eligibility changes. The full raw
+rerun reproduces the corrected diagnostic exactly. This is exposed development
+evidence with supplied cell/symmetry/elements and provisional spindle angles,
+not independent DAC metrology or an untouched holdout. Centre-ray exclusion does
+not model absorption/rocking partiality. Native equations and default builds
+are unchanged; standalone structure refinement and public API promotion remain
+pending. Small records are `benchmarks/enstatite-raw-workflow-macos.json`,
+`benchmarks/enstatite-reduction-diagnosis-macos.json` and the preserved
+`benchmarks/enstatite-raw-workflow-v4-macos.json`. See
+`docs/enstatite-reduction-diagnosis.md` and `docs/enstatite-raw-workflow.md`.
 
-The v5 follow-up adds explicit example-level measurement validity: a declared
-35-degree symmetric DAC cone excludes shadowed predicted centre rays, and the
-positive-signal-dependent profile MISMATCH bit remains a visible warning rather
-than an unconditional export veto. Every measurement, sigma and flag is retained.
-A two-factor saved-intensity diagnostic identifies both failures: neither repair
-alone solves, while both yield correct full recovery without source-HKL selection
-(PhaseSmith R1 0.04132, maximum/RMS error 0.00783/0.00501 A). This is exposed-data
-calibration, not independent transfer validation. The full v5 raw rerun is pending;
-old protocols/outcomes and native equations remain unchanged.
+A proposed shared frame-validity/seat-shadow API would bring Dioptas's existing
+MIT-licensed, original-image moving-shadow estimator into a portable array/loader
+layer, leaving UI/file readers/cache policy in Dioptas. PhaseSmith already consumes
+per-frame pixel masks. This migration is not implemented by the example repair;
+see `docs/single-crystal-mask-proposal.md` for ownership, partial-support contracts
+and validation before adopting it.
 
 Structure search now has an explicit per-dense-reflection-buffer memory policy.
 `SolutionOptions.dense_memory_budget_bytes` defaults to the historical
@@ -76,8 +77,9 @@ checksum manifest and local verifier. At the audit baseline, search capacity was
 blocker: 10,694 expanded measured rows limit the existing dense search to 36
 full-cell atoms, while the reference contains 80. Source HKL instructions must
 also be separated explicitly from its reflection block. Public API/build
-promotion and the complete raw-to-search gate remain pending; production
-equations, defaults, schemas and feature gates are unchanged. See
+promotion and independent transfer validation remain pending; the qualified raw
+MgSiO3 gate now passes as recorded above. Production equations, defaults, schemas
+and feature gates are unchanged. See
 `docs/single-crystal-promotion.md`, `docs/single-crystal-api-proposal.md` and
 `docs/enstatite-workflow.md`.
 

@@ -75,7 +75,7 @@
       "protocol": "validation/enstatite-raw-workflow-v4.json",
       "implementation_commit": "0845d1a",
       "outcome": "complete raw-frame-to-search process; no atomic candidate",
-      "summary": "benchmarks/enstatite-raw-workflow-macos.json",
+      "summary": "benchmarks/enstatite-raw-workflow-v4-macos.json",
       "search_native_seconds": 60,
       "phase_cycles": [
         200,
@@ -87,6 +87,19 @@
       "reduction_bitwise_equal_to_v3": true,
       "reference_assessment": "not_executed: no candidate",
       "passed": false
+    },
+    {
+      "protocol": "validation/enstatite-raw-workflow-v5.json",
+      "implementation_commit": "98662b0",
+      "outcome": "fresh raw-frame rerun recovered complete labelled structure",
+      "summary": "benchmarks/enstatite-raw-workflow-macos.json",
+      "changes": [
+        "Declared 35-degree DAC centre-ray validity cone",
+        "Retain profile MISMATCH as explicit warning; preserve all original flags"
+      ],
+      "numerical_values_and_flags_bitwise_equal_to_v4": true,
+      "exported_observations": 4310,
+      "passed": true
     }
   ]
 }

@@ -1,0 +1,375 @@
+{
+  "schema": "phasesmith.enstatite-reduction-diagnosis.v1",
+  "local_output_directory": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-reduction-diagnosis-20261031",
+  "source_hkl_sha256": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+  "fresh_v4_observations_sha256": "6cf846123b5cb55daa93f7cbf376e1c2df16c33ef81ac0ca9c5d79bb11881f22",
+  "comparison_method": "Signed measurements merged for diagnostics with supplied Pbca/Friedel sign equivalence and inverse-sigma-squared weights; one global rescale for plotting only. No source intensity substitutes a fresh intensity.",
+  "correlation_on_identical_families": {
+    "common_families": 1253,
+    "strong_source_families": 693,
+    "strong_source_definition": "Merged source I >10*merged source sigma, statistics only, not an export cut.",
+    "before_all": 0.7750273493930898,
+    "after_all": 0.9986598340575373,
+    "before_strong": 0.7567707851592843,
+    "after_strong": 0.9985614351120892
+  },
+  "profile_warning_censoring": {
+    "rows_with_only_mismatch": 711,
+    "positive_signal_retained_under_flags_zero": 778271.344717663,
+    "positive_signal_censored": 1930583.1672120164,
+    "positive_signal_fraction_censored": 0.7126935605843026,
+    "criterion": "Native MISMATCH is conditional on positive I>5sigma and chi2/dof>4; flags==0 therefore censors strong positive fits.",
+    "median_profile_correlation_mismatch_only": 0.9072946330920189,
+    "median_reduced_chi_square_mismatch_only": 7.620884926466454
+  },
+  "raw_equivalent_shadow": {
+    "eligible": 1645,
+    "blank_below_tenth": 133,
+    "minimum_blank_exit_angle": 35.864444378800115,
+    "blank_inside35": 0,
+    "bright_above_half_outside35": 25
+  },
+  "aperture_protocol": {
+    "scope": "Exposed-data geometric diagnostic, not a blind validation or metrology-certified DAC calibration.",
+    "assumption": "DAC axis coincides with incident beam at declared omega zero; symmetric conical half-opening 35 degrees.",
+    "equation": "s_out_sample=R(axis,-omega)*s_out_lab; exit=acos(s_out_sample dot beam); entry=abs(omega); accept only entry<=35 and exit<=35.",
+    "selection": "Geometry only, all signs/sigmas unchanged; no original HKL membership, source intensity, atom count or coordinate enters these variants.",
+    "reason": "Equivalent strong measurements collapse above about 35 degrees, matching seat/body exclusion at scan extremes in source acquisition notes. Conservative35 declared before these structure searches.",
+    "counts": {
+      "original": 7277,
+      "visible": 4873,
+      "soft_visible": 4310,
+      "strict_visible": 3625
+    },
+    "solver": "Same seeds/trials/cycles/controls/native60/dense128MiB as v4; pinned SHELXT -t1 -sPbca60sec.",
+    "reference": "After model/result serialization and process exit."
+  },
+  "cases": {
+    "original_export": {
+      "phasesmith": {
+        "termination": "search_budget",
+        "target_met": false,
+        "amplitude_r1": null,
+        "seconds": 5.266914458014071,
+        "model_saved_before_reference": true,
+        "resource": {
+          "expanded_reflection_count": 15410,
+          "volume_atom_cap": 105,
+          "memory_atom_cap": 128,
+          "maximum_atoms": 105,
+          "dense_memory_budget_bytes": 134217728
+        },
+        "observation_count": 5708,
+        "rejected_trials": []
+      },
+      "shelxt": {
+        "execution": {
+          "wall_seconds_including_startup": 60.02337916602846,
+          "returncode": 1,
+          "hard_timeout": true,
+          "command": [
+            "/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt",
+            "sample",
+            "-t1",
+            "-sPbca"
+          ]
+        },
+        "reference_read_after_solver": false,
+        "diagnostic": "FileNotFoundError: [Errno 2] No such file or directory: '/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v4-shelxt/sample_a.res'",
+        "model_returned": false,
+        "outputs_sha256": {
+          "check-first-adapter.py": "7e86c677214ef7ae221f83e234271efbc53f5cd055f6fa306299ec781e45e3ea",
+          "stdout.txt": "30f350e6181ddf6b5e1005b74ebdbce72e23b0b76bbbb2ad90c40f06630de32d",
+          "check.py": "79ce6e869b4d193299781676312a08e86571449b7dd67026c6d48e1b680a55a9",
+          "sample.ins": "60c90bd0a0e89b462c9113d9da458c89e64863e1e614627d8614c6c51198d1b7",
+          "sample.hkl": "65ad98fd8cd19c9e6ab6f9ce8939f7185a89717007838b269de851a6659d23aa",
+          "protocol.json": "b933f9934b385a4bf13c143d57c7b0c0eca99a471046611f415949b3ea0ab2c7",
+          "sample.lxt": "3e61c4b884b2b6d600d7cad755913d17297d6d239d8155baf3e659dc220637d7",
+          "adapter-first-outcome.json": "c4e9ef54016cbedccecd170fe2515df724f7c5b28d58a0bcf5d782cbcf5739e6"
+        }
+      }
+    },
+    "mismatch_warning_only": {
+      "phasesmith": {
+        "termination": "search_budget",
+        "target_met": false,
+        "amplitude_r1": null,
+        "seconds": 5.5709645000169985,
+        "model_saved_before_reference": true,
+        "resource": {
+          "expanded_reflection_count": 15920,
+          "volume_atom_cap": 105,
+          "memory_atom_cap": 128,
+          "maximum_atoms": 105,
+          "dense_memory_budget_bytes": 134217728
+        },
+        "observation_count": 6419,
+        "rejected_trials": []
+      },
+      "uses_source_hkl_membership": false,
+      "shelxt": {
+        "execution": {
+          "wall_seconds_including_startup": 60.023001457971986,
+          "returncode": 1,
+          "hard_timeout": true,
+          "command": [
+            "/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt",
+            "sample",
+            "-t1",
+            "-sPbca"
+          ]
+        },
+        "reference_read_after_solver": false,
+        "diagnostic": "FileNotFoundError: [Errno 2] No such file or directory: '/Users/clemens/ChatGPT/PhaseSmith/enstatite-reduction-diagnosis-20261031/shelxt-include-mismatch-only/sample_a.res'",
+        "model_returned": false,
+        "outputs_sha256": {
+          "stdout.txt": "bd10c1a8e7e91763859a68d7567f5536f0b4b1bfdf8569347b43e8c66424f343",
+          "check.py": "b80a342d37076f9b3b07963fe1bef676753fa7287b4f528cd107f11ef511ea10",
+          "sample.ins": "60c90bd0a0e89b462c9113d9da458c89e64863e1e614627d8614c6c51198d1b7",
+          "sample.hkl": "478df5af08365a0aae5b54a0282f1311287e8fab65688ded3ea3ad3ab31152d9",
+          "protocol.json": "ba2a65a9746d150aba404acfc7352d9faceb528d7a239fb76c867e295be7811f",
+          "sample.lxt": "c7e25f871d4f6db26706ea435b8e15751d5018029977f79a62399e5c5a9b4bca"
+        }
+      }
+    },
+    "dac_mask_only": {
+      "phasesmith": {
+        "termination": "search_budget",
+        "target_met": false,
+        "amplitude_r1": null,
+        "seconds": 1.67572087503504,
+        "model_saved_before_reference": true,
+        "resource": {
+          "expanded_reflection_count": 8910,
+          "volume_atom_cap": 105,
+          "memory_atom_cap": 128,
+          "maximum_atoms": 105,
+          "dense_memory_budget_bytes": 134217728
+        },
+        "observation_count": 3625,
+        "rejected_trials": []
+      },
+      "uses_source_hkl_membership": false
+    },
+    "both_geometry_and_warning": {
+      "phasesmith": {
+        "termination": "r1_target",
+        "target_met": true,
+        "amplitude_r1": 0.041317485983379,
+        "seconds": 0.5684063750086352,
+        "model_saved_before_reference": true,
+        "resource": {
+          "expanded_reflection_count": 9604,
+          "volume_atom_cap": 105,
+          "memory_atom_cap": 128,
+          "maximum_atoms": 105,
+          "dense_memory_budget_bytes": 134217728
+        },
+        "observation_count": 4310,
+        "rejected_trials": []
+      },
+      "uses_source_hkl_membership": false,
+      "phasesmith_post_search_audit": {
+        "counts_match": true,
+        "rms_error_angstrom": 0.005005636067474374,
+        "maximum_error_angstrom": 0.007827260357917209,
+        "hand": -1,
+        "shift": [
+          0.8357265859581471,
+          0.5562463494047918,
+          0.27234619803063964
+        ],
+        "correct": true,
+        "strict_002_angstrom": true
+      },
+      "shelxt": {
+        "execution": {
+          "wall_seconds_including_startup": 1.112687167013064,
+          "returncode": 0,
+          "hard_timeout": false,
+          "command": [
+            "/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt",
+            "sample",
+            "-t1",
+            "-sPbca"
+          ]
+        },
+        "reference_read_after_solver": true,
+        "model_returned": true,
+        "reported_r1": 0.038,
+        "output_space_group": "P b c a",
+        "returned_full_cell_counts": {
+          "Si": 16,
+          "Mg": 16,
+          "O": 48
+        },
+        "reference_sha256": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+        "assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.009481043510202652,
+          "maximum_error_angstrom": 0.018492808359393206,
+          "hand": -1,
+          "shift": [
+            0.5,
+            0.0,
+            0.5
+          ],
+          "correct": true,
+          "strict_002_angstrom": true
+        },
+        "outputs_sha256": {
+          "stdout.txt": "8a1789477cce3157a99a5add434268f9e49de22d4f4ecfb9e28cdb082681650e",
+          "saved-model.json": "db6ff9dfa638d0853480d9d07ae0c1fe7a39f0c35bb2d57f981699d7cc959984",
+          "check.py": "ab3f1b54ba11174f93481d0c20e725097bce132d3ece3c457a9e4f9d4e03ba95",
+          "sample.ins": "60c90bd0a0e89b462c9113d9da458c89e64863e1e614627d8614c6c51198d1b7",
+          "sample.hkl": "be7c373d536cd35dca1ea73bdb5690158baafd9eee4fd77088497e2397f3e998",
+          "sample_a.hkl": "5e285772ac33f6f1b67cca498d4b1d11a3ea77beb14fefe8cbcf386d8469aff5",
+          "protocol.json": "11d94fd0b34efcd75a2a4567755919400cd49d9c336661963f832751705df255",
+          "sample.lxt": "c8ee70ae0e833f7517b64e6479d3a3f63f5425e4d529bb103f634e26dac08068",
+          "sample_a.res": "11b57f5974a44e1b3006eb0b86cf8b966d0d97a55d86a4090d2b0152445c424f"
+        }
+      }
+    },
+    "source_membership_diagnostic": {
+      "phasesmith": {
+        "termination": "r1_target",
+        "target_met": true,
+        "amplitude_r1": 0.04239399036560055,
+        "seconds": 0.7144586250069551,
+        "model_saved_before_reference": true,
+        "resource": {
+          "expanded_reflection_count": 9890,
+          "volume_atom_cap": 105,
+          "memory_atom_cap": 128,
+          "maximum_atoms": 105,
+          "dense_memory_budget_bytes": 134217728
+        },
+        "observation_count": 4333,
+        "rejected_trials": []
+      },
+      "uses_source_hkl_membership": true,
+      "phasesmith_post_search_audit": {
+        "counts_match": true,
+        "rms_error_angstrom": 0.005505212383379558,
+        "maximum_error_angstrom": 0.009129471026045544,
+        "hand": -1,
+        "shift": [
+          0.8364559545916581,
+          0.9482248258467079,
+          0.772670616658127
+        ],
+        "correct": true,
+        "strict_002_angstrom": true
+      },
+      "shelxt": {
+        "execution": {
+          "wall_seconds_including_startup": 1.1098239159910008,
+          "returncode": 0,
+          "hard_timeout": false,
+          "command": [
+            "/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt",
+            "sample",
+            "-t1",
+            "-sPbca"
+          ]
+        },
+        "reference_read_after_solver": true,
+        "model_returned": true,
+        "reported_r1": 0.039,
+        "output_space_group": "P b c a",
+        "returned_full_cell_counts": {
+          "Si": 16,
+          "Mg": 16,
+          "O": 48
+        },
+        "reference_sha256": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+        "assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.008677596626789139,
+          "maximum_error_angstrom": 0.019118119504004966,
+          "hand": -1,
+          "shift": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "correct": true,
+          "strict_002_angstrom": true
+        },
+        "outputs_sha256": {
+          "stdout.txt": "5e02c016a35ecf5b9a3db1a3a2d242a09c4932690af4d01b96e48e05d7d8ca59",
+          "saved-model.json": "12afc002892bb218f8517e2ff70bb504ba701c11628203f29da19cc15493029f",
+          "check.py": "f1e454951502e5f401c6b4d83e1a5179bc4f3415852c558d6759c76450c224d0",
+          "sample.ins": "60c90bd0a0e89b462c9113d9da458c89e64863e1e614627d8614c6c51198d1b7",
+          "sample.hkl": "38ca93a433948b6ff23cba3aa6aa15839e4202033fc2e979677a0e82ea15a329",
+          "sample_a.hkl": "0f85c23a32fa58cb620debcbff60a67c96f469d8981f511f4c0aeb882c7387c6",
+          "protocol.json": "8bfde4d809591b8924b7d96252e61fc847c7670323871e6b70eaa05ebb37d923",
+          "sample.lxt": "6cc9313cec44882e671903e77b47b0c7dba326c69b7ab6b50d2223c9351af001",
+          "sample_a.res": "65bcd8217d1c84243ce6fe56d2b2bbffe2647df44e1b562b3cdccfa148d965b6"
+        }
+      }
+    }
+  },
+  "original_hkl_phasesmith_control": {
+    "output_directory": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-original-hkl-phasesmith-control-20261031",
+    "observations": 5389,
+    "search": {
+      "target_met": true,
+      "termination": "r1_target",
+      "returned_full_cell_counts": {
+        "Mg": 16,
+        "Si": 16,
+        "O": 48
+      },
+      "amplitude_r1": 0.0481402124032541,
+      "rejected_trials": []
+    },
+    "post_search_assessment": {
+      "reference_full_cell_atoms": 80,
+      "capacity_sufficient_for_reference": true,
+      "coordinate_recovery": {
+        "counts_match": true,
+        "rms_error_angstrom": 0.006819160676493051,
+        "maximum_error_angstrom": 0.012003262364801582,
+        "hand": 1,
+        "shift": [
+          0.6576093380920796,
+          0.15574240783224802,
+          0.6233460727829453
+        ],
+        "correct": true,
+        "strict_002_angstrom": true,
+        "reference_counts": {
+          "Si": 16,
+          "Mg": 16,
+          "O": 48
+        },
+        "reference_read_after_search": true
+      },
+      "standalone_structure_refinement": "not_implemented",
+      "complete_raw_to_structure_workflow": "not_executed"
+    }
+  },
+  "full_raw_confirmation": "benchmarks/enstatite-raw-workflow-macos.json",
+  "figures": [
+    {
+      "file": "reduction-diagnosis.png",
+      "sha256": "4892d13d342d2a1003b15d8fc4b0dba27cacaa8ea6482f0ba124d896a61e9290"
+    },
+    {
+      "file": "reduction-diagnosis.pdf",
+      "sha256": "ecb1faf255f5f1bfc8f1f9dd7fd5b26b515eb4f073f018687cfb58e677c0dc22"
+    }
+  ],
+  "external_scripts": {
+    "plot.py": "349be93e77f15e95c9b3bb80489f7215426e6ed3b2f074efd5f69e285ae39107",
+    "probe-strict-geometric-aperture-profile.py": "f93c001f28f167b6d264458a36a784e660e62f698271aeb3b441170aa69decf2",
+    "probe-source-membership.py": "4902398ea72ed7b20270c4754676b867d7b95bea3674a91893c60893653ef18f",
+    "probe.py": "e1df9fffbe31efbdb7a3b7c711c7a9411e8097c79d6675424741c8a2f0201f72",
+    "probe-geometric-aperture-profile.py": "4da6d408da684ffc5cedb27099381672b2c287212394855f82ae545c255c04ac",
+    "aperture.py": "d633b177987fefdfdecf252d481125ca1aeb78e33ffb426e27fe57559697d943",
+    "compare.py": "26253883cd31b37af8fed6c66380b36c9088f07fe185f05edac2c71147ea2642"
+  },
+  "interpretation": "Both validity errors are causally required in the tested two-factor experiment. Corrected geometry-only selection solves without vendor-HKL membership. Peak amplitudes and sigmas remain bitwise unchanged; primary failure is validity/export policy rather than lost raw signal or a PhaseSmith-only search failure.",
+  "scope": "Exposed-data diagnosis; 35-degree conservative cone inferred from raw-equivalent attenuation, not independent aperture calibration. No new universal or blind-validation claim."
+}

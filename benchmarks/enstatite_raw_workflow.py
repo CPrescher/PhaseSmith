@@ -160,8 +160,8 @@ def dac_aperture_visibility(centres, geometry, recipe):
 
     The DAC axis is fixed in the sample frame, specified in lab coordinates at
     omega zero. Rotate incident/outgoing rays by -omega into that frame. Both
-    cones include their boundary (eight float64 epsilons in cosine). This is an exclusion mask, not an absorption
-    or rocking-partiality correction.
+    cones include their boundary (eight float64 epsilons in cosine). This is an
+    exclusion mask, not an absorption or rocking-partiality correction.
     """
     from phasesmith.experimental.reduction import profile_geometry
 
