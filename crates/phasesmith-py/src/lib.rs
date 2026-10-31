@@ -62,6 +62,8 @@ use pyo3::types::{PyDict, PyList, PyTuple};
 mod fft;
 mod fit_diagnostics;
 #[cfg(feature = "experimental-spots")]
+mod frame_validity;
+#[cfg(feature = "experimental-spots")]
 mod intensity_model;
 #[cfg(feature = "experimental-spots")]
 mod omega_background;
@@ -4281,6 +4283,8 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     solution::register(module)?;
     #[cfg(feature = "experimental-spots")]
     spots::register(module)?;
+    #[cfg(feature = "experimental-spots")]
+    frame_validity::register(module)?;
     #[cfg(feature = "experimental-spots")]
     profiles::register(module)?;
     #[cfg(feature = "experimental-spots")]

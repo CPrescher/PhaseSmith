@@ -2,10 +2,37 @@
 
 `phasesmith.experimental.frame_validity` provides portable frame validity,
 original-image seat-shadow estimation, geometric DAC masks and composition.
-It uses NumPy arrays and loader callbacks, with no Dioptas, Qt, HDF5 reader,
-display flip or application cache dependency. Native detector/profile kernels
-remain unchanged. The API is staged under `experimental` with the existing
+Production numerics live in `phasesmith-spots::frame_validity` and can run
+entirely in Rust. Python supplies optional NumPy/loader/archive adapters, with no
+Dioptas, Qt, HDF5 reader, display flip or application cache dependency. Existing
+detector/profile value and derivative kernels remain unchanged. The API is staged under `experimental` with the existing
 single-crystal APIs; no public namespace/build promotion is implied.
+
+## Rust API
+
+`coarsen(&counts, &excluded, Shape)` returns an owned block-median frame;
+`estimate(&scan, &available, shape, SeatOptions)` returns frame-major coarse
+exclusions and detection-only scales. `dac_mask(geometry, exposure_degrees,
+shape, DacOptions)` returns a mask of complete pixel/block footprints.
+`Mask::expand()` expands a single frame. OR the expanded masks with original
+sensor/manual exclusions before passing them to detection and integration.
+These APIs use slices and typed Rust records; they need no interpreter, external
+optimizer or HDF5 dependency. The facade exposes them as `phasesmith::spots`
+with its `experimental-spots` feature.
+
+A complete synthetic masking example runs with:
+
+```sh
+cargo run -p phasesmith-spots --release --example frame_validity
+```
+
+All block medians, float32 spatial filters, reference percentiles, connectivity,
+hole filling, dilation and closed-interval DAC extrema execute natively. Spatial
+filter boundaries use half-sample reflection. The Gaussian has sigma 1 and radius
+4, applied vertically then horizontally, with float32 rounding after each pass.
+Morphology uses four-neighbour connectivity and zero exterior boundary values.
+No temporal filtering or modification of measured counts occurs. A readable
+independent reference preserves the declared equations and finite supports.
 
 ## Original-image estimator
 
@@ -44,9 +71,10 @@ observations = prepare_profiles(
 )
 ```
 
-The estimator alone requires optional SciPy (`pip install 'phasesmith[masking]'`).
-Snapshot access and geometric masks require NumPy only. Existing detector and
-profile operations retain their own native feature requirements. Source loaders,
+Build the Python extension with `experimental-spots` for estimation and geometric
+masks. Production masking does not import or require SciPy. Snapshot/archive
+access requires only NumPy. The separate `frame_validity_reference` module uses
+NumPy/SciPy solely for independent comparisons. Source loaders,
 source-mask loaders and progress callbacks run in order on the calling thread.
 At most `workers` owned frame snapshots are in flight (default 1, maximum 32).
 Every source is read once during estimation. Retained working data are coarse
@@ -190,3 +218,30 @@ analytical derivatives are unchanged; no new GSAS-II fixture covers this
 image-mask preprocessing. All ordinary native/reference tests remain required.
 The MgSiO3 v6 protocol tests the original-image mask throughout a fresh raw run,
 without the earlier example-only 35-degree centre-ray postselection.
+
+The Rust migration reproduces the unmodified upstream masks and original-image
+hashes exactly on the same 40-frame benchmark. Median loader-to-mask times are
+0.08670 s with one worker and 0.02679 s with four, compared with 0.1441/0.04563 s
+for the previous Python/SciPy prototype on this machine (three repeats each).
+Five fine geometric masks take 0.1525 s; conservative block-16 masks take
+0.001592 s. These include Python boundary/loader overhead and are not pure Rust
+kernel timings. See `benchmarks/frame-validity-rust-macos.json`.
+
+The raw MgSiO3 driver still uses Python orchestration and other experimental
+Python optimizers. Native shadow masking alone does not establish that the
+complete raw-to-structure workflow is available as a Rust executable. HDF5 I/O
+should be an optional adapter using the standard HDF5 library and required
+native filters, outside the dependency-light numerical crate.
+
+On all 142 original MgSiO3 frames, native illumination exclusions are bitwise
+identical to the retained v7 snapshot, with identical original-image hashes.
+The maximum detection-only scale difference is 5.96e-8; those scales never alter
+counts. The native wheel also passes estimation and geometric masking in a clean
+NumPy-only environment without SciPy. The v7 combined-mask full workflow already
+recovers Mg16 Si16 O48 at R1 .0411159 with maximum/RMS labelled-coordinate errors
+.0065804/.0045658 A; this mask-equivalence check is not another structure search.
+
+Workspace verification after the migration: 496 Rust tests pass (34 ignored),
+3,208 Python tests pass (11 skipped, 34 deselected), formatting and strict
+all-target/all-feature Clippy pass. These counts include the existing independent
+value/derivative suites; no profile equations or numerical tolerances changed.

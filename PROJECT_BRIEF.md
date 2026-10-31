@@ -12,6 +12,19 @@ not part of the numerical library.
 
 ## Current implementation status
 
+Rust-only production is an explicit user requirement (31 October 2026). The
+initial NumPy/SciPy shadow prototype has been replaced by native kernels in
+`phasesmith-spots`; Python remains an optional array/loader adapter, and SciPy
+is retained only in independent masking reference tests. Production masking
+now has native block medians, float32 filters, percentile normalization,
+connectivity/morphology and full-exposure DAC visibility. Geometry, strong-profile
+and empirical-scaling experimental optimizers still need a separate native port;
+do not claim the complete raw workflow is Rust-only until those paths and
+orchestration have Rust entry points. Do not introduce further production SciPy
+algorithms. HDF5 I/O belongs in an optional adapter outside the numerical core; a Rust
+frontend can use the standard C HDF5 library and native filter plugins without
+requiring a Python runtime.
+
 The script-first MgSiO3 workflow now passes from original HDF5 frames through
 PhaseSmith structure search and post-search labelled-coordinate assessment.
 Frozen v5 processes 142 frames, learns 278 profiles and exports 4,310 signed
@@ -42,8 +55,9 @@ validity snapshots with exact source/exposure identity and archives; the
 MIT-attributed portable Dioptas illumination-ratio estimator; conservative
 full-exposure/four-pixel-corner geometric DAC masks; mask composition; and
 flagging of incomplete position supports. Loaders remain application-owned;
-there is no Dioptas, Qt or HDF5 runtime dependency. Only image estimation needs
-optional SciPy. Low global illumination alone is diagnostic; insufficient
+there is no Dioptas, Qt or HDF5 runtime dependency. Production estimation and
+geometric visibility now execute in Rust with no SciPy dependency; the independent
+reference alone uses SciPy. Low global illumination alone is diagnostic; insufficient
 reference or wholly dark unclassified exposures return an explicit unavailable
 error. Counts are never replaced, normalized or interpolated by a mask.
 
@@ -54,10 +68,12 @@ bitwise for masks and source hashes. MgSiO3 v6 is frozen to use the same estimat
 pixel masks before detection and integration, replacing v5's post-hoc centre
 cone. Its v6 image-only run recovers the correct structure (maximum error .01223 A)
 but misses the numerical intensity target at R1 .13945. That outcome is retained.
-A v7 composition with the unchanged illumination estimator and the v5 explicitly
-declared DAC aperture is frozen next; full exposure/block masks replace the
-centre-only geometric check. Default native numerical kernels/equations,
-public namespace promotion and Dioptas UI migration remain unchanged. See
+The v7 composition with the unchanged illumination estimator and the v5
+explicitly declared DAC aperture recovers Mg16 Si16 O48 at R1 .0411159 and
+maximum/RMS coordinate errors .0065804/.0045658 A. Full exposure/block masks
+replace the centre-only geometric check. The native masking migration is
+validated separately against this retained outcome. Default native numerical
+kernels/equations, public namespace promotion and Dioptas UI migration remain unchanged. See
 `docs/single-crystal-frame-validity.md` for the API, contracts and validation.
 
 Structure search now has an explicit per-dense-reflection-buffer memory policy.

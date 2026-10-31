@@ -17,6 +17,10 @@ from phasesmith.experimental.frame_validity import (
 )
 from phasesmith.experimental.reciprocal import PanelGeometry
 
+native_mask = pytest.mark.skipif(
+    not hasattr(_core, "experimental_shadow_coarse"), reason="native masking build"
+)
+
 
 def test_snapshot_ownership_native_orientation_tiles_and_precise_fixed_mask(tmp_path):
     coarse = np.zeros((3, 2, 3), bool)
@@ -96,8 +100,8 @@ def scene():
     return images
 
 
+@native_mask
 def test_moving_seat_shadows_keep_spots_counts_and_uniform_dimming_distinct():
-    pytest.importorskip("scipy")
     images = scene()
     before = images.copy()
     plan = estimate_seat_shadows(
@@ -111,8 +115,8 @@ def test_moving_seat_shadows_keep_spots_counts_and_uniform_dimming_distinct():
     np.testing.assert_array_equal(images, before)
 
 
+@native_mask
 def test_partial_shadow_on_uniformly_dim_frame_keeps_illuminated_region():
-    pytest.importorskip("scipy")
     images = np.full((20, 192, 256), 80, np.uint16)
     images[-1] = 20
     images[-1, :, :80] = 3
@@ -124,8 +128,8 @@ def test_partial_shadow_on_uniformly_dim_frame_keeps_illuminated_region():
     assert not plan.mask(19)[40:150, 128:].any()
 
 
+@native_mask
 def test_wholly_dark_unknown_frame_is_not_silently_a_valid_zero_or_an_inferred_shadow():
-    pytest.importorskip("scipy")
     images = np.full((5, 32, 32), 80, np.uint16)
     images[0] = 0
     with pytest.raises(SeatShadowUnavailable, match="unknown visibility"):
@@ -139,8 +143,8 @@ def test_wholly_dark_unknown_frame_is_not_silently_a_valid_zero_or_an_inferred_s
     assert plan.provenance["known_unavailable_frames"] == [0]
 
 
+@native_mask
 def test_mask_estimation_source_order_reused_buffers_workers_and_callbacks_are_identical():
-    pytest.importorskip("scipy")
     images = scene()
     masks = []
     for workers in [1, 4]:
@@ -169,8 +173,8 @@ def test_mask_estimation_source_order_reused_buffers_workers_and_callbacks_are_i
         masks[0].verify_frame(0, modified)
 
 
+@native_mask
 def test_invalid_pixels_partial_blocks_and_missing_illumination_are_explicit():
-    pytest.importorskip("scipy")
     image = np.full((193, 257), 80.0)
     image[0, 0] = np.nan
     fixed = np.zeros(image.shape, bool)
@@ -188,7 +192,8 @@ def test_invalid_pixels_partial_blocks_and_missing_illumination_are_explicit():
         SeatShadowOptions(threshold=True)
 
 
-def test_optional_scipy_error_is_actionable_and_snapshot_access_needs_no_scipy(monkeypatch):
+@native_mask
+def test_production_shadow_estimation_and_geometry_do_not_import_scipy(monkeypatch):
     import builtins
 
     real_import = builtins.__import__
@@ -201,14 +206,23 @@ def test_optional_scipy_error_is_actionable_and_snapshot_access_needs_no_scipy(m
     monkeypatch.setattr(builtins, "__import__", without_scipy)
     plan = FrameValidity(("a",), (2, 2), np.zeros((1, 2, 2), bool))
     assert not plan.mask(0).any()
-    with pytest.raises(ImportError, match=r"phasesmith\[masking\]"):
-        estimate_seat_shadows(lambda _: pytest.fail("must not read frames"), 5)
+    derived = estimate_seat_shadows(lambda _: np.full((192, 256), 80.0), 5)
+    assert not derived.mask(0).any()
+    geometric = DacApertureMask(
+        geometry(),
+        np.array([[0.0, 1.0]]),
+        (2, 2),
+        axis_at_omega_zero=np.array([0, 0, 1]),
+        half_opening_degrees=35,
+    )
+    assert not geometric.mask(0).any()
 
 
 def geometry(origin=(0.01, 0, 1), pixel=1e-5):
     return PanelGeometry([origin, [pixel, 0, 0], [0, pixel, 0], [0, 0, 1], [0, 1, 0]], 1.0)
 
 
+@native_mask
 def test_geometric_masks_use_whole_exposure_not_midpoint_and_reverse_scan_is_equal():
     good = DacApertureMask(
         geometry(),
@@ -236,6 +250,7 @@ def test_geometric_masks_use_whole_exposure_not_midpoint_and_reverse_scan_is_equ
     np.testing.assert_array_equal(bad.mask(0), reverse.mask(0))
 
 
+@native_mask
 def test_geometric_mask_checks_pixel_corners_and_tiling_is_unobservable():
     provider = DacApertureMask(
         geometry((0.08, 0, 1), 0.02),
@@ -255,6 +270,7 @@ def test_geometric_mask_checks_pixel_corners_and_tiling_is_unobservable():
     np.testing.assert_array_equal(a.mask(0), b.mask(0))
 
 
+@native_mask
 def test_geometric_block_masks_are_conservative_and_include_partial_edge_blocks():
     kw = dict(axis_at_omega_zero=np.array([0, 0, 1]), half_opening_degrees=15)
     geo = geometry((-0.05, -0.04, 0.15), 0.005)
@@ -272,6 +288,7 @@ def test_geometric_block_masks_are_conservative_and_include_partial_edge_blocks(
     )
 
 
+@native_mask
 def test_angular_extrema_match_independent_rodrigues_sampling_including_stationary_points():
     rng = np.random.default_rng(35061)
     rays = rng.normal(size=(7, 3))
@@ -419,3 +436,34 @@ def test_masked_rocking_tail_is_not_a_valid_zero_or_a_profile_teacher():
     bank2 = learn_profiles(other, np.ones(6, bool), detector_shape=(32, 84), options=options)
     np.testing.assert_array_equal(bank.profiles, bank2.profiles)
     np.testing.assert_array_equal(fit.values, fit_profiles(other, bank2).values)
+
+
+@native_mask
+@pytest.mark.parametrize("shape", [(48, 64), (49, 65)])
+def test_native_filters_and_reference_selection_match_independent_scipy(shape):
+    pytest.importorskip("scipy")
+    from phasesmith.experimental.frame_validity import _coarse_frame
+    from phasesmith.experimental.frame_validity_reference import (
+        coarse_reference,
+        estimate_reference,
+    )
+
+    images = np.random.default_rng(5037).poisson(80, size=(51, *shape)).astype(float)
+    images[:10, :, shape[1] // 2 :] *= 0.2
+    options = SeatShadowOptions(block=4, guard_pixels=4)
+    coarse = []
+    available = []
+    for image in images:
+        mask = np.zeros(shape, bool)
+        value, _, _, present = _coarse_frame(image, mask, options.block)
+        expected, valid = coarse_reference(image, mask, options.block)
+        np.testing.assert_array_equal(value, expected)
+        assert present == valid
+        coarse.append(expected)
+        available.append(valid)
+    reference, scales, refs = estimate_reference(coarse, available, shape, options)
+    native = estimate_seat_shadows(lambda i: images[i], len(images), options=options)
+    np.testing.assert_array_equal(native.excluded, reference)
+    np.testing.assert_array_equal(native.provenance["reference_indices"], refs)
+    np.testing.assert_allclose(native.provenance["detection_scales"], scales, rtol=2e-7, atol=2e-7)
+    assert native.provenance["reference_indices"][0] == 18  # ties-to-even for .37*50
