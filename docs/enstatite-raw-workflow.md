@@ -361,7 +361,8 @@ converged structural refinement.
 
 ## Profile execution optimizations (v13–v16)
 
-The current default protocol is `validation/enstatite-raw-workflow-v16.json`.
+At completion of the initial optimization pass, the protocol was
+`validation/enstatite-raw-workflow-v16.json`.
 It enables a bounded Rust learning-geometry cache, deterministic independent-bank
 learning, a fixed-derivative integration cache and four native integration workers.
 Every intermediate stage has its own measured benchmark and fresh raw-to-search
@@ -406,3 +407,49 @@ The cumulative machine-readable report is
 `benchmarks/enstatite-profile-execution-macos.json`; per-stage reports include
 resource diagnostics, all three benchmark repeats, full timing events and exact
 identity gates.
+
+## Continuous fitting, frame workers and native archives (v17–v19)
+
+The current default is `validation/enstatite-raw-workflow-v19.json`: four learning
+workers, ten native fit workers, four bounded frame-preparation workers and
+level-1 native Rust lossless NPZ output. The [full optimization report](profile-execution-optimization.md)
+records every intermediate measurement, including the 4/6/8/10 fitting study,
+frame-memory admission and interrupted disk-limited archive trial.
+
+The two final fresh raw runs take **33.39 s** and **25.31 s** overall, with
+numerical workers at **25.22 s** and **24.20 s**. First-use parent/setup and
+indexing overhead differ; both runs and their full events are retained. Compared
+with v16's 38.95 s / 37.86 s CLI/worker, the repeat is about 35% shorter overall.
+These are individual full-run measurements, not a stable timing distribution.
+The isolated complete-fit, raw-frame-preparation and lossless-write benchmarks
+use three-repeat medians and improve by 2.99x, 1.78x and 4.13x respectively.
+
+| Part | Final repeat wall seconds |
+|---|---:|
+| Shadow masks, including frame I/O | 3.29 |
+| Detection and linking, including frame I/O | 6.58 |
+| Grain indexing and geometry fitting | 0.24 |
+| Pixel collection, integration and background | 5.06 |
+| Profile learning | 2.53 |
+| Profile amplitudes and strong shape fits | 2.79 |
+| Corrections, scaling and error model | 0.27 |
+| Native lossless output archives | 1.23 |
+| Structure search, including child launch | 0.79 |
+| Other setup, prediction, verification and assessment | 2.53 |
+| **Total** | **25.31** |
+
+Every archived numerical array, full candidate record and phasing history is
+bitwise identical to v11 in both final runs and every intermediate full run.
+R1 remains .04085182070733226 and Mg16 Si16 O48 recovery is unchanged. All
+previous geometry/provenance and optimizer-convergence qualifications apply.
+Rust tests pass 511 cases and Python 3,258, plus strict Clippy and formatting.
+No optional numerical Python packages are loaded by reduction/search workers;
+Python orchestration remains.
+
+Native archive output keeps exact numeric bytes and ordinary NumPy compatibility;
+compressed files are 6.04% larger than the prior default. The 256 MiB profile
+cache and 512 MiB queued-frame payload caps are independent of ordinary process
+workspace; repeat worker peak RSS is about 2.99 GiB. All large inputs and full
+outputs remain external. Machine-readable stage and cumulative results are in
+`benchmarks/enstatite-next-execution-stage1-macos.json` through `stage3-macos.json`
+and `benchmarks/enstatite-next-execution-macos.json`.

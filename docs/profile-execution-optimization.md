@@ -246,3 +246,48 @@ The clean bounded-storage rerun gives native level-1/uncompressed medians
 bytes (about 6% larger); uncompressed is 353,403,826 bytes. Level 1 is selected
 for the full v19 run to retain compression. The interrupted trial remains in
 the report; no numerical thresholds or scientific settings changed.
+
+## Completed follow-up measurements
+
+| Configuration | Numerical worker (s) | Full CLI (s) |
+|---|---:|---:|
+| Previous v16 | 37.86 | 38.95 |
+| Continuous fitting queue, ten fit workers (v17) | 33.91 | 42.49 |
+| Four bounded frame workers (v18) | 29.41 | 37.80 |
+| Native compressed archives (v19, first run) | 25.22 | 33.39 |
+| Same v19 protocol, second fresh raw run | 24.20 | 25.31 |
+
+Every row passes all numerical-array, full-candidate and search-history bitwise
+gates against retained v11; R1 remains .04085182070733226. No masks, choices,
+optimizer budgets, equations or scientific thresholds were changed. The first-use
+CLI rows include about eight seconds outside the worker; the final repeat has
+about one second. Indexing also varies (1.42 s first run, .23 s repeat). Do not
+attribute that variation to archive compression or claim a stable timing
+distribution from these individual full runs.
+
+| Component, three-repeat median | Before (s) | After (s) | Speedup |
+|---|---:|---:|---:|
+| Complete amplitude/strong-profile fitting | 8.731 | 2.921 | 2.99x |
+| Raw frame preparation, fixed target cohort | 8.964 | 5.039 | 1.78x |
+| Lossless archive writing, matched bounded-storage policy | 4.817 | 1.167 | 4.13x |
+
+The new archive is 6.04% larger. The initial disk-limited and baseline trials
+remain available separately; the bounded-storage baseline was remeasured after
+removing only verified duplicate benchmark output. Both backend comparisons
+retain exact byte read-back, all repeat times and sizes. No original source or
+full workflow archive was removed.
+
+Final example resource controls are four learning workers, ten baseline/shape-fit
+workers, four frame-preparation workers, and native archive level 1. The profile
+cache cap remains 256 MiB per phase; frame queued-payload cap is 512 MiB. Peak
+worker RSS in the repeat is 3,212,050,432 bytes (2.99 GiB), separate from those
+cache/payload caps. Production numerical kernels and archive compression are
+Rust; optional Python orchestration remains.
+
+Validation passes 511 Rust tests (34 ignored) and 3,258 Python tests (11 external
+data skips, 34 slow deselections), strict all-feature Clippy and formatting.
+Stage reports are `benchmarks/enstatite-next-execution-stage1-macos.json` through
+`stage3-macos.json`; the cumulative summary is
+`benchmarks/enstatite-next-execution-macos.json`, also linked by the earlier
+`benchmarks/enstatite-profile-execution-macos.json`. All large products are
+external.
