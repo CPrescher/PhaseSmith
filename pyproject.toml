@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "PhaseSmith contributors" }]
 license = "MIT"
-license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md", "licenses/hdf5/*.txt"]
 dependencies = ["numpy>=1.26"]
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
@@ -41,7 +41,7 @@ dev = ["pytest>=8", "jsonschema>=4.18", "ruff>=0.12", "gemmi>=0.7.5,<0.8", "mpma
 refinement = ["scipy>=1.11"]
 masking = []  # Native Rust masking; no numerical Python dependency.
 cif = ["gemmi>=0.7.5,<0.8"]
-single-crystal-example = ["scipy>=1.11", "h5py>=3.10", "hdf5plugin>=5", "gemmi>=0.7.5,<0.8"]
+single-crystal-example = ["scipy>=1.11", "gemmi>=0.7.5,<0.8"]
 
 [tool.maturin]
 manifest-path = "crates/phasesmith-py/Cargo.toml"

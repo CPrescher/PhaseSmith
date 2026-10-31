@@ -56,12 +56,15 @@ types and functions only. Algorithm/cache/worker helpers remain private.
 - Optimization: retain current independent NumPy references and Rust fused
   values/derivatives; migrate namespace without changing arithmetic or defaults.
 
-The shape/geometry/scaling fitting functions should require a documented optional
-installation extra, provisionally `phasesmith[single-crystal]` including SciPy.
-Baseline NumPy/native detection, summation and structure search should remain
-usable without it. File decoding belongs in a separately declared example/IO
-extra if needed (`h5py` plus the registered HDF5 compression plugin). Importing
-the public namespace must require neither Dioptas, Qt nor an external solver.
+All promoted production operations must be usable through typed Rust entry
+points, with Python as an optional frontend. The current experimental
+shape/geometry/scaling optimizers still need native ports; their existing SciPy
+requirement must not become the final production architecture. Detection,
+summation, masking and structure search already have native kernels. HDF5
+input now belongs to the separate optional `phasesmith-hdf5` adapter with bundled
+HDF5/Bitshuffle/LZ4, exposed by the `hdf5` feature without h5py/hdf5plugin.
+Importing the public namespace must require neither Dioptas, Qt nor an external
+solver. See [native HDF5 input](native-hdf5.md).
 
 ## Structure-search configuration
 

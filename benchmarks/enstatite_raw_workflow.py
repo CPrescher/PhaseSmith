@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v7.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v8.json"
 
 
 def digest(path):
@@ -47,37 +47,35 @@ class RawFrames:
     """Read-only one-frame HDF5 loader with explicit orientation and mask policy."""
 
     def __init__(self, path, acquisition, expected, validity=None):
-        import h5py
-        import hdf5plugin  # noqa: F401 -- register compression filters
+        from phasesmith.io.hdf5 import Hdf5Frames
 
-        self.file = h5py.File(path, "r")
-        self.data = self.file[expected["dataset"]]
-        if list(self.data.shape) != expected["shape"] or self.data.dtype != np.dtype("uint32"):
-            self.file.close()
+        self.reader = Hdf5Frames(path, expected["dataset"])
+        if list(self.reader.shape) != expected["shape"] or self.reader.dtype != "uint32":
+            self.reader.close()
             raise ValueError("raw HDF5 shape/dtype differs from registered source")
         self.acquisition = acquisition
         self.indices = np.arange(
             acquisition["first_frame"], acquisition["last_frame_inclusive"] + 1
         )
-        if not len(self.indices) or self.indices[-1] >= len(self.data):
+        if not len(self.indices) or self.indices[-1] >= self.reader.shape[0]:
             raise ValueError("frame selection outside source array")
         self.bounds = exposure_bounds(self.indices, acquisition)
         self.validity = validity
         if validity is not None:
             validity.validate(
                 tuple(f"{Path(path).name}#{i}" for i in self.indices),
-                self.data.shape[1:],
+                self.reader.shape[1:],
                 self.bounds,
             )
-        detector = self.data.parent
-        self.pixel1 = float(detector["detector_information/pixel_size/ysize"][()])
-        self.pixel2 = float(detector["detector_information/pixel_size/xsize"][()])
+        detector = expected["dataset"].rsplit("/", 1)[0]
+        self.pixel1 = self.reader.scalar(detector + "/detector_information/pixel_size/ysize")
+        self.pixel2 = self.reader.scalar(detector + "/detector_information/pixel_size/xsize")
         self.pending_masks = {}
         self.hashes = {}
         self.loads = 0
 
     def load(self, index):
-        image = self.data[int(self.indices[index])]
+        image = self.reader.read_frame(int(self.indices[index]))
         if self.acquisition["vertical_flip"]:
             image = image[::-1]
         image = np.ascontiguousarray(image)
@@ -96,7 +94,7 @@ class RawFrames:
         return mask
 
     def close(self):
-        self.file.close()
+        self.reader.close()
 
 
 def exposure_bounds(indices, acquisition):
@@ -335,6 +333,12 @@ def stage_validity(packet, out, protocol):
                 implementation_sha256=digest(masking.__file__),
                 seconds=time.perf_counter() - started,
                 scope="one original-frame mask shared by all stages; no vendor/atomic inputs",
+                input_reader=dict(
+                    backend="phasesmith-hdf5",
+                    library_version=frames.reader.library_version,
+                    dtype=frames.reader.dtype,
+                    filters=frames.reader.filters,
+                ),
             ),
         )
         return validity

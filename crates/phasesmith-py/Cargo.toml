@@ -16,6 +16,7 @@ name = "_core"
 crate-type = ["cdylib"]
 
 [dependencies]
+phasesmith-hdf5 = { version = "0.7.0", path = "../phasesmith-hdf5", optional = true }
 phasesmith-solution = { version = "0.7.0", path = "../phasesmith-solution", optional = true }
 phasesmith-spots = { version = "0.7.0", path = "../phasesmith-spots", optional = true }
 phasesmith-row-search = { version = "0.7.0", path = "../phasesmith-row-search", optional = true }
@@ -35,5 +36,6 @@ phasesmith-workflows = { version = "0.7.0", path = "../phasesmith-workflows" }
 workspace = true
 
 [features]
+hdf5 = ["dep:phasesmith-hdf5"]
 experimental-solution = ["dep:phasesmith-solution"]
 experimental-spots = ["dep:phasesmith-spots", "dep:phasesmith-row-search", "dep:serde_json"]
