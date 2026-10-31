@@ -143,3 +143,37 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Dioptas frame validity and seat-shadow estimator
+
+`phasesmith.experimental.frame_validity` adapts the mask representation and
+original-count illumination-ratio estimator from Dioptas
+`dioptas/model/frame_validity.py`, revision
+`651c27f98108fb19f60db9a8cb227755b2f9d6a2`. Application readers, display transforms,
+resource settings and UI/cache dependencies are not included. The source is
+MIT-licensed:
+
+MIT License
+
+Copyright (c) 2014-2019 GSECARS, University of Chicago, USA
+Copyright (c) 2015-2018 Institute for Geology and Mineralogy, University of Cologne, Germany
+Copyright (c) 2019-2020 DESY, Hamburg, Germany
+Copyright (c) 2021-2026 Clemens Prescher
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

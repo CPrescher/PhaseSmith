@@ -36,12 +36,25 @@ pending. Small records are `benchmarks/enstatite-raw-workflow-macos.json`,
 `benchmarks/enstatite-raw-workflow-v4-macos.json`. See
 `docs/enstatite-reduction-diagnosis.md` and `docs/enstatite-raw-workflow.md`.
 
-A proposed shared frame-validity/seat-shadow API would bring Dioptas's existing
-MIT-licensed, original-image moving-shadow estimator into a portable array/loader
-layer, leaving UI/file readers/cache policy in Dioptas. PhaseSmith already consumes
-per-frame pixel masks. This migration is not implemented by the example repair;
-see `docs/single-crystal-mask-proposal.md` for ownership, partial-support contracts
-and validation before adopting it.
+Shared shadow masking is now implemented in
+`python/phasesmith/experimental/frame_validity.py`: immutable coarse/native
+validity snapshots with exact source/exposure identity and archives; the
+MIT-attributed portable Dioptas illumination-ratio estimator; conservative
+full-exposure/four-pixel-corner geometric DAC masks; mask composition; and
+flagging of incomplete position supports. Loaders remain application-owned;
+there is no Dioptas, Qt or HDF5 runtime dependency. Only image estimation needs
+optional SciPy. Low global illumination alone is diagnostic; insufficient
+reference or wholly dark unclassified exposures return an explicit unavailable
+error. Counts are never replaced, normalized or interpolated by a mask.
+
+Synthetic tests check worker equality, independent angular geometry, masks in
+foreground/background/teacher/temporal fits, immutable/source identity and
+archives. The 40-frame/64-peak benchmark matches the unmodified Dioptas estimator
+bitwise for masks and source hashes. MgSiO3 v6 is frozen to use the same estimated
+pixel masks before detection and integration, replacing v5's post-hoc centre
+cone. Its full raw run is pending. Default native numerical kernels/equations,
+public namespace promotion and Dioptas UI migration remain unchanged. See
+`docs/single-crystal-frame-validity.md` for the API, contracts and validation.
 
 Structure search now has an explicit per-dense-reflection-buffer memory policy.
 `SolutionOptions.dense_memory_budget_bytes` defaults to the historical
