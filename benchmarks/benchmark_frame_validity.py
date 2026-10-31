@@ -129,6 +129,25 @@ def main():
         mask_sha256=hashes,
         tile_rows=provider.tile_rows,
     )
+    blocked = DacApertureMask(
+        geometry,
+        bounds,
+        images.shape[1:],
+        axis_at_omega_zero=np.array([0, 0, 1]),
+        half_opening_degrees=35,
+        pixel_block=16,
+    )
+    start = time.perf_counter()
+    coarse = [blocked.mask(i) for i in range(len(bounds))]
+    record["geometric_block16"] = dict(
+        seconds=time.perf_counter() - start,
+        conservative=True,
+        extra_excluded_pixels=0,
+    )
+    for i, mask in enumerate(coarse):
+        fine = provider.mask(i)
+        assert not np.any(fine & ~mask)
+        record["geometric_block16"]["extra_excluded_pixels"] += int((mask & ~fine).sum())
     with args.output.open("x") as stream:
         json.dump(record, stream, indent=2, allow_nan=False)
         stream.write("\n")

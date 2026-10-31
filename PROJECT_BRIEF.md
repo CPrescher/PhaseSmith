@@ -52,7 +52,11 @@ foreground/background/teacher/temporal fits, immutable/source identity and
 archives. The 40-frame/64-peak benchmark matches the unmodified Dioptas estimator
 bitwise for masks and source hashes. MgSiO3 v6 is frozen to use the same estimated
 pixel masks before detection and integration, replacing v5's post-hoc centre
-cone. Its full raw run is pending. Default native numerical kernels/equations,
+cone. Its v6 image-only run recovers the correct structure (maximum error .01223 A)
+but misses the numerical intensity target at R1 .13945. That outcome is retained.
+A v7 composition with the unchanged illumination estimator and the v5 explicitly
+declared DAC aperture is frozen next; full exposure/block masks replace the
+centre-only geometric check. Default native numerical kernels/equations,
 public namespace promotion and Dioptas UI migration remain unchanged. See
 `docs/single-crystal-frame-validity.md` for the API, contracts and validation.
 

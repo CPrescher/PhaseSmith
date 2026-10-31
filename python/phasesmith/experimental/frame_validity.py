@@ -92,6 +92,19 @@ def _box_counts(mask, boxes):
     return out
 
 
+def _coarse_boxes_valid(mask, boxes, shape, block, fixed):
+    b = np.asarray(boxes)
+    if b.ndim != 2 or b.shape[1] != 4 or b.dtype.kind not in "iu":
+        raise ValueError("boxes must be integer (n,4) arrays")
+    inside = (b[:, :2] >= 0).all(axis=1) & (b[:, 2:] <= shape[::-1]).all(axis=1)
+    inside &= (b[:, 2:] > b[:, :2]).all(axis=1)
+    coarse = np.c_[b[:, :2] // block, (b[:, 2:] + block - 1) // block]
+    result = inside & (_box_counts(mask, coarse) == 0)
+    if fixed is not None:
+        result &= _box_counts(fixed, b) == 0
+    return _readonly(result)
+
+
 class _MaskAccess:
     def validate(self, frame_ids, shape=None, omega_bounds=None):
         if tuple(frame_ids) != self.frame_ids or (shape is not None and tuple(shape) != self.shape):
@@ -246,16 +259,9 @@ class FrameValidity(_MaskAccess):
 
     def boxes_valid(self, frame, boxes):
         frame = _integer(frame, "frame", 0, len(self.frame_ids) - 1)
-        b = np.asarray(boxes)
-        if b.ndim != 2 or b.shape[1] != 4 or b.dtype.kind not in "iu":
-            raise ValueError("boxes must be integer (n,4) arrays")
-        inside = (b[:, :2] >= 0).all(axis=1) & (b[:, 2:] <= self.shape[::-1]).all(axis=1)
-        inside &= (b[:, 2:] > b[:, :2]).all(axis=1)
-        coarse = np.c_[b[:, :2] // self.block, (b[:, 2:] + self.block - 1) // self.block]
-        result = inside & (_box_counts(self.excluded[frame], coarse) == 0)
-        if self.fixed_mask is not None:
-            result &= _box_counts(self.fixed_mask, b) == 0
-        return _readonly(result)
+        return _coarse_boxes_valid(
+            self.excluded[frame], boxes, self.shape, self.block, self.fixed_mask
+        )
 
     def save(self, path):
         arrays = dict(excluded=self.excluded)
@@ -558,6 +564,7 @@ class DacApertureMask(_MaskAccess):
     half_opening_degrees: float
     fixed_mask: np.ndarray | None
     tile_rows: int
+    pixel_block: int
 
     def __init__(
         self,
@@ -570,6 +577,7 @@ class DacApertureMask(_MaskAccess):
         frame_ids=None,
         fixed_mask=None,
         tile_rows=64,
+        pixel_block=1,
     ):
         from .reciprocal import PanelGeometry
 
@@ -612,6 +620,7 @@ class DacApertureMask(_MaskAccess):
             ("half_opening_degrees", float(opening)),
             ("fixed_mask", None if fixed is None else _readonly(fixed)),
             ("tile_rows", _integer(tile_rows, "tile_rows", 1, 1024)),
+            ("pixel_block", _integer(pixel_block, "pixel_block", 1, 1024)),
         ):
             object.__setattr__(self, name, value)
 
@@ -625,6 +634,7 @@ class DacApertureMask(_MaskAccess):
             omega_bounds=self.omega_bounds.tolist(),
             axis_at_omega_zero=self.axis_at_omega_zero.tolist(),
             half_opening_degrees=self.half_opening_degrees,
+            pixel_block=self.pixel_block,
             support=(
                 "closed full exposure and four affine pixel corners; same cone; cosine margin 8eps"
             ),
@@ -637,26 +647,29 @@ class DacApertureMask(_MaskAccess):
         # Tiling is an implementation detail; it cannot alter the mask identity.
         return hashlib.sha256(_json(self.metadata()).encode()).hexdigest()
 
-    def mask(self, frame):
+    def _coarse_mask(self, frame):
         frame = _integer(frame, "frame", 0, len(self.frame_ids) - 1)
         low, high = np.deg2rad(sorted(self.omega_bounds[frame]))
         origin, fast, slow, beam, axis = self.geometry.vectors
         axis, beam = axis / np.linalg.norm(axis), beam / np.linalg.norm(beam)
         limit = np.cos(np.deg2rad(self.half_opening_degrees)) - 8 * np.finfo(float).eps
         low_in, high_in = _dot_range(beam[None], axis, self.axis_at_omega_zero, low, high)
-        if not ((low_in[0] >= limit) or (high_in[0] <= -limit)):
-            return np.ones(self.shape, bool)
-        result = np.empty(self.shape, bool)
         h, w = self.shape
-        for y0 in range(0, h, self.tile_rows):
-            y1 = min(h, y0 + self.tile_rows)
-            yy, xx = np.mgrid[y0:y1, :w]
+        block = self.pixel_block
+        ch, cw = (h + block - 1) // block, (w + block - 1) // block
+        if not ((low_in[0] >= limit) or (high_in[0] <= -limit)):
+            return np.ones((ch, cw), bool)
+        result = np.empty((ch, cw), bool)
+        rows_per_tile = max(1, self.tile_rows // block)
+        for y0 in range(0, ch, rows_per_tile):
+            y1 = min(ch, y0 + rows_per_tile)
+            yy, xx = np.mgrid[y0:y1, :cw]
             minimum = np.full(xx.size, np.inf)
             maximum = np.full(xx.size, -np.inf)
-            for dx, dy in ((-0.5, -0.5), (-0.5, 0.5), (0.5, -0.5), (0.5, 0.5)):
-                rays = (
-                    origin + (xx.ravel() + dx)[:, None] * fast + (yy.ravel() + dy)[:, None] * slow
-                )
+            for right, bottom in ((False, False), (False, True), (True, False), (True, True)):
+                x = np.minimum((xx.ravel() + int(right)) * block, w) - 0.5
+                y = np.minimum((yy.ravel() + int(bottom)) * block, h) - 0.5
+                rays = origin + x[:, None] * fast + y[:, None] * slow
                 lengths = np.linalg.norm(rays, axis=1)
                 if np.any(lengths == 0):
                     raise ValueError("pixel corner coincides with sample origin")
@@ -664,10 +677,21 @@ class DacApertureMask(_MaskAccess):
                 lo, hi = _dot_range(rays, axis, self.axis_at_omega_zero, low, high)
                 minimum = np.minimum(minimum, lo)
                 maximum = np.maximum(maximum, hi)
-            result[y0:y1] = ~((minimum >= limit) | (maximum <= -limit)).reshape(y1 - y0, w)
+            result[y0:y1] = ~((minimum >= limit) | (maximum <= -limit)).reshape(y1 - y0, cw)
+        return result
+
+    def mask(self, frame):
+        coarse = self._coarse_mask(frame)
+        result = np.repeat(np.repeat(coarse, self.pixel_block, 0), self.pixel_block, 1)
+        result = result[: self.shape[0], : self.shape[1]].copy()
         if self.fixed_mask is not None:
             result |= self.fixed_mask
         return result
+
+    def boxes_valid(self, frame, boxes):
+        return _coarse_boxes_valid(
+            self._coarse_mask(frame), boxes, self.shape, self.pixel_block, self.fixed_mask
+        )
 
 
 @dataclass(frozen=True)

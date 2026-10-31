@@ -255,6 +255,23 @@ def test_geometric_mask_checks_pixel_corners_and_tiling_is_unobservable():
     np.testing.assert_array_equal(a.mask(0), b.mask(0))
 
 
+def test_geometric_block_masks_are_conservative_and_include_partial_edge_blocks():
+    kw = dict(axis_at_omega_zero=np.array([0, 0, 1]), half_opening_degrees=15)
+    geo = geometry((-0.05, -0.04, 0.15), 0.005)
+    fine = DacApertureMask(geo, np.array([[-5.0, 5.0]]), (23, 31), **kw)
+    coarse = DacApertureMask(geo, fine.omega_bounds, fine.shape, pixel_block=4, **kw)
+    a, b = fine.mask(0), coarse.mask(0)
+    assert a.any() and not a.all()
+    assert not np.any(a & ~b)
+    assert b.sum() >= a.sum()
+    assert fine.fingerprint() != coarse.fingerprint()
+    boxes = np.array([[0, 0, 4, 4], [12, 8, 16, 12], [28, 20, 31, 23]])
+    np.testing.assert_array_equal(
+        coarse.boxes_valid(0, boxes),
+        [not b[y0:y1, x0:x1].any() for x0, y0, x1, y1 in boxes],
+    )
+
+
 def test_angular_extrema_match_independent_rodrigues_sampling_including_stationary_points():
     rng = np.random.default_rng(35061)
     rays = rng.normal(size=(7, 3))
