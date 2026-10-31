@@ -1,0 +1,99 @@
+{
+  "schema": "phasesmith.enstatite-next-execution-summary.v1",
+  "machine": "Apple M4 Pro / macOS arm64",
+  "baseline": {
+    "protocol": "validation/enstatite-raw-workflow-v16.json",
+    "worker_seconds": 37.86375349998707,
+    "cli_wall_seconds": 38.95
+  },
+  "stages": [
+    {
+      "stage": 1,
+      "report": "benchmarks/enstatite-next-execution-stage1-macos.json",
+      "worker_seconds": 33.905235290993005,
+      "cli_wall_seconds": 42.49,
+      "all_results_bitwise_identical": true
+    },
+    {
+      "stage": 2,
+      "report": "benchmarks/enstatite-next-execution-stage2-macos.json",
+      "worker_seconds": 29.413319166982546,
+      "cli_wall_seconds": 37.8,
+      "all_results_bitwise_identical": true
+    },
+    {
+      "stage": 3,
+      "report": "benchmarks/enstatite-next-execution-stage3-macos.json",
+      "worker_seconds": 25.220595874998253,
+      "cli_wall_seconds": 33.39,
+      "all_results_bitwise_identical": true
+    }
+  ],
+  "final": {
+    "protocol": "validation/enstatite-raw-workflow-v19.json",
+    "first_worker_seconds": 25.220595874998253,
+    "first_cli_wall_seconds": 33.39,
+    "repeat_worker_seconds": 24.19547066697851,
+    "repeat_cli_wall_seconds": 25.31,
+    "worker_speedup_over_v16": 1.5649108058750334,
+    "cli_speedup_over_v16": 1.5389174239431056,
+    "cli_fractional_time_reduction": 0.3501925545571246,
+    "worker_peak_resident_bytes": 3212050432,
+    "r1": 0.04085182070733226,
+    "all_results_bitwise_identical": true,
+    "frame_execution": {
+      "requested_workers": 4,
+      "maximum_in_flight_frames": 4,
+      "payload_budget_bytes": 536870912,
+      "peak_payload_bytes": 411333472
+    },
+    "profile_execution": {
+      "profile_learning_execution": {
+        "workers": 4,
+        "requested_workers": 4,
+        "cache_budget_bytes": 268435456,
+        "cache_bytes": 181907500,
+        "cache_rows": 506475,
+        "cache_entries": 13808351
+      },
+      "profile_integration_execution": {
+        "workers": 10,
+        "requested_workers": 10,
+        "cache_budget_bytes": 268435456,
+        "maximum_reflection_cache_bytes": 1583672,
+        "cache_peak_bound_bytes": 15836720,
+        "cached_reflections": 4701,
+        "uncached_reflections": 2576,
+        "maximum_exposure_overlap_pixels": 17928
+      }
+    }
+  },
+  "component_comparisons": {
+    "complete_profile_fitting": {
+      "before_seconds": 8.731426666025072,
+      "after_seconds": 2.920759625034407,
+      "speedup": 2.989436922910839
+    },
+    "frame_preparation": {
+      "before_seconds": 8.964236958010588,
+      "after_seconds": 5.039274415990803,
+      "speedup": 1.7788745398672783
+    },
+    "archive_write": {
+      "before_seconds": 4.816527707967907,
+      "after_seconds": 1.167239000031259,
+      "speedup": 4.126428013319397,
+      "size_ratio": 1.0603716467386355
+    }
+  },
+  "validation": {
+    "rust_passed": 511,
+    "rust_ignored": 34,
+    "python_passed": 3258,
+    "python_skipped": 11,
+    "python_deselected": 34,
+    "strict_clippy": true,
+    "formatting": true
+  },
+  "measurement_conventions": "Component values are medians of three isolated sequential real-data repeats; all configurations compared exact numeric bytes. Full runs are fresh raw-frame processes, one per stage plus one final repeat, with parent/setup and indexing variation. Keep both first-use and repeat timings. Source HKLs/reference coordinates/old observations never enter fresh numerical workers. Disk-limited archive trial retained; only successful verified duplicate benchmark files removed. Large data/products remain outside Git."
+}

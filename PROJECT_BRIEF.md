@@ -12,31 +12,33 @@ not part of the numerical library.
 
 ## Current implementation status
 
-The next measured execution pass extends explicit profile worker limits to 32
-and replaces worker-sized strong-fit barriers with a continuous native queue.
-Each reflection retains its original arithmetic; results and progress callbacks
-are assembled in source order, with cancellation stopping further scheduling.
-No scientific controls, finite support or independent reference equations change.
-Native lossless numeric NPZ output now lives in `phasesmith-persistence`, with
-explicit compression levels, exact numeric byte preservation and exclusive
-creation. It accepts bounded real/integer/boolean arrays and streams NPY members
-using existing Rust ZIP/DEFLATE dependencies. Its optional Python adapter copies
-up to 1 GiB before detaching. Existing project-bundle serialization and default
-case/mask writers remain unchanged; the example will explicitly select the
-measured native archive policy. Both compressed and uncompressed controls are
-benchmarked, including file sizes and exact read-back checks.
-Frame preparation now optionally queues bounded immutable frame snapshots for
-independent native measurements. Loaders, profile sinks, errors and progress
-remain ordered on the calling thread; Rust retains background/sample extraction
-and cross-frame accumulation. Frame payload admission includes snapshots and
-normalized/native copies, with ordinary outputs/workspace and one transient
-loader snapshot separate. The default remains serial. Resource diagnostics are
-separate from scientific options and fingerprints.
-The current experiment will benchmark 4/6/8/10 workers before selecting a resource
-configuration, then separately measure bounded frame preparation and lossless
-archive output. See `docs/profile-execution-optimization.md`.
+The follow-up execution optimization is complete. Explicit profile worker
+limits are 1–32; continuous native independent-fit scheduling replaces batch
+barriers while retaining source-order result/progress assembly and cancellation.
+Optional frame preparation queues bounded owned snapshots for independent Rust
+background/sample measurements; loaders and result assembly remain ordered, with
+serial defaults. The example uses ten fit workers and four frame workers, selected
+by measured runtime and memory, never atomic-reference scores. Profile-cache caps
+remain 256 MiB per phase; queued frame payloads have a separate 512 MiB cap.
 
-Profile execution optimization is complete through three separately measured stages.
+Native lossless numeric NPZ output is exposed through `phasesmith-persistence`,
+using existing Rust ZIP/DEFLATE dependencies with exact dtype/shape/raw-byte
+preservation, bounded input and exclusive creation. Default project/case/mask
+serialization remains unchanged; the example explicitly selects native level 1.
+Complete fitting/frame-preparation/archive medians improve 8.731→2.921 s,
+8.964→5.039 s, and 4.817→1.167 s; archives are 6.04% larger. Full v19 takes
+25.22 s worker / 33.39 s CLI on first use, and 24.20 / 25.31 s in a second fresh
+raw run, versus v16 37.86 / 38.95 s. Parent/setup and indexing variation are
+reported, not attributed to numerical changes. Every array, candidate and search
+history is bitwise identical to v11, R1 .04085182070733226. Validation passes
+511 Rust and 3,258 Python tests, strict Clippy and formatting. The disk-limited
+archive trial is preserved; only verified duplicate benchmark files were removed.
+Large sources/products remain external. See `benchmarks/enstatite-next-execution-macos.json`
+and `docs/profile-execution-optimization.md`. No scientific equations, finite
+support or independent-reference/oracle behavior changed; optional Python
+orchestration remains.
+
+The earlier v13–v16 profile execution pass completed three separately measured stages.
 Stage 1 caches exact immutable teacher pixel/voxel intersections in source
 order with an explicit additional-memory cap (default 64 MiB) and streaming
 fallback; all learning equations, iteration counts and support conventions stay

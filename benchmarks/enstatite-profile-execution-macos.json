@@ -66,11 +66,74 @@
     "memory": "Additional cache capacities are capped independently per phase, with streaming fallback. Total process RSS includes inputs, outputs and ordinary workspace and is recorded separately."
   },
   "final": {
+    "protocol": "validation/enstatite-raw-workflow-v19.json",
+    "first_worker_seconds": 25.220595874998253,
+    "first_cli_wall_seconds": 33.39,
+    "repeat_worker_seconds": 24.19547066697851,
+    "repeat_cli_wall_seconds": 25.31,
+    "worker_speedup_over_v16": 1.5649108058750334,
+    "cli_speedup_over_v16": 1.5389174239431056,
+    "cli_fractional_time_reduction": 0.3501925545571246,
+    "worker_peak_resident_bytes": 3212050432,
+    "r1": 0.04085182070733226,
+    "all_results_bitwise_identical": true,
+    "frame_execution": {
+      "requested_workers": 4,
+      "maximum_in_flight_frames": 4,
+      "payload_budget_bytes": 536870912,
+      "peak_payload_bytes": 411333472
+    },
+    "profile_execution": {
+      "profile_learning_execution": {
+        "workers": 4,
+        "requested_workers": 4,
+        "cache_budget_bytes": 268435456,
+        "cache_bytes": 181907500,
+        "cache_rows": 506475,
+        "cache_entries": 13808351
+      },
+      "profile_integration_execution": {
+        "workers": 10,
+        "requested_workers": 10,
+        "cache_budget_bytes": 268435456,
+        "maximum_reflection_cache_bytes": 1583672,
+        "cache_peak_bound_bytes": 15836720,
+        "cached_reflections": 4701,
+        "uncached_reflections": 2576,
+        "maximum_exposure_overlap_pixels": 17928
+      }
+    }
+  },
+  "initial_optimization_final": {
     "r1": 0.04085182070733226,
     "numerical_worker_seconds": 37.86375349998707,
     "cli_wall_seconds": 38.95,
     "worker_peak_resident_bytes": 3246407680,
     "all_results_bitwise_identical": true,
     "large_data_policy": "All raw frames, shoebox archives, wheels and output products remain outside Git."
-  }
+  },
+  "followup_report": "benchmarks/enstatite-next-execution-macos.json",
+  "followup_stages": [
+    {
+      "stage": 1,
+      "report": "benchmarks/enstatite-next-execution-stage1-macos.json",
+      "worker_seconds": 33.905235290993005,
+      "cli_wall_seconds": 42.49,
+      "all_results_bitwise_identical": true
+    },
+    {
+      "stage": 2,
+      "report": "benchmarks/enstatite-next-execution-stage2-macos.json",
+      "worker_seconds": 29.413319166982546,
+      "cli_wall_seconds": 37.8,
+      "all_results_bitwise_identical": true
+    },
+    {
+      "stage": 3,
+      "report": "benchmarks/enstatite-next-execution-stage3-macos.json",
+      "worker_seconds": 25.220595874998253,
+      "cli_wall_seconds": 33.39,
+      "all_results_bitwise_identical": true
+    }
+  ]
 }
