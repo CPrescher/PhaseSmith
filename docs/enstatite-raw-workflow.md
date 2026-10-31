@@ -5,8 +5,10 @@ indexing, position-refinement, integration, profile, scaling and structure-searc
 APIs. It reads original HDF5 counts and generates new measurements throughout.
 The first protocol is `validation/enstatite-raw-workflow-v1.json`, committed
 before executing the measured workflow. The current default is version 5;
-earlier versions and failures are retained as described below. This is exposed development/regression
-data with declared cell and symmetry priors, not a new blind holdout.
+earlier versions and failures are retained as described below. Version 5 passes
+complete labelled recovery; see the
+[reduction diagnosis](enstatite-reduction-diagnosis.md). This is exposed
+development/regression data with declared cell and symmetry priors, not a new blind holdout.
 
 ## Run and storage
 
@@ -210,3 +212,12 @@ membership control was used only to isolate the cause; neither vendor row
 membership nor vendor intensities enter the v5 numerical worker. Existing
 profile/scaling reference selection, search settings and coordinate gates remain
 unchanged. Original v1--v4 outcomes remain frozen.
+
+The frozen v5 full raw rerun passes: 4,310 exported observations, inferred
+Mg16 Si16 O48, R1=0.0413175 and maximum/RMS reference errors
+0.0078273/0.0050056 A. Every integrated value/sigma/flag is bitwise identical to
+v4; eligibility changes only. Search takes 0.608 seconds in the 100.42-second
+complete worker. This establishes the qualified MgSiO3 example, not general
+mask calibration or public API promotion. The retained v4 summary is now
+`benchmarks/enstatite-raw-workflow-v4-macos.json`; the current successful summary
+is `benchmarks/enstatite-raw-workflow-macos.json`.

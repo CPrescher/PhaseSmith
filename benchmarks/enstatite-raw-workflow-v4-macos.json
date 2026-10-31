@@ -1,0 +1,210 @@
+{
+  "schema": "phasesmith.enstatite-raw-workflow-summary.v1",
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "python": "3.13.7",
+    "packages": {
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "h5py": "3.16.0",
+      "hdf5plugin": "7.1.0",
+      "gemmi": "0.7.5",
+      "phasesmith": "0.7.0"
+    }
+  },
+  "protocol": {
+    "path": "validation/enstatite-raw-workflow-v4.json",
+    "sha256": "09a74f38b5726d55625fc8c578f0ca44f2745af664a9102fe0c6d99184355a53"
+  },
+  "local_output_directory": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v4",
+  "provenance": {
+    "protocol_sha256": "09a74f38b5726d55625fc8c578f0ca44f2745af664a9102fe0c6d99184355a53",
+    "source_hashes": {
+      "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+      "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+      "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+      "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+      "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+      "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+      "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+      "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+    },
+    "native_sha256": "e70e7d6e209d338c5f53447ad6328ea50501684c38a8fcd049801fe07d82acc3",
+    "implementation_sha256": "5ef7e7e265560451fc3ed4e3c664cfafa4b548384d13f4ff9c5f1e68922b88d0",
+    "git_commit": "0845d1a4d133d3e965ef746beefd0950d6d8a827"
+  },
+  "external_products": {
+    "reduced-observations.npz": {
+      "bytes": 832956,
+      "sha256": "6cf846123b5cb55daa93f7cbf376e1c2df16c33ef81ac0ca9c5d79bb11881f22"
+    },
+    "search-input.json": {
+      "bytes": 2549,
+      "sha256": "a85ea09d8ddac833be81a2e3205f7a6d99875827351c1d95c55bf7af05c7bf2b"
+    },
+    "candidate/result.json": {
+      "bytes": 341466,
+      "sha256": "3be5f303d8b7d07cd875f30250a0f2290d6c0de8e9571de122cf6a054d1253aa"
+    },
+    "report.json": {
+      "bytes": 331,
+      "sha256": "266b9df3c313eda926ff4f87802b56f8b2f9a610eea1adca974b8ea20dbbe93d"
+    }
+  },
+  "source_files_unchanged": true,
+  "positions": {
+    "selected_frames": 142,
+    "linked_tracks": 3308,
+    "frame_detections": 4483,
+    "unflagged": 2994
+  },
+  "geometry": {
+    "initial_cell": [
+      8.813074591322263,
+      5.181797161997784,
+      18.236696039776163,
+      90.0134134978561,
+      89.99224657271233,
+      90.05728311856758
+    ],
+    "training": 1421,
+    "withheld": 782,
+    "withheld_xy_rms_pixels": 0.33419541057149627,
+    "withheld_omega_rms_degrees": 0.16394521628968337,
+    "condition": 15.44441317721422,
+    "gates": {
+      "minimum_training": true,
+      "minimum_withheld": true,
+      "withheld_xy": true,
+      "withheld_omega": true,
+      "optimizer_converged": true,
+      "not_at_bounds": true
+    }
+  },
+  "reduction": {
+    "predictions": 7286,
+    "reduction_predictions": 7277,
+    "flagged_edge_centres_excluded": 9,
+    "all_domain_predictions": 7672,
+    "competing_domains": 2,
+    "used": 5708,
+    "negative_used": 1233,
+    "teachers": 278,
+    "frame_hashes_equal": true,
+    "source_loads": 142,
+    "excluded_by_quality_flags": 1569
+  },
+  "equivalent_error_model": {
+    "relative": 0.06861231070261362,
+    "training_pairs": 2344,
+    "training_families": 415,
+    "training_robust_width": 1.0,
+    "interpretation": "equivalent-pair observation error; no scale covariance"
+  },
+  "search": {
+    "termination": "search_budget",
+    "target_met": false,
+    "amplitude_r1": null,
+    "seconds": 5.266914458014071,
+    "model_saved_before_reference": true,
+    "resource": {
+      "expanded_reflection_count": 15410,
+      "volume_atom_cap": 105,
+      "memory_atom_cap": 128,
+      "maximum_atoms": 105,
+      "dense_memory_budget_bytes": 134217728
+    },
+    "observation_count": 5708,
+    "rejected_trials": []
+  },
+  "phase_slices": [
+    {
+      "trial": 0,
+      "cycle_quota": 200,
+      "completed_cycles": 200,
+      "seconds": 0.497930792,
+      "stop_reason": "cycle_limit"
+    },
+    {
+      "trial": 1,
+      "cycle_quota": 200,
+      "completed_cycles": 200,
+      "seconds": 0.495453959,
+      "stop_reason": "cycle_limit"
+    },
+    {
+      "trial": 2,
+      "cycle_quota": 800,
+      "completed_cycles": 800,
+      "seconds": 1.977448709,
+      "stop_reason": "cycle_limit"
+    },
+    {
+      "trial": 3,
+      "cycle_quota": 800,
+      "completed_cycles": 800,
+      "seconds": 1.962770791,
+      "stop_reason": "cycle_limit"
+    }
+  ],
+  "phase_origins": [
+    {
+      "trial": 0,
+      "diagnostic": "no phase origin passed alpha <= 0.3",
+      "origin_candidates": 4
+    },
+    {
+      "trial": 1,
+      "diagnostic": "no phase origin passed alpha <= 0.3",
+      "origin_candidates": 4
+    },
+    {
+      "trial": 2,
+      "diagnostic": "no phase origin passed alpha <= 0.3",
+      "origin_candidates": 4
+    },
+    {
+      "trial": 3,
+      "diagnostic": "no phase origin passed alpha <= 0.3",
+      "origin_candidates": 4
+    }
+  ],
+  "reduction_bitwise_equal_to_v3": {
+    "hkl": true,
+    "intensity": true,
+    "sigma": true,
+    "statistical_sigma": true,
+    "flags": true,
+    "use": true,
+    "aperture": true,
+    "raw_profiles": true,
+    "choices": true,
+    "parameters": true
+  },
+  "completion": {
+    "stage": "search",
+    "seconds": 103.4403941660421,
+    "reference_model_read": false,
+    "source_hkls_read": false,
+    "archived_arrays_read": false
+  },
+  "outcome": {
+    "schema": "phasesmith.enstatite-raw-workflow-result.v1",
+    "execution_returncode": 0,
+    "source_files_unchanged": true,
+    "through": "search",
+    "raw_to_structure_search_passed": false,
+    "reference_assessment": {
+      "correct": false,
+      "reason": "no candidate"
+    },
+    "standalone_structure_refinement": "not_implemented"
+  },
+  "interpretation": "Complete pipeline execution, failed scientific recovery. The unchanged-cycle longer-time diagnostic removed phase-time stops but all phase origins still failed alpha <= 0.3; no atomic model was produced, and no reference coordinates/counts were read. Does not determine whether extraction or phasing causes failure.",
+  "limitations": [
+    "Previously exposed development example; supplied cell, symmetry and element types.",
+    "Provisional spindle angles and declared detector/polarization response.",
+    "No standalone structure refinement or public API/build promotion.",
+    "No numerical core, physical equations or hot loops changed."
+  ]
+}

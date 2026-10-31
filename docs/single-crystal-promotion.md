@@ -9,8 +9,9 @@ in `5e6bfa8`, resolves the search-capacity blocker for this example. Both existi
 enstatite intensity sources recover the complete 80-atom labelled structure with
 post-search maximum coordinate errors below 0.02 A. The original failing probes
 below remain historical evidence. The [fresh raw-frame runner](enstatite-raw-workflow.md)
-now executes all stages but produces no candidate; its structure-recovery gate,
-public API promotion, packaging and the other release gates remain pending.
+now passes the MgSiO3 recovery gate with explicit v5 DAC/flag validity repairs;
+public API promotion, packaging, shared-mask extraction and independent transfer
+validation remain pending.
 
 ## Decision
 
@@ -58,7 +59,7 @@ need a new untouched set.
 | Installed capabilities | Python and Rust facade feature gates are `experimental-spots` and `experimental-solution` | Include supported capabilities in ordinary Python builds; define normal Rust defaults and preserve named opt-outs |
 | Public Python surface | Modules live under `experimental`; many expose implementation helpers | Select explicit `__all__` exports and options; add compatibility aliases without duplicate type identities |
 | Search defaults | Frozen benchmark uses many explicit flags beyond public defaults | Publish a named, fully expanded search configuration; verify it reproduces its tested baseline before changing defaults |
-| Measured pipeline | Script-first raw-frame-to-PhaseSmith-search runner implemented; frozen fresh run produces no candidate | Diagnose reduction/phasing failure and pass complete coordinate recovery; retain earlier outcomes |
+| Measured pipeline | Frozen v5 raw-frame runner passes complete MgSiO3 recovery; earlier failures retained | Validate transfer and shared frame masks; preserve exposed-data and aperture qualifications |
 | Search capacity | Default remains 2,000,000 elements; explicit budget and input-only preflight implemented | Complete: 64 MiB admits 105 atoms; both existing intensity sources recover the correct 80-atom candidate; see follow-up |
 | Scientific scope | Conditional profile errors, finite supports and empirical corrections are documented | Keep signed observations, quality flags, support conventions, explicit correction provenance and truthful termination |
 | Optional packages | Geometry/strong-shape/scaling orchestration can require SciPy | Declare the installation extra and test missing-dependency errors; avoid import-time optimizer requirements |

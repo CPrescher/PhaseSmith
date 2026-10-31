@@ -1,5 +1,5 @@
 {
-  "schema": "phasesmith.enstatite-raw-workflow-summary.v1",
+  "schema": "phasesmith.enstatite-raw-workflow-summary.v2",
   "environment": {
     "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
     "python": "3.13.7",
@@ -13,12 +13,12 @@
     }
   },
   "protocol": {
-    "path": "validation/enstatite-raw-workflow-v4.json",
-    "sha256": "09a74f38b5726d55625fc8c578f0ca44f2745af664a9102fe0c6d99184355a53"
+    "path": "validation/enstatite-raw-workflow-v5.json",
+    "sha256": "1379d31e39f1b4d645256f0abbbce6afbafce33ea15f43e33e7970e17b4ec7a3"
   },
-  "local_output_directory": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v4",
+  "local_output_directory": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v5",
   "provenance": {
-    "protocol_sha256": "09a74f38b5726d55625fc8c578f0ca44f2745af664a9102fe0c6d99184355a53",
+    "protocol_sha256": "1379d31e39f1b4d645256f0abbbce6afbafce33ea15f43e33e7970e17b4ec7a3",
     "source_hashes": {
       "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
       "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
@@ -30,25 +30,29 @@
       "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
     },
     "native_sha256": "e70e7d6e209d338c5f53447ad6328ea50501684c38a8fcd049801fe07d82acc3",
-    "implementation_sha256": "5ef7e7e265560451fc3ed4e3c664cfafa4b548384d13f4ff9c5f1e68922b88d0",
-    "git_commit": "0845d1a4d133d3e965ef746beefd0950d6d8a827"
+    "implementation_sha256": "2a5dbd79e9393eb8240033844250fd3e9534e48dd40b6d77d2c94ba54c37fb65",
+    "git_commit": "98662b0524663810280a83d198433411468a90fc"
   },
   "external_products": {
     "reduced-observations.npz": {
-      "bytes": 832956,
-      "sha256": "6cf846123b5cb55daa93f7cbf376e1c2df16c33ef81ac0ca9c5d79bb11881f22"
+      "bytes": 942539,
+      "sha256": "2e638956490040a2183dd027f3a7c27f6cce87a092d80a16af0d17e1b5edc4c0"
     },
     "search-input.json": {
-      "bytes": 2549,
-      "sha256": "a85ea09d8ddac833be81a2e3205f7a6d99875827351c1d95c55bf7af05c7bf2b"
+      "bytes": 2548,
+      "sha256": "d503e86821ae6e80f304c60b09661ea0b261ab5b10024fed1be5d3a95430cd49"
     },
     "candidate/result.json": {
-      "bytes": 341466,
-      "sha256": "3be5f303d8b7d07cd875f30250a0f2290d6c0de8e9571de122cf6a054d1253aa"
+      "bytes": 103279,
+      "sha256": "179a4b7fefc1ea6a022bfd5779b49e84f2f4c5886e95f0551640fd5e227a99db"
+    },
+    "candidate/candidate.cif": {
+      "bytes": 2490,
+      "sha256": "3f3f62d75eae798855519759cb9ea452b827405eea715d642d6b6d8caff6daa3"
     },
     "report.json": {
-      "bytes": 331,
-      "sha256": "266b9df3c313eda926ff4f87802b56f8b2f9a610eea1adca974b8ea20dbbe93d"
+      "bytes": 623,
+      "sha256": "c469560e052fe1a7225a997069f84fa9409920fda7d393cf76ef0e6f277560ac"
     }
   },
   "source_files_unchanged": true,
@@ -87,12 +91,32 @@
     "flagged_edge_centres_excluded": 9,
     "all_domain_predictions": 7672,
     "competing_domains": 2,
-    "used": 5708,
-    "negative_used": 1233,
+    "used": 4310,
+    "negative_used": 233,
     "teachers": 278,
     "frame_hashes_equal": true,
     "source_loads": 142,
-    "excluded_by_quality_flags": 1569
+    "excluded_from_search": 2967,
+    "excluded_by_quality_flags": 563,
+    "measurement_validity": {
+      "profile_warning_flags": [
+        "MISMATCH"
+      ],
+      "dac_aperture": {
+        "axis_at_omega_zero": [
+          0,
+          0,
+          1
+        ],
+        "half_opening_degrees": 35.0
+      },
+      "criterion": "Predicted centre-ray entry/exit within the closed symmetric sample-fixed cone; eight float64 epsilons in cosine at the boundary. Does not correct rocking partiality or absorption.",
+      "provenance": "Exposed raw equivalent-family ratios collapse above about35deg, consistent with source notes removing seat/body frames. Declared conservative cone before the diagnostic structure solves; not fitted to R1 or atomic geometry.",
+      "flag_policy": "Preserve every original flag/value/sigma. MISMATCH describes profile residuals and is retained as a warning; all other flags still exclude. No I/sigma cut on exported observations.",
+      "application": "After unchanged profile fitting/scaling, at search-observation export. All blocked measurements retained in diagnostics; existing training/model selection unchanged."
+    },
+    "excluded_by_dac_aperture": 2404,
+    "exported_with_profile_warning": 685
   },
   "equivalent_error_model": {
     "relative": 0.06861231070261362,
@@ -102,88 +126,45 @@
     "interpretation": "equivalent-pair observation error; no scale covariance"
   },
   "search": {
-    "termination": "search_budget",
-    "target_met": false,
-    "amplitude_r1": null,
-    "seconds": 5.266914458014071,
+    "termination": "r1_target",
+    "target_met": true,
+    "amplitude_r1": 0.041317485983379,
+    "seconds": 0.608136375027243,
     "model_saved_before_reference": true,
     "resource": {
-      "expanded_reflection_count": 15410,
+      "expanded_reflection_count": 9604,
       "volume_atom_cap": 105,
       "memory_atom_cap": 128,
       "maximum_atoms": 105,
       "dense_memory_budget_bytes": 134217728
     },
-    "observation_count": 5708,
+    "observation_count": 4310,
     "rejected_trials": []
   },
-  "phase_slices": [
-    {
-      "trial": 0,
-      "cycle_quota": 200,
-      "completed_cycles": 200,
-      "seconds": 0.497930792,
-      "stop_reason": "cycle_limit"
-    },
-    {
-      "trial": 1,
-      "cycle_quota": 200,
-      "completed_cycles": 200,
-      "seconds": 0.495453959,
-      "stop_reason": "cycle_limit"
-    },
-    {
-      "trial": 2,
-      "cycle_quota": 800,
-      "completed_cycles": 800,
-      "seconds": 1.977448709,
-      "stop_reason": "cycle_limit"
-    },
-    {
-      "trial": 3,
-      "cycle_quota": 800,
-      "completed_cycles": 800,
-      "seconds": 1.962770791,
-      "stop_reason": "cycle_limit"
-    }
-  ],
-  "phase_origins": [
-    {
-      "trial": 0,
-      "diagnostic": "no phase origin passed alpha <= 0.3",
-      "origin_candidates": 4
-    },
-    {
-      "trial": 1,
-      "diagnostic": "no phase origin passed alpha <= 0.3",
-      "origin_candidates": 4
-    },
-    {
-      "trial": 2,
-      "diagnostic": "no phase origin passed alpha <= 0.3",
-      "origin_candidates": 4
-    },
-    {
-      "trial": 3,
-      "diagnostic": "no phase origin passed alpha <= 0.3",
-      "origin_candidates": 4
-    }
-  ],
-  "reduction_bitwise_equal_to_v3": {
+  "composition_full_cell": {
+    "Mg": 16,
+    "O": 48,
+    "Si": 16
+  },
+  "reduction_values_and_flags_bitwise_equal_to_v4": {
     "hkl": true,
     "intensity": true,
     "sigma": true,
     "statistical_sigma": true,
     "flags": true,
-    "use": true,
     "aperture": true,
     "raw_profiles": true,
     "choices": true,
     "parameters": true
   },
+  "export_bitwise_equal_to_geometric_diagnostic": {
+    "hkl": true,
+    "intensity": true,
+    "sigma": true
+  },
   "completion": {
     "stage": "search",
-    "seconds": 103.4403941660421,
+    "seconds": 100.4151885000174,
     "reference_model_read": false,
     "source_hkls_read": false,
     "archived_arrays_read": false
@@ -193,18 +174,30 @@
     "execution_returncode": 0,
     "source_files_unchanged": true,
     "through": "search",
-    "raw_to_structure_search_passed": false,
+    "raw_to_structure_search_passed": true,
     "reference_assessment": {
-      "correct": false,
-      "reason": "no candidate"
+      "counts_match": true,
+      "rms_error_angstrom": 0.005005636067474374,
+      "maximum_error_angstrom": 0.007827260357917209,
+      "hand": -1,
+      "shift": [
+        0.8357265859581471,
+        0.5562463494047918,
+        0.27234619803063964
+      ],
+      "correct": true,
+      "strict_002_angstrom": true,
+      "reference_read_after_worker_stopped": true
     },
     "standalone_structure_refinement": "not_implemented"
   },
-  "interpretation": "Complete pipeline execution, failed scientific recovery. The unchanged-cycle longer-time diagnostic removed phase-time stops but all phase origins still failed alpha <= 0.3; no atomic model was produced, and no reference coordinates/counts were read. Does not determine whether extraction or phasing causes failure.",
+  "interpretation": "Full original-frame rerun passes complete labelled structure recovery. Example-only validity repairs, not integration/refinement kernel changes: declared conservative DAC aperture masks occulted rays, while MISMATCH remains a retained warning. No source-HKL membership, vendor intensity, count or coordinate enters the numerical worker.",
   "limitations": [
-    "Previously exposed development example; supplied cell, symmetry and element types.",
-    "Provisional spindle angles and declared detector/polarization response.",
-    "No standalone structure refinement or public API/build promotion.",
-    "No numerical core, physical equations or hot loops changed."
-  ]
+    "Exposed development example, not an untouched holdout.",
+    "Cell/symmetry/elements and provisional spindle angles remain supplied priors.",
+    "35-degree cone and axis at omega zero are dataset-specific exposed-data assumptions; not independently measured DAC geometry.",
+    "Centre-ray exclusion does not model absorption or finite-rocking partiality.",
+    "No standalone structure refinement or public API/build promotion."
+  ],
+  "preserved_negative_run": "benchmarks/enstatite-raw-workflow-v4-macos.json"
 }

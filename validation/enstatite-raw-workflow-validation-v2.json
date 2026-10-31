@@ -1,0 +1,41 @@
+{
+  "schema": "phasesmith.enstatite-raw-workflow-validation.v2",
+  "python": {
+    "command": ".venv/bin/pytest -q",
+    "passed": 3184,
+    "skipped": 11,
+    "deselected": 34,
+    "failed": 0
+  },
+  "rust": {
+    "command": "cargo test --workspace --all-features",
+    "passed": 489,
+    "ignored": 34,
+    "failed": 0
+  },
+  "cargo_fmt": {
+    "command": "cargo fmt --all -- --check",
+    "passed": true
+  },
+  "clippy": {
+    "command": "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+    "passed": true
+  },
+  "python_style": {
+    "ruff_check": true,
+    "ruff_format_check": true
+  },
+  "modified_doc_local_links": {
+    "missing": [],
+    "passed": true
+  },
+  "mkdocs_build": "Not run: MkDocs unavailable in this environment; local links and navigation edits checked.",
+  "new_or_changed_repo_files_above_one_megabyte": [],
+  "real_workflow": "benchmarks/enstatite-raw-workflow-macos.json",
+  "real_recovery_passed": true,
+  "diagnosis": "benchmarks/enstatite-reduction-diagnosis-macos.json",
+  "original_hkl_control": "Original source control succeeds: Mg16 Si16 O48, R1 .0481402124032541, maximum/RMS errors .012003262364801582/.006819160676493051 A.",
+  "native_equations_and_hot_loops": "Unchanged. New example-only geometry mask has independent trigonometric, boundary, invalid-input and warning/sign-preservation tests. No native benchmark or new oracle fixture applicable.",
+  "mask_library_migration": "Design proposal only; Dioptas sources inspected and not modified.",
+  "frozen_corpus": "Not rerun or regenerated; no new holdout claim."
+}
