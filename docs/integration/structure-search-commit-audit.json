@@ -5,7 +5,10 @@
     "structure": "bb6eab855e7e5ca12a5a07a58356a84a0694a1cc",
     "other_committed": "910bc22a342290aeb775a0c1f12c9783af3040f7",
     "integration_merge": "a2158432b52bf9bd376331b26708a0540a2078c5",
-    "integration_review": "c4ee76ddcac0f2efd135602cbeae6d9e2814f296"
+    "integration_review": "e9475ada57681afa415db3e7525fe09d8ffb7ec1",
+    "initial_integration_review": "c4ee76ddcac0f2efd135602cbeae6d9e2814f296",
+    "latest_other_committed_observed": "297d157c159635e81ea38b90349ffc9e5a10cf52",
+    "structure_audit_commit": "71d052c"
   },
   "committed_changesets_fork_to_holdout": 49,
   "common_fork": "f166525af743bcfa63c6e132101730d907b5927d",
@@ -635,6 +638,12 @@
       "source": "crates/phasesmith-spots/src/lib.rs:296",
       "lint": "needless_bitwise_bool",
       "existing_captured_other_source_unchanged": true
+    },
+    {
+      "command": "cargo check --workspace --all-targets --all-features --locked",
+      "scope": "Committed integration e9475ad with latest observed other committed tip 297d157",
+      "exit_code": 0,
+      "log_sha256": "95c1b469fdd65dcef69f03163bfdace00d3708ea2acd9dc2f98ff1eb1dc8dfed"
     }
   ],
   "ignored_generated_artifacts": [
@@ -649,5 +658,5 @@
     "repaired": false,
     "used_for_commits": false
   },
-  "qualification": "All structure-search implementation and canonical results are locally committed. Integration review and snapshot checks preserve both original worktrees and the frozen benchmark sources/binary. The combined test snapshot includes captured unfinished work, never committed by this audit. Later edits to unrelated row-search files are not covered by the snapshot tests. Strict Clippy remains blocked by one existing threshold expression in the captured other work. Main/other active branches are not merged or published by this audit."
+  "qualification": "All structure-search implementation and canonical results are locally committed. Integration review and snapshot checks preserve both original worktrees and the frozen benchmark sources/binary. The combined test snapshot includes captured unfinished work, never committed by this audit. Later edits to unrelated row-search files are not covered by the snapshot tests. Strict Clippy remains blocked by one existing threshold expression in the captured other work. Main/other active branches are not merged or published by this audit. The other branch committed FFT/row work during the audit. Integration e9475ad merges the exact newly committed tips and passes an additional all-target/all-feature locked check; the remaining unfinished work is preserved separately."
 }
