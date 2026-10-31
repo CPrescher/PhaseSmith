@@ -17,6 +17,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 phasesmith-spots = { version = "0.7.0", path = "../phasesmith-spots", optional = true }
+phasesmith-row-search = { version = "0.7.0", path = "../phasesmith-row-search", optional = true }
+serde_json = { version = "1", optional = true }
 npy = { package = "numpy", version = "0.27" }
 pyo3 = { version = "0.27", features = ["extension-module", "abi3-py311"] }
 phasesmith-core = { version = "0.7.0", path = "../phasesmith-core" }
@@ -32,4 +34,4 @@ phasesmith-workflows = { version = "0.7.0", path = "../phasesmith-workflows" }
 workspace = true
 
 [features]
-experimental-spots = ["dep:phasesmith-spots"]
+experimental-spots = ["dep:phasesmith-spots", "dep:phasesmith-row-search", "dep:serde_json"]

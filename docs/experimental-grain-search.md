@@ -1,5 +1,13 @@
 # Experimental FFT grain search
 
+An opt-in alternative is now available as **Row search (DAFi-based)**:
+`find_grains(q, training=mask, method="rows", row_options=RowSearchOptions(...))`.
+It groups training reflections before per-group lattice inference and the same
+frozen-pool validation. `result.row_grouping` retains its exact raw output;
+`group_rows` provides grouping alone. The existing default and all ensemble
+searches remain FFT. See [Row search](experimental-row-search.md) for settings,
+attribution and the distinction between grouping and final indexed ownership.
+
 `phasesmith.experimental.grains.find_grains(q, training=mask, options=...)`
 uses **unindexed reciprocal peak positions** (NumPy `(N,3)`, inverse Å, no
 2π factor). It infers integer HKLs, direct lattice bases and competing grain

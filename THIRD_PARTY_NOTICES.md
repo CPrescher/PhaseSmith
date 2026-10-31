@@ -3,6 +3,18 @@
 PhaseSmith is independently licensed under the MIT License. The following
 notice covers compatible behavior derived from separately licensed software.
 
+## Published DAFi algorithm
+
+The experimental **Row search (DAFi-based)** method independently implements
+equidistant-row grouping described by Andrey Aslandukov, Matvii Aslandukov,
+Natalia Dubrovinskaia and Leonid Dubrovinsky, “Domain Auto Finder (DAFi)
+program: the analysis of single-crystal X-ray diffraction data from
+polycrystalline samples”, *Journal of Applied Crystallography* **55** (2022),
+1383–1391, DOI `10.1107/S1600576722008081`. The paper is distributed under
+CC BY 4.0. No original DAFi implementation source or executable is incorporated
+or required. This is an independent implementation with documented numerical
+choices, not official DAFi or a claim of exact original-software equivalence.
+
 ## GSAS-II black-box validation
 
 PhaseSmith's optional oracle fixtures contain plain numerical outputs generated
