@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v21.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v22.json"
 
 
 def digest(path):
@@ -63,14 +63,24 @@ def log(message):
 class RawFrames:
     """Read-only one-frame HDF5 loader with explicit orientation and mask policy."""
 
-    def __init__(self, path, acquisition, expected, validity=None, *, execution=None):
+    def __init__(
+        self, path, acquisition, expected, validity=None, *, execution=None, shared_reader=None
+    ):
         from phasesmith.io.hdf5 import Hdf5Frames
 
-        self.reader = Hdf5Frames(path, expected["dataset"])
+        self.execution = {} if execution is None else dict(execution)
+        options = (
+            {"cache_bytes": self.execution["decoded_cache_bytes"]}
+            if self.execution.get("decoded_cache_bytes", 0)
+            else {}
+        )
+        self.owns_reader = shared_reader is None
+        self.reader = (
+            Hdf5Frames(path, expected["dataset"], **options) if self.owns_reader else shared_reader
+        )
         if list(self.reader.shape) != expected["shape"] or self.reader.dtype != "uint32":
             self.reader.close()
             raise ValueError("raw HDF5 shape/dtype differs from registered source")
-        self.execution = {} if execution is None else dict(execution)
         self.acquisition = acquisition
         self.indices = np.arange(
             acquisition["first_frame"], acquisition["last_frame_inclusive"] + 1
@@ -92,8 +102,63 @@ class RawFrames:
         self.hashes = {}
         self.loads = 0
         self.digest_reuses = 0
+        self.native_plan = None
+        self.prepared = {}
+        self.native_batches = 0
+        self.native_prepared_frames = 0
+        self.native_preparation_seconds = 0.0
+        workers = self.execution.get("native_preparation_workers", 0)
+        if workers:
+            from phasesmith.experimental.frame_input import preparation_plan
+
+            self.native_plan = preparation_plan(
+                self.reader.shape[1:],
+                len(self.indices),
+                acquisition["vertical_flip"],
+                acquisition["mask_minimum_reserved_uint32"],
+                validity,
+            )
+            self.native_plan.admit(
+                self.execution.get("batch_frames", 4),
+                workers,
+                self.execution.get("payload_bytes", 256 * 1024**2),
+            )
+
+    def _load_prepared(self, index):
+        if index not in self.prepared:
+            self.prepared.clear()
+            inputs = []
+            for local in range(
+                index, min(index + self.execution.get("batch_frames", 4), len(self.indices))
+            ):
+                try:
+                    inputs.append((local, self.reader.read_frame(int(self.indices[local]))))
+                except Exception as error:
+                    self.prepared[local] = (None, None, None, error)
+                    break
+            started = time.perf_counter()
+            rows = self.native_plan.prepare(
+                inputs,
+                self.execution["native_preparation_workers"],
+                self.execution.get("payload_bytes", 256 * 1024**2),
+            )
+            self.native_preparation_seconds += time.perf_counter() - started
+            self.native_batches += 1
+            for local, image, mask, digest, error in rows:
+                self.prepared[local] = (image, mask, digest, error)
+        image, mask, digest, error = self.prepared.pop(index)
+        if error is not None:
+            raise error if isinstance(error, Exception) else ValueError(error)
+        self.pending_masks[index] = mask
+        self.hashes[index] = digest
+        self.native_prepared_frames += 1
+        self.digest_reuses += int(self.native_plan.source_hash_providers > 0)
+        self.loads += 1
+        return image
 
     def load(self, index):
+        if self.native_plan is not None:
+            return self._load_prepared(index)
         image = self.reader.read_frame(int(self.indices[index]))
         if self.acquisition["vertical_flip"]:
             image = image[::-1]
@@ -113,12 +178,14 @@ class RawFrames:
 
     def mask(self, index):
         mask = self.pending_masks.pop(index)
-        if self.validity is not None:
+        if self.validity is not None and self.native_plan is None:
             mask |= self.validity.mask(index)
         return mask
 
     def close(self):
-        self.reader.close()
+        self.prepared.clear()
+        if self.owns_reader:
+            self.reader.close()
 
 
 def exposure_bounds(indices, acquisition):
@@ -299,7 +366,7 @@ def aligned_setting(candidates, cell, selection, training):
     return index, a, cell_parameters(a)
 
 
-def stage_validity(packet, out, protocol):
+def stage_validity(packet, out, protocol, shared_reader=None):
     """Freeze one shared original-count mask before detection or integration."""
     from phasesmith.experimental import frame_validity as masking
 
@@ -312,6 +379,7 @@ def stage_validity(packet, out, protocol):
         protocol["acquisition"],
         packet["raw_array"],
         execution=protocol.get("frame_input_execution"),
+        shared_reader=shared_reader,
     )
     try:
         providers = []
@@ -375,7 +443,7 @@ def stage_validity(packet, out, protocol):
         frames.close()
 
 
-def stage_positions(packet, out, protocol, validity=None):
+def stage_positions(packet, out, protocol, validity=None, shared_reader=None):
     from phasesmith.experimental.frame_validity import flag_invalid_tracks
     from phasesmith.experimental.rotation import RotationOptions, locate_series
     from phasesmith.experimental.spots import SpotOptions
@@ -386,6 +454,7 @@ def stage_positions(packet, out, protocol, validity=None):
         packet["raw_array"],
         validity,
         execution=protocol.get("frame_input_execution"),
+        shared_reader=shared_reader,
     )
     try:
         geometry = poni_geometry(
@@ -450,6 +519,9 @@ def stage_positions(packet, out, protocol, validity=None):
                 pixel_sizes_m=[frames.pixel1, frames.pixel2],
                 source_loads=frames.loads,
                 source_digest_reuses=frames.digest_reuses,
+                native_prepared_frames=frames.native_prepared_frames,
+                native_preparation_batches=frames.native_batches,
+                native_preparation_seconds=frames.native_preparation_seconds,
                 frame_validity_fingerprint=None if validity is None else validity.fingerprint(),
                 shadow_incomplete_tracks=int((positions.flags != original_flags).sum()),
             ),
@@ -621,7 +693,16 @@ def stage_indexing(positions, geometry, packet, out, protocol):
     return fitted, competitors
 
 
-def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes, frame_validity=None):
+def stage_integrate(
+    packet,
+    out,
+    protocol,
+    fitted,
+    competitors,
+    first_hashes,
+    frame_validity=None,
+    shared_reader=None,
+):
     from phasesmith.experimental.integration import FrameExecution, IntegrationOptions
     from phasesmith.experimental.prediction import ScanPredictions, predict_scan
     from phasesmith.experimental.profile_refinement import ShapeFitOptions
@@ -646,6 +727,7 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes, fr
         packet["raw_array"],
         frame_validity,
         execution=protocol.get("frame_input_execution"),
+        shared_reader=shared_reader,
     )
     try:
         shape = tuple(packet["raw_array"]["shape"][1:])
@@ -838,6 +920,9 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes, fr
                 frame_hashes_equal=True,
                 source_loads=frames.loads,
                 source_digest_reuses=frames.digest_reuses,
+                native_prepared_frames=frames.native_prepared_frames,
+                native_preparation_batches=frames.native_batches,
+                native_preparation_seconds=frames.native_preparation_seconds,
                 frame_preparation_execution=observations.summation.execution,
                 excluded_from_search=int((~valid).sum()),
                 excluded_by_quality_flags=int(((~valid) & visible).sum()),
@@ -974,11 +1059,31 @@ def numerical_worker(packet_path):
     protocol = packet["protocol"]
     block_optional_python_numerics()
     started = time.perf_counter()
-    validity = stage_validity(packet, out, protocol)
-    positions, geometry, hashes = stage_positions(packet, out, protocol, validity)
-    fitted, competitors = stage_indexing(positions, geometry, packet, out, protocol)
+    from phasesmith.io.hdf5 import Hdf5Frames
+
+    cache_bytes = protocol.get("frame_input_execution", {}).get("decoded_cache_bytes", 0)
+    shared_reader = (
+        Hdf5Frames(packet["raw_path"], packet["raw_array"]["dataset"], cache_bytes=cache_bytes)
+        if cache_bytes
+        else None
+    )
+    cache_stats = None
+    try:
+        validity = stage_validity(packet, out, protocol, shared_reader)
+        positions, geometry, hashes = stage_positions(
+            packet, out, protocol, validity, shared_reader
+        )
+        fitted, competitors = stage_indexing(positions, geometry, packet, out, protocol)
+        if packet["through"] != "geometry":
+            stage_integrate(
+                packet, out, protocol, fitted, competitors, hashes, validity, shared_reader
+            )
+        if shared_reader is not None:
+            cache_stats = shared_reader.cache_stats
+    finally:
+        if shared_reader is not None:
+            shared_reader.close()
     if packet["through"] != "geometry":
-        stage_integrate(packet, out, protocol, fitted, competitors, hashes, validity)
         subprocess.run(
             [sys.executable, str(Path(__file__).resolve()), "--search-only", str(packet_path)],
             timeout=protocol["search"]["hard_seconds"],
@@ -989,6 +1094,7 @@ def numerical_worker(packet_path):
         dict(
             stage=packet["through"],
             seconds=time.perf_counter() - started,
+            decoded_frame_cache=cache_stats,
             reference_model_read=False,
             source_hkls_read=False,
             archived_arrays_read=False,

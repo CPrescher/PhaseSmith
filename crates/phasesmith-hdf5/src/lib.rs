@@ -5,6 +5,8 @@
 //! bundled. Other filters must be available to HDF5 and are reported explicitly.
 //! This adapter never flips, normalizes, masks or otherwise changes counts.
 
+pub mod cache;
+
 use hdf5::{Dataset, File};
 use std::fmt::{Display, Formatter};
 use std::path::Path;

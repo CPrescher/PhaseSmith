@@ -16,6 +16,7 @@ pub mod box_optimizer;
 pub mod empirical_fit;
 pub mod fft;
 mod fourier_refinement;
+pub mod frame_input;
 pub mod frame_validity;
 mod geometry_linear;
 pub mod geometry_refinement;

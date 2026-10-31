@@ -63,6 +63,8 @@ mod empirical_fit;
 mod fft;
 mod fit_diagnostics;
 #[cfg(feature = "experimental-spots")]
+mod frame_input;
+#[cfg(feature = "experimental-spots")]
 mod frame_validity;
 #[cfg(feature = "experimental-spots")]
 mod geometry_refinement;
@@ -4292,6 +4294,8 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     spots::register(module)?;
     #[cfg(feature = "experimental-spots")]
     frame_validity::register(module)?;
+    #[cfg(feature = "experimental-spots")]
+    frame_input::register(module)?;
     #[cfg(feature = "experimental-spots")]
     geometry_refinement::register(module)?;
     #[cfg(feature = "hdf5")]

@@ -25,6 +25,7 @@ class Hdf5Frames:
         max_frames=1_000_000,
         max_frame_pixels=100_000_000,
         max_chunk_bytes=268_435_456,
+        cache_bytes=0,
     ):
         if not hasattr(_core, "NativeHdf5Frames"):
             raise RuntimeError(
@@ -35,8 +36,10 @@ class Hdf5Frames:
                 raise ValueError("HDF5 read limits must be positive integers")
         if not isinstance(dataset, str) or not dataset or "\0" in dataset:
             raise ValueError("dataset must be a nonempty HDF5 path")
+        if type(cache_bytes) is not int or not 0 <= cache_bytes <= 4 * 1024**3:
+            raise ValueError("decoded-frame cache must be in 0..4 GiB")
         self._reader = _core.NativeHdf5Frames(
-            path, dataset, max_frames, max_frame_pixels, max_chunk_bytes
+            path, dataset, max_frames, max_frame_pixels, max_chunk_bytes, cache_bytes
         )
 
     @property
@@ -58,6 +61,11 @@ class Hdf5Frames:
     def library_version(self):
         """Version of the bundled native HDF5 library."""
         return tuple(_core.HDF5_VERSION)
+
+    @property
+    def cache_stats(self):
+        """Decoded-payload admission and actual source-read counters."""
+        return dict(self._reader.cache_stats)
 
     def read_frame(self, index):
         """Read one owned u32 frame, preserving all original pixel counts."""
