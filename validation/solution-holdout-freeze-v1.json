@@ -1,0 +1,1223 @@
+{
+  "schema": "phasesmith.solution-holdout-freeze.v1",
+  "created_utc": "2026-10-31T06:32:50.260077+00:00",
+  "solver_commit": "870d61aaf29ec4220bb176a63f2d7085b361a50e",
+  "holdout_state_at_freeze": "unopened solver outcomes",
+  "opening_authorized_by_user": true,
+  "no_tuning": true,
+  "development_report": "benchmarks/structure-solution-repair-evaluation-cache-macos.json",
+  "development_report_sha256": "73f4cc1292974f843e4ac4eebe8fe2395dc21f7326f6ef6b154311fe3528cc26",
+  "prior_full_validation": "benchmarks/structure-solution-repair-evaluation-validation-macos.json",
+  "prior_full_validation_sha256": "6159d10d623d1cddafbfb03cfd161024afb5b692bb2c0e758f2ff732c15eaa4b",
+  "native_sha256": "891cad9dd7f702c8066191b175ab1b29458752e88ccd3dbe373702dccfe96110",
+  "comparator_sha256": "4d712cb17f8952e1f59f476af7c61ad4ab5261e594c75441c7f81dcefe7b5560",
+  "manifest_sha256": "f815629e42e608c784113ddd7400268f9e897b3db5b2af7d54224886af206f6c",
+  "corpus_lock": "validation/solution-corpus-v5.benchmark36.lock.json",
+  "corpus_lock_sha256": "95a8b592ef90362d2bb74f01401456ac661a2f92770b1cfa72ebc81472385a6e",
+  "controls": {
+    "manifest": "validation/solution-corpus-v5.json",
+    "seconds": 15,
+    "shelxt": "/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt",
+    "split": "holdout",
+    "resume": false,
+    "lock_revision": 36,
+    "legacy_counts": false,
+    "wilson_normalization": true,
+    "phase_quality_selection": true,
+    "phase_origin_selection": true,
+    "chemical_assignment": true,
+    "iterative_refinement": true,
+    "missing_reflections": false,
+    "resolution_extension": 1.0,
+    "adaptive_checkpoints": false,
+    "isotropic_assignment_refinement": true,
+    "filtered_peak_search": true,
+    "batched_fft": true,
+    "real_fft": true,
+    "fused_phase_workspace": true,
+    "cached_normal_refinement": true,
+    "multiplicity_weighted_refinement": true,
+    "ambiguous_assignments": true,
+    "cached_assignment_refinement": true,
+    "specialized_isotropic_refinement": true,
+    "streamed_peak_search": true,
+    "reuse_normal_matrices": true,
+    "short_phase_starts": true,
+    "blocked_normal_matrices": true,
+    "phase_plateau_stopping": true,
+    "assignment_convergence_stopping": true,
+    "late_phase_plateau_stopping": true,
+    "model_consensus_stopping": true,
+    "joint_assignment_refinement": true,
+    "cached_repair_evaluation": true,
+    "workers": 1,
+    "shelxt_threads": 1,
+    "work_sliced_phasing": true,
+    "independent_origin_sampling": false,
+    "phase_first_selection": true,
+    "legacy_quality_normalization": false,
+    "score_only_evaluation": true,
+    "reusable_fourier_workspaces": true,
+    "collection_schedule": "frozen holdout alternating serial program order",
+    "collection_scheduler_source": "benchmarks/solution_holdout_frozen.py"
+  },
+  "solver_options": {
+    "cycles": 800,
+    "trials": 4,
+    "seed": 0,
+    "max_seconds": 13.0,
+    "refinement": "anisotropic",
+    "completion": false
+  },
+  "holdout_ids": [
+    "cod-2011007",
+    "cod-2243196",
+    "cod-2021226",
+    "cod-2010532",
+    "cod-2011371",
+    "cod-2242644",
+    "cod-2241300",
+    "cod-2206101",
+    "cod-2021185",
+    "cod-2215687",
+    "cod-2010918",
+    "cod-2011512",
+    "cod-2010934",
+    "cod-2011363",
+    "cod-2006996",
+    "cod-2010993",
+    "cod-2242680",
+    "cod-1548676",
+    "cod-2011638",
+    "cod-2011318",
+    "cod-2101990",
+    "cod-2021040",
+    "cod-2211527",
+    "cod-2207460",
+    "cod-2200818",
+    "cod-2023383",
+    "cod-1562003",
+    "cod-2242610",
+    "cod-2022708",
+    "cod-2312802",
+    "cod-2020973",
+    "cod-2011355",
+    "cod-1519649",
+    "cod-2011750",
+    "cod-2010654",
+    "cod-2021374",
+    "cod-2017324",
+    "cod-2011344",
+    "cod-2011666",
+    "cod-2207083",
+    "cod-2232444",
+    "cod-2011271",
+    "cod-2223219",
+    "cod-2014187",
+    "cod-2011089",
+    "cod-2101973",
+    "cod-1556408",
+    "cod-2242352",
+    "cod-2243590",
+    "cod-2240852",
+    "cod-2011056",
+    "cod-2242615",
+    "cod-2011144",
+    "cod-2011501",
+    "cod-1548678",
+    "cod-2011044",
+    "cod-2233659",
+    "cod-2012343",
+    "cod-2021003",
+    "cod-1549038",
+    "cod-1550295",
+    "cod-2022343",
+    "cod-2200381",
+    "cod-2010875",
+    "cod-2211965"
+  ],
+  "input_hashes": {
+    "cod-2011007": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011007/inputs.json",
+        "sha256": "37ae286b1efea16f95c2018f0253a73a8443b00733c1f143842358f3df77b910"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011007/common.hkl",
+        "sha256": "04c6ec2164efc09f815251065726639e7d9ac136f8d90aef99b8d3a485c5de74"
+      }
+    },
+    "cod-2243196": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2243196/inputs.json",
+        "sha256": "23ec40b4eea5db386fee3c06ecc94cc7f2b910cf927dda90f9573b73ebdc51ab"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2243196/common.hkl",
+        "sha256": "1ea65c232f4f081ac61dc3931907ea5bd0506ea898fccc55cd949bc5de75b904"
+      }
+    },
+    "cod-2021226": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2021226/inputs.json",
+        "sha256": "1ec2e601bf279b390bca005310cb29a44b115d7d5691d95801d13a64999e59b7"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2021226/common.hkl",
+        "sha256": "4ccd30328472f8eb4f8d49212eb1acc58d2b78e80efe3b3395ab5a7bef4c4251"
+      }
+    },
+    "cod-2010532": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2010532/inputs.json",
+        "sha256": "2330f51b80b820165b933821782770d963c47ad00c7d13d590596957b74c1c77"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2010532/common.hkl",
+        "sha256": "d22cc280b24f91c2ec1de92e0327fcecfd46d3fed9a49dd81435741b5e77d299"
+      }
+    },
+    "cod-2011371": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011371/inputs.json",
+        "sha256": "ca829fecc83332e8fe85f4b1551fbfe22eccff02e5044c528c8ef905f32efb9a"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011371/common.hkl",
+        "sha256": "4c99d68f622c10272c7e194f4691dde2f96467fa963deab6f1f24bc5f072296c"
+      }
+    },
+    "cod-2242644": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2242644/inputs.json",
+        "sha256": "582945ee040fd9e98360176dfa000718242569f880e4161ac15e9665b0c26ba2"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2242644/common.hkl",
+        "sha256": "170d65012c843126bf89819c1f47feaff09f78d07737233507789cfa796cb6d6"
+      }
+    },
+    "cod-2241300": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2241300/inputs.json",
+        "sha256": "6424bd2a8a5aae55d9e30d4a818be7c85fddd019a63c7829239f300ac750ff35"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2241300/common.hkl",
+        "sha256": "7fec710b5733f9de0c05d74fb57c32249ea88c1491de49b00fd94f4c6a459bf9"
+      }
+    },
+    "cod-2206101": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2206101/inputs.json",
+        "sha256": "96fb0d148cd8440367f7cc9952a67e63696d4cc2aae97c0466747082b8eefd1a"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2206101/common.hkl",
+        "sha256": "14cb80c3cbcc6d8db4ac5acbb0c08249b4208cd7daffb0750a78541987151cc5"
+      }
+    },
+    "cod-2021185": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2021185/inputs.json",
+        "sha256": "22e285ad9e1fda6e48d8bc04a9cb74faa9ca64c17415ebb60e3b97e72ce79c0a"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2021185/common.hkl",
+        "sha256": "2673c98d4fda323b56e385e8c29a99412509049257b2437b78e04a84013da8d6"
+      }
+    },
+    "cod-2215687": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2215687/inputs.json",
+        "sha256": "9cd48b1609d797903ec4193ec4258ec52fa102cc3b25525b7d1005aa6bd58201"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2215687/common.hkl",
+        "sha256": "98f20b950dbf9d6c621cefb423b3b6fde872bd5f0d1b23f69f9ac74192418ddd"
+      }
+    },
+    "cod-2010918": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2010918/inputs.json",
+        "sha256": "4e0593f6dfe9e9d655eabf369cd7535909a3f21fa8b7a34abeb43c8afd3636a6"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2010918/common.hkl",
+        "sha256": "274b39d15ef301f5d153f5c45866b3f7211f01943a76436449a9bddce0dcaed4"
+      }
+    },
+    "cod-2011512": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011512/inputs.json",
+        "sha256": "f1bd1e912147a9632d97dc0e58f56b8036fce07d7f6a9bd0236caf48e7cfc77f"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011512/common.hkl",
+        "sha256": "77205a5bfc6c9060e9b719d9cb6f4398f44f7df37c01624f4c331482822984f1"
+      }
+    },
+    "cod-2010934": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2010934/inputs.json",
+        "sha256": "91344f4009f09977c307e4f15ecc92ff795e283730bcb73378f24394c8f2aa36"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2010934/common.hkl",
+        "sha256": "e4c3f594c4cef8c9b5014070cd39b43cb26dd9f2952b4e1f75562630fd28a6c8"
+      }
+    },
+    "cod-2011363": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011363/inputs.json",
+        "sha256": "43ad9e7eab6012671d46e607927db1a4bb6a27413b93f5b5f0fdf3125fd9eeae"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011363/common.hkl",
+        "sha256": "e0e5581e19cc3fb59e2e93db129cd658399d1c1454da9c1a7ff01ffdef7214dc"
+      }
+    },
+    "cod-2006996": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2006996/inputs.json",
+        "sha256": "0149c7b99af3922b56c091e805953b6e3afca108f9f8cf948e5e071fec9c095e"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2006996/common.hkl",
+        "sha256": "86de0aa86d29f380511a67a4a0793ae8093866074d86df72c4e7038c17bd7b6e"
+      }
+    },
+    "cod-2010993": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2010993/inputs.json",
+        "sha256": "2eb5827e6f9844aff7785435ccacab44c00af65bf6b77ce613e1519c39d022ca"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2010993/common.hkl",
+        "sha256": "2c3b3339d20a046b38183244f7e8983a241a54793782f5d76ea024099a6ee5a6"
+      }
+    },
+    "cod-2242680": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2242680/inputs.json",
+        "sha256": "e12a0d3d80023f4e1cd29b1fb14c3fc0c785c6b2a77727a45a1fc6360809687e"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2242680/common.hkl",
+        "sha256": "1941bcbe9c6e1062054fb4afe4778a3739093585f1b41c70173177c9b79afe91"
+      }
+    },
+    "cod-1548676": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-1548676/inputs.json",
+        "sha256": "ff23f11073d65109c466f84d022eb8d5c200fb01994c87d2ee76e17610e66b3f"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-1548676/common.hkl",
+        "sha256": "66131d9d42913e071746834240c016f374c3d244b450441d75643b38914571e9"
+      }
+    },
+    "cod-2011638": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011638/inputs.json",
+        "sha256": "6346fb6fbb2059d89750679784e437cf5819e35c01801f2d0e6aa10474bb40d3"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011638/common.hkl",
+        "sha256": "a9ac299c512ae6a96130842821c72186fa45cdce19a98ac96fab35f438a8ddbc"
+      }
+    },
+    "cod-2011318": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011318/inputs.json",
+        "sha256": "15b1604a68137708a6de73aeb2ab9047e174f65590a1c94318dccc2ea0cd4edb"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011318/common.hkl",
+        "sha256": "fcb0cee0c8510a419e9fdede7f44173316fe4e8cc03ec557c60c77adac6e3c80"
+      }
+    },
+    "cod-2101990": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2101990/inputs.json",
+        "sha256": "19b25b4ba5b2f428bd6519e1ad39e0b027691b6863d15fe6ec59512f4cf4ae30"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2101990/common.hkl",
+        "sha256": "0a294a8b509dcf7f7cf538f429cd9d66568af1a0c91732183d442e200683f017"
+      }
+    },
+    "cod-2021040": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2021040/inputs.json",
+        "sha256": "659b830f14916ba0f87538728272ba6c51f093ce02a2a43237a1eee55c10af53"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2021040/common.hkl",
+        "sha256": "a23a790b20dc1722e10938aac3c36006a4f201f5478732ebfc2d829e1c0774dc"
+      }
+    },
+    "cod-2211527": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2211527/inputs.json",
+        "sha256": "d4dbc064063fda6f7f742adc41f742a565bcf8466d070f974c67f9490553cbf4"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2211527/common.hkl",
+        "sha256": "8df427fc03fe064ada8577348c633718c04596355a4d2600558a1b1a9064445e"
+      }
+    },
+    "cod-2207460": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2207460/inputs.json",
+        "sha256": "8d46f5cc0a909a03127b502bd014064786fa5ec2fb38141e29d978c56b4bf2c6"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2207460/common.hkl",
+        "sha256": "ea1ab88de1e4298183180d68d2574b701434c10ecf8cd434387dbfa1f7defff8"
+      }
+    },
+    "cod-2200818": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2200818/inputs.json",
+        "sha256": "544b498b9bfc04790f168caac4b2b31ae0b5703780e5cc3f799b4efdc4e60594"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2200818/common.hkl",
+        "sha256": "c4b6a08b640561844e7cff667baa445aa345b55b16671976ae4176a9cdad5f6e"
+      }
+    },
+    "cod-2023383": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2023383/inputs.json",
+        "sha256": "af67a6fafeca7a8b8c24f2e57a89a57265980ea9b529f97c04d3d391a13440c6"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2023383/common.hkl",
+        "sha256": "e223447d7a4104d17d8a59303d294dfb7511a963050e22cf5dfa9bf90ebbc735"
+      }
+    },
+    "cod-1562003": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-1562003/inputs.json",
+        "sha256": "e5d4c481037ee67b9b2494dabf8d42abf6a9d829652461207fd07c4b0b69398f"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-1562003/common.hkl",
+        "sha256": "0061612a2ef593d3798e849fb5ff628712cba5c5e504908740e2a16be6a380f1"
+      }
+    },
+    "cod-2242610": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2242610/inputs.json",
+        "sha256": "cf09975936d41d48cf0df37c0305b0e440a09549300d4e94a12950d402ec29ac"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2242610/common.hkl",
+        "sha256": "216a52c5c2036bba26fb63ca59a085e19242ebfb141afceb6027824c421739f8"
+      }
+    },
+    "cod-2022708": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2022708/inputs.json",
+        "sha256": "3ee15a486db34fe6192ad26d273b1253616c38b960a0ebf329fbb8adb6b15df1"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2022708/common.hkl",
+        "sha256": "50d523d1857a5742fa0c85ef4a34b7f5a4c19b323b04bdf29e627f17bcdd7cc0"
+      }
+    },
+    "cod-2312802": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2312802/inputs.json",
+        "sha256": "835b22148c2710edc2484266f9b05c64f0b25923f043b5cef61d4f8bac28f76b"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2312802/common.hkl",
+        "sha256": "b0ac69715ded031843660a3646068c182302764a35fbbb1648b4f1dbd68f6222"
+      }
+    },
+    "cod-2020973": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2020973/inputs.json",
+        "sha256": "dbc9a7989c26b508de7bc553bc075befaa96dc263d9453ea84a477086f27ef1f"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2020973/common.hkl",
+        "sha256": "322c92dc0814078ffafba83e63b96cc25e7253c55d72393bf0e8085ef854f445"
+      }
+    },
+    "cod-2011355": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011355/inputs.json",
+        "sha256": "11fd19ecddc2a0b392710c42ad7f636d2c92562902b80fe5bc2dd27abfd7c59f"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011355/common.hkl",
+        "sha256": "ccabf931f37d1e019545ef3879dc37967421c919af6ab305e9d6ffbeddbce105"
+      }
+    },
+    "cod-1519649": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-1519649/inputs.json",
+        "sha256": "5f183e5d9fe6565c9682bb038ccd8b207f8cc9224df7072e591198bb8a8182ca"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-1519649/common.hkl",
+        "sha256": "759f93c670ae5365ca77ee36fe28dcc714e2042b2e154a28759ca5650f424e27"
+      }
+    },
+    "cod-2011750": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011750/inputs.json",
+        "sha256": "f2366fae72274bf2dd87adc7f6df590612a693f0b51581591af51a9f63d99b33"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011750/common.hkl",
+        "sha256": "661117948d21fecc1baa06120f0f6446561dc31c09573382c44f6e1104d4ed3c"
+      }
+    },
+    "cod-2010654": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2010654/inputs.json",
+        "sha256": "a354e40f868a51ccef09eadfcb7362e1e11f46a7d1eaa338aea4fa7f7b44923e"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2010654/common.hkl",
+        "sha256": "1b4c9a9a565871710a30f98ac030ed71aa71ff56d7b48d827030fcf1fe974eeb"
+      }
+    },
+    "cod-2021374": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2021374/inputs.json",
+        "sha256": "571891e9f8d9ccbdf0bedd6f75b590ee0eadf3aef42ac87d0af742457dbab94f"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2021374/common.hkl",
+        "sha256": "e2bc2bbea6b68fc75523d1690b6972e542e32659088944ae1b635b820ec60b1f"
+      }
+    },
+    "cod-2017324": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2017324/inputs.json",
+        "sha256": "3e27afa7ed94e4c67ea397bb29691f74ad75172399afaca4d390b0c778f0e5f6"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2017324/common.hkl",
+        "sha256": "94f2dcc75a4a267fd46932f59a947c741cb1b9f9e1c8913268cb6c1b90c580de"
+      }
+    },
+    "cod-2011344": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011344/inputs.json",
+        "sha256": "6b900968ed6cc7f378c9cd6c7f81c5c65d8b6cf1d16a6ffa7a9455964d4d12d1"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011344/common.hkl",
+        "sha256": "acae47de29694ebca29df044aa25fc193300dc37a35a7f6d4bfbd49065241ac7"
+      }
+    },
+    "cod-2011666": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011666/inputs.json",
+        "sha256": "c8f195ec7da83561280f3d1319f913c8e93b1548989b117556a1b765bb4f5700"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011666/common.hkl",
+        "sha256": "30e78efbccc806a601ae14fc9214e8e88d79be2f428ec2a803f0c880a052e616"
+      }
+    },
+    "cod-2207083": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2207083/inputs.json",
+        "sha256": "fa3bf1a93a4d7049614773b8950159ec9c8867edf82cc083c7feafa8516b8356"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2207083/common.hkl",
+        "sha256": "e2cc746b03861f630473b5f8f601484bf9279aa6793338b0e65686e8237545a2"
+      }
+    },
+    "cod-2232444": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2232444/inputs.json",
+        "sha256": "2c11526203bb5e25d7751cf6d6ba361aefcad49f3647f34ef09cf91eb9dfea42"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2232444/common.hkl",
+        "sha256": "b7d0f726c6ea46fb3d3c0318d741f6e9190bc4d999b7aec50606513f436bd2f9"
+      }
+    },
+    "cod-2011271": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011271/inputs.json",
+        "sha256": "59b7dc2d92a3a6c51e0fc211ca005a1d3b456fd242f5cfb81c2f7f78b03453d4"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011271/common.hkl",
+        "sha256": "43138b514ff0b53470de0475640ad6f497693b202febcac8be59539ca0a6bef9"
+      }
+    },
+    "cod-2223219": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2223219/inputs.json",
+        "sha256": "0e083df8dcaafb7e46cc78d5056d9d352d3bda783a6f78694516dafe2bd60198"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2223219/common.hkl",
+        "sha256": "623faaad101bfc5e77219aaa404291d8d85134158f1df36fc6f76274c15cbb4a"
+      }
+    },
+    "cod-2014187": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2014187/inputs.json",
+        "sha256": "616acd26ef191e59f4a0d6098851e85c53c2190439b419562ce086fafdc85e3f"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2014187/common.hkl",
+        "sha256": "0a30514711cdb5f65653f63330a0747427ae86b9f443f70c94b766f54df5df41"
+      }
+    },
+    "cod-2011089": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011089/inputs.json",
+        "sha256": "c8af5a3d4382c978c7803e41b91dac0522c9e61ecaf7ed158a07c528ecd11e21"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011089/common.hkl",
+        "sha256": "61e0c2451b378f69d1749feed2201c748b37539346748bb687d7fa9f46be01e2"
+      }
+    },
+    "cod-2101973": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2101973/inputs.json",
+        "sha256": "412c4833b481f905e09666bc1745769ad8b7e3c90fdbb34383008e2b0ce10d05"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2101973/common.hkl",
+        "sha256": "ed89f096c3cbce7864dd93795bc448bba6a0fbb25010029b464e53f905b25020"
+      }
+    },
+    "cod-1556408": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-1556408/inputs.json",
+        "sha256": "7d734b432e66511f2da2e79eae075731245b963d80379af378b2286ecc250aaf"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-1556408/common.hkl",
+        "sha256": "113658b56005a29f31369bb26330b58ecbecea20dd03cd2c8bc482540ec9ad83"
+      }
+    },
+    "cod-2242352": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2242352/inputs.json",
+        "sha256": "88bd115e35caf9483729d833bb968e9296b22640f0fd1913288c6735ed506d40"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2242352/common.hkl",
+        "sha256": "dec0f2f639cdecbfa9c7800bf4d84d8f52d2fab7edd9df630496209757ae94fa"
+      }
+    },
+    "cod-2243590": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2243590/inputs.json",
+        "sha256": "6d1b331112cad6056d4eebd598087129138cdd903a0125d482becaa2ceab1fec"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2243590/common.hkl",
+        "sha256": "2fd383c42253f135bab51aa0495b507c569dac8ec7000191a89f0cc8ebca1d71"
+      }
+    },
+    "cod-2240852": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2240852/inputs.json",
+        "sha256": "4324cc3421066cf878745d74fe4c76002fb8ef8c2915706eaade911eb78d2bcc"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2240852/common.hkl",
+        "sha256": "e5018ec965e013a6895552092f920d68c6fbd1ebca51f1c3a9a5f15e728ac912"
+      }
+    },
+    "cod-2011056": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011056/inputs.json",
+        "sha256": "10f7b4e0d455551f87d26701d525b8556ef833e5be0fc4529cb265eec74eded3"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011056/common.hkl",
+        "sha256": "2aeb845164d05c46ef0532d936c568641871cf04babef1304f23af3cf8a7e63a"
+      }
+    },
+    "cod-2242615": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2242615/inputs.json",
+        "sha256": "96c7910d356ac0bcf7f795dbc4e2979798c2f02a9219365eb37051277ce673a7"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2242615/common.hkl",
+        "sha256": "a5a4e4eac8edc891e73015b621299bf10a6e6fe69bca9ec18a79fec190deec1e"
+      }
+    },
+    "cod-2011144": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011144/inputs.json",
+        "sha256": "b0c8c23d3a013f734e3dcc4ec3e7f8ac41aa62a83a5519f7738cc496fa4b57b3"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011144/common.hkl",
+        "sha256": "5c5c183b7f86350ec7a49d7c317a7cb648a378f08d4b7dbafd9166ae84d59b6e"
+      }
+    },
+    "cod-2011501": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011501/inputs.json",
+        "sha256": "554bdccf5a955933a0e8d7fecf9eea1ff2ec19ad91d1788343ef83df2291a6c4"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011501/common.hkl",
+        "sha256": "60fa2c61ed714b259d2dd671b5be0119d260074e55f2b4ede809644d1742581c"
+      }
+    },
+    "cod-1548678": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-1548678/inputs.json",
+        "sha256": "0e3db825cd1f8b752f1723fd09ce00e3edc2520f113d0a6ba30fdec80d161f84"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-1548678/common.hkl",
+        "sha256": "3962dcd486820fb421f10b34ec35a9762842ea3999b6ce9d6e8c5ac4826de483"
+      }
+    },
+    "cod-2011044": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011044/inputs.json",
+        "sha256": "059ff4fb34072bbc39a89a5c42854e6a2c0e37d570f066c4b631650baadd76e2"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2011044/common.hkl",
+        "sha256": "d6b72a6c8faeba7b4bced034168cf2e4d47c004887064aa54595a21f46079416"
+      }
+    },
+    "cod-2233659": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2233659/inputs.json",
+        "sha256": "ae21305ea4c61ebd81bd14ad4c60a97acc2351da8402b0b37f67fca9cc5ab215"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2233659/common.hkl",
+        "sha256": "a5ef2f8d805a31ae69bfddd314d46fb4b489efabf6e4c2a01ba8379a990b2eeb"
+      }
+    },
+    "cod-2012343": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2012343/inputs.json",
+        "sha256": "f1edc72b37740feeeed3d61abc2d875785ada8eeea8f63acf50877ee9e58a78d"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2012343/common.hkl",
+        "sha256": "9a7af16e10f9a01bdfb9d33d0c48f78c4f364d636049d2ae266f438b2be42db4"
+      }
+    },
+    "cod-2021003": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2021003/inputs.json",
+        "sha256": "c23a4938dc83a56e42f8c00e8121fe4a033f455ea7554df42a3c32365a74b7f3"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2021003/common.hkl",
+        "sha256": "11a9104b7ea5f179568164f0eb29758c61be499921103af667593b36a081880b"
+      }
+    },
+    "cod-1549038": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-1549038/inputs.json",
+        "sha256": "20bdec43b2be63ce92637db2e378efce31ede7b290a725bc82317eb5c3eeb27e"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-1549038/common.hkl",
+        "sha256": "a6397b9c7e3def8ade6eeb1cab360d845d4d0d0602e772db6bf2a7de7fd8361c"
+      }
+    },
+    "cod-1550295": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-1550295/inputs.json",
+        "sha256": "b8e52101723fe9e72a39530e2bc05e3226df5b93164ae3e0d0e8e0e4ae4a5406"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-1550295/common.hkl",
+        "sha256": "35e95dd60f92b60fb33fb3091f736aadd2ed5cbcd1b1e894f05132f259e91a9e"
+      }
+    },
+    "cod-2022343": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2022343/inputs.json",
+        "sha256": "93f65f62e50b1211c078cbfc9f10a5c3cd1876dc79febd564c9ed4bd589e6f63"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2022343/common.hkl",
+        "sha256": "d0bf4642ecd82315159f0f027eb04a27fd2fabbb34e2ee8ee214834c5bd036b7"
+      }
+    },
+    "cod-2200381": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2200381/inputs.json",
+        "sha256": "df89a6fc4d7e70b6f4df0d8d8939b8fee456e3a2c8211ee766300f6773aecf2a"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2200381/common.hkl",
+        "sha256": "30628b926a613191c40168b807adcbce56b355710f72f9eb290af7e1aa9b3d30"
+      }
+    },
+    "cod-2010875": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2010875/inputs.json",
+        "sha256": "5be0ecfdeb6558a9fbe0688e6ca550b103460e6ec4a654ba3cb85485367c319c"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2010875/common.hkl",
+        "sha256": "ceff4eac4b3ac41f196c311f82225b742d0da8047fbf040605f3556648727fa4"
+      }
+    },
+    "cod-2211965": {
+      "inputs": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2211965/inputs.json",
+        "sha256": "4858f9cbb0d4507aa9f1f53be8054da20a48008f174a9412d7f9278262c19154"
+      },
+      "common_hkl": {
+        "path": "validation/data/solution-corpus-v1/prepared-v3/cod-2211965/common.hkl",
+        "sha256": "24c768d17f324807c98edfdd2d4f16ef6f9803c41d192db3fe7cfeb965e93484"
+      }
+    }
+  },
+  "source_sha256": {
+    "Cargo.lock": "ac31e1ef5132f808dff9de548844397085e7a8df4be21c746b3b79f11cf608fc",
+    "Cargo.toml": "491a33693c8dc0d836260379321a52d417219f69315ecb1c37e4e05e90a01a7a",
+    "benchmarks/solution_corpus/__init__.py": "2b8ea6877c5325bde0eb18eebea8099c15c3656cd618e11f124813a6376dce62",
+    "benchmarks/solution_corpus/audit.py": "d65dc309cea50780f937940c4ece3d880968c657b274c5efac6ab9ff522298c5",
+    "benchmarks/solution_corpus/data.py": "cddb7ad095f7add50f4dc5aa02b2a48e3109ab5adfd342145ad8b274158d8bd5",
+    "benchmarks/solution_corpus/run.py": "8cd345bda8e323881a7aa46f9d6a7c964d17313d398cc872708c08fa5ea326a8",
+    "benchmarks/solution_corpus/seal.py": "939ba9e5a3710a4395e9ed789caa8a1aa06d222f4399a14968c170a27d9858ee",
+    "benchmarks/solution_corpus_benchmark.py": "139665542c9d076be78416ac50a889b16eec7d7cdda3a3c9dd94ae9fb34ec35c",
+    "benchmarks/solution_corpus_reaudit.py": "b7d8d11aaf44212f7c9486ee5fcce167a1652f9a5539acd2a66ca32193786589",
+    "benchmarks/solution_execution_interleaved.py": "83d551d37a1e9a5ff0dee94b81a6f4fa34bcaeae8492c139698d6f893ad1268e",
+    "benchmarks/solution_holdout_frozen.py": "1f35843012d3f5860a474d18acd9682a6cde6d42d1139c7f30c1e399bc688e82",
+    "benchmarks/solution_holdout_report.py": "b376d9d1de65908ffd3ad34975434fad9df799c55383f731253478ae56ef2586",
+    "benchmarks/solution_repair_cache_interleaved.py": "53ac0ea9d59e1d367f56b622eaf50cb408ff158d7742f18b5e1a613990314e4d",
+    "crates/phasesmith-core/Cargo.toml": "1cfb4a651cb7653b7deb7eb55f173c96e137e211c6a189af7ed845a49becdb7b",
+    "crates/phasesmith-core/benches/profile.rs": "3db7ccb891905b276824541884943269f559e80374a17e940d542aef8c6bc765",
+    "crates/phasesmith-core/src/accuracy.rs": "9171a3ed68e0eb0f797b53c199359066f61d08c34f61120163765b2097b52003",
+    "crates/phasesmith-core/src/background.rs": "e3ff4c9c687843680e792d28b5daf12afcb354dd6ef15356f961956995a9f425",
+    "crates/phasesmith-core/src/cw.rs": "3c9f993da01227359fb812ff05a9ca4f7c590f2548848e47e88ce1fb1c61bb4d",
+    "crates/phasesmith-core/src/cw_components.rs": "da31b193267e8f634cd51eefc48822cc80beb7c96653a82a8e7dce790a9327e4",
+    "crates/phasesmith-core/src/cw_contributions.rs": "037d3e5d035ca77014b341d382360996c92deea7da6ed0d999e492d1637f22e3",
+    "crates/phasesmith-core/src/cw_fcj.rs": "319f28a12d6b51af9e7616eb1a6e7668df4243c3f0eb828b53d9da6d4e5a871c",
+    "crates/phasesmith-core/src/fcj.rs": "c8d9fbbc274ae2e3dcc9567d106bbf4aa986c6ec30508ab39aa8eb65221c535b",
+    "crates/phasesmith-core/src/lib.rs": "b0018de4121c9bfbf61c778980ef255afdfb42056489231c28fc05ed86c31900",
+    "crates/phasesmith-core/src/profile.rs": "ead1f9ae6ebc33101b59acf543d15ea6e7ec04a91b6aa499bf841822603509dd",
+    "crates/phasesmith-core/src/radiation.rs": "ee59663495fdd035bcfee3f14d35d62c5fbec5a916cb4a4ed93259a30eafd8f8",
+    "crates/phasesmith-core/src/tch.rs": "2089e4cf2d49129df9271a69f1c9b184288dc781724669fe3881a79b1b7c5ec2",
+    "crates/phasesmith-core/src/tof.rs": "3afad269dea8626e48c1a74aadfc757eddc9debe3295a897de815fde5559557c",
+    "crates/phasesmith-crystallography/Cargo.toml": "4c1a2ce96f68e0df93c9754d5f2e54afc4eb41e715ad85386ae8d1f25c73c08b",
+    "crates/phasesmith-crystallography/benches/reflection_generation.rs": "6bcda39d6d48293a581a5b6fd9560a030c2697b1afdf0e18bd8e708039828b72",
+    "crates/phasesmith-crystallography/benches/scattering.rs": "f9008c70b28a5300a91ca3440367d5e8576d712a8d6be531641d15a46bf9f44a",
+    "crates/phasesmith-crystallography/benches/structure_factor.rs": "dabdb99174805a64f1f18ca079de4f82fa9cb050cdb78bd71e4d9b823997a03d",
+    "crates/phasesmith-crystallography/src/cell.rs": "a14120432f02fc198ef70402d6fa7fba5535d03c1936ea1e4612d0d05f230d29",
+    "crates/phasesmith-crystallography/src/intensity_correction.rs": "edb26d44bbfe1e6c5858a04ff2961caf71061c4a3416509c0f2b3f4c65250edc",
+    "crates/phasesmith-crystallography/src/lib.rs": "3b08998bda9c9946b39086424cf76254179c89df5065262c688abd090971595c",
+    "crates/phasesmith-crystallography/src/p1.rs": "e1e8fbd22537cb7984bd99a42ad42b56844fc6d9f791437cfdef3bcc60cd62a5",
+    "crates/phasesmith-crystallography/src/powder_structure_factor.rs": "188aa274af76d46bb8b894abdea1194a326433f46c6a6c6df80ad85e79ed8c79",
+    "crates/phasesmith-crystallography/src/reflection.rs": "3148c97f5fe0b18e083f94a09b77f22fadc6b44991db69d98860e84b1a3742c8",
+    "crates/phasesmith-crystallography/src/scattering.rs": "e65904e84e3b77f43eaac46ec23cdde02364aa3006f4c1f901b5731ed8ef002f",
+    "crates/phasesmith-crystallography/src/scattering_data.rs": "56b90b345418218a5856aad9fecfa9583f3c1c290e36a36bfc8aef3f3fd361f7",
+    "crates/phasesmith-crystallography/src/structure_factor.rs": "8a0fd24c21c9ad614fbe1251a49ea8865efa04dd6025552cddc08298e3a87e74",
+    "crates/phasesmith-crystallography/src/symmetry.rs": "ad88b01583c92f6b93765ba09774bb8d0d918a29c09ff3c5205b75d62ed8ccb5",
+    "crates/phasesmith-engine/Cargo.toml": "e241178a61a8f32c96c88b9201410b793f6dc129eef8d62b8ba98ad094f93527",
+    "crates/phasesmith-engine/benches/structural_pattern.rs": "504a32a7a80e6260bd322c45c784fa5d82e5a9b97048f0b4f836f264d9d5a22b",
+    "crates/phasesmith-engine/benches/structural_tof.rs": "cadb707dbf5a75022fd6c2fd9680d3846556a3ebc8aeb989241bca43c026b727",
+    "crates/phasesmith-engine/src/lib.rs": "211a53b4d419cbe0babb47564b5957e0ce4712f8498dc9ceb23a00c53249093e",
+    "crates/phasesmith-engine/src/prepared_structural_phase.rs": "e9f07ceef2cc16163c17089ec427cd700b784b0400b491ce5aad910771c55109",
+    "crates/phasesmith-engine/src/structural_multiphase.rs": "bf19364f267d951647c01cf3ee69dbd064cb7b639a54ab5d19190ee0f801bb74",
+    "crates/phasesmith-engine/src/structural_pattern.rs": "c946552ff4524608b00b54b91f1b2e08d7a1d0b229bcb7c94dceda9036b37c7b",
+    "crates/phasesmith-engine/src/structural_spectrum.rs": "272c0e5061358302080073ff682d5555f10faae9249c7292e28d7fa169438d1b",
+    "crates/phasesmith-engine/src/structural_tof.rs": "2b582654ff289684aa81052b4777b4f64eb39fb4cd112c3fbdfd57f16ff211ea",
+    "crates/phasesmith-execution/Cargo.toml": "979e4e0dcf0d93e39e6074f007db09bc32aece616b782a109da320a9851c5788",
+    "crates/phasesmith-execution/src/lib.rs": "e1473488a788ab9619aa0f55b437020da18477c5f2e9990eabc163f9fb1b440e",
+    "crates/phasesmith-io/Cargo.toml": "290e56f63ecf4bcc440735a24f3b79ec18ff9ba04bb6d0dab3c79b61f0428b76",
+    "crates/phasesmith-io/src/cif/import.rs": "205f62c9b0969b7af32a18d0527439bcd20e3e67a64fc1315a8cb9b41efa9cd0",
+    "crates/phasesmith-io/src/cif/mod.rs": "351b5ce1247a208e712ed17956a4bc5fcef7b8c82411c2fcadcb748568aa42b1",
+    "crates/phasesmith-io/src/cif/syntax.rs": "0847c4ecf5efacbd24914b8de16bc08f11a30fe264da016cc16ce1bd94a9ddc0",
+    "crates/phasesmith-io/src/lib.rs": "8ed88a644d6ca78fd8eb13f8a3db6566de0ac176f83642bf2404b974eb2a4225",
+    "crates/phasesmith-io/src/powder.rs": "78e20bbcf0f589502dccfbe8ddf94d7b556adc6f59cca6b52a3f117d473b2a36",
+    "crates/phasesmith-io/src/space_groups.rs": "eddb69390f5bc00d9ad3add132d1deb5ccff492d6c0e9dbb7aa9321448474cc9",
+    "crates/phasesmith-io/src/tof_instrument.rs": "5ea8c4fd17b64a435aa3d66d64bcaddf0f11ac6db593e8871c8e1c2aa8963700",
+    "crates/phasesmith-io/tests/cif.rs": "786d30d6381184cb0de775102bbbfdb12492d502fdc1dd38ad9be10914add960",
+    "crates/phasesmith-io/tests/powder.rs": "1f9ae05232fe87a4962b6473df336d6c496d4fdd488cbf00069ff897999a8f43",
+    "crates/phasesmith-io/tests/space_groups.rs": "fe9fc34f8d5106072d02e98462fc25e75eb76428bf2f4873089fd096c8fcf6cc",
+    "crates/phasesmith-io/tests/tof_instrument.rs": "a1e5dae078508ddcc6663d61cf2db76f7b04de66a2edf30606e4ddafcbc1dda5",
+    "crates/phasesmith-model/Cargo.toml": "647f851de9834b8d9ae25f02fd9cf480e65ed658a56f4c8ab6c8b967efc33849",
+    "crates/phasesmith-model/src/lib.rs": "9e0f73248c9d228c157b44a893e28d49013855b709402de764878cb0f31c521e",
+    "crates/phasesmith-model/tests/domain.rs": "28a38586be2f6ed07c027801e57b090363fc89ba443ff297d117557f6f60eb80",
+    "crates/phasesmith-persistence/Cargo.toml": "27f470de197496b868e4661a9ef0a3e456e5e7d2a28aad9f5c3b519cd4e507e3",
+    "crates/phasesmith-persistence/examples/pawley_bundle_exchange.rs": "6685c4e172bea8fcd969a60d1fbe54e0082fa98324ce56433b16372e8e81ce88",
+    "crates/phasesmith-persistence/src/arrays.rs": "d6354a69f1ae8ab7e237eb6460fedc88451ed96ea903ea83d9c8793681056726",
+    "crates/phasesmith-persistence/src/bundle.rs": "b886b30ebf03df781775b1fcff7d7ce7ae145c410d632854ef8c28b9b1060eb1",
+    "crates/phasesmith-persistence/src/lib.rs": "6f0a5ae2c64919965164dbf822ac22b32b82a800db600e65f4e12e258a170507",
+    "crates/phasesmith-persistence/src/pawley.rs": "2a12ca8e101ce83068102172d7b8ab8fca20ed26c41d4d0678d59e4986f2faab",
+    "crates/phasesmith-persistence/src/report.rs": "37d0679380e0b0b3f6b63c9dac0418614ef38d4009a18bde0f3d1e28275ab1d3",
+    "crates/phasesmith-persistence/src/rietveld_wire.rs": "991d1caedc3f3a2673a10e83e4dfe5fde1645af413e5392c1503d8499e336b1f",
+    "crates/phasesmith-persistence/src/tof_multibank_wire.rs": "93536cbf284a68029d15dcb9cd41a45145f8da3402904774fdcb3f092b68138b",
+    "crates/phasesmith-persistence/src/tof_pawley.rs": "ce8c644ce8f94a4822f4b7e4f959e172b390b57bb4f5dc267e44b5ff5dd3b5c5",
+    "crates/phasesmith-persistence/src/tof_structural_wire.rs": "3a09b3dad579c810cc885524c358c279cc7472d70bcbc49d9fae11670b1a9988",
+    "crates/phasesmith-persistence/src/tof_wire.rs": "52db8b362afc6909a99af0ace59353e923001c6bca1bbd7318c9145f43e9f9d6",
+    "crates/phasesmith-persistence/src/wire.rs": "3144d4e33945b8f866f3b7aced0b3a9a231484d22f3ad977d515459b6cd497ad",
+    "crates/phasesmith-persistence/tests/pawley.rs": "60357dbd447806af7830977de80e1490f0e1e0becf809182a636f20d0f69a3cd",
+    "crates/phasesmith-persistence/tests/project.rs": "d59a3f89ab6e299cbda03032fdd3dea72d129c61f8551de2de940375a71a7f81",
+    "crates/phasesmith-persistence/tests/rietveld.rs": "eb6f7ee589f8d716a3ccc7e26c41d1e1004713e7a3e34d5e1b3df1d4a60e243c",
+    "crates/phasesmith-persistence/tests/tof_pawley.rs": "378dc440d5117d4a798859dd35dbdb83c5a466af409ff6544528e619fe7097c2",
+    "crates/phasesmith-persistence/tests/tof_project.rs": "1a05bfebeffb3f1f0cd48f3f1bb6b2b791e8722068855c702693b7e0a271cc92",
+    "crates/phasesmith-py/Cargo.toml": "e8014954aaac4866ff50ad663f2ef08888655de36436938b84645d93fe5e5395",
+    "crates/phasesmith-py/src/fft.rs": "dbee2828c4d031cabba730227a12a727b05a1476436d8d5be0c0a1a4085218a7",
+    "crates/phasesmith-py/src/fit_diagnostics.rs": "846aa3be1a1009010ba0c0660d04ddc5a91b07124a792adbc981989c9717ff76",
+    "crates/phasesmith-py/src/lib.rs": "3f8458aaac7c5a80926cd6aa8a8853e2dddb885c205148e90932df43172ff7b6",
+    "crates/phasesmith-py/src/pawley.rs": "fafad7fbab21c44592d5e7da71e4cc62e6a11a5724d4f9558a96260b15f7f396",
+    "crates/phasesmith-py/src/profile_estimation.rs": "179cbd6d717d4e3960afa5a1680898cf7d2ff6f618b69e10829849e81037dcf4",
+    "crates/phasesmith-py/src/project_bundle.rs": "369fb01a8699e755ef63b16a469f3f2757e6a2d5ad5f26ad75f2ade1dfa6afe0",
+    "crates/phasesmith-py/src/rietveld.rs": "7eaad6007378dbe3ea09d2e3432251194f9da64de6bded681e655d89b34ba393",
+    "crates/phasesmith-py/src/solution.rs": "56b879590016d2f35e767cd0c678103a15ebc513a244a2022be05a91935b00d2",
+    "crates/phasesmith-py/src/solution_completion.rs": "f054ef8c49ce3f1d6aad5e8c36b94da3f3cf3b0a08570e841060a4bbcbf81517",
+    "crates/phasesmith-py/src/solution_dual.rs": "6c144036d4448a83652851f3431246bbb40dfcc8a7009a910a9aeef717a7ae3e",
+    "crates/phasesmith-py/src/solution_origin.rs": "d63366c66de4af599a2c13ee9e10880bf1aebfe73a79612eba1bccfb1a32c356",
+    "crates/phasesmith-py/src/solution_prediction.rs": "9ffaec23a44968b25b162aa3238c2efe42173af7452797b4b6f49a822f1db8a5",
+    "crates/phasesmith-py/src/solution_quality.rs": "003e978ef52f8e1853eb3df28841bfdc0398e8cf86bb9223ba62258a060f5078",
+    "crates/phasesmith-py/src/solution_recycling.rs": "e3f2aa5c969436017d3975c7d404c47d6bfb206366fcf4863e302ed5f4c85cf5",
+    "crates/phasesmith-py/src/solution_shared.rs": "1ae0f58b6a7c0c98eddc660a893d0b39b759e6be10da1f9003a6f282d0968551",
+    "crates/phasesmith-py/src/solution_symmetry.rs": "4e2aa31c98fc42f41eb4ec8653a477094e92b4da05cbbca47201a9eddbf7847a",
+    "crates/phasesmith-py/src/solution_tangent.rs": "34afbb8faa00b6d8aedfdbe5408dcf2fd15f0e71f5661a2d1830c46da544454f",
+    "crates/phasesmith-py/src/spots.rs": "10a02a7b408323379bff17b00306ee3595b7cc212101ec3e4d00dcdc218c6598",
+    "crates/phasesmith-py/src/tof_lebail.rs": "cead70335aaa8c1591ed058911a9fb5a58ee0025088573f5243d8aec19dd1b34",
+    "crates/phasesmith-py/src/tof_multibank.rs": "deb1e133cde0fc8423ac69ebe3e12545798d009594f895a34d7590f2fe3c88c0",
+    "crates/phasesmith-py/src/tof_pawley.rs": "f08fc8ed400d9f92c0e72170b1d216af93de05748d5d342cc5addd1f7f797c00",
+    "crates/phasesmith-py/src/tof_structural_multibank.rs": "f569bdb5d98e37598e48c1a056c135b0e3531111b14afa1bedf1e360284e590b",
+    "crates/phasesmith-rs/Cargo.toml": "af852f1ec5d65bd514cc432f524369a126cec1b466bd2ba293fb5791aa43646a",
+    "crates/phasesmith-rs/src/guide.rs": "aa3c7c699cf49b9a6353627638771580628fbffd812e5481956a6402c760e7d3",
+    "crates/phasesmith-rs/src/guide/mathematics.rs": "1c995f1686a0e4fbe0eb91babaa5a85cec6a323cb63ba9d55dfe1ed74da2209e",
+    "crates/phasesmith-rs/src/lib.rs": "b264c9f947de49104df888b9afc04d3f478f356edff245068e2be496d973a1c0",
+    "crates/phasesmith-rs/tests/native_calculation.rs": "084ec16ede2bb65acad867a6f9b1fce9dd41fe95ff6c93d9df2b04e740696eff",
+    "crates/phasesmith-solution/Cargo.toml": "932dec8e1d5ea222bd9c678edda0b6cac23400e65d67a3849e9ac34945038707",
+    "crates/phasesmith-solution/benches/solution.rs": "7bec89ed410ed348ee27386651469497165beea43a2df74b88589732dfec4d2f",
+    "crates/phasesmith-solution/src/adp_refinement.rs": "4ecdba47b953086a1d6801faa6ad9dc3e674891f8f4dff91ccc6482a7137df90",
+    "crates/phasesmith-solution/src/assignment_ambiguity.rs": "14d991c0fd8553f4a23818fde9ba24fb2975ea5bb520a531b9417b6049cadded",
+    "crates/phasesmith-solution/src/atomic_mask.rs": "9a376037f445c67e0de4bf855ceda2d7615b41b073a7ae4746fab5b0eeac84eb",
+    "crates/phasesmith-solution/src/chemical_labels.rs": "4a45daa0a0eb236d448578a5ba5b6d2726599e3161e8888c378e7c42e5c6c0d5",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "df954b095fd6403480c57f8915a5f6d1a7b19dd49926642c0b6e56873a2ec96e",
+    "crates/phasesmith-solution/src/execution.rs": "ca2226a61458b73258c17a4f12761ab5c569f779d69d5c3c2f5c88b0c3cd072a",
+    "crates/phasesmith-solution/src/fft_layout.rs": "b7222a0b26104f377447e1f69fa1697aced9b5e579b75526dd268e8abd285a36",
+    "crates/phasesmith-solution/src/fourier.rs": "80b353611b38b749ee0b3a30ddf4667c898b51a8eb473af241928b2177a3a14e",
+    "crates/phasesmith-solution/src/isotropic_assignment.rs": "af377a9977f443bf4562b24ee346098a4f9bf1e0c509c494ed4cd33990ba2dc2",
+    "crates/phasesmith-solution/src/isotropic_evaluation.rs": "4c9c0bfd9d96cf75eb2fac4e63ce63bbcb2098abbd23fd8c273e477b38d4f876",
+    "crates/phasesmith-solution/src/joint_assignment.rs": "d40f2d19fc22b5bb95c5a4f699a3e165ccbdf33581812e15194c587a4486b3e9",
+    "crates/phasesmith-solution/src/lib.rs": "73fff65e952d76ad173d2991b7297dc3640dcf43a79a3ea82b08f0817b0a74c1",
+    "crates/phasesmith-solution/src/linear_step.rs": "bc5d78f7fdcafb2a726e3880264bc7fab7fd56f01ce104d393ae69237248eade",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/model_consensus.rs": "dd051aba4c207545ca9ac30fb94bc0f423a929ad12e356af09163281182645ec",
+    "crates/phasesmith-solution/src/peak_completion.rs": "c86f70630dc7e3bf50311b875af166341a291b9e543b15a24313f4a20ddfe0a3",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/peak_scan.rs": "4f948de041ccfe83f985646f874b2303475fe26eb9dbc0d687e95bef365f3d2e",
+    "crates/phasesmith-solution/src/phase_checkpoint.rs": "1d227a8d3dff3c8a78bf44785e8d539e22fd5ec496abc765b7f0672ed66c9dec",
+    "crates/phasesmith-solution/src/phase_origin.rs": "99d6778b0eda65dd0c2fa559ed3c05171db7d9caab3e25ddf02dc8d24b29204e",
+    "crates/phasesmith-solution/src/phase_quality.rs": "848a42a21f5192c6f843f86161b355c9129e963cb806f62df186ce19eec56580",
+    "crates/phasesmith-solution/src/phase_schedule.rs": "86ba01217cc3fdcfa7dbe392d7abf03a6dbd5bfeed4fe9af3d6b22ff882687dc",
+    "crates/phasesmith-solution/src/phase_score.rs": "eb637d9c87787eb5eff9663aae9f6edbdc85b501170ad21d2624e115160699c6",
+    "crates/phasesmith-solution/src/real_fourier.rs": "3b9616133fec60090d339fcb6ba7aaaf721149a736b6429ab1a65f97a2daa113",
+    "crates/phasesmith-solution/src/refinement_families.rs": "70901272c21e54b67aaa7493678e83091e6f8661217115c4cf9769f36e9a2957",
+    "crates/phasesmith-solution/src/reflection_prediction.rs": "2dd0a2f8d1ccc5cccab9d1bafcb034bc52fd409d45284b026c6ad95f26ee07f9",
+    "crates/phasesmith-solution/src/repair_evaluation.rs": "4503fa67c4ead9d5e9036ebacb18d9bb4ee40e48389896aeb987ece23a34e9e6",
+    "crates/phasesmith-solution/src/shared_assignment_repair.rs": "f78caf0e86fe8c5ab3186ccfe88cde92ae1c14020d863ee37436598c737dd631",
+    "crates/phasesmith-solution/src/shared_phase_path.rs": "d3423043abe88006ea34cec3f0e5379f3101d745cbe19d9a2ed546575eaba810",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "2ab026a6f88f2ce839ea0c6aae522c419b28f4da44c0773a68f7f6ad4e43a6b2",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "aec3f512ca23f882476081e0708dbaaadf0ba6a8d88088e4d69fab602c207005",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "b47c3acab847ec5e6b334bf5994fb1c017279bf07541af162bda0991284de950",
+    "crates/phasesmith-solution/src/tangent.rs": "25fab86895c4401d46d722d04900fda1c912d4247f346f6ed7f0fd7c04393e79",
+    "crates/phasesmith-spots/Cargo.toml": "bd48a3fbe47c6a77dafad5606123c7e7266fc0f2ccfb6553b94d10c46afb7d6d",
+    "crates/phasesmith-spots/src/fft.rs": "f9a93385a12985b4940891d380af47f69439b68e55817e6aaf854a5fdd0e8bfc",
+    "crates/phasesmith-spots/src/lib.rs": "a92aaeb106bbce2ecd3d32a0b00889d4a127441ce83b36e41f3942d930e79d1b",
+    "crates/phasesmith-spots/src/prediction.rs": "df68f0337e4ccbd6de8ea290f8c96b78b303afea993e3c9706e03b7fc372ea59",
+    "crates/phasesmith-spots/src/reciprocal.rs": "13b277f6701645ab20c7671cb81a4aafe0a72462547f913a5cf80dec10cf92aa",
+    "crates/phasesmith-spots/src/reduction.rs": "2220923f18056cefb0c4253effe33711a46e114c8b26a06cbf3071ea50dfcd6f",
+    "crates/phasesmith-spots/src/rotation.rs": "c80b772e07b5b389e407356f9f097ff1745cd15103c5263a182aedc8b0978670",
+    "crates/phasesmith-spots/tests/prediction.rs": "4d491aec37886d20cd058425fc55bd40afdc5ea665a1890f5b7e5c503a9897fa",
+    "crates/phasesmith-spots/tests/reciprocal.rs": "a508885e92909e4cddc99c75cb70647edf4af91c21860ce667d6f65ecf1e32b7",
+    "crates/phasesmith-validation/Cargo.toml": "98da03ffecf69c1448f0a93e8e0cfd3b6fd8a9afaaea8ea09094942b9ec17ae0",
+    "crates/phasesmith-validation/src/background.rs": "a31234647488dcaa0ca5e9680161e53288d1b32a97a7b4a2ed18cc8e8ef6b97c",
+    "crates/phasesmith-validation/src/bin/phasesmith-validation.rs": "0df099102dd1888de4245832e49e418a86efab52ee4159e7ac6652df32819807",
+    "crates/phasesmith-validation/src/dataset.rs": "e8abb1fd33071c48f04f2c7559069e6cbf23130e6e724001ee31b7572b114782",
+    "crates/phasesmith-validation/src/echidna.rs": "d769b1f28a1397815e7e9904299b07ecdf3e2122a3b5f1451933c5abcb38d5a7",
+    "crates/phasesmith-validation/src/lib.rs": "511906f06a7b1689ce064e5ffbd56998aff588fe77d6c01ced1f1ee7298be201",
+    "crates/phasesmith-validation/src/nickel_tof.rs": "920d51ed7827a6ccc8b1ac616af1369da18df3e32ecc46fee326cc51c4346df4",
+    "crates/phasesmith-validation/src/nist_srm660c.rs": "453aeaa688be717af3b55b7c5315114b3738ced65b407e4680d5cc185e0a20e8",
+    "crates/phasesmith-validation/src/pbso4.rs": "ffc99845b4c713bf2aba039a87c0f8c3bed9e93a86f1fa4d8a73debb816f8c9d",
+    "crates/phasesmith-validation/src/powgen_tof.rs": "179b3408abe9315eae766b20b80769b01587187101b692dbfa61af3554ca9dc7",
+    "crates/phasesmith-validation/src/qarr.rs": "f3562773a22aac7367646ee4024e746c22665905f44a1bd7212501edc5f15f1e",
+    "crates/phasesmith-validation/src/report.rs": "298686b7bf6baf7baf764fa4d363e3e735d9a6f17fd82ee8c43467a9146af04b",
+    "crates/phasesmith-validation/src/sucrose.rs": "82818f7b0fc3d836777ceb4e859323a0ce5ea012bc3ebebfb8ac08da34651570",
+    "crates/phasesmith-validation/tests/cli.rs": "7cf68d42a23039299fdc47719febda5c5812ac92fd963a399e44650b7a9c54e7",
+    "crates/phasesmith-validation/tests/contracts.rs": "475159a7b98a2bd71655165206a200f9db81db1a10d386da64065b5298ee7864",
+    "crates/phasesmith-validation/tests/echidna.rs": "fdbd673f6a26de5d9a57f1bd6a4e8c0911e0a1c325e121f22a11f557cf843231",
+    "crates/phasesmith-validation/tests/nist_srm660c.rs": "66d663cf787ee1afa66b850cd3e5240df7a626b13dc0fa84519fdf1260cdbf0e",
+    "crates/phasesmith-validation/tests/pbso4.rs": "e17cf91ce6174f72bc0bc18cd2741de48628a0c5c2271be95e071e3320041bd4",
+    "crates/phasesmith-validation/tests/powgen_tof.rs": "03f90494e9e1c0a4efa51095f253d2819851fed89d43a03ce1574af475bfd018",
+    "crates/phasesmith-validation/tests/qarr.rs": "141ac190ddcd777323ac080024da3749711a95ba46ccfd9dfb3fb3e98bf03e63",
+    "crates/phasesmith-validation/tests/sucrose.rs": "300912ca42e6ded98ba2844279a1154b24e914a9ca1096a01665978bcf3d3541",
+    "crates/phasesmith-workflows/Cargo.toml": "c53e68ed57b5612ca0968d370f08b88c38c82aaac5f1ef36b6f4e3b6373e9e44",
+    "crates/phasesmith-workflows/benches/backgrounds.rs": "62a2fbb80dfbc18ed645c8a69d81e2e73f43056f38fbe4a46dbd508864524ff2",
+    "crates/phasesmith-workflows/benches/lebail.rs": "942c92ba3d75b95185de85f63caccf209d10596eb6066f42eb4b98e97701fee6",
+    "crates/phasesmith-workflows/benches/rietveld.rs": "3e5de3bf0f096fb0cf808de31d81a0acee15a44d15cf7327553c21bd80bf3b3d",
+    "crates/phasesmith-workflows/examples/joint_pbso4.rs": "0428d08b43a7da00568c31c0a8dcbd92b7400816f620a6d1d130da4a8a6fe9e6",
+    "crates/phasesmith-workflows/examples/pawley.rs": "c10fcc353200f9fc798203441ee96887c4307f039d9868c910a19c27afafd30a",
+    "crates/phasesmith-workflows/examples/tof_pawley.rs": "61be560422fbe2a5460b37501322672b80abbed3b82e068254d917a522085589",
+    "crates/phasesmith-workflows/src/backgrounds.rs": "36aa03dacae792cf4d4b8491d3dfd5c9a95956816d986d99342a9aafc7a9cb69",
+    "crates/phasesmith-workflows/src/constraints.rs": "eda45c841ce936491f85dfb424097034d556ba144deac14ba2bf6499ea4ab7e2",
+    "crates/phasesmith-workflows/src/fit_diagnostics.rs": "a92c547bada538de10ce351ff52abf107b943a5e55fd7e4b18bcb20bf3273d89",
+    "crates/phasesmith-workflows/src/lattice.rs": "9410eb1fa52bc0d9d02d314b0297fd63766d611c08fcab3c9fa9c3985ac10bba",
+    "crates/phasesmith-workflows/src/lebail.rs": "c345e2ca336d7fc1763948592c66919750dd66abe8d38d03b6002fc59fb7c782",
+    "crates/phasesmith-workflows/src/lib.rs": "a4eab5cadd4e7850256e424d468e0842af7ba23778b1ae247eddcd47da4418a6",
+    "crates/phasesmith-workflows/src/parameters.rs": "22198c749ca2cb64c9dee75ba5df8bdb7b14bedb26fd2d33042f7b1776ce75dd",
+    "crates/phasesmith-workflows/src/pawley.rs": "4ad4163d8c731a559772c6b3aed7d2e2860acd30fec2d89f640576b94fb876c5",
+    "crates/phasesmith-workflows/src/pawley_operator.rs": "02f623ad9eeb48f572633b9ddc3e5d539c64f8041f26b7cdb00c7dd4e5988452",
+    "crates/phasesmith-workflows/src/pawley_project.rs": "d791245c423f06a17fb63c2dbfb5d00aa152b5e85f4e0f1808c04f1f32a066d5",
+    "crates/phasesmith-workflows/src/pawley_solver.rs": "4e4d7cc1aa8c3ae5648fffb03a27c4636322f231027c8ce758e6694fe1feba57",
+    "crates/phasesmith-workflows/src/pawley_support.rs": "e569ea077c9f2615c4ccb3bae3b425450452c546932cdb478a145e05492eceea",
+    "crates/phasesmith-workflows/src/phase_scale_estimation.rs": "f7a64ee9707a05b8f12e44ab1d4595f0c116c3dc6bab29a1491fc320877d404c",
+    "crates/phasesmith-workflows/src/profile_estimation.rs": "6d116ccaf3681fbce5047b27c7b69932987862cde2cc1266e2bb8d0d0e490964",
+    "crates/phasesmith-workflows/src/quantitative.rs": "9c9faed9d790e7e95f3ac7b2ecc9ca07870d86d1363c24f6fbf4457b71d028ca",
+    "crates/phasesmith-workflows/src/residuals.rs": "58a4e1eb243dc01f0745c64e2d0bd6c44674ca1fa2b88e8c43ec09bf6332196d",
+    "crates/phasesmith-workflows/src/rietveld.rs": "9a7c152619f4e7bec9679dd99fd09fdc06bae59b62de803c160dc094e84f3843",
+    "crates/phasesmith-workflows/src/rietveld_general_objective.rs": "faa08be64e89f629d7df332e1feb11ea6917badd70ae9d38659aff6d0939b6c5",
+    "crates/phasesmith-workflows/src/rietveld_general_parameters.rs": "d14060f6e92f69cc84c1a1589e57202f08bd2e67cc6a0c0699a9b5b8015c7773",
+    "crates/phasesmith-workflows/src/rietveld_general_solver.rs": "f8daa9e01f948c5f9c559ca6873619c6e947e14bac06957fb8eb366f22fd8f30",
+    "crates/phasesmith-workflows/src/rietveld_joint.rs": "7b949bbb517f13b3c6a5ae4eaa9cfe0dc9188b50a22bb65fcc945f8e26f96e95",
+    "crates/phasesmith-workflows/src/rietveld_joint_solver.rs": "544111c38af3c5c22c8e119140e1860b35d6ba4e1453672168a550944337b72a",
+    "crates/phasesmith-workflows/src/rietveld_objective.rs": "990e23eb1eb1542663f4a8f3547252601cafe95d87be82c8fe4c0591717b66a6",
+    "crates/phasesmith-workflows/src/rietveld_parameters.rs": "5c5497d5bf927620be5cadc34f021036df376792ad52559498e5222955bdee9a",
+    "crates/phasesmith-workflows/src/rietveld_project.rs": "228a0c36bae4cff7c74e86328e7a11fd256f3866ded8e6b6989a6e4d5c099ea5",
+    "crates/phasesmith-workflows/src/rietveld_recipe.rs": "eaed1744052e92d895ee1d8ca15916ed90fc3d7b42a78c81571fae33002b37ec",
+    "crates/phasesmith-workflows/src/rietveld_solver.rs": "36aeea41bcc1573ed967971050722f6411b25c0351b34d2f29ada14fd122f94f",
+    "crates/phasesmith-workflows/src/runtime.rs": "f0f4b9dc686a6040ba928dd3f7143f6a292d4ca26b46e44dcafa66a5e8c176ba",
+    "crates/phasesmith-workflows/src/sample_physics.rs": "12f55bc6018dc70b5801fe805870caa62f1c340e28596e909aba3642b9c07b9c",
+    "crates/phasesmith-workflows/src/tof_lebail.rs": "cc5c99a2ac557b7ff1becc9517fcdc658652a15728260d279b9729b58db95ad6",
+    "crates/phasesmith-workflows/src/tof_multibank.rs": "e0960c13d00662383c437f777a7827c19cc3b0ca0c578a290c15f7a3c8f654d1",
+    "crates/phasesmith-workflows/src/tof_multibank_geometry.rs": "061d5c84384222458f4f523f328afbbd4f5da6caa0b3a29bfd6f80d487179cb6",
+    "crates/phasesmith-workflows/src/tof_multibank_instrument.rs": "68a063c09f64b2f6862aac51db637e2c3546fb1475bad35737c3e7820a78c2a7",
+    "crates/phasesmith-workflows/src/tof_multibank_lattice.rs": "c237e945f6532cb333e0154b792155a9c8607892da0d159acb72bf6574da525f",
+    "crates/phasesmith-workflows/src/tof_multibank_project.rs": "1d936d7d4409dace0a34c84a6c1f03d09e10b248e634da6f9dc7174f7e6a7af0",
+    "crates/phasesmith-workflows/src/tof_pawley.rs": "d37dfa0fabf3e63fb9f056a4865d47ba5fb0e1c9fe227caa4c947a97bbf46a1c",
+    "crates/phasesmith-workflows/src/tof_project.rs": "5d091395f1e7e2aa377d6734044946b582cedebbadbbba7115e9221ecadd6144",
+    "crates/phasesmith-workflows/src/tof_structural_multibank.rs": "44a069388cb2a42bc7109bbcdd39aac01533143a6abbbb64e53e4710f5ef408c",
+    "crates/phasesmith-workflows/src/tof_structural_multibank_solver.rs": "652a4f4c3e6b5a7e03d165e96f97dee109fa14f1d92692a279e20d4b8f597698",
+    "crates/phasesmith-workflows/src/tof_structural_project.rs": "b678d2d5e1fb39e909ad52653291e6290739b1ee199fcfd77ebe8a24314268a7",
+    "crates/phasesmith-workflows/tests/backgrounds.rs": "a2d0741b3a25f500ee6715a458a90ac29593f910099d2e18a7c9884517851734",
+    "crates/phasesmith-workflows/tests/constraints.rs": "8f6d022271fbf9ffcf6a983155e1bac275ded73e3eb0f2a1a99d59ed64c8a8b8",
+    "crates/phasesmith-workflows/tests/lattice.rs": "910e1932f9d9ef4f31c6b5758e3d7fd9d585639c1de3ad7a5bc2e088f8d5f8da",
+    "crates/phasesmith-workflows/tests/lebail.rs": "381834d86609e7ee0771e1fdd15de5b429962d412d09ef2052110d334f0a7cc6",
+    "crates/phasesmith-workflows/tests/pawley.rs": "0926611b5a0c8b966e0ce2b3b8c547a6304725b5a5a8dd6e1ed5809cdd7f542d",
+    "crates/phasesmith-workflows/tests/profile_estimation.rs": "f714b994bba13e227ca366a79bbfeb2bb5e52aea6235b00a7690c618f0fbb1cf",
+    "crates/phasesmith-workflows/tests/quantitative.rs": "8750c6f0f0d8b6ed70f1cd3533cd1206b0acd5dd2497f58370bfcdc8440b30e6",
+    "crates/phasesmith-workflows/tests/residuals.rs": "113d259a2ab3d77770c9d5a43883536274e6770716edf73e03efd0625bba6d04",
+    "crates/phasesmith-workflows/tests/rietveld.rs": "dcec3cd2543cd5da3b5750cf5133d777930a0da11ee83bce13149189173900c4",
+    "crates/phasesmith-workflows/tests/rietveld_general.rs": "8e5919d394b08fae88a3875477634cbaef8b141ca127c0d95e30643361801f5b",
+    "crates/phasesmith-workflows/tests/rietveld_general_solver.rs": "a36110c9c578f9ac17147c5592bb2bc61798df935007a9377c67e840eae352f3",
+    "crates/phasesmith-workflows/tests/rietveld_joint.rs": "ff4bf42612f16b108cd47105290430d7f7d54a3bdf1b952fee0a37538ea10a90",
+    "crates/phasesmith-workflows/tests/rietveld_parameters.rs": "5229bef587e5e6ac015ccc5dd9fa2162b42baf4413bac5e9697e6a0670b0cbc6",
+    "crates/phasesmith-workflows/tests/rietveld_project.rs": "d30979855909246b7e5225e98220c15e1dad9064eeb396faa1161233f54692ab",
+    "crates/phasesmith-workflows/tests/rietveld_recipe.rs": "41abeb25b314b1b2d93de4fa2fbda3651b07c5b785ae444d8e57ce37b7f2ee08",
+    "crates/phasesmith-workflows/tests/rietveld_solver.rs": "d1b6a494603f9469250074ed9509dfc645678770e9d44a20374e0512401549b1",
+    "crates/phasesmith-workflows/tests/rietveld_topology.rs": "a4e180cd0e04f05a04daf79ac0fd7618c21a972b7dae81ebb0f12be873e5255d",
+    "crates/phasesmith-workflows/tests/runtime.rs": "6e88b614682de3a804da56429ae63de6f0b8b7841361cdf2e26e3a1afcd5b3e9",
+    "crates/phasesmith-workflows/tests/sample_physics.rs": "a953c814154a38620a851658d99b6986e2104932dfc0411f49c8c0a4ee307d09",
+    "crates/phasesmith-workflows/tests/tof_lebail.rs": "41557752a74eaf08d9ce121baefe76e018f6d5a731521b44e322865a61e057bc",
+    "crates/phasesmith-workflows/tests/tof_multibank.rs": "3fa4a442efefe9529bf521a3ce80fc2eb99c0b7f9b01b0355f79cbc08450cd84",
+    "crates/phasesmith-workflows/tests/tof_multibank_geometry.rs": "6462e6d46499f0bf1a3d8cd16a62521ca8ed04754213c7c25211353179977c19",
+    "crates/phasesmith-workflows/tests/tof_multibank_instrument.rs": "25af043c362c9e13fd25c4ca0f578e3a15ce42059aa8b97d90163cec0055306c",
+    "crates/phasesmith-workflows/tests/tof_multibank_lattice.rs": "f7a23b392b7f0ef909f6067dc0e605cd3e8049109a104ec794673b501214fe9a",
+    "crates/phasesmith-workflows/tests/tof_structural_multibank.rs": "b245456c01825d2a475df1fc67d87dbe0fa884f1211fdd702267364adbf5afcf",
+    "docs/solution-holdout-freeze.md": "35c740c0a55fa5a718c8235c9f6f4ff753ea57a3283ec39bb9763216c764d6ee",
+    "pyproject.toml": "f5a1ba78ee8ff800f13924752612f609e6a3f171f998fab30c0a9669056ea81c",
+    "python/phasesmith/__init__.py": "0a20763aba548d04e8989b11f7a0ac36f880ce93e6c4d93f012f4845ebcdfa6e",
+    "python/phasesmith/_api.py": "286090bba9c0ec9727ab0e98d281f55793407f7a4d39f204051c32536aecf86d",
+    "python/phasesmith/_native_persistence.py": "8a5d5df4f2bdae09f39d147212017afada87da7cf032f0ad647b194fd12a3598",
+    "python/phasesmith/_numpy_compat.py": "2453f0386dffa0f61691ba1380630e93eef6a7b3b49084aae52d5e55a1f6a0a1",
+    "python/phasesmith/_skill.py": "d9187cac1bbdd593ddb21a7a245e47fb7f97cffd2492d54f0f08650307bc09f0",
+    "python/phasesmith/accuracy.py": "d1df0c46e7e73d57173639cdb64303d116e3680973bf022040d21f47bdcca404",
+    "python/phasesmith/automation.py": "d1168f8e97cdf2219b537c63c3b619a88f342495386354303a92f03a84371346",
+    "python/phasesmith/background.py": "8e32ef5a36b86531a46f20345cf82d756751046aacec8f88efe1d55c43ccc5fc",
+    "python/phasesmith/background_reference.py": "dda9a6464b2ac07166c5546622caa5b3c9c38dc8a4198dd5d51071c12753edca",
+    "python/phasesmith/calculation.py": "74c7ef9431764ad3938aaa39f4ed1454f0f646816b6a5a8ccfd5e7780d471179",
+    "python/phasesmith/cli.py": "b0d2721f46ccada720abb2573ce18768750f6c9c51c7655285bfc955d8762567",
+    "python/phasesmith/control.py": "d661aa4b58ecc6aa675bf2021ea8f66d641e5b9f3605144e763cc81d2df45f48",
+    "python/phasesmith/crystallography.py": "3bed1ebaa2049dcae69a6c46160a7c266f8b1f40037e4b3ea52d35a9d22c7521",
+    "python/phasesmith/crystallography_reference.py": "126f7b4bdd405868f87072970f18b234b6e35feb4560e899159bdf76d1c80369",
+    "python/phasesmith/cw.py": "3c4925cb5035fa10a36abda473d7c3d53cedcfc9ab71970f02e0b4a6731881f9",
+    "python/phasesmith/empirical.py": "3c813f5b5d14fc52926a563d8d1d429facfb2414f4bd33572086c836045489c3",
+    "python/phasesmith/execution.py": "2835fd457971c3f3f19efe0d2749cb75eb72eb24f2b8304b70b53dddbac14984",
+    "python/phasesmith/experimental/__init__.py": "beddb0dd5860bf43322bc15341d47a98b09ca882720ee9993b71f01b6ef4c632",
+    "python/phasesmith/experimental/cell_comparison.py": "32c89091c90520e5bc2672e9a031b91091a3064056f312627366b83794af7e9f",
+    "python/phasesmith/experimental/cell_metrics.py": "c7d3e575917e4f7a55e418c49b9caebadd9eb800ff7a93e9b50de1470e241d1c",
+    "python/phasesmith/experimental/cell_reference.py": "0e3035772c4d51fb6d2c8ec3a31eb227a3cc3c8d1dc817073043158f0385f566",
+    "python/phasesmith/experimental/grains.py": "4a8ba12aa2b93e8be8fdc58ed65c1c3f6ed1717505fffba8206a925b86fdf58d",
+    "python/phasesmith/experimental/grains_reference.py": "fbb77a577666f8fe62ac5411a06064fdf4cb75ff57c0a1d9bc17d79e3ae13417",
+    "python/phasesmith/experimental/indexing.py": "f374bbb1346ca177af24014d490d625961f256d1cbbd0f53bad89696dd543439",
+    "python/phasesmith/experimental/orthorhombic.py": "77ae03a1c8e7b7df67bf09c3769e27472afa982e083ceed47b957755d931e376",
+    "python/phasesmith/experimental/prediction.py": "3c1500096d410080f50c92cbfa7772b7ca612965efbbaf4168d580c6ce386d30",
+    "python/phasesmith/experimental/prediction_reference.py": "2725bffdaed5fbb705d7f5a58fa2c5aa03357d135a236fe2103f8abf64646c4a",
+    "python/phasesmith/experimental/reciprocal.py": "74881ee58a43a3b1b880abdf806cba8c29485c12b2045eb12ef2ce372c7ea96f",
+    "python/phasesmith/experimental/reciprocal_reference.py": "ea8e08ceac3fd9d10e9156dbf0d875b2f554f8998dcb44680500cb0eeeb9cf20",
+    "python/phasesmith/experimental/rotation.py": "e0102b979501842077310711bdacbb1d448f4c1bc55cb65e6993f25edfb1e96f",
+    "python/phasesmith/experimental/rotation_reference.py": "0e8c9936a9572a3c4bf8ea97b443e4ce970b49ddefb6c46271e928e22b618d64",
+    "python/phasesmith/experimental/solution.py": "dfb114bd246366f76236ec9616581774a897e3cf51dada6b2cf54e935e3d3e0c",
+    "python/phasesmith/experimental/solution_assignment_reference.py": "e56b2c5fb53e0d649a244668dbd8cc4feb304638851d8af014d03be046d80c4c",
+    "python/phasesmith/experimental/solution_checkpoint_reference.py": "99fa042ab6511b71268f2bba47cea2e9f1b4d84c335ea0ae7b7b4ee1c1d6f7df",
+    "python/phasesmith/experimental/solution_completion_reference.py": "ce05df8ac0ce37c5775eff8a5d199a7c6d005544086bafff584da6467a88df38",
+    "python/phasesmith/experimental/solution_consensus_reference.py": "38fd069a40acaf459f63b96684cc414a3f6e9bde5bbfca2d8c9c453c9e4c3c2d",
+    "python/phasesmith/experimental/solution_count_free_reference.py": "73c4d7731afad95e9b0e809124fbf725afbfa54b0c551044efbb955fea8d93e5",
+    "python/phasesmith/experimental/solution_count_reference.py": "9cddde0ab4fa73fbad2068817aaf7e28f51873c3fb6bde56d7c9d61edd127d3a",
+    "python/phasesmith/experimental/solution_dual_reference.py": "818e1910c616c39f77f42bea25bea5af281a9ab6f29517bb910b0c715f719aa1",
+    "python/phasesmith/experimental/solution_fft_reference.py": "71482ac1976c461b01ccfd17ca663feb5d44502d52a688883f3127b91609dfb6",
+    "python/phasesmith/experimental/solution_origin_reference.py": "1b2d5beb868bb6c07014661bd91f7f8d5a5ba147a18853bc3575c8dfd8d42188",
+    "python/phasesmith/experimental/solution_peak_density_reference.py": "0aa18c02afa708f4b883065ffa3cfad1f6e280985894678d81a56dd7cbdd4397",
+    "python/phasesmith/experimental/solution_prediction_reference.py": "98ceb36557d68efd2308cfaf9c197127a15e13678624ebaf3bd506905878d73c",
+    "python/phasesmith/experimental/solution_quality_reference.py": "ac80c6b70234e8820660d56f06fd0b57bb963a95cb3e3000b1d0eae43de6480c",
+    "python/phasesmith/experimental/solution_recycling_reference.py": "285ea001a20ae5955e03d1941944f0ac66703dd802c23496554ab1b267741e72",
+    "python/phasesmith/experimental/solution_reference.py": "11f3dbef78e1d22b8b881c959cd6e0967eb62292e1ef078405f870a13d4b4a38",
+    "python/phasesmith/experimental/solution_schedule_reference.py": "dc92795044c48b64f40fe0e5b296e4154861a93d8d3e403ccb32c395b0518211",
+    "python/phasesmith/experimental/solution_shared_reference.py": "4bbb33e0bc6991f65171c2b4db1452c342c7d54952d4fa612f50375eb29dfe7b",
+    "python/phasesmith/experimental/solution_symmetry.py": "feffc42ed9cec6b5baf77fb9feaacac5264f8fc472dd88e333796ca54588b350",
+    "python/phasesmith/experimental/solution_tangent_reference.py": "0c68928588736ebc42816d73e1b0e7212b312e46de6aac846bd0bf975f02c158",
+    "python/phasesmith/experimental/spots.py": "6578a70062bf615bd02532fdbc0b803d0fe8f2dbcd888bf9c77e5a2c527d5cac",
+    "python/phasesmith/experimental/spots_reference.py": "3d20f37cca9a3a124294ff132c910183d6b9bf3f294f78745ad57966cfcfce72",
+    "python/phasesmith/extensions.py": "1170c3eaf1de113ce982ac293ce225ddbb5e8cf34ce2c4ee25e773d1f3b5542e",
+    "python/phasesmith/fcj.py": "7650aba3336b115ca0f2628d9e0ee09290c300504e1efaa56ec53324542daf74",
+    "python/phasesmith/fit_report.py": "94ed87ecf1acd04e62f19618240ebe1f925c32e5bbcf39dbdf678fa50ceb0162",
+    "python/phasesmith/fit_report_reference.py": "ad9bcd46d9d03c013273e1f4eecb572a624ac8822ed01884fe0aa6bb2517dc40",
+    "python/phasesmith/fpa_calibration.py": "c45ae21c145224c968dfc068c4ac66f56938539bdaf1e5d862768a05bd29a059",
+    "python/phasesmith/instrument.py": "9ca06bb21935b10e33791db1d2a3938c5780bbef90eaffe318b35d68482067b7",
+    "python/phasesmith/integrations/__init__.py": "f6cfe23c9716127c2b4d4766cd6fc03dec68287f144b801d717c7c60a5efd6b5",
+    "python/phasesmith/integrations/dioptas.py": "c936ae005ed4164a7eb7effff3e21a5a6e9d2037cf04d5c3fba083ce08b9b6bd",
+    "python/phasesmith/intensity_corrections.py": "f95de1b08513fcd0229d4a3f92be6c0d70e7b87bc98d7d9eb51c72e45fec8cea",
+    "python/phasesmith/io/__init__.py": "67ac9604887f3bdb911fdadeb97558ddb65a235683cf6f8ec544ff731f2b5ac3",
+    "python/phasesmith/io/_gemmi.py": "3eca3cadf7591b39adeb68cd0ebd639d62da599da82d11d0baabcc5e82925112",
+    "python/phasesmith/io/bath_ltl.py": "043c3a4ae77c6d5db0c562bb0cdbd24f48a6bcbff1d742e2ee51b24a6ea1ef29",
+    "python/phasesmith/io/cif.py": "50ba28cf0c312ee12c34b75db1e21c34a71331114ac2ff44310fb4fce8180ca2",
+    "python/phasesmith/io/hkl.py": "b64e22a693116d1883b015a271b0df83ef60755881a29289efe5150640c9b434",
+    "python/phasesmith/io/iucr_silicon_standard.py": "c26c0db403f860b8378f58dd5a672aec24b74b340bbdc8a1eee8fc725809720b",
+    "python/phasesmith/io/iucr_sodium_citrate_silicon.py": "1e05cd859a11ff2199dbf98ca44f0e0149c87616f7d906eaa9f9f1d625771706",
+    "python/phasesmith/io/iucr_tripotassium_citrate_silicon.py": "3cbd1673ccdff3caf2fd3ee0d4158b377cde71295c92ceffeebdedd5a57e325b",
+    "python/phasesmith/io/iucr_trirubidium_citrate_silicon.py": "79b0865835298c3379ce17ed96a95eb09b6191d361c233e6ba8d874f7e78644e",
+    "python/phasesmith/io/powder.py": "f845468b539920d8d8e9d0392ad5a00c75ff6863ccb09f635d9e9a63aa95a4c6",
+    "python/phasesmith/io/space_groups.py": "962c002a3f1b4243359bc6b0d44d0d6176116858e28dfa53d71f65456b2a630f",
+    "python/phasesmith/io/tof_instrument.py": "5469ff1a1cbfd78ea40d447bbc95138795c1f091ea9f7c27911cf6b82dc11450",
+    "python/phasesmith/io/topas.py": "c834f2512ed54640f9cf7972cda31c108e5aba99362bbfe3526f4c2b3fefc606",
+    "python/phasesmith/io/xred.py": "425c0669470ba42500beadb1a801d2f93786c94c82bd0f7e328cfe6b9f7c3c40",
+    "python/phasesmith/oracle/__init__.py": "f5b2d8708dd309db1f09ff8ffa0bac86f95ecb0dfa519aa436fdb26fd96a1e0a",
+    "python/phasesmith/oracle/_pinned_probe.py": "54f50a567e1beb82094131d00902ee99eaa22d29991118270bd63e197b603441",
+    "python/phasesmith/oracle/conventions.py": "6b5d0e85b794006974a2546172ff1e6a9b3e7fe2a48e85b23e7724bd8e314d0b",
+    "python/phasesmith/oracle/fixtures.py": "79cb263ead6a9999f61c285cc81bbac9415277cc315787b5b064b355938798c3",
+    "python/phasesmith/oracle/gsasii.py": "8171afe51fb843b052b079a7483a6135d8465409d9825da9091db7ee58da6839",
+    "python/phasesmith/pattern.py": "d6d5a27a7b892276b6ea57e467439887a91993b0fb11c5b8fa7ce925db3ce283",
+    "python/phasesmith/pawley_reference.py": "a5ac3ce9862ed506450e71476bd1dd8a66bd8b629104e1877bec59ad62f26d34",
+    "python/phasesmith/persistence.py": "8c8dca9c3f4678bdd5893ead736db571f40295ca9dfd1ee0406dbc2f2d2073e5",
+    "python/phasesmith/phase.py": "cc129c4c8f079a59151296c6c9d18349e481b8119e2012bd3091250e8f8232e2",
+    "python/phasesmith/profile_estimation.py": "c4ebb0d74dcedbe85541796af56e012c6981caca1f3900df1b21c5ec7f655dd6",
+    "python/phasesmith/project.py": "1b018d07a71091b56cf38fb6d0d1ebbfecc5c9e0c83123c74086af4203563dcb",
+    "python/phasesmith/project_bundle.py": "f1c05026100f2fe96e5f3324a986dd94fd3f5bd0e5f1d74d8f0f622a80cc4cfd",
+    "python/phasesmith/quantitative.py": "b18b5ea9b440a18d79e83580200506d52f323ef9106fca4e1b4b0ecf47239b03",
+    "python/phasesmith/radiation.py": "0713e982ad9927285af25822c1e76a05c50051569060f5cc8231291de332ef2a",
+    "python/phasesmith/reference.py": "0787834183c50338cf60e25457f37f53edcebbe59199e7036bf320c3bab15b28",
+    "python/phasesmith/refinement/__init__.py": "f25dde0ef05336433a4a18c8dc01084a283774dd314d84830529632748c0f032",
+    "python/phasesmith/refinement/background.py": "34facc3323edf9be1089b8d4cf3912dca4eab4eeb46c0ec573b8383c42feaba8",
+    "python/phasesmith/refinement/core.py": "56857ef27b330ea92218a54727c7e989533c43801ae098d3acaf0bceddb6d6da",
+    "python/phasesmith/refinement/lattice.py": "ce687dbc9002b7446b4f46555fd6c2f393da98f05c68afae0da8e6af0d56a925",
+    "python/phasesmith/refinement/lebail.py": "3171dacd4657b46b7c69f27e79ae665319a1da5950bcbb952918777495b45cb1",
+    "python/phasesmith/refinement/pawley.py": "2d9d01605b121a8a4f98e485f89dcb20eb00fa6e49cf03fc3674715f98a2fee0",
+    "python/phasesmith/refinement/readiness.py": "38aaa2e7b9e954594cc6cdf070d2440ed1017114d7527dde096d855667173d51",
+    "python/phasesmith/refinement/rietveld.py": "93ece4d345479e617881ca7d71514fd33b82b211757645a3b45f3dc71a50d11e",
+    "python/phasesmith/refinement/runtime.py": "62e1243c9ba256844cfc2f41ceaf143a9bc0053f4cf18d616da7cfc533fa39d1",
+    "python/phasesmith/refinement/scipy.py": "b0bb56fd8ad6fe6c8b3005717cb9b29261c6de2705fecd57ac441c955b735f20",
+    "python/phasesmith/refinement/tof_lebail.py": "da8304047d1c08a33572112ded0cfac2f2f8187ba23e3c45c6521af22650ace1",
+    "python/phasesmith/refinement/tof_multibank.py": "02835ad575c7bd26ac7581d1e15afbce8aa6b90761e9b5c1f626757b5f524952",
+    "python/phasesmith/refinement/tof_pawley.py": "c9f19c6c125cd17fdd4247bb3e6af4857556495511d09d30528c11c97077b832",
+    "python/phasesmith/refinement/tof_structural.py": "2914e66bb5e0aba94706da486dc296da464fe358d6c1706f368c1fa89d4db570",
+    "python/phasesmith/refinement/workflow.py": "e851a7da28cc3cbc6c755d42b1a4cdd1b9df57940a446fe94774dd23c3e0f4ef",
+    "python/phasesmith/reporting.py": "e0513392086c2e986c94066cfe4a4f3d2682a954c194ea047b87268634e13b9c",
+    "python/phasesmith/results.py": "3d1148a52f09973ec6f307e86c6c6bb0f84e1a15ef40a688a8b117283d75195d",
+    "python/phasesmith/sample.py": "c50dbbf26950b78497ffa38c4587b26d1d5de03554ea12383c5f1f5edae95d3d",
+    "python/phasesmith/scattering.py": "4a863baffef9b8843e4dc60ec272fc18f6ce485a7aa8cf30a2bbee09e71755fe",
+    "python/phasesmith/scattering_reference.py": "f3e4fdabab121b71114c3539c841077a50370d82cfb178fa499199e1c1b43695",
+    "python/phasesmith/structural_calculation.py": "c206425b64a4d54380eb87c74567a8ea616d3166fe417881a02dcbc3b4e4785a",
+    "python/phasesmith/structure.py": "568af00b0baf4f54efe63f0851a79e9bcbc4a3903813957d55ef075fd80358a2",
+    "python/phasesmith/symmetry.py": "db13d9b2b6453f65a449589a3d50c829a3765cbb009a39474def1cec1ab0f7d1",
+    "python/phasesmith/symmetry_reference.py": "7ea78230cb494c756b8c8906173eb1bd202fa67f3dffe1e80a0c46c5bfe1f87b",
+    "python/phasesmith/terminal.py": "092b80cc6f6247f870e39cb3f0c5b637317f28362c0391381f95dc2ba992d23d",
+    "python/phasesmith/tof.py": "88931dc0f6438c0a70dcc25e1bf713445bd5cce2e1422632f450f56b7069953f",
+    "python/phasesmith/tof_pawley_reference.py": "d8dd799e6004e5ec97124c7e80ba292c55f17db4246608af8ff0d9a2fa06f234",
+    "python/phasesmith/validation/__init__.py": "4dfad91b9c9c8ccbf6f05d998e7e817c704a22c9b3ea927364c8e811927da79a",
+    "python/phasesmith/validation/_rietveld_parity.py": "1f60baf749db724a631eb9332a360cb97097cdce09c4b7cdff3a887cafa88346",
+    "python/phasesmith/validation/bath_ltl.py": "718a8f04c18f58992d6d4e4a7640cfa6858116e84675f7812088ba5324111ed9",
+    "python/phasesmith/validation/ceria_transferability.py": "a7a8b5075f6b85de18ca8b69ff0a24c69f058909be4736fb25cabe2f6ed15bd9",
+    "python/phasesmith/validation/citrate_broadening_ablation.py": "ca5c51efdfbeea093c3dd7d314229704d949e8d0b24343de1e0583eb71723fdc",
+    "python/phasesmith/validation/citrate_source_fidelity.py": "83576b442945887dbf83ad3fd41b620bc1d5b09fc4d353f259b5e71cb67fb0b5",
+    "python/phasesmith/validation/citrate_stephens_ablation.py": "7cad6b520e6c88f3da3ffb23621ef57d7f7993873c20db0e63d5aced50e1c857",
+    "python/phasesmith/validation/datasets.py": "b5303abfe2634bcfdc513fae49c92156a73b8e79e0b1063c1f36497afb9f34fd",
+    "python/phasesmith/validation/fcj_angular_reference.py": "9ef3d5cdef5d66f56026e9e0397605ce4df65656a5dc8bf8c06469cd5ab69d1c",
+    "python/phasesmith/validation/iucr_silicon_standard.py": "ad25d9a1476e55d74231ccb140094d9775590b1112363e02497f0ac47990284c",
+    "python/phasesmith/validation/iucr_sodium_citrate_silicon.py": "2ebd72ae48af3bc9feded72c6befc9ee6c0c24f18708dcc92d33a3aa42b70272",
+    "python/phasesmith/validation/iucr_tripotassium_citrate_silicon.py": "636f9a30304b35469d0fe476179dd7656b3c67086892890c976029ef140fac62",
+    "python/phasesmith/validation/iucr_trirubidium_citrate_silicon.py": "4b06e10101459f60ce44226abe3525dd6dfefd6c5460b7c5cc4a0f555fd1626d",
+    "python/phasesmith/validation/nist_srm660c_parity.py": "6fbc96a8b1c10c6efb2c1af689926b29958b6ee8c8d0fb21b4462c64f6cf4ff9",
+    "python/phasesmith/validation/opxrd.py": "e9cee5c10bb71f4d2663fe4c3313c9ac0797ed0fac001019710918bdc8eada1e",
+    "python/phasesmith/validation/pawley.py": "7eb0063412350c39382002ae32f5de4c7d912d162eb1ce1e8f8176fa04ee9b37",
+    "python/phasesmith/validation/pawley_oracle.py": "0cd498b8ced5d9a77348f013829981cfb7dbd0297b50d1a22f57a3e24b687da7",
+    "python/phasesmith/validation/pawley_profile_diagnostic.py": "a9ad1ccf6d6240c75ca40200e65a821e79fe963add6cd6576db0b6df5ba52eb6",
+    "python/phasesmith/validation/pawley_spectrum.py": "7e2d14ef45307fc441a2312f5124b6c92a1b78272b187aad01a07700b8675988",
+    "python/phasesmith/validation/qarr_parity.py": "7ed3f31bcd1995fd2cdeb9cc610c762aa25c386e30eca93f8fc7c401e3c29656",
+    "python/phasesmith/validation/real_data.py": "87781aac939a6be4fe2ad76511947dbb73c90eb76b791b2dba8741e7492addc5",
+    "python/phasesmith/validation/rowles.py": "2a01ffe8457c1c2e1f93c68afaf08cdfd5164f170280f484bf1e9050b0e1e4e5",
+    "python/phasesmith/validation/suite.py": "58a6a3ecfe186985ef6bcb4072711ec180ae6d17f26607d3bede0e53446fd828",
+    "python/phasesmith/validation/tof_pawley.py": "2f32f2b7b357eb9a467f2bce3f9c997ba64791e292284981234d93ebbf35abd5",
+    "python/phasesmith/validation/xred_tio2.py": "88360fb4247f02b2f5146c078669908d2f820fd5a327ed8cc58d25ebc5bc7a75",
+    "tests/test_solution_holdout_freeze.py": "07d5e30566262788463aebbf28e89b281e2293ccb780a2b7d9895789da877eff"
+  },
+  "algorithm_sources": [
+    {
+      "author": "G. M. Sheldrick",
+      "year": 2015,
+      "journal": "Acta Crystallographica A",
+      "volume": 71,
+      "pages": "3-8",
+      "doi": "10.1107/S2053273314026370",
+      "role": "Published dual-space phasing and phase/symmetry/density concepts; implementation constants and full workflow include documented independent PhaseSmith choices"
+    },
+    {
+      "author": "G. M. Sheldrick",
+      "year": 1990,
+      "journal": "Acta Crystallographica A",
+      "volume": 46,
+      "pages": "467-473",
+      "doi": "10.1107/S0108767390000277",
+      "role": "Published phase annealing and negative-quartet consistency"
+    }
+  ],
+  "external_test_comparator": {
+    "name": "SHELXT",
+    "version": "2018/2",
+    "role": "External test comparator only",
+    "runtime": "User-provided separately licensed executable, x86_64 on arm64 host compatibility runtime; not distributed or required by PhaseSmith"
+  },
+  "protocol": "docs/solution-holdout-freeze.md",
+  "qualification": "Exact accepted development configuration transferred once to all 65 held-out families, with no outcome-based tuning, exclusions or numerical reruns. Full predicted structures saved before any reference grading. Existing frozen auditor and all quality/resource thresholds retained. Historical unopened corpus locks are immutable; new run records authorized opening."
+}
