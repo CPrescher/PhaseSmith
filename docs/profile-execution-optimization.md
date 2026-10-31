@@ -170,3 +170,11 @@ workers; no partial result escapes. Explicit profile worker limits are now
 not a per-worker multiplication. The 4/6/8/10 worker choice will use observed
 runtime, never intensity agreement or atomic-reference scores. Independent
 references and GSAS-II coverage are unchanged because equations are unchanged.
+
+Follow-up 1 measures the complete real-case amplitude/146-strong-fit stage:
+old four-worker batches 8.731 s; continuous scheduling with 4/6/8/10 workers
+6.128/4.178/3.372/2.921 s (three-repeat medians). All output hashes match.
+Fresh v17 passes every bitwise gate; worker time is 33.91 s versus 37.86 s.
+Its CLI is 42.49 s versus 38.95 s: cold parent/setup overhead accounts for
+the reversal, so this single run does not establish a CLI gain. Both are
+retained. Report: `benchmarks/enstatite-next-execution-stage1-macos.json`.

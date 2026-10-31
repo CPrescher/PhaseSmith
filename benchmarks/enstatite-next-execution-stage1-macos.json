@@ -1,0 +1,395 @@
+{
+  "schema": "phasesmith.enstatite-next-execution-stage.v1",
+  "stage": 1,
+  "protocol": "validation/enstatite-raw-workflow-v17.json",
+  "baseline_benchmark": {
+    "schema": "phasesmith.profile-worker-scaling.v1",
+    "strong": 146,
+    "reflections": 7277,
+    "samples": 13267065,
+    "records": [
+      {
+        "workers": 4,
+        "seconds": [
+          8.907089832995553,
+          8.724449125002138,
+          8.731426666025072
+        ],
+        "median_seconds": 8.731426666025072,
+        "sha256": "cdd2417383b2fe1ef42481ab50b0c99adbe046d4f0dfd830fe979ecd4c4824b1"
+      }
+    ],
+    "all_outputs_bitwise_identical": true,
+    "maximum_resident_bytes": 2437054464
+  },
+  "current_benchmark": {
+    "schema": "phasesmith.profile-worker-scaling.v1",
+    "strong": 146,
+    "reflections": 7277,
+    "samples": 13267065,
+    "records": [
+      {
+        "workers": 4,
+        "seconds": [
+          6.167398708988912,
+          6.113391832972411,
+          6.128061166033149
+        ],
+        "median_seconds": 6.128061166033149,
+        "sha256": "cdd2417383b2fe1ef42481ab50b0c99adbe046d4f0dfd830fe979ecd4c4824b1"
+      },
+      {
+        "workers": 6,
+        "seconds": [
+          4.17816250002943,
+          4.17689004202839,
+          4.1779981249710545
+        ],
+        "median_seconds": 4.1779981249710545,
+        "sha256": "cdd2417383b2fe1ef42481ab50b0c99adbe046d4f0dfd830fe979ecd4c4824b1"
+      },
+      {
+        "workers": 8,
+        "seconds": [
+          3.3152686660178006,
+          3.398754875001032,
+          3.3715886250138283
+        ],
+        "median_seconds": 3.3715886250138283,
+        "sha256": "cdd2417383b2fe1ef42481ab50b0c99adbe046d4f0dfd830fe979ecd4c4824b1"
+      },
+      {
+        "workers": 10,
+        "seconds": [
+          2.913550707977265,
+          2.920759625034407,
+          2.9594382920186035
+        ],
+        "median_seconds": 2.920759625034407,
+        "sha256": "cdd2417383b2fe1ef42481ab50b0c99adbe046d4f0dfd830fe979ecd4c4824b1"
+      }
+    ],
+    "all_outputs_bitwise_identical": true,
+    "maximum_resident_bytes": 2463465472
+  },
+  "equivalence": {
+    "schema": "phasesmith.enstatite-execution-equivalence.v1",
+    "baseline": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v11-timing",
+    "candidate": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v17",
+    "passed": true,
+    "gates": {
+      "all_numerical_arrays_bitwise_identical": true,
+      "full_candidate_records_identical": true,
+      "phasing_histories_identical": true,
+      "source_files_unchanged": true,
+      "structure_recovered": true,
+      "worker_isolation": true,
+      "no_optional_python_numerics": true
+    },
+    "array_identity": {
+      "frame-validity.npz": {
+        "excluded": true,
+        "metadata": true,
+        "omega_bounds": true
+      },
+      "positions.npz": {
+        "boxes": true,
+        "flags": true,
+        "frame_ranges": true,
+        "observations": true,
+        "omega_bounds": true,
+        "original_flags": true,
+        "values": true
+      },
+      "indexed-positions.npz": {
+        "eligible": true,
+        "hkl": true,
+        "observed": true,
+        "predicted": true,
+        "track_ids": true,
+        "training": true
+      },
+      "edge-exclusions.npz": {
+        "aperture": true,
+        "flags": true,
+        "hkl": true,
+        "predicted": true
+      },
+      "raw-observations-and-bank.npz": {
+        "bank_counts": true,
+        "bank_profiles": true,
+        "bank_reference_centres": true,
+        "bank_reference_ids": true,
+        "bank_shifts": true,
+        "obs_centres": true,
+        "obs_covariance": true,
+        "obs_offsets": true,
+        "obs_planar_transforms": true,
+        "obs_samples": true,
+        "obs_scales": true,
+        "obs_valid": true,
+        "table_angular_half_widths": true,
+        "table_background_models": true,
+        "table_boxes": true,
+        "table_flags": true,
+        "table_frame_flags": true,
+        "table_frame_indices": true,
+        "table_frame_values": true,
+        "table_grain_ids": true,
+        "table_hkl": true,
+        "table_observation_ids": true,
+        "table_omega_bounds": true,
+        "table_predicted": true,
+        "table_values": true
+      },
+      "reduced-observations.npz": {
+        "aperture": true,
+        "choices": true,
+        "dac_entry_degrees": true,
+        "dac_exit_degrees": true,
+        "flags": true,
+        "hkl": true,
+        "intensity": true,
+        "parameters": true,
+        "raw_profiles": true,
+        "sigma": true,
+        "statistical_sigma": true,
+        "use": true,
+        "visible": true
+      }
+    },
+    "r1": 0.04085182070733226,
+    "reference_assessment": {
+      "counts_match": true,
+      "rms_error_angstrom": 0.004538501994491189,
+      "maximum_error_angstrom": 0.007523594148997598,
+      "hand": -1,
+      "shift": [
+        0.836137362336214,
+        0.31599369727651205,
+        0.47339919140711983
+      ],
+      "correct": true,
+      "strict_002_angstrom": true,
+      "reference_read_after_worker_stopped": true
+    },
+    "execution": {
+      "profile_learning_execution": {
+        "workers": 4,
+        "requested_workers": 4,
+        "cache_budget_bytes": 268435456,
+        "cache_bytes": 181907500,
+        "cache_rows": 506475,
+        "cache_entries": 13808351
+      },
+      "profile_integration_execution": {
+        "workers": 10,
+        "requested_workers": 10,
+        "cache_budget_bytes": 268435456,
+        "maximum_reflection_cache_bytes": 1583672,
+        "cache_peak_bound_bytes": 15836720,
+        "cached_reflections": 4701,
+        "uncached_reflections": 2576,
+        "maximum_exposure_overlap_pixels": 17928
+      }
+    },
+    "worker": {
+      "stage": "search",
+      "seconds": 33.905235290993005,
+      "reference_model_read": false,
+      "source_hkls_read": false,
+      "archived_arrays_read": false,
+      "blocked_python_packages": [
+        "scipy",
+        "h5py",
+        "hdf5plugin"
+      ],
+      "loaded_blocked_python_packages": []
+    },
+    "timings": {
+      "schema": "phasesmith.enstatite-wall-timings.v1",
+      "wall_seconds": 34.03430937504163,
+      "maximum_resident_bytes": 3251748864,
+      "accounted_exclusive_seconds": 33.906226916995365,
+      "exclusive_by_name": {
+        "shadow_estimation": 3.3563625829992816,
+        "compressed_archives": 5.1960218729800545,
+        "stage_validity": 0.0027331679593771696,
+        "detection_and_linking": 6.594463707995601,
+        "stage_positions": 0.23624958394793794,
+        "grain_indexing": 1.431962625007145,
+        "geometry_fit": 0.004886957991402596,
+        "stage_indexing": 0.03171666798880324,
+        "pixel_collection_and_background": 9.349970084032975,
+        "profile_learning": 2.557206000026781,
+        "observation_archive": 0.0008998330449685454,
+        "profile_fitting": 2.915210291976109,
+        "physical_corrections": 0.0007734160171821713,
+        "empirical_design": 0.031923458038363606,
+        "empirical_scaling": 0.2171221660100855,
+        "equivalent_error_model": 0.02167783404001966,
+        "reduction_other": 0.014260374882724136,
+        "stage_integrate": 1.1510647929972038,
+        "search_process": 0.7905584170366637,
+        "process_main": 0.0011630820226855576
+      },
+      "events": [
+        {
+          "name": "shadow_estimation",
+          "start_seconds": 0.13003379199653864,
+          "inclusive_seconds": 3.3563625829992816,
+          "exclusive_seconds": 3.3563625829992816
+        },
+        {
+          "name": "compressed_archives",
+          "start_seconds": 3.4867168749915436,
+          "inclusive_seconds": 0.007937083020806313,
+          "exclusive_seconds": 0.007937083020806313
+        },
+        {
+          "name": "stage_validity",
+          "start_seconds": 0.12845158303389326,
+          "inclusive_seconds": 3.367032833979465,
+          "exclusive_seconds": 0.0027331679593771696
+        },
+        {
+          "name": "detection_and_linking",
+          "start_seconds": 3.4960790420300327,
+          "inclusive_seconds": 6.594463707995601,
+          "exclusive_seconds": 6.594463707995601
+        },
+        {
+          "name": "compressed_archives",
+          "start_seconds": 10.325782708008774,
+          "inclusive_seconds": 0.008603500027675182,
+          "exclusive_seconds": 0.008603500027675182
+        },
+        {
+          "name": "stage_positions",
+          "start_seconds": 3.4954865000327118,
+          "inclusive_seconds": 6.839316791971214,
+          "exclusive_seconds": 0.23624958394793794
+        },
+        {
+          "name": "grain_indexing",
+          "start_seconds": 10.335184958006721,
+          "inclusive_seconds": 1.431962625007145,
+          "exclusive_seconds": 1.431962625007145
+        },
+        {
+          "name": "geometry_fit",
+          "start_seconds": 11.796469499997329,
+          "inclusive_seconds": 0.004886957991402596,
+          "exclusive_seconds": 0.004886957991402596
+        },
+        {
+          "name": "compressed_archives",
+          "start_seconds": 11.802208042005077,
+          "inclusive_seconds": 0.00574066600529477,
+          "exclusive_seconds": 0.00574066600529477
+        },
+        {
+          "name": "stage_indexing",
+          "start_seconds": 10.334805499995127,
+          "inclusive_seconds": 1.4743069169926457,
+          "exclusive_seconds": 0.03171666798880324
+        },
+        {
+          "name": "pixel_collection_and_background",
+          "start_seconds": 11.833451082988176,
+          "inclusive_seconds": 9.349970084032975,
+          "exclusive_seconds": 9.349970084032975
+        },
+        {
+          "name": "compressed_archives",
+          "start_seconds": 21.18354979204014,
+          "inclusive_seconds": 0.00043833296513184905,
+          "exclusive_seconds": 0.00043833296513184905
+        },
+        {
+          "name": "profile_learning",
+          "start_seconds": 21.65093204198638,
+          "inclusive_seconds": 2.557206000026781,
+          "exclusive_seconds": 2.557206000026781
+        },
+        {
+          "name": "compressed_archives",
+          "start_seconds": 24.208373917033896,
+          "inclusive_seconds": 5.150105957989581,
+          "exclusive_seconds": 5.150105957989581
+        },
+        {
+          "name": "observation_archive",
+          "start_seconds": 24.208151291997638,
+          "inclusive_seconds": 5.1510057910345495,
+          "exclusive_seconds": 0.0008998330449685454
+        },
+        {
+          "name": "profile_fitting",
+          "start_seconds": 29.372901333030313,
+          "inclusive_seconds": 2.915210291976109,
+          "exclusive_seconds": 2.915210291976109
+        },
+        {
+          "name": "physical_corrections",
+          "start_seconds": 32.288119542005006,
+          "inclusive_seconds": 0.0007734160171821713,
+          "exclusive_seconds": 0.0007734160171821713
+        },
+        {
+          "name": "empirical_design",
+          "start_seconds": 32.28893275000155,
+          "inclusive_seconds": 0.031923458038363606,
+          "exclusive_seconds": 0.031923458038363606
+        },
+        {
+          "name": "empirical_scaling",
+          "start_seconds": 32.320875542005524,
+          "inclusive_seconds": 0.2171221660100855,
+          "exclusive_seconds": 0.2171221660100855
+        },
+        {
+          "name": "equivalent_error_model",
+          "start_seconds": 32.53851783298887,
+          "inclusive_seconds": 0.02167783404001966,
+          "exclusive_seconds": 0.02167783404001966
+        },
+        {
+          "name": "reduction_other",
+          "start_seconds": 29.35932979203062,
+          "inclusive_seconds": 3.200967540964484,
+          "exclusive_seconds": 0.014260374882724136
+        },
+        {
+          "name": "compressed_archives",
+          "start_seconds": 33.21873562503606,
+          "inclusive_seconds": 0.023196332971565425,
+          "exclusive_seconds": 0.023196332971565425
+        },
+        {
+          "name": "stage_integrate",
+          "start_seconds": 11.809115333016962,
+          "inclusive_seconds": 21.43384887499269,
+          "exclusive_seconds": 1.1510647929972038
+        },
+        {
+          "name": "search_process",
+          "start_seconds": 33.24305008299416,
+          "inclusive_seconds": 0.7905584170366637,
+          "exclusive_seconds": 0.7905584170366637
+        },
+        {
+          "name": "process_main",
+          "start_seconds": 0.1280071249930188,
+          "inclusive_seconds": 33.906226916995365,
+          "exclusive_seconds": 0.0011630820226855576
+        }
+      ],
+      "interpretation": "Nested inclusive times overlap; exclusive seconds partition each process's recorded wall time. Native parallel tasks and original-count I/O are included in the owning function. Timing observer changes no numerical arguments."
+    }
+  },
+  "cli_wall_seconds": 42.49,
+  "baseline_cli_wall_seconds": 38.95,
+  "baseline_worker_seconds": 37.86375349998707,
+  "interpretation": "Continuous four-worker scheduling alone improves complete fit median 8.731 to 6.128 seconds (1.42x); ten workers gives 2.921 seconds (2.99x). Full worker improves to 33.91 seconds; cold parent/setup makes CLI 42.49 seconds, slower than the warm v16 CLI. Both measurements are retained; no claim of CLI improvement from this single cold run. All numerical outputs and histories remain bitwise identical."
+}
