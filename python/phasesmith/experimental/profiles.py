@@ -219,6 +219,7 @@ def prepare_profiles(
     *,
     mask_loader=None,
     variance_loader=None,
+    grain_ids=None,
     options=None,
     gain=1.0,
     read_noise=0.0,
@@ -270,6 +271,7 @@ def prepare_profiles(
         predictions,
         mask_loader=mask_loader,
         variance_loader=variance_loader,
+        grain_ids=grain_ids,
         options=options,
         gain=gain,
         read_noise=read_noise,
@@ -629,9 +631,15 @@ def _evaluation_inputs(profile, bounds, centre, step, scales):
     return p, b, c, s, scale
 
 
-def evaluate_profile_shape(profile, bounds, *, step=(1., 1., 1.),
-                           centre=(0., 0., 0.), scales=(1., 1., 1.),
-                           planar_transform=None):
+def evaluate_profile_shape(
+    profile,
+    bounds,
+    *,
+    step=(1.0, 1.0, 1.0),
+    centre=(0.0, 0.0, 0.0),
+    scales=(1.0, 1.0, 1.0),
+    planar_transform=None,
+):
     """Mass and fused partials for x/y/omega and log spatial/rocking width.
 
     Width derivatives dilate the finite support together with its voxels.
@@ -641,10 +649,17 @@ def evaluate_profile_shape(profile, bounds, *, step=(1., 1., 1.),
     """
     p, b, c, s, scale = _evaluation_inputs(profile, bounds, centre, step, scales)
     a = np.eye(2) if planar_transform is None else _planar(np.asarray(planar_transform)[None], 1)[0]
-    return _readonly(_core.experimental_profile_evaluate_shape(
-        np.ascontiguousarray(p, float).ravel(), p.shape[::-1], tuple(map(float, s)),
-        np.ascontiguousarray(b, float), tuple(map(float, c)), tuple(a.ravel()),
-        tuple(map(float, scale))))
+    return _readonly(
+        _core.experimental_profile_evaluate_shape(
+            np.ascontiguousarray(p, float).ravel(),
+            p.shape[::-1],
+            tuple(map(float, s)),
+            np.ascontiguousarray(b, float),
+            tuple(map(float, c)),
+            tuple(a.ravel()),
+            tuple(map(float, scale)),
+        )
+    )
 
 
 def rotation_factors(xy, geometry):
@@ -812,6 +827,27 @@ class LearnedProfileVariations:
             fraction[empty] = selected[empty].mean(axis=1)
             output[targets] = fraction / fraction.sum(axis=1)[:, None]
         return _readonly(output)
+
+
+def select_observations(observations, ids):
+    """Select ordered unique reflection rows, preserving all-domain background fits.
+
+    Selection happens after joint collection/exclusion. It never rereads pixels
+    or refits backgrounds; signed observations and fitted covariance are retained.
+    """
+    if not isinstance(observations, ProfileObservations):
+        raise TypeError("observations must be ProfileObservations")
+    indices = np.asarray(ids)
+    if (
+        indices.ndim != 1
+        or indices.dtype.kind not in "iu"
+        or not len(indices)
+        or np.any(indices >= len(observations.centres))
+        or np.any(indices < 0)
+        or np.any(indices[1:] <= indices[:-1])
+    ):
+        raise ValueError("ids must be sorted unique in-range integer reflection rows")
+    return _reference_observations(observations, indices.astype(np.int64))
 
 
 def _reference_observations(observations, ids):

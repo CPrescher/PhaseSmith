@@ -12,6 +12,17 @@ not part of the numerical library.
 
 ## Current implementation status
 
+A script-first MgSiO3 raw-frame example is prepared in
+`benchmarks/enstatite_raw_workflow.py`, with the pre-execution protocol
+`validation/enstatite-raw-workflow-v1.json`. It streams original frames through
+new detection/indexing, prior-assisted positional calibration, joint-domain
+integration, training-family profile/scaling fits and PhaseSmith structure search.
+The numerical worker receives no atomic model, source HKLs/peak table or archived
+reduction arrays. Large products require an external output directory; references
+are graded only after a candidate is saved. New optional grain IDs and selected
+shoebox adapters preserve existing integration/background behavior. No Rust
+equation/support change is included. See `docs/enstatite-raw-workflow.md`.
+
 Structure search now has an explicit per-dense-reflection-buffer memory policy.
 `SolutionOptions.dense_memory_budget_bytes` defaults to the historical
 16,000,000 bytes; callers can request up to 1 GiB. Native input-only preflight
