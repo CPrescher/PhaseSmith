@@ -240,6 +240,7 @@ def reduce_observations(
     frozen_parameters=None,
     cache=None,
     progress=None,
+    profile_execution=None,
 ):
     """Complete signed profile path, retaining the exact aperture table and rows.
 
@@ -374,6 +375,7 @@ def reduce_observations(
             options=c.shape_fit,
             frozen_parameters=frozen_parameters,
             progress=progress,
+            execution=profile_execution,
         )
         profile, parameters = refined.integration, refined.parameters
         if store is not None:
@@ -469,6 +471,7 @@ def reduce_observations(
         cache_hit=cached is not None,
         reflections=n,
         profile_learning_execution=model.execution,
+        profile_integration_execution=profile.execution,
         profile_fitting_backend="phasesmith-spots native bounded L-BFGS-B",
         empirical_scaling_backend="phasesmith-spots native bounded least squares and IRLS",
         corrections=corrections,

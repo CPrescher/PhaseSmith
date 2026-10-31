@@ -29,6 +29,7 @@ pub mod profile_refinement;
 pub mod profiles;
 mod profiles_affine;
 mod profiles_cache;
+mod profiles_fit;
 pub mod profiles_variation;
 pub mod reciprocal;
 pub mod reduction;

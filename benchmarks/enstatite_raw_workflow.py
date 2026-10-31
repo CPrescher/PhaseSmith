@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v14.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v15.json"
 
 
 def digest(path):
@@ -730,6 +730,7 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes, fr
             geometry=fitted.geometry,
             model=bank,
             reference_mask=refs,
+            profile_execution=ProfileExecution(**protocol.get("baseline_profile_execution", {})),
             progress=lambda n, total: (
                 log(f"reduce {n}/{total}") if n % 500 == 0 or n == total else None
             ),

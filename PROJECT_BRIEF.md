@@ -20,8 +20,11 @@ unchanged. Native entry points retain their convenience signatures and expose
 resource-controlled variants. Cache metadata is diagnostic, not a scientific
 profile parameter. Stage 2 runs independent bank iteration sequences in a private native pool,
 retaining each bank's exact scalar accumulation order; its stable row index is
-admitted under the same cache cap, with serial fallback. The next stage
-optimizes baseline profile integration. Every stage has fresh measured runs
+admitted under the same cache cap, with serial fallback. Stage 3 adds resource-controlled per-reflection GLS: exact first-pass
+derivative contributions are cached under a per-pool cap and replayed without
+changing arithmetic; independent reflections run in a private pool, and
+integer overlap bookkeeping retains only one exposure at a time. Legacy
+streaming integration remains available for controls/fallback comparisons. Every stage has fresh measured runs
 and numerical-identity reports. See `docs/profile-execution-optimization.md`.
 
 Rust-only production is an explicit user requirement (31 October 2026). The

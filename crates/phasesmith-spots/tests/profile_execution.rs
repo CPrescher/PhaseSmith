@@ -160,5 +160,44 @@ fn learning_cache_is_exact_and_tiny_budgets_fall_back() {
                 assert!(parallel.execution.cache_bytes <= 1024 * 1024);
             }
         }
+        for expected in [false, true] {
+            let (values, flags) = profiles::fit(
+                &o,
+                &profile,
+                grid,
+                &[0; 4],
+                &[[0.; 3]],
+                0.9,
+                expected,
+                1.,
+                0.,
+            )
+            .unwrap();
+            for workers in [1, 2, 4] {
+                for budget in [1, 1024 * 1024] {
+                    let actual = profiles::fit_with_execution(
+                        &o,
+                        &profile,
+                        grid,
+                        &[0; 4],
+                        &[[0.; 3]],
+                        0.9,
+                        expected,
+                        1.,
+                        0.,
+                        Execution {
+                            workers,
+                            geometry_cache_bytes: budget,
+                        },
+                    )
+                    .unwrap();
+                    assert_eq!(actual.flags, flags);
+                    for (a, b) in actual.values.iter().flatten().zip(values.iter().flatten()) {
+                        assert_eq!(a.to_bits(), b.to_bits());
+                    }
+                    assert!(actual.execution.cache_peak_bound_bytes <= budget);
+                }
+            }
+        }
     }
 }
