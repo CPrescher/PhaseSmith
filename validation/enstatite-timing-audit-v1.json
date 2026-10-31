@@ -1,0 +1,10 @@
+{
+  "schema": "phasesmith.enstatite-timing-audit.v1",
+  "protocol": "validation/enstatite-raw-workflow-v11.json",
+  "protocol_sha256": "874f4deb98b94a2ab587795f348af2a4479986a332c928542716283d284f4232",
+  "purpose": "Post-hoc speed and convergence investigation requested by user; fresh isolated timing run with unchanged v11 science and numerical controls. Preserve all earlier measured runs.",
+  "observer": "benchmarks/enstatite_profiled_workflow.py",
+  "expected": "All saved numerical arrays and candidate values match retained v11; compare after worker exits. No reference feedback or search control changes.",
+  "data_policy": "Large data/products external, source files unchanged; references only graded in the existing parent after worker exit.",
+  "timing_policy": "Exclusive function-boundary wall times partition each process. Native worker/streaming I/O time belongs to owning stage; nested inclusive times are never added. Run separately from convergence probes."
+}
