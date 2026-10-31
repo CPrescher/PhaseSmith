@@ -357,43 +357,70 @@ fn search(
         completion: false,
         dense_memory_budget: DenseMemoryBudget::new(o.dense_memory_bytes)?,
         cancellation: Some(o.cancellation.clone()),
-        ..SolveOptions::default()
+        delta_sigma: 1.0,
+        weak_fraction: 0.2,
+        cleanup_cycles: 10,
+        polish_iterations: 50,
+        assignment_rounds: 4,
+        grid_shape: None,
+        refinement: Some(AdpMode::Anisotropic),
+        symmetry_tolerance_angstrom: 0.15,
+        symmetry_iterations: 80,
     };
-    let mut shared = SharedSearchOptions::default();
-    shared.maximum_atoms = memory.maximum_atoms;
-    // Literal validated-v1 production strategy, mirrored by the independent Python profile.
-    shared.joint_assignment_refinement = true;
-    shared.cached_repair_evaluation = true;
-    shared.symmetry_recycling = true;
-    shared.tangent_refinement = true;
-    shared.wilson_normalization = true;
-    shared.phase_quality_selection = true;
-    shared.phase_first_selection = true;
-    shared.calculated_shell_normalization = true;
-    shared.phase_origin_selection = true;
-    shared.score_only_evaluation = true;
-    shared.reusable_fourier_workspaces = true;
-    shared.work_sliced_phasing = true;
-    shared.isotropic_assignment_refinement = true;
-    shared.filtered_peak_search = true;
-    shared.batched_fft = true;
-    shared.real_fft = true;
-    shared.fused_phase_workspace = true;
-    shared.chemical_assignment = true;
-    shared.iterative_refinement = true;
-    shared.cached_normal_refinement = true;
-    shared.multiplicity_weighted_refinement = true;
-    shared.ambiguous_assignments = true;
-    shared.cached_assignment_refinement = true;
-    shared.specialized_isotropic_refinement = true;
-    shared.streamed_peak_search = true;
-    shared.reuse_normal_matrices = true;
-    shared.short_phase_starts = true;
-    shared.blocked_normal_matrices = true;
-    shared.phase_plateau_stopping = true;
-    shared.assignment_convergence_stopping = true;
-    shared.late_phase_plateau_stopping = true;
-    shared.model_consensus_stopping = true;
+    let shared = SharedSearchOptions {
+        maximum_atoms: memory.maximum_atoms,
+        workers: 1,
+        joint_assignment_refinement: true,
+        cached_repair_evaluation: true,
+        beam_width: 4,
+        rounds: 8,
+        staged_refinement: true,
+        screening_iterations: 8,
+        refinement_shortlist: 3,
+        integrated_peak_density: true,
+        peak_density_radius_angstrom: 0.7,
+        dual_peak_sigma: 2.0,
+        dual_peak_cap: 128,
+        dual_checkpoints: true,
+        cached_refinement: true,
+        symmetry_recycling: true,
+        recycling_cycles: 10,
+        tangent_refinement: true,
+        tangent_in_recycling: true,
+        adaptive_counts: true,
+        wilson_normalization: true,
+        phase_quality_selection: true,
+        phase_first_selection: true,
+        calculated_shell_normalization: true,
+        phase_origin_selection: true,
+        adaptive_checkpoints: false,
+        score_only_evaluation: true,
+        reusable_fourier_workspaces: true,
+        work_sliced_phasing: true,
+        isotropic_assignment_refinement: true,
+        filtered_peak_search: true,
+        batched_fft: true,
+        real_fft: true,
+        fused_phase_workspace: true,
+        independent_origin_sampling: false,
+        chemical_assignment: true,
+        iterative_refinement: true,
+        cached_normal_refinement: true,
+        multiplicity_weighted_refinement: true,
+        ambiguous_assignments: true,
+        cached_assignment_refinement: true,
+        specialized_isotropic_refinement: true,
+        streamed_peak_search: true,
+        reuse_normal_matrices: true,
+        short_phase_starts: true,
+        blocked_normal_matrices: true,
+        phase_plateau_stopping: true,
+        assignment_convergence_stopping: true,
+        late_phase_plateau_stopping: true,
+        model_consensus_stopping: true,
+        missing_reflections: false,
+        resolution_extension: 1.0,
+    };
     let solution = solve_elements(
         &observations,
         o.priors.cell,

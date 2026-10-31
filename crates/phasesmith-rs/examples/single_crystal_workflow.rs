@@ -106,6 +106,7 @@ struct Save {
     shape: [usize; 2],
     cell: [f64; 6],
     priors: Value,
+    angles: Vec<[f64; 2]>,
 }
 impl Save {
     fn archive(&self, name: &str, a: &[Array]) -> sc::Result<()> {
@@ -214,14 +215,6 @@ impl sc::Observer for Save {
     fn profiles(&mut self, m: &sc::Measurements) -> sc::Result<()> {
         let d = &m.data;
         let n = m.hkl.len();
-        let angles = d.angles.iter().copied();
-        let scan_angles: Vec<_> = (0..142)
-            .flat_map(|i| {
-                let x = -35. + i as f64 * 0.5;
-                [x, x + 0.5]
-            })
-            .collect();
-        let _ = angles;
         self.archive(
             "edge-exclusions.npz",
             &[
@@ -280,7 +273,11 @@ impl sc::Observer for Save {
                     d.frame_values.iter().flatten().copied(),
                 ),
                 flags("table_frame_flags", &d.flags),
-                f64s("table_omega_bounds", vec![142, 2], scan_angles),
+                f64s(
+                    "table_omega_bounds",
+                    vec![self.angles.len(), 2],
+                    self.angles.iter().flatten().copied(),
+                ),
                 f64s(
                     "table_background_models",
                     vec![d.background.len(), 12],
@@ -544,7 +541,14 @@ fn main() -> Result<()> {
         },
         geometry,
         priors: sc::Priors {
-            cell: UnitCell::new(cell[0], cell[1], cell[2], cell[3], cell[4], cell[5])?,
+            cell: UnitCell {
+                a_angstrom: cell[0],
+                b_angstrom: cell[1],
+                c_angstrom: cell[2],
+                alpha_deg: cell[3],
+                beta_deg: cell[4],
+                gamma_deg: cell[5],
+            },
             group: space_group_by_number(
                 packet["priors"]["space_group_number"]
                     .as_i64()
@@ -580,6 +584,13 @@ fn main() -> Result<()> {
         shape: [shape[1], shape[2]],
         cell,
         priors: packet["priors"].clone(),
+        angles: (options.acquisition.first..=options.acquisition.last)
+            .map(|i| {
+                let a = &options.acquisition;
+                let low = a.omega_zero + i as f64 * a.omega_step;
+                [low, low + a.exposure]
+            })
+            .collect(),
     };
     let started = Instant::now();
     let mut source = Source(reader);
