@@ -1,0 +1,74 @@
+{
+  "basis_only": {
+    "median_seconds": 0.0012607710086740553,
+    "value_basis_sha256": "6b50da8e6459f52c0cfa0443882218df15de510f762b5b02ef9ed71add694af8",
+    "deterministic_repeats": true
+  },
+  "with_detector": {
+    "median_seconds": 0.0015709584986325353,
+    "value_basis_sha256": "6b50da8e6459f52c0cfa0443882218df15de510f762b5b02ef9ed71add694af8",
+    "deterministic_repeats": true
+  },
+  "earlier_core": {
+    "median_seconds": 0.0014206454798113555,
+    "value_basis_sha256": "6b50da8e6459f52c0cfa0443882218df15de510f762b5b02ef9ed71add694af8"
+  },
+  "basis_only_ratio_to_earlier": 0.8874634992267533,
+  "earlier_core_sha256": "2bde0cd29ea0ba8d7a2c7c96bfdbe77c832bd6e4e39bdf04f94d2fdd88c8bbde",
+  "geometry_fit": {
+    "seconds": [
+      0.022959624999202788,
+      0.022828166955150664,
+      0.023087124980520457
+    ],
+    "median_seconds": 0.022959624999202788,
+    "evaluations": 7,
+    "backend": "phasesmith-spots Rust",
+    "deterministic_repeats": true,
+    "withheld": {
+      "count": 2178,
+      "before": {
+        "rms_xy": 0.8326857632303774,
+        "rms_omega": 0.02407953093784412,
+        "rms_scaled": 2.0851931498174556
+      },
+      "after": {
+        "rms_xy": 0.01425475580976457,
+        "rms_omega": 0.0019750626732595042,
+        "rms_scaled": 0.0369798554493887
+      }
+    },
+    "earlier_python_scipy": {
+      "seconds": [
+        0.16099870804464445,
+        0.03452645899960771,
+        0.034032292023766786
+      ],
+      "median_seconds": 0.03452645899960771,
+      "evaluations": 6,
+      "maximum_prediction_difference": [
+        1.8189894035458565e-12,
+        1.1368683772161603e-12,
+        5.684341886080802e-14
+      ]
+    },
+    "ratio_to_python_scipy": 0.6649863804296773
+  },
+  "reflections": 10888,
+  "thread_environment": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "core_sha256": "1e66f0e880ee997aea162d1e825db6d3678a9007155bedd0c2da42b804a69552",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "validation": {
+    "rust_passed": 505,
+    "rust_ignored": 34,
+    "python_passed": 3225,
+    "python_skipped": 11,
+    "python_deselected": 34,
+    "formatting": true,
+    "strict_workspace_clippy": true
+  }
+}

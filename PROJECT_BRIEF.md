@@ -17,8 +17,11 @@ initial NumPy/SciPy shadow prototype has been replaced by native kernels in
 `phasesmith-spots`; Python remains an optional array/loader adapter, and SciPy
 is retained only in independent masking reference tests. Production masking
 now has native block medians, float32 filters, percentile normalization,
-connectivity/morphology and full-exposure DAC visibility. Geometry, strong-profile
-and empirical-scaling experimental optimizers still need a separate native port;
+connectivity/morphology and full-exposure DAC visibility. Single-crystal geometry
+fitting now also lives entirely in `phasesmith-spots`, including parameter chains,
+bounded soft-L1 optimization and conditional/withheld diagnostics. An independent
+NumPy/SciPy reference remains separate. Strong-profile and empirical-scaling
+experimental optimizers still need native ports;
 do not claim the complete raw workflow is Rust-only until those paths and
 orchestration have Rust entry points. Do not introduce further production SciPy
 algorithms. HDF5 I/O now lives in the separate optional `phasesmith-hdf5` adapter.
@@ -33,8 +36,9 @@ Si16 O48, R1 .0411159, maximum/RMS coordinate errors .0065804/.0045658 A in
 The clean wheel needs no h5py/hdf5plugin, external HDF5 or dynamic plugins. This
 validates I/O, not a completed Rust-only pipeline. The record is
 `benchmarks/enstatite-bundled-hdf5-macos.json`.
-Existing Python orchestration/experimental optimizers remain explicit pending
-work. Large raw data and full products stay outside Git; only a 10-KiB independent
+Python orchestration and the profile/scaling optimizers remain pending. The v9
+protocol freezes a native-geometry full rerun with explicit v8 equivalence gates;
+its scientific model, loss, bounds, partitions and downstream controls are unchanged. Large raw data and full products stay outside Git; only a 10-KiB independent
 compressed interoperability fixture is checked in.
 
 The script-first MgSiO3 workflow now passes from original HDF5 frames through

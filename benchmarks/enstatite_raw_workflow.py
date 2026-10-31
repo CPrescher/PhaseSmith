@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v8.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v9.json"
 
 
 def digest(path):
@@ -517,6 +517,9 @@ def stage_indexing(positions, geometry, packet, out, protocol):
             withheld_omega_rms_degrees=omega_rms,
             parameters=fitted.parameters.tolist(),
             condition=float(fitted.scaled_condition),
+            fitting_backend=fitted.backend,
+            fitting_evaluations=fitted.evaluations,
+            fitting_objective_history=list(fitted.objective_history),
             gates=gates,
             reference_coordinates_used=False,
         ),

@@ -4,8 +4,9 @@ This explicit example coordinates PhaseSmith's existing detector, reciprocal,
 indexing, position-refinement, integration, profile, scaling and structure-search
 APIs. It reads original HDF5 counts and generates new measurements throughout.
 The first protocol is `validation/enstatite-raw-workflow-v1.json`, committed
-before executing the measured workflow. The current default is version 8, which validates bundled native HDF5 input
-and Rust shadow masks with version 7 scientific settings. Earlier versions and
+before executing the measured workflow. The current default is version 9, which adds native geometry fitting after
+version 8 validated bundled native HDF5 input and Rust shadow masks. The
+scientific geometry model and downstream settings remain unchanged. Earlier versions and
 failures are retained as described below. Version 5 first passed complete labelled recovery; see the
 [reduction diagnosis](enstatite-reduction-diagnosis.md). This is exposed
 development/regression data with declared cell and symmetry priors, not a new blind holdout.
