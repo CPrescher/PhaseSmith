@@ -25,6 +25,30 @@ class ProfileFlag(IntFlag):
 
 
 @dataclass(frozen=True)
+class ProfileExecution:
+    """Native resource controls; zero cache bytes selects the streaming evaluator."""
+
+    workers: int = 1
+    geometry_cache_bytes: int = 64 * 1024 * 1024
+
+    def __post_init__(self):
+        if type(self.workers) is not int or not 1 <= self.workers <= 4:
+            raise ValueError("profile workers must be in 1..4")
+        if (
+            type(self.geometry_cache_bytes) is not int
+            or not 0 <= self.geometry_cache_bytes <= 1024**3
+        ):
+            raise ValueError("profile geometry cache must be in 0..1 GiB")
+
+
+def _execution(value):
+    value = ProfileExecution() if value is None else value
+    if not isinstance(value, ProfileExecution):
+        raise TypeError("execution must be ProfileExecution")
+    return value
+
+
+@dataclass(frozen=True)
 class ProfileOptions:
     shape: tuple = (19, 19, 9)  # x, y, omega; array storage is bank,omega,y,x.
     step: tuple = (1.0, 1.0, 1.0)
@@ -304,6 +328,7 @@ class ProfileModel:
     angular_range: tuple
     options: ProfileOptions
     reference_centres: np.ndarray | None = None
+    execution: dict | None = None
 
     def __post_init__(self):
         n = 1 + int(np.prod(self.options.regions))
@@ -368,7 +393,7 @@ def _regions(centres, detector_shape, angular_range, regions):
     return np.ascontiguousarray((index[:, 2] * regions[1] + index[:, 1]) * regions[0] + index[:, 0])
 
 
-def learn_profiles(observations, reference_mask, *, detector_shape, options=None):
+def learn_profiles(observations, reference_mask, *, detector_shape, options=None, execution=None):
     """Learn only from the supplied training population, then native quality gates.
 
     Detector/angle cells with too few references explicitly fall back to bank 0.
@@ -386,7 +411,8 @@ def learn_profiles(observations, reference_mask, *, detector_shape, options=None
         float(observations.summation.omega_bounds.max()),
     )
     regions = _regions(observations.centres, detector_shape, angular_range, options.regions)
-    p, counts, shifts, used, reference_centres = _core.experimental_profile_learn(
+    execution = _execution(execution)
+    p, counts, shifts, used, reference_centres, stats = _core.experimental_profile_learn(
         observations._native(),
         regions,
         np.ascontiguousarray(mask),
@@ -398,6 +424,8 @@ def learn_profiles(observations, reference_mask, *, detector_shape, options=None
         options.cutoff,
         options.iterations,
         options.reference_weighting == "inverse_variance",
+        execution.workers,
+        execution.geometry_cache_bytes,
     )
     return ProfileModel(
         p,
@@ -409,6 +437,7 @@ def learn_profiles(observations, reference_mask, *, detector_shape, options=None
         angular_range,
         options,
         reference_centres[used],
+        stats,
     )
 
 
@@ -455,6 +484,7 @@ def fit_profiles(
     variation_factors=None,
     fixed_fractions=None,
     allow_shape_refinement=False,
+    execution=None,
 ):
     """Signed GLS amplitudes with explicit mass, residual and source quality flags.
 
@@ -465,6 +495,7 @@ def fit_profiles(
         raise TypeError("expected ProfileObservations and ProfileModel")
     if type(expected_noise) is not bool:
         raise ValueError("expected_noise must be boolean")
+    execution = _execution(execution)
     o = model.options
     regions = (
         _regions(observations.centres, model.detector_shape, model.angular_range, o.regions) + 1

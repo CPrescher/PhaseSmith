@@ -56,6 +56,7 @@ def save_case(path, observations, model=None):
             detector_shape=model.detector_shape,
             angular_range=model.angular_range,
             training_fingerprint=model.training_fingerprint,
+            execution=model.execution,
         )
         arrays.update(
             {
@@ -100,6 +101,7 @@ def load_case(path):
             detector_shape=tuple(m["detector_shape"]),
             angular_range=tuple(m["angular_range"]),
             training_fingerprint=m["training_fingerprint"],
+            execution=m.get("execution"),
         )
     if meta.get("observation_fingerprint", obs.fingerprint()) != obs.fingerprint():
         raise ValueError("profile case observation fingerprint mismatch")

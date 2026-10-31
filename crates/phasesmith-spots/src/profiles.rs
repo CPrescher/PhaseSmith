@@ -392,6 +392,48 @@ pub fn extract_frame(
     Ok((spots, diagnostics, covariance, samples, valid))
 }
 
+/// Performance controls only; scientific equations and traversal order are unchanged.
+#[derive(Clone, Copy)]
+pub struct Execution {
+    /// Requested native worker count, in 1..4.
+    pub workers: usize,
+    /// Additional geometry-cache byte cap, 0 disables caching, at most 1 GiB.
+    pub geometry_cache_bytes: usize,
+}
+impl Default for Execution {
+    fn default() -> Self {
+        Self {
+            workers: 1,
+            geometry_cache_bytes: 64 * 1024 * 1024,
+        }
+    }
+}
+impl Execution {
+    /// Validate explicit resource controls.
+    /// # Errors
+    /// Invalid worker count or geometry-cache cap.
+    pub fn validate(self) -> Result<(), SpotError> {
+        if !(1..=4).contains(&self.workers) || self.geometry_cache_bytes > 1024 * 1024 * 1024 {
+            return Err(invalid("invalid profile execution workers/cache budget"));
+        }
+        Ok(())
+    }
+}
+/// Actual admitted learning cache; independent of the learned numerical arrays.
+#[derive(Clone, Copy, Default)]
+pub struct LearningExecution {
+    /// Actual native workers (serial cache implementation: one).
+    pub workers: usize,
+    /// Caller-declared additional-cache cap.
+    pub cache_budget_bytes: usize,
+    /// Actual admitted vector-capacity bytes, zero on streaming fallback.
+    pub cache_bytes: usize,
+    /// Cached sample rows.
+    pub cache_rows: usize,
+    /// Cached nonzero voxel intersections.
+    pub cache_entries: usize,
+}
+
 /// Finite local/global profile bank and auditable reference membership.
 pub struct Learned {
     /// Contiguous model-major finite voxel masses, each nonempty model sums to one.
@@ -404,6 +446,8 @@ pub struct Learned {
     pub used: Vec<bool>,
     /// Independently measured spatial reference centres, angular predictions retained.
     pub reference_centres: Vec<[f64; 3]>,
+    /// Actual numerical execution resources, not part of the profile model.
+    pub execution: LearningExecution,
 }
 fn median(mut a: Vec<f64>) -> f64 {
     a.sort_by(f64::total_cmp);
@@ -430,6 +474,39 @@ pub fn learn(
     iterations: usize,
     variance_weighted: bool,
 ) -> Result<Learned, SpotError> {
+    learn_with_execution(
+        o,
+        regions,
+        references,
+        grid,
+        models,
+        minimum,
+        snr,
+        cut,
+        iterations,
+        variance_weighted,
+        Execution::default(),
+    )
+}
+
+/// Same finite-profile equations with bounded, immutable geometry reuse.
+/// # Errors
+/// Rejects the same learning inputs and invalid execution controls.
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+pub fn learn_with_execution(
+    o: &Observations<'_>,
+    regions: &[usize],
+    references: &[bool],
+    grid: Grid,
+    models: usize,
+    minimum: usize,
+    snr: f64,
+    cut: f64,
+    iterations: usize,
+    variance_weighted: bool,
+    execution: Execution,
+) -> Result<Learned, SpotError> {
+    execution.validate()?;
     o.validate()?;
     grid.validate()?;
     let n = o.centres.len();
@@ -543,21 +620,53 @@ pub fn learn(
         .collect();
     let mut profile = vec![0.; models * k];
     let mut denominator = vec![0.; models * k];
-    for g in 0..o.ids.len() {
-        let id = o.ids[g];
-        if !used[id] {
-            continue;
-        }
-        for i in o.offsets[g]..o.offsets[g + 1] {
-            let value = o.samples[i][0] / total[id];
-            let mut row = 0.;
-            o.weights(grid, o.bounds(g, i), centres[id], id, |_, w, _| row += w);
-            o.weights(grid, o.bounds(g, i), centres[id], id, |j, w, _| {
-                for m in [0, regions[id] + 1] {
-                    profile[m * k + j] += reference_weights[id] * w * value;
-                    denominator[m * k + j] += reference_weights[id] * w * row;
-                }
-            });
+    let cache = crate::profiles_cache::LearningGeometry::new(
+        o,
+        grid,
+        &centres,
+        &used,
+        execution.geometry_cache_bytes,
+    );
+    let execution_stats = LearningExecution {
+        workers: 1,
+        cache_budget_bytes: execution.geometry_cache_bytes,
+        cache_bytes: cache
+            .as_ref()
+            .map_or(0, crate::profiles_cache::LearningGeometry::bytes),
+        cache_rows: cache
+            .as_ref()
+            .map_or(0, crate::profiles_cache::LearningGeometry::rows),
+        cache_entries: cache
+            .as_ref()
+            .map_or(0, crate::profiles_cache::LearningGeometry::entries),
+    };
+    if let Some(cache) = &cache {
+        cache.initialize(
+            o,
+            regions,
+            &total,
+            &reference_weights,
+            k,
+            &mut profile,
+            &mut denominator,
+        );
+    } else {
+        for g in 0..o.ids.len() {
+            let id = o.ids[g];
+            if !used[id] {
+                continue;
+            }
+            for i in o.offsets[g]..o.offsets[g + 1] {
+                let value = o.samples[i][0] / total[id];
+                let mut row = 0.;
+                o.weights(grid, o.bounds(g, i), centres[id], id, |_, w, _| row += w);
+                o.weights(grid, o.bounds(g, i), centres[id], id, |j, w, _| {
+                    for m in [0, regions[id] + 1] {
+                        profile[m * k + j] += reference_weights[id] * w * value;
+                        denominator[m * k + j] += reference_weights[id] * w * row;
+                    }
+                });
+            }
         }
     }
     for (p, &d) in profile.iter_mut().zip(&denominator) {
@@ -565,24 +674,37 @@ pub fn learn(
     }
     for _ in 0..iterations {
         let mut gradient = vec![0.; models * k];
-        for g in 0..o.ids.len() {
-            let id = o.ids[g];
-            if !used[id] {
-                continue;
-            }
-            for i in o.offsets[g]..o.offsets[g + 1] {
-                let b = o.bounds(g, i);
-                let value = o.samples[i][0] / total[id];
-                let mut expected = [0.; 2];
-                o.weights(grid, b, centres[id], id, |j, w, _| {
-                    expected[0] += w * profile[j];
-                    expected[1] += w * profile[(regions[id] + 1) * k + j];
-                });
-                o.weights(grid, b, centres[id], id, |j, w, _| {
-                    for (slot, m) in [0, regions[id] + 1].into_iter().enumerate() {
-                        gradient[m * k + j] += reference_weights[id] * w * (value - expected[slot]);
-                    }
-                });
+        if let Some(cache) = &cache {
+            cache.gradient(
+                o,
+                regions,
+                &total,
+                &reference_weights,
+                k,
+                &profile,
+                &mut gradient,
+            );
+        } else {
+            for g in 0..o.ids.len() {
+                let id = o.ids[g];
+                if !used[id] {
+                    continue;
+                }
+                for i in o.offsets[g]..o.offsets[g + 1] {
+                    let b = o.bounds(g, i);
+                    let value = o.samples[i][0] / total[id];
+                    let mut expected = [0.; 2];
+                    o.weights(grid, b, centres[id], id, |j, w, _| {
+                        expected[0] += w * profile[j];
+                        expected[1] += w * profile[(regions[id] + 1) * k + j];
+                    });
+                    o.weights(grid, b, centres[id], id, |j, w, _| {
+                        for (slot, m) in [0, regions[id] + 1].into_iter().enumerate() {
+                            gradient[m * k + j] +=
+                                reference_weights[id] * w * (value - expected[slot]);
+                        }
+                    });
+                }
             }
         }
         for ((p, &d), &g) in profile.iter_mut().zip(&denominator).zip(&gradient) {
@@ -656,6 +778,7 @@ pub fn learn(
         shifts,
         used,
         reference_centres: centres,
+        execution: execution_stats,
     })
 }
 
