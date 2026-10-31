@@ -30,6 +30,19 @@ dependency or Rust minimum change. The first v10 simplified-quasi-Newton run
 recovers the same structure but fails frozen reduction equivalence; it is retained
 in `benchmarks/enstatite-native-profile-scaling-v10-macos.json`. Frozen-shape
 controls isolate that drift to optimization trajectories.
+The corrected v11 fresh raw run passes structure recovery and every frozen
+reduction-equivalence gate: Mg16 Si16 O48, 4,125 observations/220 negative,
+R1 .0408518, maximum/RMS reference errors .0075236/.0045385 A. Intensity/sigma
+relative L2 drift is 2.42e-5/2.15e-5, at most .02153 baseline sigma; positions
+and export mask match v9. Strict end-to-end parity is still false: R1 delta
+.00020038 exceeds .0001 and maximum candidate-coordinate delta .0017993 A
+exceeds .001. These limits and the v10 failure are retained. Production workers
+reject SciPy/h5py/hdf5plugin imports. Validation passes 509 Rust and 3,235
+Python tests, strict Clippy and formatting. See
+`benchmarks/enstatite-native-profile-scaling-macos.json`. The isolated
+64-profile benchmark is 1.07x faster and the 4,096-row/173-parameter scaling
+benchmark 4.32x faster; a NumPy-only wheel passes both with no SciPy present.
+See `benchmarks/profile-scaling-fit-rust-macos.json`.
 Do not claim the complete raw workflow is Rust-only until orchestration and
 remaining design/convenience calculations also have Rust entry points. Do not
 introduce further production SciPy algorithms. HDF5 I/O now lives in the separate optional `phasesmith-hdf5` adapter.

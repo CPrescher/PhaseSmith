@@ -73,7 +73,8 @@ The frozen MgSiO3 v8 protocol uses this reader and native illumination/geometric
 masks in every raw-data pass, with v7's scientific settings unchanged. Its full
 run is made in an environment without h5py/hdf5plugin. At v8 the raw example uses Python orchestration and Python
 geometry/profile/scaling optimizers (the subsequent native geometry migration
-is documented in `experimental-crystal-geometry.md`): success establishes native HDF5 integration, not an entirely
+is documented in `experimental-crystal-geometry.md`, and later native
+profile/scaling fitting in `native-profile-scaling-fitting.md`): success establishes native HDF5 integration, not an entirely
 Rust-only raw-to-structure executable. Standalone structure refinement remains
 outside the implemented search workflow. Raw inputs and large products stay
 outside Git.

@@ -1,0 +1,129 @@
+{
+  "schema": "phasesmith.native-profile-scaling-performance.v1",
+  "baseline": {
+    "schema": "phasesmith.native-profile-scaling-benchmark.v1",
+    "native": false,
+    "numpy": "2.5.4",
+    "native_module_sha256": "d38ecd0c0aee92c13f88753f9926e0ba078be166c66f57490f17d21b9a55f1bb",
+    "optional_packages_available": {
+      "scipy": true,
+      "h5py": false,
+      "hdf5plugin": false
+    },
+    "profiles": {
+      "rows": 64,
+      "samples": 130725,
+      "shape": [
+        31,
+        31,
+        23
+      ],
+      "workers": 1,
+      "median_seconds": 7.370898916036822,
+      "repeats": [
+        7.446486458007712,
+        7.370898916036822,
+        7.359348499972839
+      ],
+      "deterministic": true,
+      "sha256": "adae2fac908a1046f147ce0885c16a05994fced31558a73f61cf98c30f9c4308",
+      "converged": 64,
+      "failed": 0
+    },
+    "loaded_optional_packages": [
+      "scipy"
+    ],
+    "scaling": {
+      "rows": 4096,
+      "parameters": 173,
+      "references": 3272,
+      "median_seconds": 0.4063237499794923,
+      "repeats": [
+        0.4063237499794923,
+        0.40700916602509096,
+        0.4024085419951007
+      ],
+      "iterations": 7,
+      "deterministic": true
+    }
+  },
+  "native": {
+    "schema": "phasesmith.native-profile-scaling-benchmark.v1",
+    "native": true,
+    "numpy": "2.5.4",
+    "native_module_sha256": "41fa85897d2574f3206eff098afb14493e0bbdc6d5a5fd9b3843e47c8941dff5",
+    "optional_packages_available": {
+      "scipy": false,
+      "h5py": false,
+      "hdf5plugin": false
+    },
+    "profiles": {
+      "rows": 64,
+      "samples": 130725,
+      "shape": [
+        31,
+        31,
+        23
+      ],
+      "workers": 1,
+      "median_seconds": 6.885483500023838,
+      "repeats": [
+        6.952006084029563,
+        6.885483500023838,
+        6.863033375004306
+      ],
+      "deterministic": true,
+      "sha256": "c869980bfcaf52e9619dc8212a67c318db2ab19008ed07e0cbce6d83df1a7bb1",
+      "converged": 64,
+      "failed": 0
+    },
+    "loaded_optional_packages": [],
+    "scaling": {
+      "rows": 4096,
+      "parameters": 173,
+      "references": 3272,
+      "median_seconds": 0.0939987919991836,
+      "repeats": [
+        0.10879929101793095,
+        0.09073474997421727,
+        0.0939987919991836
+      ],
+      "iterations": 7,
+      "deterministic": true
+    }
+  },
+  "performance": {
+    "profiles": {
+      "baseline_seconds": 7.370898916036822,
+      "native_seconds": 6.885483500023838,
+      "native_over_baseline": 0.9341443395788717,
+      "speedup": 1.0704983776391743
+    },
+    "scaling": {
+      "baseline_seconds": 0.4063237499794923,
+      "native_seconds": 0.0939987919991836,
+      "native_over_baseline": 0.23133964481261024,
+      "speedup": 4.322648635559288
+    }
+  },
+  "validation": {
+    "final_rust_tests": 509,
+    "final_python_tests": 3235,
+    "formatting": true,
+    "strict_all_features_all_targets_clippy": true
+  },
+  "compiler": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+  "policy": "Separate sequential processes, one BLAS/OpenMP/Accelerate thread, native profile worker count one. Three deterministic measured repeats each. No raw frames or atomic references read by benchmark; cached real shoeboxes and synthetic equivalent-family design only.",
+  "scaling_parity": {
+    "coefficients_maximum_absolute_difference": 1.0958161374835518e-10,
+    "correction_maximum_absolute_difference": 1.4505729950542445e-10
+  },
+  "native_wheel": {
+    "path": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-native-profile-scaling-validation-20261031/v11/wheels/phasesmith-0.7.0-cp311-abi3-macosx_11_0_arm64.whl",
+    "sha256": "aad8a856604949341b3d89f596e3ef05176d76033b23ca39c3581bc43edd0348",
+    "only_installed_packages": [
+      "numpy==2.5.4",
+      "phasesmith==0.7.0"
+    ]
+  }
+}

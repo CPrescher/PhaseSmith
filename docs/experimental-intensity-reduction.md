@@ -97,7 +97,11 @@ subset to unit mass.
 `0` fixed, `1` strong centre plus spatial/rocking widths, `2` strong x/y centre
 only. `ShapeFitOptions` declares bounds, regularization, optimization budget,
 noise iterations and 1–4 independent workers. Native GLS marginalizes the fitted
-background-plane covariance; Python orchestrates the optimizer. All rows and the
+background-plane covariance. Rust now owns the bounded profile optimizer,
+counting-noise iterations, joint sigma and frozen weak filter; Python is an
+optional array adapter. Native empirical scaling also owns the inner solve and
+robust outer iterations. See [native fitting](native-profile-scaling-fitting.md)
+for equations, independent references and validation. All rows and the
 aperture baseline are retained. Failed conditional fits retain baseline values
 with the profile failure bit.
 
