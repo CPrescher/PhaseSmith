@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from verify_single_crystal_data import verify_dataset  # noqa: E402
 
-PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v11.json"
+PROTOCOL = ROOT / "validation/enstatite-raw-workflow-v12.json"
 
 
 def digest(path):
@@ -585,6 +585,7 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes, fr
     from phasesmith.experimental.prediction import ScanPredictions, predict_scan
     from phasesmith.experimental.profile_refinement import ShapeFitOptions
     from phasesmith.experimental.profiles import (
+        ProfileExecution,
         ProfileOptions,
         learn_profiles,
         prepare_profiles,
@@ -688,7 +689,13 @@ def stage_integrate(packet, out, protocol, fitted, competitors, first_hashes, fr
         _, _, folds = family_partition(target_hkl, packet["rotations"])
         refs = folds != 0
         options = ProfileOptions(**protocol["profiles"])
-        bank = learn_profiles(observations, refs, detector_shape=shape, options=options)
+        bank = learn_profiles(
+            observations,
+            refs,
+            detector_shape=shape,
+            options=options,
+            execution=ProfileExecution(**protocol.get("profile_execution", {})),
+        )
         if len(bank.reference_ids) < protocol["gates"]["minimum_profile_teachers"]:
             raise ValueError("insufficient independent training profile teachers")
         # Large shoebox arrays are written only to the explicitly external run directory.

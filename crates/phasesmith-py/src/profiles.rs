@@ -127,6 +127,7 @@ fn experimental_profile_evaluate<'py>(
     Ok(matrix(py, result))
 }
 #[pyfunction]
+#[pyo3(signature=(observations,regions,references,shape,step,models,minimum,snr,cut,iterations,variance_weighted,workers=1,cache_bytes=67_108_864))]
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn experimental_profile_learn<'py>(
     py: Python<'py>,
@@ -141,19 +142,22 @@ fn experimental_profile_learn<'py>(
     cut: f64,
     iterations: usize,
     variance_weighted: bool,
+    workers: usize,
+    cache_bytes: usize,
 ) -> PyResult<(
     Bound<'py, PyArray2<f64>>,
     Bound<'py, PyArray1<i64>>,
     Bound<'py, PyArray2<f64>>,
     Bound<'py, PyArray1<bool>>,
     Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyDict>,
 )> {
     let owned = Owned::new(observations)?;
     let regions = integers(regions)?;
     let references = references.as_slice()?.to_vec();
     let result = py
         .detach(move || {
-            kernel::learn(
+            kernel::learn_with_execution(
                 &owned.borrowed(),
                 &regions,
                 &references,
@@ -164,9 +168,19 @@ fn experimental_profile_learn<'py>(
                 cut,
                 iterations,
                 variance_weighted,
+                kernel::Execution {
+                    workers,
+                    geometry_cache_bytes: cache_bytes,
+                },
             )
         })
         .map_err(error)?;
+    let stats = PyDict::new(py);
+    stats.set_item("workers", result.execution.workers)?;
+    stats.set_item("cache_budget_bytes", result.execution.cache_budget_bytes)?;
+    stats.set_item("cache_bytes", result.execution.cache_bytes)?;
+    stats.set_item("cache_rows", result.execution.cache_rows)?;
+    stats.set_item("cache_entries", result.execution.cache_entries)?;
     let profiles =
         Array2::from_shape_vec((models, result.profiles.len() / models), result.profiles)
             .unwrap()
@@ -183,6 +197,7 @@ fn experimental_profile_learn<'py>(
         matrix(py, result.shifts),
         result.used.into_pyarray(py),
         matrix(py, result.reference_centres),
+        stats,
     ))
 }
 #[pyfunction]

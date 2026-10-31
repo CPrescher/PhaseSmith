@@ -12,6 +12,16 @@ not part of the numerical library.
 
 ## Current implementation status
 
+Profile execution optimization is proceeding in separately measured stages.
+Stage 1 caches exact immutable teacher pixel/voxel intersections in source
+order with an explicit additional-memory cap (default 64 MiB) and streaming
+fallback; all learning equations, iteration counts and support conventions stay
+unchanged. Native entry points retain their convenience signatures and expose
+resource-controlled variants. Cache metadata is diagnostic, not a scientific
+profile parameter. Subsequent stages parallelize learning and optimize baseline
+profile integration, with fresh measured runs and numerical-identity reports
+after each. See `docs/profile-execution-optimization.md`.
+
 Rust-only production is an explicit user requirement (31 October 2026). The
 initial NumPy/SciPy shadow prototype has been replaced by native kernels in
 `phasesmith-spots`; Python remains an optional array/loader adapter, and SciPy
