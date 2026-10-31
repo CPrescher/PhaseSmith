@@ -157,3 +157,16 @@ The modest 2% learning gain in stage 2 is retained honestly. The initial 64 MiB
 cache rejection and measurement are preserved, as are all earlier trials.
 The cumulative machine-readable report is
 `benchmarks/enstatite-profile-execution-macos.json`.
+
+## Follow-up 1: continuous fitting queue and worker scaling
+
+A fixed-size native queue replaces per-batch barriers in conditional profile
+fitting. Each independent reflection retains exactly the same finite-support
+value/partial passes, optimizer controls and scalar operation order. Results
+and progress callbacks are consumed in source order on the calling thread.
+Cancellation stops new work, drops the bounded result channel and joins active
+workers; no partial result escapes. Explicit profile worker limits are now
+1–32, with default one unchanged. Cache bytes remain a shared per-pool cap,
+not a per-worker multiplication. The 4/6/8/10 worker choice will use observed
+runtime, never intensity agreement or atomic-reference scores. Independent
+references and GSAS-II coverage are unchanged because equations are unchanged.

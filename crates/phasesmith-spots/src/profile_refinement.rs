@@ -5,7 +5,10 @@ use crate::{
     intensity_model, invalid,
     profiles::{self, Grid, Observations},
 };
-use rayon::prelude::*;
+use std::sync::{
+    atomic::{AtomicBool, AtomicUsize, Ordering},
+    mpsc,
+};
 
 /// Declared independent-pixel counting model.
 #[derive(Clone, Copy)]
@@ -20,7 +23,7 @@ pub struct Noise {
 /// Explicit strong/frozen-weak controls, with unchanged finite profile support.
 #[derive(Clone, Copy)]
 pub struct Options {
-    /// Private native worker count, 1..4.
+    /// Private native worker count, 1..32.
     pub workers: usize,
     /// Fixed count/noise outer iteration count, 1..10.
     pub iterations: usize,
@@ -59,7 +62,7 @@ impl Default for Options {
 }
 impl Options {
     fn validate(self) -> Result<(), SpotError> {
-        if !(1..=4).contains(&self.workers)
+        if !(1..=32).contains(&self.workers)
             || !(1..=10).contains(&self.iterations)
             || !(1..=200).contains(&self.maximum_iterations)
             || [
@@ -736,79 +739,110 @@ pub fn refine(
         groups[cursor[id]] = g;
         cursor[id] += 1;
     }
-    let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(options.workers)
-        .build()
-        .map_err(|_| invalid("could not build profile worker pool"))?;
-    let mut done = 0;
-    for chunk in selected.chunks(options.workers) {
-        let rows: Vec<_> = pool.install(|| {
-            chunk
-                .par_iter()
-                .map(|&i| {
-                    let bank = input.assignments[i];
-                    let k = input.grid.size();
-                    let mut spot = PreparedSpot::selected(
-                        o,
-                        i,
-                        &groups[offsets[i]..offsets[i + 1]],
-                        &input.profiles[bank * k..(bank + 1) * k],
-                        input.grid,
-                        input.shifts[bank],
-                        input.minimum_mass,
-                        input.noise,
-                    );
-                    let mut p = [0.; 5];
-                    let result = if input.choices[i] != 0 {
-                        if let Some(frozen) = input.frozen {
-                            p = frozen[i];
-                            spot.finish(p, input.choices[i]).map(|(values, flags)| Row {
-                                values,
-                                flags,
-                                parameters: p,
-                                converged: true,
-                                evaluations: 0,
-                            })
-                        } else {
-                            spot.refine(baseline_values[i][0], input.choices[i], options)
-                        }
-                    } else {
-                        p[3] = options.weak_spatial_width.ln();
-                        p[0] = input.sensor_offsets[i][0] - centroids[i][0];
-                        p[1] = input.sensor_offsets[i][1] - centroids[i][1];
-                        spot.fixed(p, options.weak_design_counts).map(|fixed| {
-                            let mut values = baseline_values[i];
-                            values[..3].copy_from_slice(&fixed);
-                            values[3..].fill(f64::NAN);
-                            Row {
-                                values,
-                                flags: baseline_flags[i],
-                                parameters: p,
-                                converged: true,
-                                evaluations: 0,
-                            }
-                        })
-                    };
-                    (i, result, p)
+    let work = |position: usize| {
+        let i = selected[position];
+        let bank = input.assignments[i];
+        let k = input.grid.size();
+        let mut spot = PreparedSpot::selected(
+            o,
+            i,
+            &groups[offsets[i]..offsets[i + 1]],
+            &input.profiles[bank * k..(bank + 1) * k],
+            input.grid,
+            input.shifts[bank],
+            input.minimum_mass,
+            input.noise,
+        );
+        let mut p = [0.; 5];
+        let result = if input.choices[i] != 0 {
+            if let Some(frozen) = input.frozen {
+                p = frozen[i];
+                spot.finish(p, input.choices[i]).map(|(values, flags)| Row {
+                    values,
+                    flags,
+                    parameters: p,
+                    converged: true,
+                    evaluations: 0,
                 })
-                .collect()
-        });
-        for (i, result, p) in rows {
-            if let Ok(row) = result {
-                values[i] = row.values;
-                flags[i] = row.flags;
-                parameters[i] = row.parameters;
-                converged[i] = row.converged;
-                evaluations[i] = row.evaluations;
             } else {
-                flags[i] |= profiles::FAILED;
-                parameters[i] = p;
-                converged[i] = false;
+                spot.refine(baseline_values[i][0], input.choices[i], options)
             }
-            done += 1;
-            progress(done, selected.len())?;
+        } else {
+            p[3] = options.weak_spatial_width.ln();
+            p[0] = input.sensor_offsets[i][0] - centroids[i][0];
+            p[1] = input.sensor_offsets[i][1] - centroids[i][1];
+            spot.fixed(p, options.weak_design_counts).map(|fixed| {
+                let mut values = baseline_values[i];
+                values[..3].copy_from_slice(&fixed);
+                values[3..].fill(f64::NAN);
+                Row {
+                    values,
+                    flags: baseline_flags[i],
+                    parameters: p,
+                    converged: true,
+                    evaluations: 0,
+                }
+            })
+        };
+        (i, result, p)
+    };
+    let next = AtomicUsize::new(0);
+    let cancelled = AtomicBool::new(false);
+    std::thread::scope(|scope| -> Result<(), SpotError> {
+        let (sender, receiver) = mpsc::sync_channel(options.workers);
+        for _ in 0..options.workers.min(selected.len()) {
+            let sender = sender.clone();
+            let (next, cancelled, work) = (&next, &cancelled, &work);
+            let count = selected.len();
+            std::thread::Builder::new()
+                .spawn_scoped(scope, move || {
+                    while !cancelled.load(Ordering::Relaxed) {
+                        let position = next.fetch_add(1, Ordering::Relaxed);
+                        if position >= count {
+                            break;
+                        }
+                        if sender.send((position, work(position))).is_err() {
+                            break;
+                        }
+                    }
+                })
+                .map_err(|_| invalid("could not build profile worker pool"))?;
         }
-    }
+        drop(sender);
+        let mut pending: Vec<_> = (0..selected.len()).map(|_| None).collect();
+        let mut done = 0;
+        let result = (|| {
+            while done < selected.len() {
+                let (position, row) = receiver
+                    .recv()
+                    .map_err(|_| invalid("profile worker stopped without a result"))?;
+                pending[position] = Some(row);
+                while done < selected.len() {
+                    let Some((i, result, p)) = pending[done].take() else {
+                        break;
+                    };
+                    if let Ok(row) = result {
+                        values[i] = row.values;
+                        flags[i] = row.flags;
+                        parameters[i] = row.parameters;
+                        converged[i] = row.converged;
+                        evaluations[i] = row.evaluations;
+                    } else {
+                        flags[i] |= profiles::FAILED;
+                        parameters[i] = p;
+                        converged[i] = false;
+                    }
+
+                    done += 1;
+                    progress(done, selected.len())?;
+                }
+            }
+            Ok(())
+        })();
+        cancelled.store(true, Ordering::Relaxed);
+        drop(receiver);
+        result
+    })?;
     Ok(Fit {
         baseline_values,
         baseline_flags,

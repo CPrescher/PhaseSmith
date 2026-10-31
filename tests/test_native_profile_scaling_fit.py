@@ -81,9 +81,12 @@ def test_worker_determinism_frozen_shapes_and_cancellation():
             **kwargs,
         )
 
-    a, b = run(1), run(4)
-    np.testing.assert_array_equal(a.integration.values, b.integration.values)
-    np.testing.assert_array_equal(a.parameters, b.parameters)
+    a = run(1)
+    for workers in [4, 6, 8, 10]:
+        b = run(workers)
+        assert a.integration.values.tobytes() == b.integration.values.tobytes()
+        assert a.parameters.tobytes() == b.parameters.tobytes()
+        assert a.converged.tobytes() == b.converged.tobytes()
     frozen = run(4, frozen_parameters=a.parameters)
     np.testing.assert_array_equal(a.integration.values, frozen.integration.values)
     events = []

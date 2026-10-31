@@ -31,8 +31,8 @@ class ShapeFitOptions:
     weak_spatial_width: float = 0.95
 
     def __post_init__(self):
-        if type(self.workers) is not int or not 1 <= self.workers <= 4:
-            raise ValueError("profile workers must be in 1..4")
+        if type(self.workers) is not int or not 1 <= self.workers <= 32:
+            raise ValueError("profile workers must be in 1..32")
         if (
             type(self.iterations) is not int
             or not 1 <= self.iterations <= 10

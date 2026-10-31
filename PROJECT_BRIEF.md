@@ -12,6 +12,15 @@ not part of the numerical library.
 
 ## Current implementation status
 
+The next measured execution pass extends explicit profile worker limits to 32
+and replaces worker-sized strong-fit barriers with a continuous native queue.
+Each reflection retains its original arithmetic; results and progress callbacks
+are assembled in source order, with cancellation stopping further scheduling.
+No scientific controls, finite support or independent reference equations change.
+The current experiment will benchmark 4/6/8/10 workers before selecting a resource
+configuration, then separately measure bounded frame preparation and lossless
+archive output. See `docs/profile-execution-optimization.md`.
+
 Profile execution optimization is complete through three separately measured stages.
 Stage 1 caches exact immutable teacher pixel/voxel intersections in source
 order with an explicit additional-memory cap (default 64 MiB) and streaming

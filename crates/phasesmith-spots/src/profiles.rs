@@ -395,7 +395,7 @@ pub fn extract_frame(
 /// Performance controls only; scientific equations and traversal order are unchanged.
 #[derive(Clone, Copy)]
 pub struct Execution {
-    /// Requested native worker count, in 1..4.
+    /// Requested native worker count, in 1..32.
     pub workers: usize,
     /// Additional geometry-cache byte cap, 0 disables caching, at most 1 GiB.
     pub geometry_cache_bytes: usize,
@@ -413,7 +413,7 @@ impl Execution {
     /// # Errors
     /// Invalid worker count or geometry-cache cap.
     pub fn validate(self) -> Result<(), SpotError> {
-        if !(1..=4).contains(&self.workers) || self.geometry_cache_bytes > 1024 * 1024 * 1024 {
+        if !(1..=32).contains(&self.workers) || self.geometry_cache_bytes > 1024 * 1024 * 1024 {
             return Err(invalid("invalid profile execution workers/cache budget"));
         }
         Ok(())
