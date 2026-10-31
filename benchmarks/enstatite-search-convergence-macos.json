@@ -1,0 +1,468 @@
+{
+  "schema": "phasesmith.enstatite-search-convergence-audit.v1",
+  "scope": "Post-hoc deterministic replay, common-objective cross scoring and constrained-convergence diagnosis; not a new blind structure-solution experiment. No atomic reference or raw frame read by this audit.",
+  "production_numerical_changes": false,
+  "search_source_changes": [],
+  "runs": {
+    "previous": {
+      "run": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v9",
+      "candidate_r1": 0.04105220115416806,
+      "candidate_objective": 0.0014638655468774855,
+      "phasing_cycles": 113,
+      "candidate_refinement_termination": "max_iterations",
+      "candidate_polish_accepted_steps": 54,
+      "candidate_polish_iteration_budget": 80,
+      "files_sha256": {
+        "reduced-observations.npz": "1b8b1a06a38f458f031a2a6794d5b603eb21c64d15b5935634887b34a2013beb",
+        "candidate/result.json": "0d3e12214f8eff560e438ebe5ec1b30a68f2d66285d93ee70e13f49035a4f131",
+        "search-input.json": "e3988c794f63ca9ea7864efac152257c9255a5cd64121d8b46c95f702e758abd"
+      }
+    },
+    "native": {
+      "run": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v11",
+      "candidate_r1": 0.04085182070733226,
+      "candidate_objective": 0.0014590227468470646,
+      "phasing_cycles": 58,
+      "candidate_refinement_termination": "max_iterations",
+      "candidate_polish_accepted_steps": 54,
+      "candidate_polish_iteration_budget": 80,
+      "files_sha256": {
+        "reduced-observations.npz": "10642f6271d8e464ab7c914cad75cc4cd086132f75a5b01c4aaa23503b1477fd",
+        "candidate/result.json": "9a24341e03a348783b470788dc44cd8d1ca0c43a4e5a13b75675ea40b4bdc969",
+        "search-input.json": "e3988c794f63ca9ea7864efac152257c9255a5cd64121d8b46c95f702e758abd"
+      }
+    }
+  },
+  "replays": {
+    "replay-native-previous": {
+      "input": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v9",
+      "seconds": 0.6894834159757011,
+      "options": {
+        "seed": 0,
+        "trials": 4,
+        "cycles": 800,
+        "phasing": "dual_space",
+        "delta_sigma": 1.0,
+        "weak_fraction": 0.2,
+        "cleanup_cycles": 10,
+        "polish_iterations": 50,
+        "assignment_rounds": 4,
+        "max_seconds": 60.0,
+        "r1_target": 0.06,
+        "grid_shape": null,
+        "refinement": "anisotropic",
+        "symmetry_tolerance_angstrom": 0.15,
+        "symmetry_iterations": 80,
+        "completion": false,
+        "dense_memory_budget_bytes": 134217728
+      },
+      "numerical_result_sha256": "d2f2dc9c56afae0a43f8dfdd7039e2deac7d8b1c744d6ab2f4c2ebca7ba93991",
+      "candidates_identical_to_original": true,
+      "phasing_histories_identical_to_original": true,
+      "r1": 0.04105220115416806,
+      "native_module_sha256": "41fa85897d2574f3206eff098afb14493e0bbdc6d5a5fd9b3843e47c8941dff5"
+    },
+    "replay-previous-previous": {
+      "input": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v9",
+      "seconds": 0.6800666250055656,
+      "options": {
+        "seed": 0,
+        "trials": 4,
+        "cycles": 800,
+        "phasing": "dual_space",
+        "delta_sigma": 1.0,
+        "weak_fraction": 0.2,
+        "cleanup_cycles": 10,
+        "polish_iterations": 50,
+        "assignment_rounds": 4,
+        "max_seconds": 60.0,
+        "r1_target": 0.06,
+        "grid_shape": null,
+        "refinement": "anisotropic",
+        "symmetry_tolerance_angstrom": 0.15,
+        "symmetry_iterations": 80,
+        "completion": false,
+        "dense_memory_budget_bytes": 134217728
+      },
+      "numerical_result_sha256": "d2f2dc9c56afae0a43f8dfdd7039e2deac7d8b1c744d6ab2f4c2ebca7ba93991",
+      "candidates_identical_to_original": true,
+      "phasing_histories_identical_to_original": true,
+      "r1": 0.04105220115416806,
+      "native_module_sha256": "d38ecd0c0aee92c13f88753f9926e0ba078be166c66f57490f17d21b9a55f1bb"
+    },
+    "replay-previous-native": {
+      "input": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v11",
+      "seconds": 0.5503849169472232,
+      "options": {
+        "seed": 0,
+        "trials": 4,
+        "cycles": 800,
+        "phasing": "dual_space",
+        "delta_sigma": 1.0,
+        "weak_fraction": 0.2,
+        "cleanup_cycles": 10,
+        "polish_iterations": 50,
+        "assignment_rounds": 4,
+        "max_seconds": 60.0,
+        "r1_target": 0.06,
+        "grid_shape": null,
+        "refinement": "anisotropic",
+        "symmetry_tolerance_angstrom": 0.15,
+        "symmetry_iterations": 80,
+        "completion": false,
+        "dense_memory_budget_bytes": 134217728
+      },
+      "numerical_result_sha256": "729534a49988c2e7fca812dca7a8b5c51918a8b6c4ed90d361c71f622ecf06b0",
+      "candidates_identical_to_original": true,
+      "phasing_histories_identical_to_original": true,
+      "r1": 0.04085182070733226,
+      "native_module_sha256": "d38ecd0c0aee92c13f88753f9926e0ba078be166c66f57490f17d21b9a55f1bb"
+    },
+    "replay-native-native": {
+      "input": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v11",
+      "seconds": 0.5551626670057885,
+      "options": {
+        "seed": 0,
+        "trials": 4,
+        "cycles": 800,
+        "phasing": "dual_space",
+        "delta_sigma": 1.0,
+        "weak_fraction": 0.2,
+        "cleanup_cycles": 10,
+        "polish_iterations": 50,
+        "assignment_rounds": 4,
+        "max_seconds": 60.0,
+        "r1_target": 0.06,
+        "grid_shape": null,
+        "refinement": "anisotropic",
+        "symmetry_tolerance_angstrom": 0.15,
+        "symmetry_iterations": 80,
+        "completion": false,
+        "dense_memory_budget_bytes": 134217728
+      },
+      "numerical_result_sha256": "729534a49988c2e7fca812dca7a8b5c51918a8b6c4ed90d361c71f622ecf06b0",
+      "candidates_identical_to_original": true,
+      "phasing_histories_identical_to_original": true,
+      "r1": 0.04085182070733226,
+      "native_module_sha256": "41fa85897d2574f3206eff098afb14493e0bbdc6d5a5fd9b3843e47c8941dff5"
+    }
+  },
+  "same_input_old_and_new_binary_results_bitwise_identical": true,
+  "cross_fit": {
+    "schema": "phasesmith.enstatite-search-common-objective.v1",
+    "raw_frames_read": false,
+    "atomic_reference_read": false,
+    "production_controls_changed": false,
+    "prepared_merging": "Pbca Friedel families identified by absolute HKLs; native systematic absences/expanded order; source-order normalized inverse-variance means. Original candidate scores reproduced within 2e-13.",
+    "continuation_iterations": 200,
+    "continuation_max_seconds": 60,
+    "coordinate_only_max_evaluations": 300,
+    "cases": [
+      {
+        "data": "previous",
+        "start": "previous",
+        "original": {
+          "r1": 0.04105220115416784,
+          "objective": 0.001463865546877505,
+          "amplitude_scale": 0.8440563739756515,
+          "gradient_inf": 0.0016124739037442861,
+          "min_u_eigenvalue": 1.013418733419005e-05
+        },
+        "continued": {
+          "cached": {
+            "r1": 0.040763667443319246,
+            "objective": 0.001455274159362031,
+            "amplitude_scale": 0.8437960348633982,
+            "gradient_inf": 0.0016497501918278385,
+            "min_u_eigenvalue": 9.999999999989338e-06,
+            "termination": "stagnated",
+            "accepted_steps": 52,
+            "coordinate_gradient_inf": 0.0016497501918278385,
+            "coordinate_only_control": {
+              "r1": 0.04078849193228168,
+              "objective": 0.001454260449482464,
+              "amplitude_scale": 0.8437998764813932,
+              "gradient_inf": 2.9219569639556146e-05,
+              "min_u_eigenvalue": 9.999999999989338e-06,
+              "success": true,
+              "evaluations": 5,
+              "coordinate_gradient_inf": 7.39309324480561e-12,
+              "termination": "`gtol` termination condition is satisfied.",
+              "tensors_fixed": true,
+              "interpretation": "Independent SciPy optimizer on the same native objective; all ADPs frozen at the feasible stopped values. This checks optimizer convergence, not an independent physics implementation."
+            },
+            "finite_difference_coordinate_gradient_checks": [
+              {
+                "parameter": 0,
+                "analytical": 0.0005564221954501942,
+                "finite_difference": 0.000556422194344236
+              },
+              {
+                "parameter": 18,
+                "analytical": 0.0016497501918278385,
+                "finite_difference": 0.0016497501905158793
+              },
+              {
+                "parameter": 36,
+                "analytical": -0.00015769577937914717,
+                "finite_difference": -0.00015769578015373958
+              },
+              {
+                "parameter": 54,
+                "analytical": -5.520408759850635e-06,
+                "finite_difference": -5.5204080239359965e-06
+              },
+              {
+                "parameter": 72,
+                "analytical": -0.00029438297075418997,
+                "finite_difference": -0.00029438297231756255
+              }
+            ]
+          },
+          "dense": {
+            "r1": 0.04076366778209213,
+            "objective": 0.0014552741819249307,
+            "amplitude_scale": 0.8437960350099362,
+            "gradient_inf": 0.0016497563105141461,
+            "min_u_eigenvalue": 9.999999999990578e-06,
+            "termination": "stagnated",
+            "accepted_steps": 50,
+            "coordinate_gradient_inf": 0.0016497563105141461
+          }
+        }
+      },
+      {
+        "data": "previous",
+        "start": "native",
+        "original": {
+          "r1": 0.040852920783812495,
+          "objective": 0.001459093472410515,
+          "amplitude_scale": 0.8440967509629316,
+          "gradient_inf": 0.001248464657966579,
+          "min_u_eigenvalue": 1.0000518050569296e-05
+        },
+        "continued": {
+          "cached": {
+            "r1": 0.04069587234898934,
+            "objective": 0.0014519921783600336,
+            "amplitude_scale": 0.8439562541679976,
+            "gradient_inf": 0.0012163255872582339,
+            "min_u_eigenvalue": 9.999999999991764e-06,
+            "termination": "stagnated",
+            "accepted_steps": 30,
+            "coordinate_gradient_inf": 0.0012163255872582339,
+            "coordinate_only_control": {
+              "r1": 0.0407116190815533,
+              "objective": 0.0014513700035010274,
+              "amplitude_scale": 0.8439562791339852,
+              "gradient_inf": 2.545815442395304e-05,
+              "min_u_eigenvalue": 9.999999999991764e-06,
+              "success": true,
+              "evaluations": 5,
+              "coordinate_gradient_inf": 1.572957514022963e-11,
+              "termination": "`gtol` termination condition is satisfied.",
+              "tensors_fixed": true,
+              "interpretation": "Independent SciPy optimizer on the same native objective; all ADPs frozen at the feasible stopped values. This checks optimizer convergence, not an independent physics implementation."
+            },
+            "finite_difference_coordinate_gradient_checks": [
+              {
+                "parameter": 0,
+                "analytical": 0.0004272669719850679,
+                "finite_difference": 0.00042726697559777177
+              },
+              {
+                "parameter": 18,
+                "analytical": 0.0012163255872582339,
+                "finite_difference": 0.0012163255853903099
+              },
+              {
+                "parameter": 36,
+                "analytical": -0.00012261492471043675,
+                "finite_difference": -0.00012261492407343588
+              },
+              {
+                "parameter": 54,
+                "analytical": 6.972867596452526e-06,
+                "finite_difference": 6.972866403200106e-06
+              },
+              {
+                "parameter": 72,
+                "analytical": -0.00020521280568987351,
+                "finite_difference": -0.00020521280573275458
+              }
+            ]
+          },
+          "dense": {
+            "r1": 0.04069587235077996,
+            "objective": 0.0014519921784644692,
+            "amplitude_scale": 0.843956254161597,
+            "gradient_inf": 0.0012163256217074987,
+            "min_u_eigenvalue": 9.999999999991729e-06,
+            "termination": "stagnated",
+            "accepted_steps": 28,
+            "coordinate_gradient_inf": 0.0012163256217074987
+          }
+        }
+      },
+      {
+        "data": "native",
+        "start": "previous",
+        "original": {
+          "r1": 0.04105110771498528,
+          "objective": 0.001463800733812542,
+          "amplitude_scale": 0.8440564939015691,
+          "gradient_inf": 0.0016118397688905917,
+          "min_u_eigenvalue": 1.013418733419005e-05
+        },
+        "continued": {
+          "cached": {
+            "r1": 0.040761910542512395,
+            "objective": 0.0014551851249099042,
+            "amplitude_scale": 0.8438023972555947,
+            "gradient_inf": 0.001635836444586342,
+            "min_u_eigenvalue": 9.999999999990102e-06,
+            "termination": "stagnated",
+            "accepted_steps": 50,
+            "coordinate_gradient_inf": 0.001635836444586342,
+            "coordinate_only_control": {
+              "r1": 0.04078645576965873,
+              "objective": 0.0014541811447850467,
+              "amplitude_scale": 0.8438061324834293,
+              "gradient_inf": 2.9141384627339412e-05,
+              "min_u_eigenvalue": 9.999999999990102e-06,
+              "success": true,
+              "evaluations": 9,
+              "coordinate_gradient_inf": 9.818441851650733e-10,
+              "termination": "`ftol` termination condition is satisfied.",
+              "tensors_fixed": true,
+              "interpretation": "Independent SciPy optimizer on the same native objective; all ADPs frozen at the feasible stopped values. This checks optimizer convergence, not an independent physics implementation."
+            },
+            "finite_difference_coordinate_gradient_checks": [
+              {
+                "parameter": 0,
+                "analytical": 0.0005513171783647478,
+                "finite_difference": 0.000551317176481804
+              },
+              {
+                "parameter": 18,
+                "analytical": 0.001635836444586342,
+                "finite_difference": 0.0016358364422156685
+              },
+              {
+                "parameter": 36,
+                "analytical": -0.00015695586662097763,
+                "finite_difference": -0.0001569558667063875
+              },
+              {
+                "parameter": 54,
+                "analytical": -2.2114992899964015e-06,
+                "finite_difference": -2.2115008392262214e-06
+              },
+              {
+                "parameter": 72,
+                "analytical": -0.000294398868193614,
+                "finite_difference": -0.00029439886954033684
+              }
+            ]
+          },
+          "dense": {
+            "r1": 0.04076191089710073,
+            "objective": 0.0014551851486598252,
+            "amplitude_scale": 0.8438023974183433,
+            "gradient_inf": 0.0016358429090586211,
+            "min_u_eigenvalue": 9.999999999990258e-06,
+            "termination": "stagnated",
+            "accepted_steps": 46,
+            "coordinate_gradient_inf": 0.0016358429090586211
+          }
+        }
+      },
+      {
+        "data": "native",
+        "start": "native",
+        "original": {
+          "r1": 0.040851820707332356,
+          "objective": 0.0014590227468470455,
+          "amplitude_scale": 0.8440968733934627,
+          "gradient_inf": 0.0012478301421378294,
+          "min_u_eigenvalue": 1.0000518050569296e-05
+        },
+        "continued": {
+          "cached": {
+            "r1": 0.040750134060591234,
+            "objective": 0.0014548512778132534,
+            "amplitude_scale": 0.8439633200619686,
+            "gradient_inf": 0.0017825150751217028,
+            "min_u_eigenvalue": 9.999999999989997e-06,
+            "termination": "stagnated",
+            "accepted_steps": 26,
+            "coordinate_gradient_inf": 0.0017825150751217028,
+            "coordinate_only_control": {
+              "r1": 0.04075922275056776,
+              "objective": 0.001453449277579938,
+              "amplitude_scale": 0.8439643654067124,
+              "gradient_inf": 3.737148720508699e-05,
+              "min_u_eigenvalue": 9.999999999989997e-06,
+              "success": true,
+              "evaluations": 6,
+              "coordinate_gradient_inf": 3.03675827431453e-11,
+              "termination": "`gtol` termination condition is satisfied.",
+              "tensors_fixed": true,
+              "interpretation": "Independent SciPy optimizer on the same native objective; all ADPs frozen at the feasible stopped values. This checks optimizer convergence, not an independent physics implementation."
+            },
+            "finite_difference_coordinate_gradient_checks": [
+              {
+                "parameter": 0,
+                "analytical": 0.0006227617378399071,
+                "finite_difference": 0.0006227617377948386
+              },
+              {
+                "parameter": 18,
+                "analytical": 0.0017825150751217028,
+                "finite_difference": 0.0017825150749970625
+              },
+              {
+                "parameter": 36,
+                "analytical": -0.00018760761919753288,
+                "finite_difference": -0.00018760761748368854
+              },
+              {
+                "parameter": 54,
+                "analytical": 1.407010235521662e-05,
+                "finite_difference": 1.4070101746026242e-05
+              },
+              {
+                "parameter": 72,
+                "analytical": -0.0002970051751734039,
+                "finite_difference": -0.0002970051758786202
+              }
+            ]
+          },
+          "dense": {
+            "r1": 0.04075013406054475,
+            "objective": 0.001454851277821951,
+            "amplitude_scale": 0.8439633200579275,
+            "gradient_inf": 0.001782515085276774,
+            "min_u_eigenvalue": 9.999999999991317e-06,
+            "termination": "stagnated",
+            "accepted_steps": 21,
+            "coordinate_gradient_inf": 0.001782515085276774
+          }
+        }
+      }
+    ]
+  },
+  "r1_data_effect_at_previous_model": -1.0934391825589973e-06,
+  "r1_model_effect_on_previous_data": -0.00019928037035534668,
+  "conclusions": [
+    "Intensity/uncertainty changes alter the nonlinear phasing path (113 versus 58 cycles), but old/new binaries reproduce each input-specific candidate and history bitwise.",
+    "On common previous data the native-run candidate has both lower R1 and lower normalized amplitude least-squares objective. Lower reported R1 is therefore not merely from changing the observations.",
+    "Both original candidate polishers stopped at the 80-iteration cap, not gradient convergence. Additional native iterations stagnate at the same 1e-5 A^2 ADP-eigenvalue lower bound with a nonzero coordinate gradient.",
+    "Dense Cholesky and cached/iterative continuations agree closely and exhibit the same boundary stagnation; this is not introduced by the profile/scaling port or cached linear algebra.",
+    "A feasible coordinate-only diagnostic with the tensors fixed lowers the actual least-squares objective further and reduces coordinate gradient to approximately 1e-11. R1 may increase slightly because R1 is not the minimized squared-amplitude objective.",
+    "The native candidate polisher needs boundary-aware constrained steps before its returned structures should be called fully converged. No production fix or threshold change was made in this investigation."
+  ],
+  "r1_data_effect_at_native_model": -1.100076480138601e-06,
+  "candidate_path_share_of_reported_r1_difference": 0.9945100607493815,
+  "focused_validation": "65 existing raw-workflow/symmetry-ADP/family-weighting/normal-reuse tests pass; native objective coordinate gradients checked by centered differences on all four continued cases."
+}
