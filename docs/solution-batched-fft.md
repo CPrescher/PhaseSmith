@@ -121,7 +121,7 @@ activity is uncontrolled; no task-owned workload overlaps these measurements.
 Build the Python extension with both experimental features before collecting:
 
 ```sh
-VIRTUAL_ENV="$PWD/.venv" maturin develop --release --features experimental-solution,experimental-spots
+VIRTUAL_ENV="$PWD/.venv" maturin develop --release --features solution,spots
 .venv/bin/python benchmarks/solution_fft_interleaved.py --output runs/batched-fft --seconds 15
 ```
 

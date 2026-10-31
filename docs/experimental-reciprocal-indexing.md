@@ -7,9 +7,8 @@ kernels. The historical filename is retained for existing links. See the
 finite support and the specific limitations below remain unchanged.
 
 
-Only `codex/experimental-spots`, with `--features spots`. No default
-API, runtime dependency, release, GUI or GSAS-II coupling is added. This slice
-uses first-principles vector geometry and the published Fourier indexing idea;
+The native kernels are included in ordinary builds and available through the
+Rust `spots` feature. This method uses first-principles vector geometry and the published Fourier indexing idea;
 it does not reuse indexing implementation code from another package.
 
 ## Geometry and units

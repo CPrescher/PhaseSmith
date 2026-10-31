@@ -201,6 +201,6 @@ starting commit `6756789` and has separate samples; it contributes no corpus
 correctness evidence and is not part of the final path.
 
 ```sh
-VIRTUAL_ENV="$PWD/.venv" maturin develop --release --features experimental-solution,experimental-spots
+VIRTUAL_ENV="$PWD/.venv" maturin develop --release --features solution,spots
 .venv/bin/python benchmarks/solution_real_fft_interleaved.py --output runs/real-fft-new --seconds 15
 ```

@@ -7,7 +7,7 @@ kernels. The historical filename is retained for existing links. See the
 finite support and the specific limitations below remain unchanged.
 
 
-Opt-in `experimental-spots` only. `phasesmith.single_crystal.integration` is a
+`phasesmith.single_crystal.integration` is a
 script-first workflow; Dioptas supplies file loading, masks and inspection.
 No material, composition or structure is required. Supply the selected indexed
 cell/orientation through `predict_scan`, or an equivalent `ScanPredictions`

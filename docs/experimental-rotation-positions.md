@@ -8,9 +8,8 @@ finite support and the specific limitations below remain unchanged.
 
 
 This is a position-first peak hunt, before cell finding or intensity integration.
-It is private branch work under the existing `experimental-spots` feature, with
-no change to standard builds, powder APIs or release dependencies. The UI and file
-readers remain in Dioptas. PhaseSmith accepts arrays and caller-supplied frame
+It is included in ordinary builds through the single-crystal capability.
+Application UI and interactive file browsing remain in Dioptas. PhaseSmith accepts arrays and caller-supplied frame
 loaders; the dependency-free spot crate owns the linking and centroid kernels.
 
 ## Input and angle conventions

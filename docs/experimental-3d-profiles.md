@@ -7,7 +7,7 @@ kernels. The historical filename is retained for existing links. See the
 finite support and the specific limitations below remain unchanged.
 
 
-Opt-in `experimental-spots`. This increment learns nonnegative empirical voxel
+The supported profile workflow learns nonnegative empirical voxel
 masses in detector x/y and a scaled rocking coordinate from isolated, strong training
 reflections. Detector-region/rotation-region profiles can fall back to a global
 profile with explicit model IDs/counts. The default is a detector-coordinate

@@ -68,7 +68,7 @@ def reciprocal_with_jacobian(observed, geometry):
             raise ValueError("pixel inverse Jacobian must be finite (N,2,2)")
         chain = np.linalg.inv(inverse)
     if not hasattr(_core, "experimental_reciprocal_jacobian"):
-        raise RuntimeError("ownership needs a rebuilt experimental-spots extension")
+        raise RuntimeError("ownership needs a rebuilt single-crystal extension")
     q, j = _core.experimental_reciprocal_jacobian(samples, geometry.vectors, geometry.wavelength)
     j = j.reshape(-1, 3, 3)
     if chain is not None:

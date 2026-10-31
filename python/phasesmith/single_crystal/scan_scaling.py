@@ -128,7 +128,7 @@ def fit_scan_scale(
     nonzero within-family angular spread are required.
     """
     if not hasattr(_core, "experimental_scan_scale_fit"):
-        raise RuntimeError("rebuild PhaseSmith with experimental-spots scan scaling")
+        raise RuntimeError("rebuild PhaseSmith with single-crystal scan scaling")
     options = options or ScanScaleOptions()
     if not isinstance(options, ScanScaleOptions):
         raise TypeError("options must be ScanScaleOptions")

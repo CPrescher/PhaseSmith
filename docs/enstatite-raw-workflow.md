@@ -16,12 +16,12 @@ development/regression data with declared cell and symmetry priors, not a new bl
 
 ## Run and storage
 
-Install a feature-enabled PhaseSmith build and the optional dependencies:
+Install PhaseSmith and the optional example grading dependencies:
 
 ```sh
 python -m pip install 'phasesmith[single-crystal-example]'
-# Development build, until single-crystal features join ordinary wheels:
-maturin develop --release --features experimental-spots,experimental-solution,hdf5
+# Optional development build from the current checkout:
+maturin develop --release --features spots,solution,hdf5
 python benchmarks/enstatite_raw_workflow.py \
   --data-root /path/to/MgSiO3-files \
   --output /path/outside/the/repository/enstatite-raw-run

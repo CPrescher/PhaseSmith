@@ -1,12 +1,12 @@
 # Shared single-crystal shadow masks
 
-`phasesmith.experimental.frame_validity` provides portable frame validity,
+`phasesmith.single_crystal.frame_validity` provides portable frame validity,
 original-image seat-shadow estimation, geometric DAC masks and composition.
 Production numerics live in `phasesmith-spots::frame_validity` and can run
 entirely in Rust. Python supplies optional NumPy/loader/archive adapters, with no
 Dioptas, Qt, HDF5 reader, display flip or application cache dependency. Existing
-detector/profile value and derivative kernels remain unchanged. The API is staged under `experimental` with the existing
-single-crystal APIs; no public namespace/build promotion is implied.
+detector/profile value and derivative kernels remain unchanged. The supported
+`single_crystal` namespace is included in ordinary Python wheels.
 
 ## Rust API
 
@@ -18,7 +18,7 @@ shape, DacOptions)` returns a mask of complete pixel/block footprints.
 sensor/manual exclusions before passing them to detection and integration.
 These APIs use slices and typed Rust records; they need no interpreter, external
 optimizer or HDF5 dependency. The facade exposes them as `phasesmith::spots`
-with its `experimental-spots` feature.
+with its default `single-crystal` capability or the focused `spots` feature.
 
 A complete synthetic masking example runs with:
 
@@ -38,13 +38,13 @@ independent reference preserves the declared equations and finite supports.
 
 ```python
 import numpy as np
-from phasesmith.experimental.frame_validity import (
+from phasesmith.single_crystal.frame_validity import (
     SeatShadowOptions,
     estimate_seat_shadows,
     flag_invalid_tracks,
 )
-from phasesmith.experimental.rotation import locate_series
-from phasesmith.experimental.profiles import prepare_profiles
+from phasesmith.single_crystal.rotation import locate_series
+from phasesmith.single_crystal.profiles import prepare_profiles
 
 # Loader returns original nonnegative counts in one declared array orientation.
 # Supply ordered identities and actual exposure bounds; the library reads no files.
@@ -84,8 +84,7 @@ observations = prepare_profiles(
 )
 ```
 
-Build the Python extension with `experimental-spots` for estimation and geometric
-masks. Production masking does not import or require SciPy. Snapshot/archive
+Ordinary Python wheels include estimation and geometric masks. Production masking does not import or require SciPy. Snapshot/archive
 access requires only NumPy. The separate `frame_validity_reference` module uses
 NumPy/SciPy solely for independent comparisons. Source loaders,
 source-mask loaders and progress callbacks run in order on the calling thread.
@@ -154,7 +153,7 @@ actual loaded frames; the library does not stat or reopen application files.
 ## Geometric masks and composition
 
 ```python
-from phasesmith.experimental.frame_validity import DacApertureMask, CombinedValidity
+from phasesmith.single_crystal.frame_validity import DacApertureMask, CombinedValidity
 
 aperture = DacApertureMask(
     geometry,

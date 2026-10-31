@@ -6,7 +6,10 @@ proposals below describe their recorded baseline; current implementation and
 validation are tracked in the [0.8 release candidate](release-candidate-0.8.md).
 
 
-Status: promotion proposal, 31 October 2026. These imports do not exist yet.
+Historical status: promotion proposal, 31 October 2026, before implementation.
+The compatibility-wrapper proposal below was superseded: the maintainer requested
+removal of the old imports and a direct Dioptas migration before 0.8. See the
+[package review](package-review-0.8.md) for the final decision.
 The reviewed implementation baseline is `54784c5`. See the
 [promotion audit](single-crystal-promotion.md) for evidence and release gates.
 

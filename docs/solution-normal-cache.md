@@ -131,7 +131,7 @@ are checked through local linear-system residual and complete-fit tolerances.
 To reproduce the collection, build the experimental extension explicitly:
 
 ```sh
-VIRTUAL_ENV="$PWD/.venv" maturin develop --release --features experimental-solution,experimental-spots
+VIRTUAL_ENV="$PWD/.venv" maturin develop --release --features solution,spots
 .venv/bin/python benchmarks/solution_normal_interleaved.py --output runs/normal-cache --seconds 15
 ```
 
