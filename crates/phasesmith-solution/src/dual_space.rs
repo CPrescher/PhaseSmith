@@ -739,10 +739,10 @@ pub(crate) fn dual_space_guided_prediction(
     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
     mask_bounds(shape, &geometry, options.mask_sigma)?;
     let (indices, mut f) = prepare_fourier(shape, hkl, amplitudes, phases, support)?;
-    if let Some(plan) = tangent {
-        if !plan.matches_hkl(hkl) {
-            return Err(error("tangent plan does not match measured reflections"));
-        }
+    if let Some(plan) = tangent
+        && !plan.matches_hkl(hkl)
+    {
+        return Err(error("tangent plan does not match measured reflections"));
     }
     let n = grid_len(shape)?;
     let maximum = amplitudes.iter().copied().fold(0.0_f64, f64::max);
@@ -1022,55 +1022,54 @@ pub(crate) fn dual_space_guided_prediction(
             late_plateau_stopped = true;
             break;
         }
-        if let Some(accept) = &mut checkpoint {
-            if (cycle + 1 == next_checkpoint || cycle + 1 == options.cycles)
-                && window_score.is_finite()
-            {
-                // Preserve the amplitude candidate: P1 quality alone is not a
-                // reliable proxy for recovery after supplied-symmetry recycling.
-                // Only spend additional work on a distinct quality candidate if
-                // the first model was not accepted and budget remains.
-                if quality.is_some() {
-                    let accepted = accept(&amplitude_best, cycle + 1, amplitude_cycle)?;
-                    checkpoints.push(DualSpaceCheckpoint {
-                        completed_cycles: cycle + 1,
-                        best_cycle: amplitude_cycle,
-                        score: amplitude_score,
-                        accepted,
-                    });
-                    if accepted {
-                        best = amplitude_best;
-                        best_cycle = amplitude_cycle;
-                        best_score = amplitude_score;
-                        break;
-                    }
+        if let Some(accept) = &mut checkpoint
+            && (cycle + 1 == next_checkpoint || cycle + 1 == options.cycles)
+            && window_score.is_finite()
+        {
+            // Preserve the amplitude candidate: P1 quality alone is not a
+            // reliable proxy for recovery after supplied-symmetry recycling.
+            // Only spend additional work on a distinct quality candidate if
+            // the first model was not accepted and budget remains.
+            if quality.is_some() {
+                let accepted = accept(&amplitude_best, cycle + 1, amplitude_cycle)?;
+                checkpoints.push(DualSpaceCheckpoint {
+                    completed_cycles: cycle + 1,
+                    best_cycle: amplitude_cycle,
+                    score: amplitude_score,
+                    accepted,
+                });
+                if accepted {
+                    best = amplitude_best;
+                    best_cycle = amplitude_cycle;
+                    best_score = amplitude_score;
+                    break;
                 }
-                if quality.is_none()
-                    || (window_cycle != amplitude_cycle
-                        && !crate::stopped(deadline, options.cancellation.as_ref()))
-                {
-                    if let Some(trace) = &mut quality_trace {
-                        trace.alternative_handoffs += 1;
-                    }
-                    let accepted = accept(&window_best, cycle + 1, window_cycle)?;
-                    checkpoints.push(DualSpaceCheckpoint {
-                        completed_cycles: cycle + 1,
-                        best_cycle: window_cycle,
-                        score: window_score,
-                        accepted,
-                    });
-                    if accepted {
-                        best = window_best;
-                        best_cycle = window_cycle;
-                        best_score = window_score;
-                        break;
-                    }
-                }
-                window_score = f64::INFINITY;
-                window_rank = f64::INFINITY;
-                amplitude_score = f64::INFINITY;
-                next_checkpoint *= 4;
             }
+            if quality.is_none()
+                || (window_cycle != amplitude_cycle
+                    && !crate::stopped(deadline, options.cancellation.as_ref()))
+            {
+                if let Some(trace) = &mut quality_trace {
+                    trace.alternative_handoffs += 1;
+                }
+                let accepted = accept(&window_best, cycle + 1, window_cycle)?;
+                checkpoints.push(DualSpaceCheckpoint {
+                    completed_cycles: cycle + 1,
+                    best_cycle: window_cycle,
+                    score: window_score,
+                    accepted,
+                });
+                if accepted {
+                    best = window_best;
+                    best_cycle = window_cycle;
+                    best_score = window_score;
+                    break;
+                }
+            }
+            window_score = f64::INFINITY;
+            window_rank = f64::INFINITY;
+            amplitude_score = f64::INFINITY;
+            next_checkpoint *= 4;
         }
         if let (Some(plan), Some(audit)) = (tangent, &mut tangent_audit) {
             let update = if reusable_fourier_workspaces {

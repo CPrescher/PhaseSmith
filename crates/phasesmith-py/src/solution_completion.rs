@@ -52,7 +52,9 @@ impl NativeSearch {
             return Err(invalid("framework coordinate/species lengths differ"));
         }
         let points = xyz
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .map(|p| [p[0], p[1], p[2]])
             .collect::<Vec<_>>();
         let hkl = hkl_rows(&hkl)?;
@@ -141,7 +143,9 @@ fn frameworks<'py>(
         return Err(invalid("framework coordinate/species lengths differ"));
     }
     let points = xyz
-        .chunks_exact(3)
+        .as_chunks::<3>()
+        .0
+        .iter()
         .map(|p| [p[0], p[1], p[2]])
         .collect::<Vec<_>>();
     let models = py
@@ -216,7 +220,9 @@ fn complete<'py>(
         return Err(invalid("invalid candidate boundary"));
     }
     let points = xyz
-        .chunks_exact(3)
+        .as_chunks::<3>()
+        .0
+        .iter()
         .map(|p| [p[0], p[1], p[2]])
         .collect::<Vec<_>>();
     let token = cancellation.map(|t| t.inner.clone());

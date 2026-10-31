@@ -739,12 +739,10 @@ impl TofPawleyProjectState {
                     .phases
                     .iter()
                     .find(|p| p.phase_id == *cell.phase_id())
+                    && (phase.definition.cell != cell.initial_cell()
+                        || &phase.definition.space_group != cell.parameterization().space_group())
                 {
-                    if phase.definition.cell != cell.initial_cell()
-                        || &phase.definition.space_group != cell.parameterization().space_group()
-                    {
-                        return Err(err("TOF Pawley shared cell/symmetry mismatch"));
-                    }
+                    return Err(err("TOF Pawley shared cell/symmetry mismatch"));
                 }
             }
         }

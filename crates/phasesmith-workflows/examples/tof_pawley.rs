@@ -39,7 +39,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (bank, values) in input
         .banks
         .iter_mut()
-        .zip(truth.calculated_y.chunks_exact(1001))
+        .zip(truth.calculated_y.as_chunks::<1001>().0)
     {
         bank.pattern.observed_y = Some(values.to_vec());
         bank.phases[0].intensities.fill(0.0);

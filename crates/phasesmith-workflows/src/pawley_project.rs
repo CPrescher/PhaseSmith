@@ -101,22 +101,19 @@ impl PawleyProjectState {
                 return Err(err("Pawley analysis differs from shared histogram state"));
             }
             for phase in &analysis.input.phases {
-                if let Some(domain) = &phase.lattice {
-                    if let Some(shared) = self
+                if let Some(domain) = &phase.lattice
+                    && let Some(shared) = self
                         .project
                         .phases
                         .iter()
                         .find(|p| p.phase_id.as_str() == phase.id)
-                    {
-                        if domain.parameterization().reference_cell() != shared.definition.cell
-                            || domain.parameterization().space_group()
-                                != &shared.definition.space_group
-                        {
-                            return Err(err(
-                                "Pawley cell/symmetry differs from shared phase metadata",
-                            ));
-                        }
-                    }
+                    && (domain.parameterization().reference_cell() != shared.definition.cell
+                        || domain.parameterization().space_group()
+                            != &shared.definition.space_group)
+                {
+                    return Err(err(
+                        "Pawley cell/symmetry differs from shared phase metadata",
+                    ));
                 }
             }
             if !histogram.phase_ids.is_empty()

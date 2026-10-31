@@ -613,32 +613,29 @@ pub(crate) fn refine_problem_with_runtime<I: PawleyProblem>(
                 let mut upper = 2.0 * fraction;
                 if let (Ok(Some(base)), Ok(Some(end))) =
                     (membership_at(lower), membership_at(upper))
+                    && base != end
                 {
-                    if base != end {
-                        for _ in 0..48 {
-                            let middle = lower + (upper - lower) * 0.5;
-                            if middle.to_bits() == lower.to_bits()
-                                || middle.to_bits() == upper.to_bits()
-                            {
-                                break;
-                            }
-                            match membership_at(middle) {
-                                Ok(Some(m)) if m == base => lower = middle,
-                                _ => upper = middle,
-                            }
+                    for _ in 0..48 {
+                        let middle = lower + (upper - lower) * 0.5;
+                        if middle.to_bits() == lower.to_bits()
+                            || middle.to_bits() == upper.to_bits()
+                        {
+                            break;
                         }
-                        if let Err(e) = runtime.begin_evaluation() {
-                            stopped = Some(stop(e)?);
-                        } else if let Ok(trial) = trial_at(lower) {
-                            if let Ok(evaluation) =
-                                timed_evaluate(input, options, &trial, &mut diagnostics)
-                            {
-                                if evaluation.residuals.chi_square < current.residuals.chi_square {
-                                    fraction = lower;
-                                    accepted = Some((trial, evaluation));
-                                }
-                            }
+                        match membership_at(middle) {
+                            Ok(Some(m)) if m == base => lower = middle,
+                            _ => upper = middle,
                         }
+                    }
+                    if let Err(e) = runtime.begin_evaluation() {
+                        stopped = Some(stop(e)?);
+                    } else if let Ok(trial) = trial_at(lower)
+                        && let Ok(evaluation) =
+                            timed_evaluate(input, options, &trial, &mut diagnostics)
+                        && evaluation.residuals.chi_square < current.residuals.chi_square
+                    {
+                        fraction = lower;
+                        accepted = Some((trial, evaluation));
                     }
                 }
             }

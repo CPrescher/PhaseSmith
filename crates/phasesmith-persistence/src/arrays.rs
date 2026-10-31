@@ -327,20 +327,26 @@ fn read_npy(
     }
     match descriptor.dtype.as_str() {
         "float64" => ArrayData::f64(
-            raw.chunks_exact(8)
-                .map(|chunk| f64::from_le_bytes(chunk.try_into().expect("exact f64 chunk length")))
+            raw.as_chunks::<8>()
+                .0
+                .iter()
+                .map(|chunk| f64::from_le_bytes(*chunk))
                 .collect(),
             shape,
         ),
         "int32" => ArrayData::i32(
-            raw.chunks_exact(4)
-                .map(|chunk| i32::from_le_bytes(chunk.try_into().expect("exact i32 chunk length")))
+            raw.as_chunks::<4>()
+                .0
+                .iter()
+                .map(|chunk| i32::from_le_bytes(*chunk))
                 .collect(),
             shape,
         ),
         "uint64" => ArrayData::u64(
-            raw.chunks_exact(8)
-                .map(|chunk| u64::from_le_bytes(chunk.try_into().expect("exact u64 chunk length")))
+            raw.as_chunks::<8>()
+                .0
+                .iter()
+                .map(|chunk| u64::from_le_bytes(*chunk))
                 .collect(),
             shape,
         ),

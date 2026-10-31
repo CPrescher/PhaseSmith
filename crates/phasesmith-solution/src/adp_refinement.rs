@@ -1234,22 +1234,22 @@ impl PreparedSymmetricModel {
                     .zip(&step)
                     .map(|(a, b)| a + alpha * b)
                     .collect();
-                if let Ok(next) = self.evaluate(&trial) {
-                    if next.objective < evaluation.objective {
-                        if self.assignment_convergence_stopping {
-                            let small = (evaluation.objective - next.objective)
-                                <= 1e-6 * evaluation.objective.max(1e-30)
-                                && (next.r1 - evaluation.r1).abs() <= 1e-6;
-                            small_improvements = if small { small_improvements + 1 } else { 0 };
-                        }
-                        parameters = trial;
-                        linear_cache.clear();
-                        evaluation = next;
-                        accepted += 1;
-                        improved = true;
-                        damping = (damping * 0.3).max(1e-10);
-                        break;
+                if let Ok(next) = self.evaluate(&trial)
+                    && next.objective < evaluation.objective
+                {
+                    if self.assignment_convergence_stopping {
+                        let small = (evaluation.objective - next.objective)
+                            <= 1e-6 * evaluation.objective.max(1e-30)
+                            && (next.r1 - evaluation.r1).abs() <= 1e-6;
+                        small_improvements = if small { small_improvements + 1 } else { 0 };
                     }
+                    parameters = trial;
+                    linear_cache.clear();
+                    evaluation = next;
+                    accepted += 1;
+                    improved = true;
+                    damping = (damping * 0.3).max(1e-10);
+                    break;
                 }
             }
             if self.assignment_convergence_stopping

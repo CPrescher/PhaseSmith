@@ -402,16 +402,15 @@ fn prepared_tables(
         scattering: input.scattering_model,
         correction: input.correction_model,
     };
-    if let Some(cache) = cache {
-        if let Some((_, tables)) = cache
+    if let Some(cache) = cache
+        && let Some((_, tables)) = cache
             .entries
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .iter()
             .find(|(candidate, _)| candidate == &key)
-        {
-            return Ok(Arc::clone(tables));
-        }
+    {
+        return Ok(Arc::clone(tables));
     }
     let geometry = cell
         .geometry()

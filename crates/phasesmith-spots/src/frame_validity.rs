@@ -107,7 +107,7 @@ pub struct CoarseFrame {
 #[allow(clippy::manual_midpoint)] // Counts <=1e30 cannot overflow; preserve reference rounding.
 fn median(values: &mut [f64]) -> f64 {
     let m = values.len() / 2;
-    let even = values.len() % 2 == 0;
+    let even = values.len().is_multiple_of(2);
     let (lower, middle, _) = values.select_nth_unstable_by(m, f64::total_cmp);
     if even {
         let low = lower
@@ -262,7 +262,7 @@ fn neighbors(i: usize, h: usize, w: usize) -> impl Iterator<Item = usize> {
     if i + w < h * w {
         v[1] = Some(i + w);
     }
-    if i % w != 0 {
+    if !i.is_multiple_of(w) {
         v[2] = Some(i - 1);
     }
     if i % w + 1 < w {

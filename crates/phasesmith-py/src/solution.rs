@@ -440,7 +440,12 @@ fn model<'py>(
     if flat.len() != 3 * species.len() {
         return Err(invalid("coordinate shape differs from species"));
     }
-    let xyz: Vec<_> = flat.chunks_exact(3).map(|r| [r[0], r[1], r[2]]).collect();
+    let xyz: Vec<_> = flat
+        .as_chunks::<3>()
+        .0
+        .iter()
+        .map(|r| [r[0], r[1], r[2]])
+        .collect();
     let result = py
         .detach(move || {
             phasesmith_solution::evaluate_model(cell, &hkl, &observed, &species, &xyz, u)

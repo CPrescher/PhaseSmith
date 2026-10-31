@@ -457,23 +457,24 @@ pub fn solve(
                             Err(e) => candidate.refinement_diagnostic = Some(e.to_string()),
                         }
                     }
-                    if options.completion && !target(&candidate, options) {
-                        if let Some(mode) = options.refinement {
-                            let (repaired, audit) = crate::complete_candidate(
-                                cell,
-                                group,
-                                &result.data,
-                                shape,
-                                &candidate,
-                                mode,
-                                options,
-                                deadline,
-                            );
-                            if let Some(repaired) = repaired {
-                                candidate = repaired;
-                            }
-                            candidate.completion = Some(audit);
+                    if options.completion
+                        && !target(&candidate, options)
+                        && let Some(mode) = options.refinement
+                    {
+                        let (repaired, audit) = crate::complete_candidate(
+                            cell,
+                            group,
+                            &result.data,
+                            shape,
+                            &candidate,
+                            mode,
+                            options,
+                            deadline,
+                        );
+                        if let Some(repaired) = repaired {
+                            candidate = repaired;
                         }
+                        candidate.completion = Some(audit);
                     }
                     let preferred = candidate.refinement.is_some();
                     let previous_preferred =

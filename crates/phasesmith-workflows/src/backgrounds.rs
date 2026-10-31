@@ -534,7 +534,9 @@ impl DifferentiableBackground for AmorphousBackground {
             .ok_or(BackgroundError::SizeOverflow)?;
         validate_replacement(coefficients, expected)?;
         let peaks = coefficients
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .map(|values| AmorphousPeak::new(values[0], values[1], values[2]))
             .collect::<Result<Vec<_>, _>>()?;
         Self::new(self.background_id.clone(), peaks)

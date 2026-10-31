@@ -664,10 +664,10 @@ impl NativeRietveldRequest {
                     let mut runtime = RefinementRuntime::new(options.limits, cancellation)?;
                     runtime.set_event_sink(move |event: &RefinementEvent| {
                         let objective = event.diagnostics().iter().find_map(|(name, value)| {
-                            if name == "objective" {
-                                if let DiagnosticValue::Float(value) = value {
-                                    return Some(*value);
-                                }
+                            if name == "objective"
+                                && let DiagnosticValue::Float(value) = value
+                            {
+                                return Some(*value);
                             }
                             None
                         });

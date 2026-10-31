@@ -686,7 +686,7 @@ fn calculate_cyclotomic_polynomial(order: usize) -> Result<Vec<i64>, SymmetryErr
     polynomial[0] = -1;
     polynomial[order] = 1;
     for divisor in 1..order {
-        if order % divisor == 0 {
+        if order.is_multiple_of(divisor) {
             polynomial = polynomial_exact_quotient(polynomial, &cyclotomic_polynomial(divisor)?)?;
         }
     }
@@ -809,11 +809,11 @@ fn normalize_integer_equation(equation: &mut [i64; 6]) {
             *value /= divisor;
         }
     }
-    if let Some(first) = equation.iter().find(|value| **value != 0) {
-        if *first < 0 {
-            for value in equation.iter_mut() {
-                *value = -*value;
-            }
+    if let Some(first) = equation.iter().find(|value| **value != 0)
+        && *first < 0
+    {
+        for value in equation.iter_mut() {
+            *value = -*value;
         }
     }
 }

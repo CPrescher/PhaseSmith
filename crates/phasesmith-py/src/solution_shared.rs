@@ -309,7 +309,12 @@ impl NativePool {
         if xyz.len() != fixed_species.len() * 3 {
             return Err(invalid("shared coordinate/species lengths differ"));
         }
-        let points: Vec<_> = xyz.chunks_exact(3).map(|p| [p[0], p[1], p[2]]).collect();
+        let points: Vec<_> = xyz
+            .as_chunks::<3>()
+            .0
+            .iter()
+            .map(|p| [p[0], p[1], p[2]])
+            .collect();
         let hkl = hkl_rows(&hkl)?;
         let observed = observed.as_slice()?.to_vec();
         let inner = py

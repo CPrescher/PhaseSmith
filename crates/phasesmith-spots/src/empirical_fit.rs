@@ -79,7 +79,7 @@ pub fn fit(input: &Input<'_>, options: Options) -> Result<Fit, SpotError> {
     let p: usize = d.widths.iter().sum();
     if p == 0
         || p > 256
-        || input.penalty.len() % p != 0
+        || !input.penalty.len().is_multiple_of(p)
         || input.penalty.len() > 20_000_000
         || [
             input.intensity.len(),
