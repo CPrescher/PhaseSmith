@@ -35,23 +35,42 @@ def main():
         for _ in range(a.repeats):
             start = time.perf_counter()
             result = refine_profiles(
-                obs, bank, choices, options=ShapeFitOptions(workers=workers),
+                obs,
+                bank,
+                choices,
+                options=ShapeFitOptions(workers=workers),
                 execution=ProfileExecution(workers, 256 * 1024**2),
             )
             seconds.append(time.perf_counter() - start)
             digest = hashlib.sha256()
-            for array in [result.integration.values, result.integration.flags,
-                          result.parameters, result.converged, result.baseline.values]:
+            for array in [
+                result.integration.values,
+                result.integration.flags,
+                result.parameters,
+                result.converged,
+                result.baseline.values,
+            ]:
                 digest.update(array.tobytes())
             hashes.append(digest.hexdigest())
-        records.append(dict(workers=workers, seconds=seconds,
-                            median_seconds=float(np.median(seconds)), sha256=hashes[-1]))
+        records.append(
+            dict(
+                workers=workers,
+                seconds=seconds,
+                median_seconds=float(np.median(seconds)),
+                sha256=hashes[-1],
+            )
+        )
         print(json.dumps(records[-1]), flush=True)
     assert len(set(hashes)) == 1
-    record = dict(schema="phasesmith.profile-worker-scaling.v1", strong=int((choices != 0).sum()),
-                  reflections=len(t), samples=len(obs.samples), records=records,
-                  all_outputs_bitwise_identical=True,
-                  maximum_resident_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+    record = dict(
+        schema="phasesmith.profile-worker-scaling.v1",
+        strong=int((choices != 0).sum()),
+        reflections=len(t),
+        samples=len(obs.samples),
+        records=records,
+        all_outputs_bitwise_identical=True,
+        maximum_resident_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+    )
     with a.output.open("x") as stream:
         json.dump(record, stream, indent=2)
         stream.write("\n")

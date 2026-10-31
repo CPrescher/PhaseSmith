@@ -254,6 +254,7 @@ def prepare_profiles(
     angular_half_widths=None,
     progress=None,
     max_samples=20_000_000,
+    execution=None,
 ):
     """Stream raw frames once, preserving summed counts and fitted-plane covariance.
 
@@ -301,6 +302,7 @@ def prepare_profiles(
         read_noise=read_noise,
         saturation=saturation,
         progress=progress,
+        execution=execution,
         _profile_sink=sink,
         _profile_half_widths=angular_half_widths,
     )
