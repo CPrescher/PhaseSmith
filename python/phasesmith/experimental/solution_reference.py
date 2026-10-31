@@ -9,6 +9,29 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 
+def dense_memory_atom_cap_reference(
+    expanded_reflections: int, volume_angstrom3: float, dense_memory_budget_bytes: int
+) -> int:
+    """Independent exhaustive integer admission for the published buffer envelope.
+
+    Counts only admissible full-cell atoms; it never inspects a reference model
+    or calls Rust. FFT, independent caches and total process RSS are separate.
+    """
+    if type(expanded_reflections) is not int or expanded_reflections < 1:
+        raise ValueError("positive integer expanded_reflections required")
+    if not np.isfinite(volume_angstrom3) or volume_angstrom3 <= 0:
+        raise ValueError("positive finite cell volume required")
+    if type(dense_memory_budget_bytes) is not int or not 8 <= dense_memory_budget_bytes <= 2**30:
+        raise ValueError("dense byte budget must be an integer in [8,2**30]")
+    allowed = [
+        atoms
+        for atoms in range(1, 129)
+        if atoms <= np.ceil(volume_angstrom3 / 8)
+        and 8 * expanded_reflections * (5 * atoms + 7) <= dense_memory_budget_bytes
+    ]
+    return max(allowed, default=0)
+
+
 def charge_flip_reference(
     shape: tuple[int, int, int],
     hkl: ArrayLike,

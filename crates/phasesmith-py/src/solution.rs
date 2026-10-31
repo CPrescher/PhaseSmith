@@ -130,6 +130,7 @@ fn solve_structure<'py>(
     phasing: String,
     completion: bool,
     shared_search: Option<SharedSearchRequest>,
+    dense_memory_budget_bytes: usize,
 ) -> PyResult<Bound<'py, PyDict>> {
     let hkl = hkl_rows(&hkl)?;
     let intensity = intensity.as_slice()?.to_vec();
@@ -162,6 +163,8 @@ fn solve_structure<'py>(
         _ => return Err(invalid("unknown phasing method")),
     };
     let options = SolveOptions {
+        dense_memory_budget: phasesmith_solution::DenseMemoryBudget::new(dense_memory_budget_bytes)
+            .map_err(invalid)?,
         seed,
         trials,
         cycles,
@@ -472,6 +475,57 @@ impl NativeCancellation {
     }
 }
 
+#[pyfunction(name = "_solution_memory_estimate")]
+#[allow(clippy::too_many_arguments)]
+fn memory_estimate<'py>(
+    py: Python<'py>,
+    hkl: PyReadonlyArray1<'py, i64>,
+    intensity: PyReadonlyArray1<'py, f64>,
+    sigma: PyReadonlyArray1<'py, f64>,
+    cell_parameters: Vec<f64>,
+    group: PyRef<'py, NativePreparedReflectionGenerator>,
+    dense_memory_budget_bytes: usize,
+) -> PyResult<Bound<'py, PyDict>> {
+    let hkl = hkl_rows(&hkl)?;
+    let intensity = intensity.as_slice()?.to_vec();
+    let sigma = sigma.as_slice()?.to_vec();
+    if hkl.len() != intensity.len() || hkl.len() != sigma.len() {
+        return Err(invalid("HKL, intensity and sigma lengths differ"));
+    }
+    let observations: Vec<_> = hkl
+        .into_iter()
+        .zip(intensity)
+        .zip(sigma)
+        .map(|((hkl, intensity), sigma)| Observation {
+            hkl,
+            intensity,
+            sigma,
+        })
+        .collect();
+    let cell = cell(&cell_parameters)?;
+    let group = group.space_group().clone();
+    let memory =
+        phasesmith_solution::DenseMemoryBudget::new(dense_memory_budget_bytes).map_err(invalid)?;
+    let result = py
+        .detach(move || {
+            phasesmith_solution::estimate_solution_memory(&observations, cell, &group, memory)
+        })
+        .map_err(invalid)?;
+    let out = PyDict::new(py);
+    out.set_item(
+        "expanded_reflection_count",
+        result.expanded_reflection_count,
+    )?;
+    out.set_item("volume_atom_cap", result.volume_atom_cap)?;
+    out.set_item("memory_atom_cap", result.memory_atom_cap)?;
+    out.set_item("maximum_atoms", result.maximum_atoms)?;
+    out.set_item(
+        "dense_memory_budget_bytes",
+        result.dense_memory_budget_bytes,
+    )?;
+    Ok(out)
+}
+
 pub fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     symmetry_adp::register(module)?;
     dual::register(module)?;
@@ -484,6 +538,7 @@ pub fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     tangent::register(module)?;
     module.add_class::<NativeCancellation>()?;
     module.add_function(wrap_pyfunction!(solve_structure, module)?)?;
+    module.add_function(wrap_pyfunction!(memory_estimate, module)?)?;
     module.add_function(wrap_pyfunction!(flip, module)?)?;
     module.add_function(wrap_pyfunction!(model, module)?)?;
     Ok(())

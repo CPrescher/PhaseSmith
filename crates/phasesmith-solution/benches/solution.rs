@@ -11,6 +11,7 @@ use phasesmith_solution::{
 
 #[allow(clippy::too_many_lines)]
 fn benchmark(c: &mut Criterion) {
+    dense_memory_benchmarks(c);
     let shape = [32; 3];
     let mut hkl = Vec::new();
     for h in -8_i32..=8 {
@@ -2882,6 +2883,60 @@ fn benchmark(c: &mut Criterion) {
             });
         },
     );
+}
+
+fn dense_memory_benchmarks(c: &mut Criterion) {
+    use phasesmith_solution::{DenseMemoryBudget, evaluate_model_with_memory_budget};
+    let cell = UnitCell {
+        a_angstrom: 20.,
+        b_angstrom: 21.,
+        c_angstrom: 22.,
+        alpha_deg: 90.,
+        beta_deg: 90.,
+        gamma_deg: 90.,
+    };
+    let hkl: Vec<_> = (0_i32..6400)
+        .map(|i| [1 + i % 16, (i / 16) % 16, i / 256])
+        .collect();
+    let observed = vec![1.; hkl.len()];
+    for (atoms, bytes, name) in [
+        (
+            24,
+            16_000_000,
+            "dense_memory_24_atoms_6400_reflections_default",
+        ),
+        (
+            24,
+            64 * 1024 * 1024,
+            "dense_memory_24_atoms_6400_reflections_64mib",
+        ),
+        (
+            64,
+            64 * 1024 * 1024,
+            "dense_memory_64_atoms_6400_reflections_64mib",
+        ),
+    ] {
+        let species = vec!["O".into(); atoms];
+        let xyz: Vec<_> = (0..atoms)
+            .map(|i| {
+                let x = f64::from(u32::try_from(i).unwrap());
+                [
+                    (x * 0.137).fract(),
+                    (x * 0.241).fract(),
+                    (x * 0.319).fract(),
+                ]
+            })
+            .collect();
+        let memory = DenseMemoryBudget::new(bytes).unwrap();
+        c.bench_function(name, |b| {
+            b.iter(|| {
+                evaluate_model_with_memory_budget(
+                    cell, &hkl, &observed, &species, &xyz, 0.01, memory,
+                )
+                .unwrap()
+            });
+        });
+    }
 }
 criterion_group!(benches, benchmark);
 criterion_main!(benches);

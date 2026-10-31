@@ -709,7 +709,7 @@ fn refine(
             species[image.source_index].clone_from(&site.species);
         }
     }
-    let prepared = PreparedSymmetricModel::new_with_family_weighting(
+    let prepared = PreparedSymmetricModel::new_with_memory_budget(
         model,
         &data.hkl,
         &data.amplitudes,
@@ -717,6 +717,7 @@ fn refine(
         audit.cached_refinement,
         audit.multiplicity_weighted_refinement
             && !matches!(pass, FitPass::Screen(_) | FitPass::ScreenSeed(_, _)),
+        options.dense_memory_budget,
     )?
     .with_specialized_isotropic_evaluation(audit.specialized_isotropic_refinement)
     .with_blocked_normal_matrices(audit.blocked_normal_matrices)
@@ -2093,9 +2094,9 @@ fn solve_elements_inner(
         .checked_add(Duration::from_secs_f64(options.max_seconds))
         .ok_or_else(|| error("invalid shared deadline"))?;
     let data = prepare_data(observations, cell, group)?;
-    if (5 * search.maximum_atoms + 7) * data.hkl.len() > 2_000_000 {
-        return Err(error("shared dense refinement memory bound exceeded"));
-    }
+    options
+        .dense_memory_budget
+        .check_model(search.maximum_atoms, data.hkl.len())?;
     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
     let lengths = [cell.a_angstrom, cell.b_angstrom, cell.c_angstrom];
     if lengths.iter().any(|l| l / data.d_min >= 64.) {

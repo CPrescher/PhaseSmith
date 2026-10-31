@@ -310,8 +310,15 @@ pub fn complete_candidate(
                     Some(deadline),
                     options.cancellation.as_ref(),
                 )?;
-                let model =
-                    PreparedSymmetricModel::new(symmetry, &data.hkl, &data.amplitudes, mode)?;
+                let model = PreparedSymmetricModel::new_with_memory_budget(
+                    symmetry,
+                    &data.hkl,
+                    &data.amplitudes,
+                    mode,
+                    true,
+                    false,
+                    options.dense_memory_budget,
+                )?;
                 if data.family_count <= model.parameter_count + 1 {
                     continue;
                 }

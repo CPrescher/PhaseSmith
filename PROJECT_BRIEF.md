@@ -12,13 +12,24 @@ not part of the numerical library.
 
 ## Current implementation status
 
+Structure search now has an explicit per-dense-reflection-buffer memory policy.
+`SolutionOptions.dense_memory_budget_bytes` defaults to the historical
+16,000,000 bytes; callers can request up to 1 GiB. Native input-only preflight
+derives admissible full-cell atom capacity from expanded measured rows, cell
+volume and that budget. P1 preparation/polishing, symmetric Jacobians and their
+linear-operator paths carry the same checked policy. FFT/cache bounds and
+physical/numerical equations remain unchanged; this is not a total-RSS limit.
+Automatic element-search caps now respect both volume and memory; explicit
+over-budget caps still fail. See `docs/solution-memory-budget.md` for contracts,
+independent integer admission, compatibility and validation.
+
 The 31 October single-crystal promotion audit proposes a supported
 `phasesmith.single_crystal` namespace and an external-data MgSiO3 enstatite
 workflow ending in PhaseSmith structure search and candidate assessment.
 Standalone single-crystal structure refinement is not implemented; internal
 candidate polishing and optional external SHELXL diagnostics remain distinct.
 The eight source files total 470,052,794 bytes and stay outside Git behind a
-checksum manifest and local verifier. Current search capacity is a concrete
+checksum manifest and local verifier. At the audit baseline, search capacity was a concrete
 blocker: 10,694 expanded measured rows limit the existing dense search to 36
 full-cell atoms, while the reference contains 80. Source HKL instructions must
 also be separated explicitly from its reflection block. Public API/build

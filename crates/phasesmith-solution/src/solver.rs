@@ -9,7 +9,7 @@ use phasesmith_crystallography::{
 use crate::fourier::{grid_index, grid_len};
 use crate::{
     FlipOptions, Observation, PreparedData, SolutionError, charge_flip, error, extract_peaks,
-    polish_model, prepare_data,
+    polish_model_with_memory_budget, prepare_data,
 };
 
 /// Explicit phasing strategy; the historical default stays unchanged.
@@ -85,6 +85,8 @@ pub struct SolveOptions {
     pub symmetry_iterations: usize,
     /// Attempt one weakest-species orbit completion from stronger symmetry orbits.
     pub completion: bool,
+    /// Per controlled dense f64 buffer, in bytes; independent of FFT/cache/RSS limits.
+    pub dense_memory_budget: crate::DenseMemoryBudget,
 }
 
 impl Default for SolveOptions {
@@ -107,6 +109,7 @@ impl Default for SolveOptions {
             symmetry_tolerance_angstrom: 0.15,
             symmetry_iterations: 80,
             completion: true,
+            dense_memory_budget: crate::DenseMemoryBudget::default(),
         }
     }
 }
@@ -246,9 +249,9 @@ pub fn solve(
     species.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
     let species: Vec<String> = species.into_iter().map(|(_, name)| name).collect();
     let data = prepare_data(observations, cell, group)?;
-    if (5 * species.len() + 7) * data.hkl.len() > 2_000_000 {
-        return Err(error("expanded data exceed dense polishing memory budget"));
-    }
+    options
+        .dense_memory_budget
+        .check_model(species.len(), data.hkl.len())?;
     if [cell.a_angstrom, cell.b_angstrom, cell.c_angstrom]
         .iter()
         .any(|length| {
@@ -400,7 +403,7 @@ pub fn solve(
         result.histories.push(flip.history);
         let peaks = extract_peaks(&flip.density, shape, species.len())?;
         if peaks.len() == species.len() {
-            match polish_model(
+            match polish_model_with_memory_budget(
                 cell,
                 &result.data.hkl,
                 &result.data.amplitudes,
@@ -410,6 +413,7 @@ pub fn solve(
                 options.polish_iterations,
                 Some(deadline),
                 options.cancellation.as_ref(),
+                options.dense_memory_budget,
             ) {
                 Ok(polished) => {
                     let (assigned, polished, swaps) =
@@ -592,13 +596,14 @@ fn assign_elements(
                 break;
             }
             species.swap(left, right);
-            let trial = crate::evaluate_model(
+            let trial = crate::evaluate_model_with_memory_budget(
                 cell,
                 &data.hkl,
                 &data.amplitudes,
                 &species,
                 &model.fractional_xyz,
                 model.u_iso,
+                options.dense_memory_budget,
             )?;
             species.swap(left, right);
             if trial.objective < best_score * (1.0 - 1e-8) {
@@ -610,7 +615,7 @@ fn assign_elements(
             break;
         };
         species.swap(left, right);
-        let mut next = polish_model(
+        let mut next = polish_model_with_memory_budget(
             cell,
             &data.hkl,
             &data.amplitudes,
@@ -620,6 +625,7 @@ fn assign_elements(
             options.polish_iterations,
             Some(deadline),
             options.cancellation.as_ref(),
+            options.dense_memory_budget,
         )?;
         next.accepted_steps += model.accepted_steps;
         model = next;
@@ -687,7 +693,15 @@ fn refine_candidate(
         Some(deadline),
         options.cancellation.as_ref(),
     )?;
-    let model = crate::PreparedSymmetricModel::new(symmetry, &data.hkl, &data.amplitudes, mode)?;
+    let model = crate::PreparedSymmetricModel::new_with_memory_budget(
+        symmetry,
+        &data.hkl,
+        &data.amplitudes,
+        mode,
+        true,
+        false,
+        options.dense_memory_budget,
+    )?;
     if data.family_count <= model.parameter_count + 1 {
         return Err(error(
             "insufficient independent reflection families for the requested symmetric refinement",

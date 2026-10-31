@@ -15,7 +15,7 @@ import os
 import subprocess
 import sys
 from collections import Counter
-from dataclasses import asdict
+from dataclasses import asdict, fields
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,6 +79,13 @@ def worker(packet_path):
         "returned_full_cell_counts": dict(Counter(result.best.species)) if result.best else None,
         "amplitude_r1": result.best.r1 if result.best else None,
         "options": asdict(result.options),
+        "rejected_trials": list(result.rejected_trials),
+        "independent_families": result.family_count,
+        "work_counters": {
+            field.name: value
+            for field in fields(result.shared_search)
+            if isinstance(value := getattr(result.shared_search, field.name), (int, float, bool))
+        },
     }
     (packet_path.parent / "search-summary.json").write_text(json.dumps(summary, indent=2) + "\n")
 
@@ -86,9 +93,10 @@ def worker(packet_path):
 def run(args):
     import numpy as np
     from phasesmith import _core
-    from phasesmith.experimental.solution import solve_structure_elements
+    from phasesmith.crystallography import UnitCell
+    from phasesmith.experimental.solution import estimate_solution_memory, solve_structure_elements
     from phasesmith.io.hkl import HklData
-    from solution_corpus.run import resource_atom_cap
+    from phasesmith.io.space_groups import space_group_by_number
 
     manifest = json.loads(DEFAULT_MANIFEST.read_text())
     verification = verify_dataset(manifest, args.data_root)
@@ -116,14 +124,23 @@ def run(args):
         )
         intensity_source = "archived_phasesmith_raw_count_reduction"
     inputs = manifest["search_inputs"]
-    cap, measured_rows = resource_atom_cap(
-        observations, inputs["cell_angstrom_degrees"], inputs["space_group_symbol"]
+    resources = estimate_solution_memory(
+        observations,
+        cell=UnitCell(*inputs["cell_angstrom_degrees"]),
+        space_group=space_group_by_number(inputs["space_group_number"]).space_group,
+        dense_memory_budget_bytes=args.dense_memory_budget_bytes,
     )
+    cap, measured_rows = resources.maximum_atoms, resources.expanded_reflection_count
     freeze = json.loads((ROOT / "validation/solution-holdout-freeze-v1.json").read_text())
     parameters = inspect.signature(solve_structure_elements).parameters
     controls = {k: v for k, v in freeze["controls"].items() if k in parameters}
     controls.update(symmetry_recycling=True, tangent_refinement=True)
-    options = dict(freeze["solver_options"], phasing="dual_space", r1_target=0.06)
+    options = dict(
+        freeze["solver_options"],
+        phasing="dual_space",
+        r1_target=0.06,
+        dense_memory_budget_bytes=args.dense_memory_budget_bytes,
+    )
     packet = {
         "cell": inputs["cell_angstrom_degrees"],
         "space_group_number": inputs["space_group_number"],
@@ -161,6 +178,22 @@ def run(args):
             execution = {"returncode": None, "hard_timeout": True}
     summary_path = args.output / "search-summary.json"
     summary = json.loads(summary_path.read_text()) if summary_path.exists() else None
+    coordinate_assessment = {"status": "no_candidate", "correct": False}
+    if summary is not None and summary["returned_full_cell_counts"] is not None:
+        # Existing independent auditor; reference coordinates are opened only now.
+        import gemmi
+        from solution_corpus.audit import match_geometry
+        from solution_corpus.data import atom_block, expanded_sites
+
+        saved = json.loads((args.output / "candidate/result.json").read_text())
+        model = dict(saved["candidates"][0], cell=inputs["cell_angstrom_degrees"])
+        labels, xyz = expanded_sites(
+            atom_block(args.data_root / "dom1_v9.cif"),
+            gemmi.find_spacegroup_by_name(inputs["space_group_symbol"]),
+        )
+        coordinate_assessment = match_geometry(model, labels, xyz, inputs["cell_angstrom_degrees"])
+        coordinate_assessment["reference_counts"] = dict(Counter(labels))
+        coordinate_assessment["reference_read_after_search"] = True
     with Path(_core.__file__).open("rb") as stream:
         native_sha = hashlib.file_digest(stream, "sha256").hexdigest()
     report = {
@@ -173,6 +206,7 @@ def run(args):
         "observation_rows": len(observations.hkl),
         "symmetry_expanded_measured_rows": measured_rows,
         "input_only_atom_cap": cap,
+        "resource_estimate": asdict(resources),
         "native_sha256": native_sha,
         "solver_checkout_commit": subprocess.check_output(
             ["git", "-C", str(Path(_core.__file__).resolve().parents[2]), "rev-parse", "HEAD"],
@@ -181,6 +215,16 @@ def run(args):
         "search_controls": packet,
         "prepared_hkl_sha256": hashlib.sha256(reflection_text.encode("ascii")).hexdigest(),
         "manifest_sha256": hashlib.sha256(DEFAULT_MANIFEST.read_bytes()).hexdigest(),
+        "numerical_source_sha256": {
+            str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted(
+                [
+                    *ROOT.joinpath("crates/phasesmith-solution/src").glob("*.rs"),
+                    ROOT / "crates/phasesmith-py/src/solution.rs",
+                    ROOT / "python/phasesmith/experimental/solution.py",
+                ]
+            )
+        },
         "execution": execution,
         "search": summary,
         # Only the parent reads the reference count, after the search has stopped.
@@ -188,7 +232,7 @@ def run(args):
             "reference_full_cell_atoms": manifest["assessment"]["reference_full_cell_non_h_atoms"],
             "capacity_sufficient_for_reference": cap
             >= manifest["assessment"]["reference_full_cell_non_h_atoms"],
-            "coordinate_recovery": "not_assessed",
+            "coordinate_recovery": coordinate_assessment,
             "standalone_structure_refinement": "not_implemented",
             "complete_raw_to_structure_workflow": "not_executed",
         },
@@ -203,6 +247,7 @@ def main():
     parser.add_argument("--data-root", type=Path)
     parser.add_argument("--observations", type=Path, help="registered archived PhaseSmith NPZ")
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--dense-memory-budget-bytes", type=int, default=16_000_000)
     parser.add_argument("--worker", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.worker:
