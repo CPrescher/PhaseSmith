@@ -1,0 +1,348 @@
+{
+  "schema": "phasesmith.frame-input-stage.v1",
+  "stage": 3,
+  "protocol": "validation/enstatite-raw-workflow-v23.json",
+  "execution": {
+    "reuse_verified_digest": true,
+    "native_preparation_workers": 2,
+    "batch_frames": 2,
+    "payload_bytes": 268435456,
+    "decoded_cache_bytes": 1073741824
+  },
+  "benchmark": {
+    "schema": "phasesmith.decoded-frame-cache.v1",
+    "records": [
+      {
+        "cache_budget_bytes": 0,
+        "repeats": [
+          {
+            "pass_seconds": [
+              1.8222862919210456,
+              1.81059720198391,
+              1.8188488314044662
+            ],
+            "total_read_seconds": 5.451732325309422,
+            "sha256": "c931643b1b9bb2a71ce19b8c4b4bc8e8b38e977676d20f3851d48900cd46bc44",
+            "cache": {
+              "budget_bytes": 0,
+              "decodes": 426,
+              "frames": 0,
+              "hits": 0,
+              "invalidations": 0,
+              "payload_bytes": 0,
+              "requests": 426
+            }
+          },
+          {
+            "pass_seconds": [
+              1.8168228403083049,
+              1.8235153710702434,
+              1.8203869188437238
+            ],
+            "total_read_seconds": 5.460725130222272,
+            "sha256": "c931643b1b9bb2a71ce19b8c4b4bc8e8b38e977676d20f3851d48900cd46bc44",
+            "cache": {
+              "budget_bytes": 0,
+              "decodes": 426,
+              "frames": 0,
+              "hits": 0,
+              "invalidations": 0,
+              "payload_bytes": 0,
+              "requests": 426
+            }
+          },
+          {
+            "pass_seconds": [
+              1.8251051711267792,
+              1.8288944583619013,
+              1.8213926224852912
+            ],
+            "total_read_seconds": 5.475392251973972,
+            "sha256": "c931643b1b9bb2a71ce19b8c4b4bc8e8b38e977676d20f3851d48900cd46bc44",
+            "cache": {
+              "budget_bytes": 0,
+              "decodes": 426,
+              "frames": 0,
+              "hits": 0,
+              "invalidations": 0,
+              "payload_bytes": 0,
+              "requests": 426
+            }
+          }
+        ],
+        "median_seconds": 5.460725130222272
+      },
+      {
+        "cache_budget_bytes": 1073741824,
+        "repeats": [
+          {
+            "pass_seconds": [
+              1.8959829112282023,
+              1.094840376637876,
+              1.0736232476192527
+            ],
+            "total_read_seconds": 4.064446535485331,
+            "sha256": "c931643b1b9bb2a71ce19b8c4b4bc8e8b38e977676d20f3851d48900cd46bc44",
+            "cache": {
+              "budget_bytes": 1073741824,
+              "decodes": 306,
+              "frames": 60,
+              "hits": 120,
+              "invalidations": 0,
+              "payload_bytes": 1073043840,
+              "requests": 426
+            }
+          },
+          {
+            "pass_seconds": [
+              1.841950919246301,
+              1.069860954885371,
+              1.0712049182038754
+            ],
+            "total_read_seconds": 3.9830167923355475,
+            "sha256": "c931643b1b9bb2a71ce19b8c4b4bc8e8b38e977676d20f3851d48900cd46bc44",
+            "cache": {
+              "budget_bytes": 1073741824,
+              "decodes": 306,
+              "frames": 60,
+              "hits": 120,
+              "invalidations": 0,
+              "payload_bytes": 1073043840,
+              "requests": 426
+            }
+          },
+          {
+            "pass_seconds": [
+              1.8531876271008514,
+              1.0750663734506816,
+              1.0758328416268341
+            ],
+            "total_read_seconds": 4.004086842178367,
+            "sha256": "c931643b1b9bb2a71ce19b8c4b4bc8e8b38e977676d20f3851d48900cd46bc44",
+            "cache": {
+              "budget_bytes": 1073741824,
+              "decodes": 306,
+              "frames": 60,
+              "hits": 120,
+              "invalidations": 0,
+              "payload_bytes": 1073043840,
+              "requests": 426
+            }
+          }
+        ],
+        "median_seconds": 4.004086842178367
+      }
+    ],
+    "all_count_bytes_identical": true,
+    "maximum_resident_bytes": 1197309952
+  },
+  "full_runs": [
+    {
+      "output": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v23",
+      "cli_wall_seconds": 18.65,
+      "worker_seconds": 17.62175983400084,
+      "observer_worker_wall_seconds": 17.72505716700107,
+      "worker_peak_resident_bytes": 4327161856,
+      "exclusive_by_name": {
+        "shadow_estimation": 2.734716582985129,
+        "compressed_archives": 1.0208161659538746,
+        "stage_validity": 0.001232168055139482,
+        "detection_and_linking": 3.3534294579876587,
+        "stage_positions": 0.23328570905141532,
+        "grain_indexing": 0.23041799996281043,
+        "geometry_fit": 0.0036100830184295774,
+        "stage_indexing": 0.019700543023645878,
+        "pixel_collection_and_background": 2.637969083036296,
+        "profile_learning": 2.506331082957331,
+        "observation_archive": 7.220800034701824e-05,
+        "profile_fitting": 2.725272124982439,
+        "physical_corrections": 0.0007371669635176659,
+        "empirical_design": 0.03203124995343387,
+        "empirical_scaling": 0.21069262502714992,
+        "equivalent_error_model": 0.021422124991659075,
+        "reduction_other": 0.009966916113626212,
+        "stage_integrate": 1.1043237100238912,
+        "search_process": 0.7502519579720683,
+        "process_main": 0.026772997924126685
+      },
+      "equivalence_report": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/stage3/equivalence.json",
+      "gates": {
+        "all_numerical_arrays_bitwise_identical": true,
+        "full_candidate_records_identical": true,
+        "phasing_histories_identical": true,
+        "source_files_unchanged": true,
+        "structure_recovered": true,
+        "worker_isolation": true,
+        "no_optional_python_numerics": true
+      },
+      "r1": 0.04085182070733226,
+      "reference_assessment": {
+        "counts_match": true,
+        "rms_error_angstrom": 0.004538501994491189,
+        "maximum_error_angstrom": 0.007523594148997598,
+        "hand": -1,
+        "shift": [
+          0.836137362336214,
+          0.31599369727651205,
+          0.47339919140711983
+        ],
+        "correct": true,
+        "strict_002_angstrom": true,
+        "reference_read_after_worker_stopped": true
+      },
+      "profile_execution": {
+        "profile_learning_execution": {
+          "workers": 4,
+          "requested_workers": 4,
+          "cache_budget_bytes": 268435456,
+          "cache_bytes": 181907500,
+          "cache_rows": 506475,
+          "cache_entries": 13808351
+        },
+        "profile_integration_execution": {
+          "workers": 10,
+          "requested_workers": 10,
+          "cache_budget_bytes": 268435456,
+          "maximum_reflection_cache_bytes": 1583672,
+          "cache_peak_bound_bytes": 15836720,
+          "cached_reflections": 4701,
+          "uncached_reflections": 2576,
+          "maximum_exposure_overlap_pixels": 17928
+        }
+      },
+      "decoded_frame_cache": {
+        "budget_bytes": 1073741824,
+        "decodes": 306,
+        "frames": 60,
+        "hits": 120,
+        "invalidations": 0,
+        "payload_bytes": 1073043840,
+        "requests": 426
+      }
+    },
+    {
+      "output": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v23-repeat",
+      "cli_wall_seconds": 18.56,
+      "worker_seconds": 17.573050416947808,
+      "observer_worker_wall_seconds": 17.663092375034466,
+      "worker_peak_resident_bytes": 4325588992,
+      "exclusive_by_name": {
+        "shadow_estimation": 2.729598125035409,
+        "compressed_archives": 0.9733430420747027,
+        "stage_validity": 0.0011537079117260873,
+        "detection_and_linking": 3.321227959007956,
+        "stage_positions": 0.23128054203698412,
+        "grain_indexing": 0.23906745802378282,
+        "geometry_fit": 0.003589834028389305,
+        "stage_indexing": 0.01999845792306587,
+        "pixel_collection_and_background": 2.6687277919845656,
+        "profile_learning": 2.5155096250236966,
+        "observation_archive": 7.358303992077708e-05,
+        "profile_fitting": 2.7190702499938197,
+        "physical_corrections": 0.0010369590017944574,
+        "empirical_design": 0.032420040981378406,
+        "empirical_scaling": 0.2113108750199899,
+        "equivalent_error_model": 0.021134209004230797,
+        "reduction_other": 0.010058000043500215,
+        "stage_integrate": 1.0909214568673633,
+        "search_process": 0.7576296250335872,
+        "process_main": 0.027316832973156124
+      },
+      "equivalence_report": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/stage3/equivalence-repeat.json",
+      "gates": {
+        "all_numerical_arrays_bitwise_identical": true,
+        "full_candidate_records_identical": true,
+        "phasing_histories_identical": true,
+        "source_files_unchanged": true,
+        "structure_recovered": true,
+        "worker_isolation": true,
+        "no_optional_python_numerics": true
+      },
+      "r1": 0.04085182070733226,
+      "reference_assessment": {
+        "counts_match": true,
+        "rms_error_angstrom": 0.004538501994491189,
+        "maximum_error_angstrom": 0.007523594148997598,
+        "hand": -1,
+        "shift": [
+          0.836137362336214,
+          0.31599369727651205,
+          0.47339919140711983
+        ],
+        "correct": true,
+        "strict_002_angstrom": true,
+        "reference_read_after_worker_stopped": true
+      },
+      "profile_execution": {
+        "profile_learning_execution": {
+          "workers": 4,
+          "requested_workers": 4,
+          "cache_budget_bytes": 268435456,
+          "cache_bytes": 181907500,
+          "cache_rows": 506475,
+          "cache_entries": 13808351
+        },
+        "profile_integration_execution": {
+          "workers": 10,
+          "requested_workers": 10,
+          "cache_budget_bytes": 268435456,
+          "maximum_reflection_cache_bytes": 1583672,
+          "cache_peak_bound_bytes": 15836720,
+          "cached_reflections": 4701,
+          "uncached_reflections": 2576,
+          "maximum_exposure_overlap_pixels": 17928
+        }
+      },
+      "decoded_frame_cache": {
+        "budget_bytes": 1073741824,
+        "decodes": 306,
+        "frames": 60,
+        "hits": 120,
+        "invalidations": 0,
+        "payload_bytes": 1073043840,
+        "requests": 426
+      }
+    }
+  ],
+  "performance": {
+    "isolated_cache_read_speedup": 1.3637878860917616,
+    "previous_warm_cli_seconds": 19.17,
+    "cached_cli_seconds": [
+      18.65,
+      18.56
+    ],
+    "cli_seconds_saved_vs_warm_uncached": [
+      0.5200000000000031,
+      0.610000000000003
+    ],
+    "cli_fractional_time_reduction_vs_warm_uncached": [
+      0.027125717266562543,
+      0.031820552947313674
+    ],
+    "uncached_peak_resident_bytes": 3245719552,
+    "cached_peak_resident_bytes": [
+      4327161856,
+      4325588992
+    ]
+  },
+  "interpretation": "The cache has a modest 0.52\u20130.61 s full-workflow gain for about 1 GiB extra process RSS. A 1.36x isolated read gain is not a 1.36x overall gain; read work overlaps computation. Generic caching remains opt-in.",
+  "conventions": {
+    "machine": "Apple M4 Pro, macOS arm64",
+    "full_runs": "Fresh workers and empty caches, original external raw frames, immutable final-v4 release wheel for both v22 and v23. Parent launch/setup/indexing vary; first-use runs retained.",
+    "isolated_detection": "Three sequential original-count repeats per trial; frozen mask provenance is only reused for this isolated component benchmark. Same positions/fingerprints required exactly.",
+    "isolated_cache": "Three fresh readers per budget, three complete 142-frame passes per reader; timed native read/owned array return only, independent original byte digest checks outside timer.",
+    "correctness": "Strict comparison to v11 of every retained numerical array/dtype/shape/byte, complete candidates and search histories. Metadata-only resource fields excluded. No tolerance changes.",
+    "resource_selection": "Runtime and memory only; no source HKLs/reference/R1 used to select execution controls. Generic decoded cache default remains zero; example explicitly requests 1 GiB.",
+    "thread_limits": "Two native count-preparation plus eight detector workers; learning four and profile fitting ten in separate phases. Numeric-library limits remain one. Four existing sample/background workers during pixel collection.",
+    "timing": "Exclusive main-thread stage wall times partition observed worker; I/O and parallel work are included in owning stages. Nested detection load/native preparation measurements overlap detector tasks and cannot be added to stage wall times.",
+    "scientific_scope": "Equations, finite support, thresholds, mask geometry, deterministic accumulation order and reference/oracle fixtures unchanged. Python orchestration remains optional; this example driver still uses it."
+  },
+  "build_and_validation_provenance": {
+    "wheel": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/final-wheels-v4/phasesmith-0.7.0-cp311-abi3-macosx_11_0_arm64.whl",
+    "wheel_sha256": "919c5c3b4e600d8803293000babffbfedacaf78767e6759d17d62f62a908d185",
+    "final_runtime": "/tmp/phasesmith-frame-input-final-v4/bin/python",
+    "protocol_code_commit": "caf7c4f",
+    "native_owned_buffer_code_commit": "2adcf11",
+    "validation_logs": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/validation-final"
+  }
+}

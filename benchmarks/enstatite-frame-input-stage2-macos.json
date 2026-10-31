@@ -1,0 +1,642 @@
+{
+  "schema": "phasesmith.frame-input-stage.v1",
+  "stage": 2,
+  "protocol": "validation/enstatite-raw-workflow-v22.json",
+  "execution": {
+    "reuse_verified_digest": true,
+    "native_preparation_workers": 2,
+    "batch_frames": 2,
+    "payload_bytes": 268435456
+  },
+  "decoded_cache_bytes": 0,
+  "trials": [
+    {
+      "source": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/stage2/detection.json",
+      "interpretation": "Initial software ARM SHA and per-pixel block expansion: regression retained.",
+      "benchmark": {
+        "schema": "phasesmith.detection-execution.v1",
+        "records": [
+          {
+            "workers": 8,
+            "repeats": [
+              {
+                "image_load_wall_seconds": 5.732796136115212,
+                "mask_load_wall_seconds": 6.620713975280523e-05,
+                "frame_measurement_thread_seconds": 21.583519872743636,
+                "linking_wall_seconds": 0.0006945839850232005,
+                "ordered_detection_wall_seconds": 5.973545541986823,
+                "total_wall_seconds": 6.0418065410340205,
+                "track_assembly_wall_seconds": 0.0675664150621742,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              },
+              {
+                "image_load_wall_seconds": 5.7494972530403174,
+                "mask_load_wall_seconds": 6.879476131871343e-05,
+                "frame_measurement_thread_seconds": 21.456053293601144,
+                "linking_wall_seconds": 0.0003656659973785281,
+                "ordered_detection_wall_seconds": 5.980172708979808,
+                "total_wall_seconds": 6.021575958991889,
+                "track_assembly_wall_seconds": 0.04103758401470259,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              },
+              {
+                "image_load_wall_seconds": 5.777629958756734,
+                "mask_load_wall_seconds": 6.566883530467749e-05,
+                "frame_measurement_thread_seconds": 21.51066841604188,
+                "linking_wall_seconds": 0.00038116698851808906,
+                "ordered_detection_wall_seconds": 6.0013551249867305,
+                "total_wall_seconds": 6.042595874983817,
+                "track_assembly_wall_seconds": 0.040859583008568734,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              }
+            ],
+            "median_seconds": 6.0418065410340205,
+            "tracks": 3047,
+            "detections": 4098,
+            "all_position_arrays_bitwise_identical": true
+          }
+        ],
+        "maximum_resident_bytes": 1655521280,
+        "interpretation": "Three sequential repeats per worker count. All raw frames reread; frozen masks reused only in isolated benchmark. Serial load times overlap worker tasks; thread seconds overlap each other. Ordered detection, linking and track assembly partition total wall time."
+      }
+    },
+    {
+      "source": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/stage2/detection-fast.json",
+      "interpretation": "Upstream AArch64 SHA feature and row-run masks, four-frame batch.",
+      "benchmark": {
+        "schema": "phasesmith.detection-execution.v1",
+        "records": [
+          {
+            "workers": 8,
+            "repeats": [
+              {
+                "image_load_wall_seconds": 3.016583329648711,
+                "mask_load_wall_seconds": 8.362054359167814e-05,
+                "frame_measurement_thread_seconds": 21.875845457718242,
+                "linking_wall_seconds": 0.0004711250076070428,
+                "ordered_detection_wall_seconds": 4.295309584005736,
+                "total_wall_seconds": 4.35809429094661,
+                "track_assembly_wall_seconds": 0.062313581933267415,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              },
+              {
+                "image_load_wall_seconds": 3.010017869703006,
+                "mask_load_wall_seconds": 8.083711145445704e-05,
+                "frame_measurement_thread_seconds": 21.71970029117074,
+                "linking_wall_seconds": 0.00036800000816583633,
+                "ordered_detection_wall_seconds": 4.283813250018284,
+                "total_wall_seconds": 4.325031041982584,
+                "track_assembly_wall_seconds": 0.04084979195613414,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              },
+              {
+                "image_load_wall_seconds": 3.020301126758568,
+                "mask_load_wall_seconds": 7.791147800162435e-05,
+                "frame_measurement_thread_seconds": 21.740267618908547,
+                "linking_wall_seconds": 0.00035570800537243485,
+                "ordered_detection_wall_seconds": 4.277694834046997,
+                "total_wall_seconds": 4.319168957998045,
+                "track_assembly_wall_seconds": 0.041118415945675224,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              }
+            ],
+            "median_seconds": 4.325031041982584,
+            "tracks": 3047,
+            "detections": 4098,
+            "all_position_arrays_bitwise_identical": true
+          }
+        ],
+        "maximum_resident_bytes": 1777172480,
+        "interpretation": "Three sequential repeats per worker count. All raw frames reread; frozen masks reused only in isolated benchmark. Serial load times overlap worker tasks; thread seconds overlap each other. Ordered detection, linking and track assembly partition total wall time."
+      }
+    },
+    {
+      "source": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/stage2/detection-batch1.json",
+      "interpretation": "One-frame batch, two preparation workers, corrected backend.",
+      "benchmark": {
+        "schema": "phasesmith.detection-execution.v1",
+        "records": [
+          {
+            "workers": 8,
+            "repeats": [
+              {
+                "image_load_wall_seconds": 3.888574122043792,
+                "mask_load_wall_seconds": 0.0001400770852342248,
+                "frame_measurement_thread_seconds": 21.530806956696324,
+                "linking_wall_seconds": 0.0003757909871637821,
+                "ordered_detection_wall_seconds": 4.014983915956691,
+                "total_wall_seconds": 4.062941165990196,
+                "track_assembly_wall_seconds": 0.04758145904634148,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              },
+              {
+                "image_load_wall_seconds": 3.8766821218887344,
+                "mask_load_wall_seconds": 0.00012724852422252297,
+                "frame_measurement_thread_seconds": 21.321726667927578,
+                "linking_wall_seconds": 0.00034454104024916887,
+                "ordered_detection_wall_seconds": 3.9939951249980368,
+                "total_wall_seconds": 4.037690875004046,
+                "track_assembly_wall_seconds": 0.043351208965759724,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              },
+              {
+                "image_load_wall_seconds": 3.851543629076332,
+                "mask_load_wall_seconds": 0.00012324919225648046,
+                "frame_measurement_thread_seconds": 21.322452038002666,
+                "linking_wall_seconds": 0.0003640840295702219,
+                "ordered_detection_wall_seconds": 3.969208416994661,
+                "total_wall_seconds": 4.010227209015284,
+                "track_assembly_wall_seconds": 0.04065470799105242,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              }
+            ],
+            "median_seconds": 4.037690875004046,
+            "tracks": 3047,
+            "detections": 4098,
+            "all_position_arrays_bitwise_identical": true
+          }
+        ],
+        "maximum_resident_bytes": 1654358016,
+        "interpretation": "Three sequential repeats per worker count. All raw frames reread; frozen masks reused only in isolated benchmark. Serial load times overlap worker tasks; thread seconds overlap each other. Ordered detection, linking and track assembly partition total wall time."
+      }
+    },
+    {
+      "source": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/stage2/detection-batch2.json",
+      "interpretation": "Two-frame batch, two preparation workers, corrected backend.",
+      "benchmark": {
+        "schema": "phasesmith.detection-execution.v1",
+        "records": [
+          {
+            "workers": 8,
+            "repeats": [
+              {
+                "image_load_wall_seconds": 3.0787575759459287,
+                "mask_load_wall_seconds": 0.00010474590817466378,
+                "frame_measurement_thread_seconds": 21.507145917159505,
+                "linking_wall_seconds": 0.00036762497620657086,
+                "ordered_detection_wall_seconds": 3.6291060419753194,
+                "total_wall_seconds": 3.6743784999707714,
+                "track_assembly_wall_seconds": 0.044904833019245416,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              },
+              {
+                "image_load_wall_seconds": 3.062267333967611,
+                "mask_load_wall_seconds": 9.820912964642048e-05,
+                "frame_measurement_thread_seconds": 21.4882054181071,
+                "linking_wall_seconds": 0.00036399997770786285,
+                "ordered_detection_wall_seconds": 3.6275772500084713,
+                "total_wall_seconds": 3.6682390829664655,
+                "track_assembly_wall_seconds": 0.04029783298028633,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              },
+              {
+                "image_load_wall_seconds": 3.0504350852570496,
+                "mask_load_wall_seconds": 9.070098167285323e-05,
+                "frame_measurement_thread_seconds": 21.682024407724384,
+                "linking_wall_seconds": 0.0003652090090326965,
+                "ordered_detection_wall_seconds": 3.66243454196956,
+                "total_wall_seconds": 3.7035180830280297,
+                "track_assembly_wall_seconds": 0.04071833204943687,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              }
+            ],
+            "median_seconds": 3.6743784999707714,
+            "tracks": 3047,
+            "detections": 4098,
+            "all_position_arrays_bitwise_identical": true
+          }
+        ],
+        "maximum_resident_bytes": 1806794752,
+        "interpretation": "Three sequential repeats per worker count. All raw frames reread; frozen masks reused only in isolated benchmark. Serial load times overlap worker tasks; thread seconds overlap each other. Ordered detection, linking and track assembly partition total wall time."
+      }
+    },
+    {
+      "source": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/stage2/detection-final.json",
+      "interpretation": "Cache-capable reader exposed uncached buffer traversal regression.",
+      "benchmark": {
+        "schema": "phasesmith.detection-execution.v1",
+        "input_execution": {
+          "reuse_verified_digest": true,
+          "native_preparation_workers": 2,
+          "batch_frames": 2,
+          "payload_bytes": 268435456
+        },
+        "records": [
+          {
+            "workers": 8,
+            "repeats": [
+              {
+                "image_load_wall_seconds": 4.040702414291445,
+                "mask_load_wall_seconds": 0.00011036696378141642,
+                "frame_measurement_thread_seconds": 21.491388502821792,
+                "linking_wall_seconds": 0.00042570801451802254,
+                "ordered_detection_wall_seconds": 4.222619167005178,
+                "total_wall_seconds": 4.285731417010538,
+                "track_assembly_wall_seconds": 0.06268654199084267,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              },
+              {
+                "image_load_wall_seconds": 4.0154661680571735,
+                "mask_load_wall_seconds": 0.00011617183918133378,
+                "frame_measurement_thread_seconds": 21.38183412811486,
+                "linking_wall_seconds": 0.00037704198621213436,
+                "ordered_detection_wall_seconds": 4.199417166993953,
+                "total_wall_seconds": 4.240966500015929,
+                "track_assembly_wall_seconds": 0.04117229103576392,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              },
+              {
+                "image_load_wall_seconds": 3.999325620417949,
+                "mask_load_wall_seconds": 0.00010412250412628055,
+                "frame_measurement_thread_seconds": 21.426880204933695,
+                "linking_wall_seconds": 0.0003529579844325781,
+                "ordered_detection_wall_seconds": 4.195259208034258,
+                "total_wall_seconds": 4.236153709003702,
+                "track_assembly_wall_seconds": 0.04054154298501089,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              }
+            ],
+            "median_seconds": 4.240966500015929,
+            "tracks": 3047,
+            "detections": 4098,
+            "all_position_arrays_bitwise_identical": true
+          }
+        ],
+        "maximum_resident_bytes": 1508343808,
+        "interpretation": "Three sequential repeats per worker count. All raw frames reread; frozen masks reused only in isolated benchmark. Serial load times overlap worker tasks; thread seconds overlap each other. Ordered detection, linking and track assembly partition total wall time."
+      }
+    },
+    {
+      "source": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/stage2/detection-final-v3.json",
+      "interpretation": "Zero-budget bypass alone did not resolve read regression.",
+      "benchmark": {
+        "schema": "phasesmith.detection-execution.v1",
+        "input_execution": {
+          "reuse_verified_digest": true,
+          "native_preparation_workers": 2,
+          "batch_frames": 2,
+          "payload_bytes": 268435456
+        },
+        "records": [
+          {
+            "workers": 8,
+            "repeats": [
+              {
+                "image_load_wall_seconds": 4.020966554351617,
+                "mask_load_wall_seconds": 0.00013966806000098586,
+                "frame_measurement_thread_seconds": 21.5867104579811,
+                "linking_wall_seconds": 0.00040612503653392196,
+                "ordered_detection_wall_seconds": 4.206946499994956,
+                "total_wall_seconds": 4.270312707987614,
+                "native_preparation_wall_seconds": 0.8676837111706845,
+                "track_assembly_wall_seconds": 0.0629600829561241,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              },
+              {
+                "image_load_wall_seconds": 4.002558330190368,
+                "mask_load_wall_seconds": 0.0001230946509167552,
+                "frame_measurement_thread_seconds": 21.47889137401944,
+                "linking_wall_seconds": 0.0003677919739857316,
+                "ordered_detection_wall_seconds": 4.20254525000928,
+                "total_wall_seconds": 4.243534500012174,
+                "native_preparation_wall_seconds": 0.8650615819497034,
+                "track_assembly_wall_seconds": 0.04062145802890882,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              },
+              {
+                "image_load_wall_seconds": 4.031796830124222,
+                "mask_load_wall_seconds": 0.00010291510261595249,
+                "frame_measurement_thread_seconds": 21.524929617298767,
+                "linking_wall_seconds": 0.00036683399230241776,
+                "ordered_detection_wall_seconds": 4.2477064590202644,
+                "total_wall_seconds": 4.2903856670018286,
+                "native_preparation_wall_seconds": 0.8692590441787615,
+                "track_assembly_wall_seconds": 0.04231237398926169,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              }
+            ],
+            "median_seconds": 4.270312707987614,
+            "tracks": 3047,
+            "detections": 4098,
+            "all_position_arrays_bitwise_identical": true
+          }
+        ],
+        "maximum_resident_bytes": 1675542528,
+        "interpretation": "Three sequential repeats per worker count. All raw frames reread; frozen masks reused only in isolated benchmark. Serial load times overlap worker tasks; thread seconds overlap each other. Ordered detection, linking and track assembly partition total wall time."
+      }
+    },
+    {
+      "source": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/stage2/diagnostic-old-reader.json",
+      "interpretation": "Paired old-reader diagnostic; no scientific setting change.",
+      "benchmark": {
+        "schema": "phasesmith.detection-execution.v1",
+        "input_execution": {
+          "reuse_verified_digest": true,
+          "native_preparation_workers": 2,
+          "batch_frames": 2,
+          "payload_bytes": 268435456
+        },
+        "records": [
+          {
+            "workers": 8,
+            "repeats": [
+              {
+                "image_load_wall_seconds": 3.0984717454994097,
+                "mask_load_wall_seconds": 0.0001053026644513011,
+                "frame_measurement_thread_seconds": 21.507176209939644,
+                "linking_wall_seconds": 0.00035858299816027284,
+                "ordered_detection_wall_seconds": 3.6402215419802815,
+                "total_wall_seconds": 3.68460325000342,
+                "native_preparation_wall_seconds": 0.8706484973081388,
+                "track_assembly_wall_seconds": 0.04402312502497807,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              }
+            ],
+            "median_seconds": 3.68460325000342,
+            "tracks": 3047,
+            "detections": 4098,
+            "all_position_arrays_bitwise_identical": true
+          }
+        ],
+        "maximum_resident_bytes": 1776648192,
+        "interpretation": "Three sequential repeats per worker count. All raw frames reread; frozen masks reused only in isolated benchmark. Serial load times overlap worker tasks; thread seconds overlap each other. Ordered detection, linking and track assembly partition total wall time."
+      }
+    },
+    {
+      "source": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/stage2/diagnostic-new-reader.json",
+      "interpretation": "Paired cache-capable reader diagnostic, cache disabled.",
+      "benchmark": {
+        "schema": "phasesmith.detection-execution.v1",
+        "input_execution": {
+          "reuse_verified_digest": true,
+          "native_preparation_workers": 2,
+          "batch_frames": 2,
+          "payload_bytes": 268435456
+        },
+        "records": [
+          {
+            "workers": 8,
+            "repeats": [
+              {
+                "image_load_wall_seconds": 3.996923959814012,
+                "mask_load_wall_seconds": 0.00011020904639735818,
+                "frame_measurement_thread_seconds": 21.539733332407195,
+                "linking_wall_seconds": 0.00037941598566249013,
+                "ordered_detection_wall_seconds": 4.192363583017141,
+                "total_wall_seconds": 4.23806029104162,
+                "native_preparation_wall_seconds": 0.8747404555906542,
+                "track_assembly_wall_seconds": 0.04531729203881696,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              }
+            ],
+            "median_seconds": 4.23806029104162,
+            "tracks": 3047,
+            "detections": 4098,
+            "all_position_arrays_bitwise_identical": true
+          }
+        ],
+        "maximum_resident_bytes": 1457766400,
+        "interpretation": "Three sequential repeats per worker count. All raw frames reread; frozen masks reused only in isolated benchmark. Serial load times overlap worker tasks; thread seconds overlap each other. Ordered detection, linking and track assembly partition total wall time."
+      }
+    },
+    {
+      "source": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/stage2/detection-final-v4.json",
+      "interpretation": "Final owned C-order HDF5 buffer transfer, two-frame batch, cache disabled.",
+      "benchmark": {
+        "schema": "phasesmith.detection-execution.v1",
+        "input_execution": {
+          "reuse_verified_digest": true,
+          "native_preparation_workers": 2,
+          "batch_frames": 2,
+          "payload_bytes": 268435456
+        },
+        "records": [
+          {
+            "workers": 8,
+            "repeats": [
+              {
+                "image_load_wall_seconds": 2.846279251796659,
+                "mask_load_wall_seconds": 0.00010337529238313437,
+                "frame_measurement_thread_seconds": 21.609056783665437,
+                "linking_wall_seconds": 0.0004366669454611838,
+                "ordered_detection_wall_seconds": 3.5608857499901205,
+                "total_wall_seconds": 3.624228000000585,
+                "native_preparation_wall_seconds": 0.8825825408566743,
+                "track_assembly_wall_seconds": 0.06290558306500316,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              },
+              {
+                "image_load_wall_seconds": 2.8257772920187563,
+                "mask_load_wall_seconds": 0.0001105008996091783,
+                "frame_measurement_thread_seconds": 21.460008335707244,
+                "linking_wall_seconds": 0.00036399997770786285,
+                "ordered_detection_wall_seconds": 3.5186001249821857,
+                "total_wall_seconds": 3.559799375012517,
+                "native_preparation_wall_seconds": 0.8756427548942156,
+                "track_assembly_wall_seconds": 0.04083525005262345,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              },
+              {
+                "image_load_wall_seconds": 2.8337415030691773,
+                "mask_load_wall_seconds": 0.00015588029054924846,
+                "frame_measurement_thread_seconds": 21.38791937835049,
+                "linking_wall_seconds": 0.0003583329962566495,
+                "ordered_detection_wall_seconds": 3.520633959036786,
+                "total_wall_seconds": 3.5619378330302425,
+                "native_preparation_wall_seconds": 0.8778140441863798,
+                "track_assembly_wall_seconds": 0.040945540997199714,
+                "sha256": "0e75170201cca211d94391a5c624c8f3fe4db74e128f3b9698bbf21c721d0abe"
+              }
+            ],
+            "median_seconds": 3.5619378330302425,
+            "tracks": 3047,
+            "detections": 4098,
+            "all_position_arrays_bitwise_identical": true
+          }
+        ],
+        "maximum_resident_bytes": 1801830400,
+        "interpretation": "Three sequential repeats per worker count. All raw frames reread; frozen masks reused only in isolated benchmark. Serial load times overlap worker tasks; thread seconds overlap each other. Ordered detection, linking and track assembly partition total wall time."
+      }
+    }
+  ],
+  "full_runs": [
+    {
+      "output": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v22",
+      "cli_wall_seconds": 27.52,
+      "worker_seconds": 19.378296667011455,
+      "observer_worker_wall_seconds": 19.501840999990236,
+      "worker_peak_resident_bytes": 3244359680,
+      "exclusive_by_name": {
+        "shadow_estimation": 2.660230458015576,
+        "compressed_archives": 0.9345664590364322,
+        "stage_validity": 0.0015373749774880707,
+        "detection_and_linking": 3.5971507919603027,
+        "stage_positions": 0.23421070800395682,
+        "grain_indexing": 1.3694815409835428,
+        "geometry_fit": 0.004758458992000669,
+        "stage_indexing": 0.03199524903902784,
+        "pixel_collection_and_background": 3.148703957966063,
+        "profile_learning": 2.5030926669714972,
+        "observation_archive": 7.112498860806227e-05,
+        "profile_fitting": 2.711252874985803,
+        "physical_corrections": 0.0008106669993139803,
+        "empirical_design": 0.03159816697007045,
+        "empirical_scaling": 0.2146618750412017,
+        "equivalent_error_model": 0.021200707997195423,
+        "reduction_other": 0.012956875027157366,
+        "stage_integrate": 1.1161852090153843,
+        "search_process": 0.7836438330123201,
+        "process_main": 0.0010961670195683837
+      },
+      "equivalence_report": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/stage2/equivalence.json",
+      "gates": {
+        "all_numerical_arrays_bitwise_identical": true,
+        "full_candidate_records_identical": true,
+        "phasing_histories_identical": true,
+        "source_files_unchanged": true,
+        "structure_recovered": true,
+        "worker_isolation": true,
+        "no_optional_python_numerics": true
+      },
+      "r1": 0.04085182070733226,
+      "reference_assessment": {
+        "counts_match": true,
+        "rms_error_angstrom": 0.004538501994491189,
+        "maximum_error_angstrom": 0.007523594148997598,
+        "hand": -1,
+        "shift": [
+          0.836137362336214,
+          0.31599369727651205,
+          0.47339919140711983
+        ],
+        "correct": true,
+        "strict_002_angstrom": true,
+        "reference_read_after_worker_stopped": true
+      },
+      "profile_execution": {
+        "profile_learning_execution": {
+          "workers": 4,
+          "requested_workers": 4,
+          "cache_budget_bytes": 268435456,
+          "cache_bytes": 181907500,
+          "cache_rows": 506475,
+          "cache_entries": 13808351
+        },
+        "profile_integration_execution": {
+          "workers": 10,
+          "requested_workers": 10,
+          "cache_budget_bytes": 268435456,
+          "maximum_reflection_cache_bytes": 1583672,
+          "cache_peak_bound_bytes": 15836720,
+          "cached_reflections": 4701,
+          "uncached_reflections": 2576,
+          "maximum_exposure_overlap_pixels": 17928
+        }
+      },
+      "decoded_frame_cache": null
+    },
+    {
+      "output": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v22-repeat",
+      "cli_wall_seconds": 19.17,
+      "worker_seconds": 18.13462133402936,
+      "observer_worker_wall_seconds": 18.226115249970462,
+      "worker_peak_resident_bytes": 3245719552,
+      "exclusive_by_name": {
+        "shadow_estimation": 2.6487559999804944,
+        "compressed_archives": 0.9103907500393689,
+        "stage_validity": 0.0015337510267272592,
+        "detection_and_linking": 3.577340957999695,
+        "stage_positions": 0.23298154200892895,
+        "grain_indexing": 0.22455587500007823,
+        "geometry_fit": 0.003569666005205363,
+        "stage_indexing": 0.019338249985594302,
+        "pixel_collection_and_background": 3.147819207981229,
+        "profile_learning": 2.5024642079952173,
+        "observation_archive": 7.408397505059838e-05,
+        "profile_fitting": 2.736333000008017,
+        "physical_corrections": 0.0008943330030888319,
+        "empirical_design": 0.0312212499557063,
+        "empirical_scaling": 0.2157140420167707,
+        "equivalent_error_model": 0.02134775003651157,
+        "reduction_other": 0.010070874937810004,
+        "stage_integrate": 1.1009605000726879,
+        "search_process": 0.7491057500010356,
+        "process_main": 0.0010790419182740152
+      },
+      "equivalence_report": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/stage2/equivalence-repeat.json",
+      "gates": {
+        "all_numerical_arrays_bitwise_identical": true,
+        "full_candidate_records_identical": true,
+        "phasing_histories_identical": true,
+        "source_files_unchanged": true,
+        "structure_recovered": true,
+        "worker_isolation": true,
+        "no_optional_python_numerics": true
+      },
+      "r1": 0.04085182070733226,
+      "reference_assessment": {
+        "counts_match": true,
+        "rms_error_angstrom": 0.004538501994491189,
+        "maximum_error_angstrom": 0.007523594148997598,
+        "hand": -1,
+        "shift": [
+          0.836137362336214,
+          0.31599369727651205,
+          0.47339919140711983
+        ],
+        "correct": true,
+        "strict_002_angstrom": true,
+        "reference_read_after_worker_stopped": true
+      },
+      "profile_execution": {
+        "profile_learning_execution": {
+          "workers": 4,
+          "requested_workers": 4,
+          "cache_budget_bytes": 268435456,
+          "cache_bytes": 181907500,
+          "cache_rows": 506475,
+          "cache_entries": 13808351
+        },
+        "profile_integration_execution": {
+          "workers": 10,
+          "requested_workers": 10,
+          "cache_budget_bytes": 268435456,
+          "maximum_reflection_cache_bytes": 1583672,
+          "cache_peak_bound_bytes": 15836720,
+          "cached_reflections": 4701,
+          "uncached_reflections": 2576,
+          "maximum_exposure_overlap_pixels": 17928
+        }
+      },
+      "decoded_frame_cache": null
+    }
+  ],
+  "performance": {
+    "baseline_detection_median_seconds": 5.003338541951962,
+    "previous_detection_median_seconds": 4.138260709005408,
+    "final_detection_median_seconds": 3.5619378330302425,
+    "detection_speedup_over_previous": 1.1618003746811243,
+    "detection_speedup_over_v20": 1.404667564816952,
+    "warm_cli_seconds": 19.17
+  },
+  "interpretation": "Main measured frame-input gain is native bounded hash/verification/mask preparation plus owned HDF5 buffer transfer. Slower trials are retained. Initial parent/indexing overhead prevents attributing first-use CLI differences to native preparation alone.",
+  "conventions": {
+    "machine": "Apple M4 Pro, macOS arm64",
+    "full_runs": "Fresh workers and empty caches, original external raw frames, immutable final-v4 release wheel for both v22 and v23. Parent launch/setup/indexing vary; first-use runs retained.",
+    "isolated_detection": "Three sequential original-count repeats per trial; frozen mask provenance is only reused for this isolated component benchmark. Same positions/fingerprints required exactly.",
+    "isolated_cache": "Three fresh readers per budget, three complete 142-frame passes per reader; timed native read/owned array return only, independent original byte digest checks outside timer.",
+    "correctness": "Strict comparison to v11 of every retained numerical array/dtype/shape/byte, complete candidates and search histories. Metadata-only resource fields excluded. No tolerance changes.",
+    "resource_selection": "Runtime and memory only; no source HKLs/reference/R1 used to select execution controls. Generic decoded cache default remains zero; example explicitly requests 1 GiB.",
+    "thread_limits": "Two native count-preparation plus eight detector workers; learning four and profile fitting ten in separate phases. Numeric-library limits remain one. Four existing sample/background workers during pixel collection.",
+    "timing": "Exclusive main-thread stage wall times partition observed worker; I/O and parallel work are included in owning stages. Nested detection load/native preparation measurements overlap detector tasks and cannot be added to stage wall times.",
+    "scientific_scope": "Equations, finite support, thresholds, mask geometry, deterministic accumulation order and reference/oracle fixtures unchanged. Python orchestration remains optional; this example driver still uses it."
+  },
+  "build_and_validation_provenance": {
+    "wheel": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/final-wheels-v4/phasesmith-0.7.0-cp311-abi3-macosx_11_0_arm64.whl",
+    "wheel_sha256": "919c5c3b4e600d8803293000babffbfedacaf78767e6759d17d62f62a908d185",
+    "final_runtime": "/tmp/phasesmith-frame-input-final-v4/bin/python",
+    "protocol_code_commit": "caf7c4f",
+    "native_owned_buffer_code_commit": "2adcf11",
+    "validation_logs": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-frame-input-20261031/validation-final"
+  }
+}

@@ -457,7 +457,7 @@ and `benchmarks/enstatite-next-execution-macos.json`.
 
 ## Detection worker scaling (v20)
 
-The current default is `validation/enstatite-raw-workflow-v20.json`, with eight
+The v20 protocol is `validation/enstatite-raw-workflow-v20.json`, with eight
 detection workers and the same four shadow/acquisition workers. All scientific
 settings and production numerical kernels remain unchanged. Three-repeat raw
 detection/linking medians at 4/6/8/10 workers are 6.568/5.041/5.003/5.048 s:
@@ -475,5 +475,39 @@ loading/detection/linking timings and ranked remaining opportunities. The main
 limit is the serial original-frame pipeline: HDF5 reading/decoding, source
 verification, repeated hashing and mask construction. Linking itself is below
 a millisecond. Shared original decoded frames and bounded per-frame validation
-are proposed next measurements; their speedups are not yet established.
+were the next measurements, now completed in v21–v23 below.
 The machine-readable record is `benchmarks/enstatite-detection-execution-macos.json`.
+
+## Native frame input and decoded-count reuse (v21–v23)
+
+The current default is `validation/enstatite-raw-workflow-v23.json`. A newly
+verified digest is reused for the same owned original frame. Two Rust preparation
+workers compose verified masks in two-frame batches under a 256 MiB payload cap;
+eight detector workers consume them in source order. All source and count checks
+remain active. Native HDF5 reading transfers its owned C-order buffer directly.
+
+The optional Rust decoded-count cache retains original uint32 frames only,
+within an explicit 1 GiB example budget and a single source identity. It stores
+60 of 142 selected frames (1,073,043,840 bytes), records 120 hits in three passes,
+and is closed before structure search. The library default remains uncached.
+
+| Execution change | Detection median | Full CLI runs |
+| --- | ---: | ---: |
+| Previous eight-worker v20 | 5.003 s | 23.46 / 23.76 s |
+| Verified digest reuse, v21 | 4.138 s | 32.34 / 23.48 s |
+| Native preparation and owned HDF5 buffer, uncached v22 | 3.562 s | 27.52 / 19.17 s |
+| Same native binary, 1 GiB decoded cache, v23 | full-stage 3.353 / 3.321 s | 18.65 / 18.56 s |
+
+The v23 detection values are individual full-stage timings, not isolated medians.
+First-use parent/indexing variability is retained; the isolated digest gain does
+not establish a net full-run gain by itself. Cached/uncached comparisons use the
+same release binary. The cache saves .52–.61 s over warm uncached execution for
+about 1 GiB extra RSS (3.02→4.03 GiB), while the full pass reduces elapsed time
+by about 21% versus v20. Every retained numerical array, full candidate and search
+history remains bitwise identical to v11; R1 is .04085182070733226. Source files
+remain unchanged; reference assessment runs only after the numerical worker exits.
+
+The [frame-input report](frame-input-optimization.md) includes all intermediate
+regressions, final full wall partitions and remaining targets. Its machine-readable
+summary is `benchmarks/enstatite-frame-input-macos.json`. Large raw sources,
+decoded counts, full archives and wheel artifacts remain outside Git.

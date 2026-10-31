@@ -28,17 +28,27 @@ counts, bound to one open canonical source/dataset and file identity. It has
 0–4 GiB payload admission, deterministic prefix retention, owned caller copies,
 change detection with fail-closed cache clearing, and source/decode/hit counters.
 One fresh reader can span the three raw-frame passes and is closed before search;
-no cross-run or archived-array cache is used. Full cached/uncached comparisons
-will use identical native binaries and strict bitwise gates. See the measured
-stages in `docs/frame-input-optimization.md`.
+no cross-run or archived-array cache is used. Identical native binaries and
+strict bitwise gates validate both uncached/cached full runs. Warm uncached v22
+takes 19.17 s CLI; cached v23 takes 18.65/18.56 s, versus v20 23.46/23.76 s
+(about 21% less elapsed time). Cache payload is 1,073,043,840 bytes, retaining
+60 of 142 original frames; peak process RSS rises from 3.02 to about 4.03 GiB.
+The generic cache default stays off; the example explicitly requests 1 GiB.
+The cache saves only .52–.61 s overall despite a 1.36x isolated-read gain.
+All full arrays, complete candidates and search histories remain bitwise v11,
+R1 .04085182070733226. See `docs/frame-input-optimization.md` and the complete
+stage records in `benchmarks/enstatite-frame-input-macos.json`.
 
-The next frame-input pass starts with verified-digest reuse: every mask provider
+The completed frame-input pass starts with verified-digest reuse: every mask provider
 still checks current original counts and layout; verify_frame now returns its
 fresh digest when provenance is present, and the example can reuse that value
 for its raw-source record. Geometric-only providers return None and keep the
 ordinary digest path. No unchecked digest is accepted from a caller. Numeric
-kernels, finite support and scientific controls remain unchanged. The pass will
-measure hashing, bounded native preparation and decoded-frame reuse separately.
+kernels, finite support and scientific controls remain unchanged. Three-repeat
+detection medians improve 5.003→4.138→3.562 s for digest reuse then native
+preparation/owned-buffer transfer without caching. Initial native/backend and
+reader regressions, first-use full runs and every intermediate trial are retained.
+Two preparation workers plus eight detector workers respect the ten-worker choice.
 
 The detection/linking worker study measures the unchanged detector at 4/6/8/10
 workers: median 6.568/5.041/5.003/5.048 s on all 142 original MgSiO3 frames.
@@ -53,8 +63,9 @@ pass every bitwise array/candidate/history and source-identity gate; R1 remains
 about 4.79 s serial image/mask loading in a 4.90 s pipeline: HDF5 read/decode
 2.19 s, verification .89 s, other image preparation/hashing 1.02 s and masks
 .68 s, overlapping worker tasks. Linking is .00035 s and track assembly .0445 s.
-The next measured priorities are bounded loading/validation/mask pipelining and
-original decoded-frame reuse, before profile kernels. See
+Those loading/validation/mask and decoded-frame priorities are now measured above.
+Next candidates are profile objective allocations/fixed-coordinate work and
+detector workspace/copy reuse; learning/fitting still total 5.23 s. See
 `docs/detection-execution-optimization.md` and
 `benchmarks/enstatite-detection-execution-macos.json` for full wall partitions,
 all repeats and timing limits.
