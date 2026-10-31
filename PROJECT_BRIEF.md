@@ -2717,3 +2717,18 @@ documents independent PhaseSmith choices. SHELXT is solely an external test
 comparator. See `docs/solution-holdout-freeze.md` and the immutable freeze record.
 Once evaluated, these 65 cases are exposed validation evidence and must not be
 described as an untouched test of future tuning.
+
+The frozen holdout evaluation is complete: all 130 predictions preceded grading,
+with zero numerical tuning or search reruns. All 402 pinned source files and the
+release binary remain unchanged. On all 65 cases, PhaseSmith recovers 35 full
+structures, 40 exact total counts, 36 per-element vectors and 34 strict structures;
+the external test comparator recovers 18, 51, 22 and 11 respectively. Median wall
+times are 0.683/0.782 seconds and summed wall times 83.717/93.209 seconds; the
+median paired PhaseSmith/comparator ratio is 0.9721. There are zero/two hard
+timeouts. All 24 above-cap references remain in the primary denominator; among
+the 41 within-cap cases, PhaseSmith recovers 35 structures and 40 total counts.
+There are no audit errors or post-reference model changes. Source/binary/input
+hashes, fixed worker controls and comparator thread logs are verified. Results,
+limitations, attribution to the published papers and immutable provenance are in
+`docs/solution-holdout-results.md`. The 65-case holdout is now exposed validation
+evidence, with no claim that it remains untouched for future algorithm changes.

@@ -1,0 +1,78 @@
+{
+  "schema": "phasesmith.frozen-holdout-validation.v1",
+  "timestamp_utc": "2026-10-31T06:40:31.292001+00:00",
+  "solver_commit": "870d61aaf29ec4220bb176a63f2d7085b361a50e",
+  "protocol_commit": "bc4c639fe2dfb2448a6141c26f00c9777b19377b",
+  "freeze_sha256": "06f30ca34cc1ca42b37d6bb2895a2fa980618c093f148f8711a4d29969aac7e4",
+  "native_sha256": "891cad9dd7f702c8066191b175ab1b29458752e88ccd3dbe373702dccfe96110",
+  "holdout_opened": true,
+  "no_numerical_source_or_configuration_changes": true,
+  "no_numerical_search_reruns": true,
+  "source_files_verified": 402,
+  "source_binary_guard_checks": 133,
+  "copied_input_hashes_verified": 260,
+  "pre_reference_predictions": 130,
+  "post_reference_model_differences": 0,
+  "audit_errors": 0,
+  "prior_full_solver_validation": {
+    "path": "benchmarks/structure-solution-repair-evaluation-validation-macos.json",
+    "sha256": "6159d10d623d1cddafbfb03cfd161024afb5b692bb2c0e758f2ff732c15eaa4b",
+    "rust_passed": 429,
+    "python_passed": 2743,
+    "qualification": "Existing pre-freeze solver validation, not rerun during this comparison; numerical implementation and native binary unchanged."
+  },
+  "checks": [
+    {
+      "command": ".venv/bin/pytest -q tests/test_solution_holdout_freeze.py tests/test_solution_corpus.py tests/test_solution_stopping_schedule.py",
+      "passed": 33,
+      "exit_code": 0,
+      "log_sha256": "3799a5914a394ad11e4637a2fa36fcb21625db3e7b2b73dc3cc540ce4d26c710",
+      "completed_before_collection": true
+    },
+    {
+      "command": "git diff --exit-code 870d61aaf29ec4220bb176a63f2d7085b361a50e -- crates python Cargo.toml Cargo.lock pyproject.toml",
+      "exit_code": 0
+    },
+    {
+      "command": "frozen runner; existing reference auditor; frozen report verifier",
+      "exit_code": 0,
+      "campaign_log_sha256": "c123938820db224b4fa649556c0d5d47cf3937bcadd1157de587d721d05bf067"
+    }
+  ],
+  "artifact_sha256": {
+    "structure-solution-holdout-frozen-comparison-macos.json": "9a0fd3f64853ab5abca3704b0488aff099152f1c461af2538fa99f92908da5b0",
+    "structure-solution-holdout-frozen-summary-macos.json": "1f0bbb8f51b6010129c436d55cea8edd80e7251dc763333083a0037032a6c866"
+  },
+  "run_artifact_sha256": {
+    "predictions-at-barrier.json": "33385380319d7f154c1ad161b48f652fdd09602529f6caaf390f1f15e847dcc7",
+    "prediction-barrier.json": "18c0332316f9238bda60e9a45d0c7316090a2df6a7514eb69c5127f592fd9529",
+    "holdout-schedule.json": "b9b30aa458724531b9987c88ea14457506d9b133209299fc1c10690974cd8bfa",
+    "frozen-run.json": "6d199d67493a34102d41484aa6eec5b71974cec52e870f073418750554f5c070",
+    "protocol.json": "f0895ee2c0cfb0426b84ea8cd73e68e6cdb7b5a08f7df3178898385c514e300a",
+    "before-reference-audit.json": "e145264a938ea2c1ace6ebbc42421bac119cf3f3260f7096344ab86cf51a7bf1",
+    "comparison.json": "fda166791fe6b0de9a30f30bf7e0b4f8c9cfed5061f673a0976b3420a18214d8",
+    "comparison-verified-predictions-before-reference.json": "6f17250fdd57e5d27afb0bd4c6e7966c1ef19a2c893677709d3e1078a27ac7e4",
+    "comparison-verified.json": "9a0fd3f64853ab5abca3704b0488aff099152f1c461af2538fa99f92908da5b0"
+  },
+  "run_provenance": {
+    "schema": "phasesmith.frozen-holdout-run.v1",
+    "started_utc": "2026-10-31T06:33:59.974269+00:00",
+    "finished_utc": "2026-10-31T06:37:05.392279+00:00",
+    "solver_commit": "870d61aaf29ec4220bb176a63f2d7085b361a50e",
+    "protocol_commit": "bc4c639fe2dfb2448a6141c26f00c9777b19377b",
+    "freeze_sha256": "06f30ca34cc1ca42b37d6bb2895a2fa980618c093f148f8711a4d29969aac7e4",
+    "native_sha256": "891cad9dd7f702c8066191b175ab1b29458752e88ccd3dbe373702dccfe96110",
+    "holdout_opened": true,
+    "development_options_unchanged": true,
+    "source_and_binary_checks": 133,
+    "barrier": {
+      "predictions": 130,
+      "timestamp_utc": "2026-10-31T06:37:03.940627+00:00",
+      "prediction_sha256": "33385380319d7f154c1ad161b48f652fdd09602529f6caaf390f1f15e847dcc7",
+      "freeze_sha256": "06f30ca34cc1ca42b37d6bb2895a2fa980618c093f148f8711a4d29969aac7e4",
+      "commit": "bc4c639fe2dfb2448a6141c26f00c9777b19377b",
+      "source_and_binary_unchanged": true
+    }
+  },
+  "qualification": "Frozen implementation, controls, source/data/binary hashes and unchanged reference/output auditors. All 65 cases remain in primary denominators, including 24 above-cap references. No task-owned tests, builds, profiles or kernel jobs overlap timed collection. SHELXT is solely the external test comparator; algorithm sources are the papers recorded in the immutable freeze. The 65 cases are now exposed validation data."
+}
