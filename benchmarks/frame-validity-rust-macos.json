@@ -1,0 +1,87 @@
+{
+  "schema": "phasesmith.frame-validity-benchmark.v1",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "frames": 40,
+  "detector_shape": [
+    512,
+    768
+  ],
+  "peaks_per_frame": 64,
+  "timing": "in-memory original-count loaders; three repeats; no file/cache read timing",
+  "illumination": {
+    "1": {
+      "seconds": [
+        0.087913750030566,
+        0.08669562498107553,
+        0.08656908298144117
+      ],
+      "median": 0.08669562498107553
+    },
+    "4": {
+      "seconds": [
+        0.02678895799908787,
+        0.02655754197621718,
+        0.02686354098841548
+      ],
+      "median": 0.02678895799908787
+    }
+  },
+  "workers_bitwise_equal": true,
+  "coarse_storage_bytes": 61440,
+  "one_full_resolution_mask_bytes": 393216,
+  "upstream": {
+    "source_sha256": "316682575546c311e288231394e114df3f0355e1f9cde00973a48cc627e5b5a4",
+    "excluded_bitwise_equal": true,
+    "frame_hashes_equal": true,
+    "revision": "651c27f98108fb19f60db9a8cb227755b2f9d6a2"
+  },
+  "geometric": {
+    "frames": 5,
+    "seconds": 0.15253329102415591,
+    "mask_sha256": [
+      "00a0b67f4b0e2d9e3a5e2dbcd89c12b7622cfe82f3b1ba9af4a7caeaa59af0ab",
+      "a6619f482fee91a315f76cdcd8705d39b6ce11077c435ccc696142e130c27762",
+      "a6619f482fee91a315f76cdcd8705d39b6ce11077c435ccc696142e130c27762",
+      "a6619f482fee91a315f76cdcd8705d39b6ce11077c435ccc696142e130c27762",
+      "46a1b24ef9a6b8d5676fce7ce7f3066044077c2395d02be6e7b2b32b98fb00b0"
+    ],
+    "tile_rows": 64
+  },
+  "geometric_block16": {
+    "seconds": 0.0015916249831207097,
+    "conservative": true,
+    "extra_excluded_pixels": 9536
+  },
+  "backend": "phasesmith-spots Rust via optional Python adapter",
+  "real_frames": {
+    "frames": 142,
+    "seconds": 3.4713036670000292,
+    "coarse_masks_bitwise_equal_to_v7": true,
+    "original_image_hashes_equal": true,
+    "maximum_scale_difference": 5.960464477539063e-08,
+    "backend": "phasesmith-spots Rust",
+    "prior": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v7",
+    "standalone_raw_workflow_rust_only": false
+  },
+  "wheel_smoke": {
+    "wheel_sha256": "141dc53b1c7cb938da1de76ef4bcc24ca7ec7c24ab0869a30507018781a76ba5",
+    "scipy_installed": false,
+    "estimator_backend": "phasesmith-spots Rust",
+    "shadow_and_geometric_masks_passed": true
+  },
+  "rust_validation": {
+    "passed": 496,
+    "failed": 0,
+    "ignored": 34,
+    "formatting": true,
+    "strict_workspace_clippy": true,
+    "standalone_example": true
+  },
+  "python_validation": {
+    "passed": 3208,
+    "skipped": 11,
+    "deselected": 34,
+    "seconds": 108.7,
+    "ruff": true
+  }
+}

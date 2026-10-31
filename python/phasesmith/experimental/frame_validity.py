@@ -4,20 +4,22 @@
 The illumination estimator adapts Dioptas's MIT-licensed frame_validity.py at
 651c27f98108fb19f60db9a8cb227755b2f9d6a2. See THIRD_PARTY_NOTICES.md. Readers,
 display transformations, application caches and resource policy remain callers'
-responsibility. SciPy is imported only by the illumination estimator.
+responsibility. Production numerical masking runs in Rust; SciPy appears only
+in the independent reference.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
-import warnings
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 import numpy as np
+
+from phasesmith import _core
 
 from .rotation import angle_segments
 
@@ -331,32 +333,18 @@ class SeatShadowUnavailable(ValueError):
     """Original frames do not provide enough illuminated reference information."""
 
 
+def _native():
+    if not hasattr(_core, "experimental_shadow_coarse"):
+        raise RuntimeError("build PhaseSmith with --features experimental-spots for native masking")
+    return _core
+
+
 def _coarse_frame(image, mask, block):
     digest = hashlib.sha256(memoryview(image).cast("B")).hexdigest()
-    complete = not (image.shape[0] % block or image.shape[1] % block)
-    valid = np.isfinite(image) & ~mask
-    if np.any(image[valid] < 0):
-        raise ValueError(
-            "seat-shadow estimation requires original nonnegative counts, not residuals"
-        )
-    if np.any(image[valid] > 1e30):
-        raise ValueError("original counts exceed the 1e30 coarse-estimator range")
-    if complete and valid.all():
-        c = np.median(
-            image.reshape(image.shape[0] // block, block, image.shape[1] // block, block),
-            axis=(1, 3),
-        )
-    else:
-        a = np.where(valid, image, np.nan)
-        a = np.pad(
-            a, ((0, (-a.shape[0]) % block), (0, (-a.shape[1]) % block)), constant_values=np.nan
-        )
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
-            c = np.nanmedian(
-                a.reshape(a.shape[0] // block, block, a.shape[1] // block, block), axis=(1, 3)
-            )
-    return np.nan_to_num(c), digest, hashlib.sha256(mask.tobytes()).hexdigest(), bool(valid.any())
+    coarse, available = _native().experimental_shadow_coarse(
+        np.ascontiguousarray(image, dtype=np.float64), np.ascontiguousarray(mask), block
+    )
+    return coarse, digest, hashlib.sha256(mask.tobytes()).hexdigest(), available
 
 
 def estimate_seat_shadows(
@@ -378,10 +366,7 @@ def estimate_seat_shadows(
     normalization never changes counts or infers a wholly blocked frame from
     uniform dimming. Caller-owned orientation is used without any implicit flip.
     """
-    try:
-        from scipy import ndimage
-    except ImportError as error:
-        raise ImportError("seat-shadow estimation requires phasesmith[masking] (SciPy)") from error
+    native = _native()
     count = _integer(frame_count, "frame_count", 1, 1_000_000)
     if count < 5:
         raise SeatShadowUnavailable("seat-shadow estimation needs at least five frames")
@@ -393,10 +378,8 @@ def estimate_seat_shadows(
     opts = SeatShadowOptions() if options is None else options
     if not isinstance(opts, SeatShadowOptions):
         raise TypeError("options must be SeatShadowOptions")
-    first = round(0.37 * (count - 1)) if opts.reference_first is None else opts.reference_first
-    last = round(0.59 * (count - 1)) if opts.reference_last is None else opts.reference_last
-    if not 0 <= first < last < count:
-        raise ValueError("choose a valid inclusive illuminated reference-frame range")
+    if any(v is not None and v >= count for v in (opts.reference_first, opts.reference_last)):
+        raise ValueError("reference frame outside source scan")
     shape = None
 
     def load(index):
@@ -439,38 +422,20 @@ def estimate_seat_shadows(
             available.append(has_valid_pixels)
             if progress:
                 progress(len(coarse), count)
-    smooth = ndimage.gaussian_filter(
-        ndimage.median_filter(np.asarray(coarse, dtype=np.float32), size=(1, 3, 3)), sigma=(0, 1, 1)
-    )
-    references = np.linspace(first, last, min(5, last - first + 1)).astype(int)
-    reference = np.median(smooth[references], axis=0)
-    if not np.any(reference > 40):
-        raise SeatShadowUnavailable("illuminated reference background must exceed 40 counts")
-    ratio = smooth / np.maximum(reference, 1)
-    scales = np.quantile(ratio[:, reference > 40], 0.9, axis=1)
-    if np.any((scales <= 0) & available):
-        raise SeatShadowUnavailable(
-            "wholly dark unmasked frames have unknown visibility; supply reviewed masks or geometry"
+    try:
+        excluded, scales, references, unavailable = native.experimental_shadow_estimate(
+            np.ascontiguousarray(coarse, dtype=np.float64),
+            np.array(available, dtype=bool),
+            shape[0],
+            shape[1],
+            opts.block,
+            opts.threshold,
+            opts.guard_pixels,
+            opts.reference_first,
+            opts.reference_last,
         )
-    ratio /= np.maximum(scales[:, None, None], 1e-6)
-    support = reference > 25
-    _, xx = np.indices(reference.shape)
-    sides = (xx * opts.block < shape[1] * 350 / 2048) | (xx * opts.block > shape[1] * 1700 / 2048)
-    excluded = []
-    for index, frame in enumerate(ratio):
-        if not available[index]:
-            excluded.append(np.ones(reference.shape, bool))
-            continue
-        candidate = ndimage.binary_fill_holes(
-            ndimage.binary_closing((frame < opts.threshold) & support)
-        )
-        labels, _ = ndimage.label(candidate)
-        sizes = np.bincount(labels.ravel())
-        connected = np.unique(labels[sides])
-        connected = connected[(connected != 0) & (sizes[connected] >= 20)]
-        keep = np.isin(labels, connected)
-        margin = int(np.ceil(opts.guard_pixels / opts.block))
-        excluded.append(ndimage.binary_dilation(keep, iterations=margin) if margin else keep)
+    except native.ExperimentalSeatShadowUnavailable as error:
+        raise SeatShadowUnavailable(str(error)) from error
     return FrameValidity(
         ids,
         shape,
@@ -480,13 +445,14 @@ def estimate_seat_shadows(
         omega_bounds=bounds,
         provenance=dict(
             algorithm="seat-illumination-ratio-v2",
+            backend="phasesmith-spots Rust",
             options=asdict(opts),
             reference_indices=references.tolist(),
             image_sha256=hashes,
             input_mask_sha256=mask_hashes,
             detection_scales=scales.tolist(),
             globally_low_signal_frames=np.flatnonzero(scales < 0.5).tolist(),
-            known_unavailable_frames=np.flatnonzero(~np.asarray(available)).tolist(),
+            known_unavailable_frames=unavailable.tolist(),
             low_signal_policy="diagnostic only; exclusions follow spatial shadow components",
             input_kind="original nonnegative counts; no normalization applied to measurements",
             upstream="Dioptas 651c27f98108fb19f60db9a8cb227755b2f9d6a2; MIT",
@@ -526,24 +492,10 @@ def flag_invalid_tracks(table, validity):
 
 
 def _dot_range(rays, axis, normal, low, high):
-    """Exact extrema of ray dot R(axis,omega)normal on a closed interval."""
-    parallel = (axis @ normal) * axis
-    c = rays @ parallel
-    a, b = rays @ (normal - parallel), rays @ np.cross(axis, normal)
-    ends = (c + a * np.cos(low) + b * np.sin(low), c + a * np.cos(high) + b * np.sin(high))
-    minimum, maximum = np.minimum(*ends), np.maximum(*ends)
-    phase, radius = np.arctan2(b, a), np.hypot(a, b)
-    period = 2 * np.pi
-    for point, value, maximum_point in (
-        (phase, c + radius, True),
-        (phase + np.pi, c - radius, False),
-    ):
-        occurs = np.ceil((low - point) / period) <= np.floor((high - point) / period)
-        if maximum_point:
-            maximum = np.where(occurs, np.maximum(maximum, value), maximum)
-        else:
-            minimum = np.where(occurs, np.minimum(minimum, value), minimum)
-    return minimum, maximum
+    result = _native().experimental_mask_dot_range(
+        np.ascontiguousarray(rays, dtype=float), tuple(axis), tuple(normal), low, high
+    )
+    return result[:, 0], result[:, 1]
 
 
 @dataclass(frozen=True, init=False)
@@ -649,36 +601,15 @@ class DacApertureMask(_MaskAccess):
 
     def _coarse_mask(self, frame):
         frame = _integer(frame, "frame", 0, len(self.frame_ids) - 1)
-        low, high = np.deg2rad(sorted(self.omega_bounds[frame]))
-        origin, fast, slow, beam, axis = self.geometry.vectors
-        axis, beam = axis / np.linalg.norm(axis), beam / np.linalg.norm(beam)
-        limit = np.cos(np.deg2rad(self.half_opening_degrees)) - 8 * np.finfo(float).eps
-        low_in, high_in = _dot_range(beam[None], axis, self.axis_at_omega_zero, low, high)
-        h, w = self.shape
-        block = self.pixel_block
-        ch, cw = (h + block - 1) // block, (w + block - 1) // block
-        if not ((low_in[0] >= limit) or (high_in[0] <= -limit)):
-            return np.ones((ch, cw), bool)
-        result = np.empty((ch, cw), bool)
-        rows_per_tile = max(1, self.tile_rows // block)
-        for y0 in range(0, ch, rows_per_tile):
-            y1 = min(ch, y0 + rows_per_tile)
-            yy, xx = np.mgrid[y0:y1, :cw]
-            minimum = np.full(xx.size, np.inf)
-            maximum = np.full(xx.size, -np.inf)
-            for right, bottom in ((False, False), (False, True), (True, False), (True, True)):
-                x = np.minimum((xx.ravel() + int(right)) * block, w) - 0.5
-                y = np.minimum((yy.ravel() + int(bottom)) * block, h) - 0.5
-                rays = origin + x[:, None] * fast + y[:, None] * slow
-                lengths = np.linalg.norm(rays, axis=1)
-                if np.any(lengths == 0):
-                    raise ValueError("pixel corner coincides with sample origin")
-                rays /= lengths[:, None]
-                lo, hi = _dot_range(rays, axis, self.axis_at_omega_zero, low, high)
-                minimum = np.minimum(minimum, lo)
-                maximum = np.maximum(maximum, hi)
-            result[y0:y1] = ~((minimum >= limit) | (maximum <= -limit)).reshape(y1 - y0, cw)
-        return result
+        return _native().experimental_dac_mask(
+            np.ascontiguousarray(self.geometry.vectors),
+            tuple(self.omega_bounds[frame]),
+            self.shape[0],
+            self.shape[1],
+            self.pixel_block,
+            tuple(self.axis_at_omega_zero),
+            self.half_opening_degrees,
+        )
 
     def mask(self, frame):
         coarse = self._coarse_mask(frame)

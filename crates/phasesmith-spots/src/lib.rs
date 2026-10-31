@@ -14,6 +14,7 @@ use std::fmt::{Display, Formatter};
 
 pub mod fft;
 mod fourier_refinement;
+pub mod frame_validity;
 pub mod integration;
 pub mod intensity_model;
 pub mod local_background;
