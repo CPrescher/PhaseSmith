@@ -5,6 +5,8 @@ use crate::{Cancellation, SolutionError, SymmetryModel, error};
 use phasesmith_crystallography::Matrix3;
 use rustfft::num_complex::Complex;
 use std::time::Instant;
+#[path = "repair_evaluation.rs"]
+mod evaluation;
 
 /// Complete discrete proposal with isotropic shifts of the original site tensors.
 #[derive(Clone, Debug)]
@@ -27,6 +29,14 @@ pub struct JointAssignments {
     pub evaluations: usize,
     /// Completed categorical beam expansions.
     pub depths: usize,
+    /// Cached reflection fields actually built.
+    pub profile_builds: usize,
+    /// Reused cached fields, including categorical rescoring.
+    pub profile_reuses: usize,
+    /// Line-search requests that avoid objective derivatives.
+    pub score_only_requests: usize,
+    /// Maximum per-call bytes for base columns and reflection buffers.
+    pub workspace_bytes: usize,
 }
 impl PreparedPeakCompletion {
     /// Apply supplied-symmetry Cartesian tensors to orbit values and coordinate jets together.
@@ -325,6 +335,39 @@ impl PreparedPeakCompletion {
         deadline: Option<Instant>,
         cancellation: Option<&Cancellation>,
     ) -> Result<JointAssignments, SolutionError> {
+        self.joint_neighbors_with_cache(labels, bounds, maximum, deadline, cancellation, false)
+    }
+    /// Evaluate the same bounded categorical search with optional call-local numerical reuse.
+    /// # Errors
+    /// Uses the same input validation and resource limits as `joint_neighbors`.
+    /// # Panics
+    /// Only if public element metadata was mutated after preparation.
+    #[allow(clippy::too_many_lines, clippy::too_many_arguments)]
+    pub fn joint_neighbors_with_cache(
+        &self,
+        labels: &[Option<usize>],
+        bounds: &[[f64; 2]],
+        maximum: usize,
+        deadline: Option<Instant>,
+        cancellation: Option<&Cancellation>,
+        cached: bool,
+    ) -> Result<JointAssignments, SolutionError> {
+        if cached {
+            self.joint_neighbors_impl::<true>(labels, bounds, maximum, deadline, cancellation)
+        } else {
+            self.joint_neighbors_impl::<false>(labels, bounds, maximum, deadline, cancellation)
+        }
+    }
+    #[allow(clippy::too_many_lines)]
+    fn joint_neighbors_impl<const CACHED: bool>(
+        &self,
+        labels: &[Option<usize>],
+        bounds: &[[f64; 2]],
+        maximum: usize,
+        deadline: Option<Instant>,
+        cancellation: Option<&Cancellation>,
+    ) -> Result<JointAssignments, SolutionError> {
+        let cached = CACHED;
         self.evaluate(labels, 0)?;
         if !self.displacement_applied
             || !self.covered(labels)
@@ -366,15 +409,23 @@ impl PreparedPeakCompletion {
             .min_by(|(_, a), (_, b)| (*a - s2).abs().total_cmp(&(*b - s2).abs()))
             .expect("nonempty rows")
             .0;
+        let columns = cached.then(|| evaluation::Columns::new(self));
+        let mut workspace = cached.then(|| evaluation::Workspace::new(self));
+        let mut rest_buffer = if cached {
+            vec![Complex::default(); self.observed.len()]
+        } else {
+            Vec::new()
+        };
         let column = |site: usize, label: Option<usize>, shift: f64| -> Vec<Complex<f64>> {
             self.s_squared
                 .iter()
                 .enumerate()
                 .map(|(h, &s)| {
                     label.map_or(Complex::default(), |e| {
-                        self.phase[site][h]
-                            * self.factors[h * width + e]
-                            * (-beta * shift * s).clamp(-600., 600.).exp()
+                        columns.as_ref().map_or_else(
+                            || self.phase[site][h] * self.factors[h * width + e],
+                            |cache| cache.value(self, site, e, h),
+                        ) * (-beta * shift * s).clamp(-600., 600.).exp()
                     })
                 })
                 .collect()
@@ -415,6 +466,13 @@ impl PreparedPeakCompletion {
                     }
                     let old = state.labels[i];
                     let old_column = column(i, old, state.shifts[i]);
+                    if cached {
+                        for (value, (t, o)) in
+                            rest_buffer.iter_mut().zip(total.iter().zip(&old_column))
+                        {
+                            *value = t - o;
+                        }
+                    }
                     for new in std::iter::once(None).chain((0..width).map(Some)) {
                         if new == old
                             || old
@@ -441,8 +499,17 @@ impl PreparedPeakCompletion {
                             }
                         });
                         let shifted = (state.shifts[i] + delta).clamp(bounds[i][0], bounds[i][1]);
-                        let rest: Vec<_> =
-                            total.iter().zip(&old_column).map(|(t, o)| t - o).collect();
+                        let owned_rest: Vec<_>;
+                        let rest = if cached {
+                            rest_buffer.as_slice()
+                        } else {
+                            owned_rest =
+                                total.iter().zip(&old_column).map(|(t, o)| t - o).collect();
+                            &owned_rest
+                        };
+                        if let Some(work) = workspace.as_mut() {
+                            work.begin();
+                        }
                         let mut polished = if self
                             .s_squared
                             .iter()
@@ -453,8 +520,13 @@ impl PreparedPeakCompletion {
                             shifted
                         };
                         for _ in 0..3 {
-                            let (value, gradient, curvature) =
-                                self.shift_profile(&rest, i, new, polished);
+                            let (value, gradient, curvature) = if let (Some(work), Some(columns)) =
+                                (workspace.as_mut(), columns.as_ref())
+                            {
+                                work.profile(self, columns, rest, i, new, polished, true)
+                            } else {
+                                self.shift_profile(rest, i, new, polished)
+                            };
                             out.evaluations += 1;
                             if curvature <= 1e-20 {
                                 break;
@@ -474,7 +546,13 @@ impl PreparedPeakCompletion {
                                 {
                                     continue;
                                 }
-                                let (objective, _, _) = self.shift_profile(&rest, i, new, next);
+                                let (objective, _, _) = if let (Some(work), Some(columns)) =
+                                    (workspace.as_mut(), columns.as_ref())
+                                {
+                                    work.profile(self, columns, rest, i, new, next, false)
+                                } else {
+                                    self.shift_profile(rest, i, new, next)
+                                };
                                 out.evaluations += 1;
                                 if objective < value - 1e-14 {
                                     polished = next;
@@ -502,14 +580,20 @@ impl PreparedPeakCompletion {
                             {
                                 continue;
                             }
-                            let changed = column(i, new, shift);
-                            let trial: Vec<_> = total
-                                .iter()
-                                .zip(&old_column)
-                                .zip(changed)
-                                .map(|((t, o), c)| t - o + c)
-                                .collect();
-                            let objective = self.fixed_objective(&trial);
+                            let objective = if let (Some(work), Some(columns)) =
+                                (workspace.as_mut(), columns.as_ref())
+                            {
+                                work.fixed_trial(self, columns, rest, i, new, shift)
+                            } else {
+                                let changed = column(i, new, shift);
+                                let trial: Vec<_> = total
+                                    .iter()
+                                    .zip(&old_column)
+                                    .zip(changed)
+                                    .map(|((t, o), c)| t - o + c)
+                                    .collect();
+                                self.fixed_objective(&trial)
+                            };
                             out.evaluations += 1;
                             if !objective.is_finite() || objective > 1.25 * parent.objective + 1e-4
                             {
@@ -569,6 +653,14 @@ impl PreparedPeakCompletion {
             if out.candidates.len() == maximum {
                 break;
             }
+        }
+        if let (Some(work), Some(columns)) = (workspace.as_ref(), columns.as_ref()) {
+            out.profile_builds = work.builds;
+            out.profile_reuses = work.reuses;
+            out.score_only_requests = work.score_only;
+            out.workspace_bytes = work.bytes()
+                + columns.bytes()
+                + rest_buffer.len() * std::mem::size_of::<Complex<f64>>();
         }
         Ok(out)
     }

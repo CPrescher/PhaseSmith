@@ -2689,3 +2689,26 @@ seconds, 18 full fits and five accepted rounds; summed library solve time rises
 41.741-to-46.620 seconds (11.69%), typical paired time 4.25%. All 140 predictions
 precede development grading; seven above-cap references remain in the denominator.
 The option stays experimental/off by default, and the 65 holdout cases stay closed.
+
+An execution-only `cached_repair_evaluation` option reuses bounded immutable
+categorical columns, two scalar reflection fields, line-search buffers and
+coherence-neighbor preparation inside joint assignment repair. Original equations,
+reduction order, proposals, work budgets, physical fits and acceptance remain.
+The column cache caps payload at 4 MiB and falls back to direct multiplication;
+reflection buffers add at most 208 KiB. Caches expire before full physical fits,
+with no global numerical state or additional threads. Independent equations,
+finite differences, bitwise original/fast comparisons and a complete matched
+35-development-case protocol are described in `docs/solution-repair-evaluation.md`.
+The option requires joint assignment repair, remains off by default, and the
+65 holdout cases remain closed.
+The matched all-35 three-mode collection retains the exact 19 structures,
+27 correct total counts, 19 correct per-element vectors and 15 strict structures;
+all 35 count vectors and all logical repair work match the preceding repair.
+Repair stage time falls 4.477-to-3.466 seconds (22.59%); summed library time falls
+39.605-to-38.566 seconds (2.62%) and process time 46.880-to-45.639 seconds (2.65%).
+Median paired solver time improves only 0.26%. Relative to the same-collection
+35.118-second no-repair reference, added solver overhead falls 12.78%-to-9.82%.
+The isolated categorical kernel improves 35.125-to-17.479 ms (2.01 times).
+All 210 predictions precede grading; seven above-cap references and four no-model
+cases stay in the denominator. Experimental defaults and the closed holdout stay
+unchanged. Provenance is in the `structure-solution-repair-evaluation-*` reports.

@@ -256,23 +256,25 @@ impl NativeCompletion {
             .shift_score(&completion_labels(labels)?, &shifts, site)
             .map_err(invalid)
     }
-    #[pyo3(signature=(labels,bounds,maximum=2))]
+    #[pyo3(signature=(labels,bounds,maximum=2,cached=false))]
     fn joint<'py>(
         &self,
         py: Python<'py>,
         labels: Vec<i32>,
         bounds: Vec<[f64; 2]>,
         maximum: usize,
+        cached: bool,
     ) -> PyResult<Bound<'py, PyDict>> {
         let labels = completion_labels(labels)?;
         let result = py
             .detach(|| {
-                self.inner.joint_neighbors(
+                self.inner.joint_neighbors_with_cache(
                     &labels,
                     &bounds,
                     maximum,
                     Some(Instant::now() + Duration::from_secs(10)),
                     None,
+                    cached,
                 )
             })
             .map_err(invalid)?;
@@ -295,6 +297,10 @@ impl NativeCompletion {
         out.set_item("candidates", candidates)?;
         out.set_item("evaluations", result.evaluations)?;
         out.set_item("depths", result.depths)?;
+        out.set_item("profile_builds", result.profile_builds)?;
+        out.set_item("profile_reuses", result.profile_reuses)?;
+        out.set_item("score_only_requests", result.score_only_requests)?;
+        out.set_item("workspace_bytes", result.workspace_bytes)?;
         Ok(out)
     }
     fn reassign<'py>(&self, py: Python<'py>, labels: Vec<i32>) -> PyResult<Bound<'py, PyDict>> {

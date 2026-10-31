@@ -72,6 +72,20 @@ pub(super) fn summary<'py>(
     d.set_item("model_consensus_stopping", s.model_consensus_stopping)?;
     d.set_item("requested_workers", s.requested_workers)?;
     d.set_item("workers", s.workers)?;
+    d.set_item("cached_repair_evaluation", s.cached_repair_evaluation)?;
+    d.set_item(
+        "joint_assignment_field_builds",
+        s.joint_assignment_field_builds,
+    )?;
+    d.set_item(
+        "joint_assignment_field_reuses",
+        s.joint_assignment_field_reuses,
+    )?;
+    d.set_item("joint_assignment_score_only", s.joint_assignment_score_only)?;
+    d.set_item(
+        "joint_assignment_workspace_bytes",
+        s.joint_assignment_workspace_bytes,
+    )?;
     d.set_item("joint_assignment_refinement", s.joint_assignment_refinement)?;
     d.set_item("joint_assignment_scores", s.joint_assignment_scores)?;
     d.set_item("joint_assignment_depths", s.joint_assignment_depths)?;

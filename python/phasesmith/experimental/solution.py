@@ -544,6 +544,11 @@ class SharedSearchAudit:
     assignment_convergence_stopping: bool = False
     late_phase_plateau_stopping: bool = False
     model_consensus_stopping: bool = False
+    cached_repair_evaluation: bool = False
+    joint_assignment_field_builds: int = 0
+    joint_assignment_field_reuses: int = 0
+    joint_assignment_score_only: int = 0
+    joint_assignment_workspace_bytes: int = 0
     joint_assignment_refinement: bool = False
     joint_assignment_scores: int = 0
     joint_assignment_depths: int = 0
@@ -856,6 +861,7 @@ def solve_structure_elements(
     model_consensus_stopping: bool = False,
     workers: int = 1,
     joint_assignment_refinement: bool = False,
+    cached_repair_evaluation: bool = False,
     missing_reflections: bool = False,
     resolution_extension: float = 1.0,
     score_only_evaluation: bool = False,
@@ -978,6 +984,10 @@ def solve_structure_elements(
     seeds. At most six full fits share two seconds and the original deadline.
     The original winner is retained unless rank/R1 are non-worse and the physical
     amplitude objective falls at least one percent. Requires phase-origin selection.
+    ``cached_repair_evaluation=True`` reuses bounded categorical columns, scalar
+    reflection fields and line-search buffers without changing repair proposals
+    or acceptance. Requires joint assignment refinement and adds at most 4 MiB
+    of column cache plus bounded reflection buffers per active repair call.
     ``workers`` bounds one call-owned pool (1..64, capped to available CPUs).
     Reflection values and derivatives run in parallel; reductions, phase starts,
     candidate ordering and stopping stay ordered. Small evaluations stay serial.
@@ -1016,6 +1026,7 @@ def solve_structure_elements(
         ("late_phase_plateau_stopping", late_phase_plateau_stopping),
         ("model_consensus_stopping", model_consensus_stopping),
         ("joint_assignment_refinement", joint_assignment_refinement),
+        ("cached_repair_evaluation", cached_repair_evaluation),
         ("missing_reflections", missing_reflections),
         ("adaptive_checkpoints", adaptive_checkpoints),
         ("score_only_evaluation", score_only_evaluation),
@@ -1054,6 +1065,8 @@ def solve_structure_elements(
         raise ValueError("fused_phase_workspace requires reusable_fourier_workspaces")
     if late_phase_plateau_stopping and (not work_sliced_phasing or adaptive_checkpoints):
         raise ValueError("late_phase_plateau_stopping requires work_sliced_phasing without adaptive_checkpoints")
+    if cached_repair_evaluation and not joint_assignment_refinement:
+        raise ValueError("cached_repair_evaluation requires joint_assignment_refinement")
     if joint_assignment_refinement and not phase_origin_selection:
         raise ValueError("joint_assignment_refinement requires phase_origin_selection")
     if model_consensus_stopping and (not phase_origin_selection or not ambiguous_assignments):
@@ -1225,7 +1238,7 @@ def solve_structure_elements(
                     specialized_isotropic_refinement,
                     streamed_peak_search,
                     reuse_normal_matrices,
-                    (short_phase_starts, blocked_normal_matrices, phase_plateau_stopping, assignment_convergence_stopping, late_phase_plateau_stopping, model_consensus_stopping, workers, joint_assignment_refinement),
+                    (short_phase_starts, blocked_normal_matrices, phase_plateau_stopping, assignment_convergence_stopping, late_phase_plateau_stopping, model_consensus_stopping, workers, joint_assignment_refinement, cached_repair_evaluation),
                 ),
             ),
         ),

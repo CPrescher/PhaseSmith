@@ -1,0 +1,643 @@
+{
+  "schema": "phasesmith.repair-evaluation-profiles.v1",
+  "holdout_opened": false,
+  "qualification": "Separate five-second samples of repeated complete development solves, not timed corpus collection. Sampling counts and one recorded iteration per profile do not establish a wall-time speedup. Baseline uses the preceding committed native binary; fast profile uses the current candidate. Raw native hashes, exact drivers and collapsed leaf counts retained.",
+  "profiles": [
+    {
+      "mode": "control",
+      "native_sha256": "f02e749f23e832d4359fb9f6e00efcb31711956bb8bcaeeb079cb545a3fa0996",
+      "driver": "import sys,json,time,hashlib\nfrom pathlib import Path\nroot=Path(__file__).resolve().parents[2]\nsys.path.insert(0,str(root/'benchmarks'))\nfrom solution_multicore import ENABLED\nfrom phasesmith import _core\nfrom phasesmith.crystallography import UnitCell\nfrom phasesmith.experimental.solution import solve_structure_elements,SolutionOptions\nfrom phasesmith.io.hkl import read_hkl\nfrom phasesmith.io.space_groups import space_group_by_number\nbase=root/'runs/joint-assignment-final/repair/cod-2242589/phasesmith'\np=json.load(open(base/'inputs.json'));data=read_hkl(base/'sample.hkl');group=space_group_by_number(p['space_group_number']).space_group\nkwargs={k:True for k in ENABLED};kwargs.update(cell=UnitCell(*p['cell']),space_group=group,elements=p['elements'],maximum_atoms=json.load(open(base/'solution/worker.json'))['input_only_resource_atom_cap'],symmetry_recycling=True,tangent_refinement=True,joint_assignment_refinement=True,workers=1,options=SolutionOptions(phasing='dual_space',trials=4,cycles=800,seed=0,max_seconds=13,r1_target=.06,completion=False))\nprint(json.dumps(dict(native=_core.__file__,native_sha256=hashlib.sha256(Path(_core.__file__).read_bytes()).hexdigest())),flush=True)\nfor _ in range(12):\n r=solve_structure_elements(data,**kwargs);print(r.shared_search.joint_assignment_seconds,flush=True)\n",
+      "driver_sha256": "e9c27ac281fb2f43b9eca94f23ec2164286197dbbe96fd3f92f9ca0df8a28e0b",
+      "raw_profile_sha256": "f431ce96fbc129464a817ae2fb4b56b57ff117563ab0394dfa81fefbe6a6d9bb",
+      "main_thread_samples": 4155,
+      "collapsed_leaves": [
+        {
+          "symbol": "_RNvNtCsgUZMp6OeHys_14matrixmultiply12dgemm_kernel18kernel_target_neon",
+          "image": "_core.abi3.so",
+          "leaf_samples": 554
+        },
+        {
+          "symbol": "_RNvNtCsH7vNu8lIFZ_19phasesmith_solution11linear_step25original_residual_squared",
+          "image": "_core.abi3.so",
+          "leaf_samples": 365
+        },
+        {
+          "symbol": "_RNvMNtNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completion5jointNtB4_22PreparedPeakCompletion13shift_profile",
+          "image": "_core.abi3.so",
+          "leaf_samples": 304
+        },
+        {
+          "symbol": "exp",
+          "image": "libsystem_m.dylib",
+          "leaf_samples": 226
+        },
+        {
+          "symbol": "_RNvMs0_NtCsH7vNu8lIFZ_19phasesmith_solution14adp_refinementNtB5_22PreparedSymmetricModel8evaluate",
+          "image": "_core.abi3.so",
+          "leaf_samples": 210
+        },
+        {
+          "symbol": "_RNvMs0_NtCsH7vNu8lIFZ_19phasesmith_solution14adp_refinementNtB5_22PreparedSymmetricModel13evaluate_rows",
+          "image": "_core.abi3.so",
+          "leaf_samples": 191
+        },
+        {
+          "symbol": "_RNvMs0_NtCsH7vNu8lIFZ_19phasesmith_solution14adp_refinementNtB5_22PreparedSymmetricModel24refine_with_normal_reuse",
+          "image": "_core.abi3.so",
+          "leaf_samples": 165
+        },
+        {
+          "symbol": "hypot",
+          "image": "libsystem_m.dylib",
+          "leaf_samples": 159
+        },
+        {
+          "symbol": "__sincos_stret",
+          "image": "libsystem_m.dylib",
+          "leaf_samples": 150
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completionNtB2_22PreparedPeakCompletion6search",
+          "image": "_core.abi3.so",
+          "leaf_samples": 140
+        },
+        {
+          "symbol": "_RINvNtCsgUZMp6OeHys_14matrixmultiply4gemm9gemm_loopNtNtB4_12dgemm_kernel10KernelNeonEB4_",
+          "image": "_core.abi3.so",
+          "leaf_samples": 131
+        },
+        {
+          "symbol": "_RNvMNtNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completion5jointNtB4_22PreparedPeakCompletion15joint_neighbors",
+          "image": "_core.abi3.so",
+          "leaf_samples": 111
+        },
+        {
+          "symbol": "_RNvNtNtCsH7vNu8lIFZ_19phasesmith_solution14adp_refinement9isotropic8evaluate",
+          "image": "_core.abi3.so",
+          "leaf_samples": 109
+        },
+        {
+          "symbol": "_RINvNtCsi9Y0qaxCpcI_7rustfft11array_utils17validate_and_iterINtCs14PP5DI4t7A_11num_complex7ComplexdENCNvXs1J_NtNtB4_4neon16neon_butterfliesINtB1J_18NeonF64Butterfly32dEINtB4_3FftdE20process_with_scratch0ECsH7vNu8lIFZ_19phasesmith_solution",
+          "image": "_core.abi3.so",
+          "leaf_samples": 78
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution11atomic_maskNtB2_12PreparedMask8add_peak",
+          "image": "_core.abi3.so",
+          "leaf_samples": 73
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution11linear_stepNtB2_20PreparedNormalSystem7prepare",
+          "image": "_core.abi3.so",
+          "leaf_samples": 70
+        },
+        {
+          "symbol": "_RINvMs3_NtCsgUZMp6OeHys_14matrixmultiply9threadingINtB6_18RangeChunkParallelNCINvNtB8_4gemm9gemm_loopNtNtB8_12dgemm_kernel10KernelNeonE0E8for_eachNCB1e_s_0EB8_",
+          "image": "_core.abi3.so",
+          "leaf_samples": 69
+        },
+        {
+          "symbol": "_RNvMs_NtCsH7vNu8lIFZ_19phasesmith_solution11linear_stepNtB4_11NormalReuse4step",
+          "image": "_core.abi3.so",
+          "leaf_samples": 60
+        },
+        {
+          "symbol": "<deduplicated_symbol>",
+          "image": "_core.abi3.so",
+          "leaf_samples": 57
+        },
+        {
+          "symbol": "DYLD-STUB$$exp",
+          "image": "_core.abi3.so",
+          "leaf_samples": 55
+        },
+        {
+          "symbol": "_RINvXs0_NtNtNtCs3bJEMBXHbwl_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterINtCs14PP5DI4t7A_11num_complex7ComplexdEEENCNvMNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completionNtB2A_22PreparedPeakCompletion7updated0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB45_8for_each4callB1P_NCINvMsk_NtCs8Hh7wWMBHrQ_5alloc3vecINtB5l_3VecB1P_E14extend_trustedBN_E0E0EB2C_",
+          "image": "_core.abi3.so",
+          "leaf_samples": 55
+        },
+        {
+          "symbol": "_RNvMNtNtCsH7vNu8lIFZ_19phasesmith_solution7fourier4realNtB2_13RealTransform2xy",
+          "image": "_core.abi3.so",
+          "leaf_samples": 54
+        },
+        {
+          "symbol": "DYLD-STUB$$hypot",
+          "image": "_core.abi3.so",
+          "leaf_samples": 46
+        },
+        {
+          "symbol": "_RNvNtCsH7vNu8lIFZ_19phasesmith_solution14adp_refinement16prepare_geometry",
+          "image": "_core.abi3.so",
+          "leaf_samples": 38
+        },
+        {
+          "symbol": "_RINvNtCsi9Y0qaxCpcI_7rustfft11array_utils17validate_and_iterINtCs14PP5DI4t7A_11num_complex7ComplexdENCNvXs1x_NtNtB4_4neon16neon_butterfliesINtB1J_18NeonF64Butterfly16dEINtB4_3FftdE20process_with_scratch0ECsH7vNu8lIFZ_19phasesmith_solution",
+          "image": "_core.abi3.so",
+          "leaf_samples": 37
+        },
+        {
+          "symbol": "_RINvXs0_NtNtNtCs3bJEMBXHbwl_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterdEENCNCNvMNtNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completion5jointNtB21_22PreparedPeakCompletion15joint_neighborss3_00ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB3P_8for_each4callINtCs14PP5DI4t7A_11num_complex7ComplexdENCINvMsk_NtCs8Hh7wWMBHrQ_5alloc3vecINtB5F_3VecB4S_E14extend_trustedBN_E0E0EB23_",
+          "image": "_core.abi3.so",
+          "leaf_samples": 37
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution11linear_stepNtB2_20PreparedNormalSystem14solve_with_rhs",
+          "image": "_core.abi3.so",
+          "leaf_samples": 37
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution9peak_scanNtB2_21PreparedAdaptivePeaks13scan_streamed",
+          "image": "_core.abi3.so",
+          "leaf_samples": 31
+        },
+        {
+          "symbol": "_RNvNtCsH7vNu8lIFZ_19phasesmith_solution10dual_space28dual_space_guided_prediction",
+          "image": "_core.abi3.so",
+          "leaf_samples": 29
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution7fourierNtB2_9Transform24fourier_to_density_slice",
+          "image": "_core.abi3.so",
+          "leaf_samples": 27
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution7fourierNtB2_9Transform24density_slice_to_fourier",
+          "image": "_core.abi3.so",
+          "leaf_samples": 23
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completionNtB2_22PreparedPeakCompletion7profile",
+          "image": "_core.abi3.so",
+          "leaf_samples": 20
+        },
+        {
+          "symbol": "_xzm_free",
+          "image": "libsystem_malloc.dylib",
+          "leaf_samples": 20
+        },
+        {
+          "symbol": "_RNvNtCsH7vNu8lIFZ_19phasesmith_solution5math35eigen",
+          "image": "_core.abi3.so",
+          "leaf_samples": 19
+        },
+        {
+          "symbol": "atan2",
+          "image": "libsystem_m.dylib",
+          "leaf_samples": 19
+        },
+        {
+          "symbol": "_platform_memset",
+          "image": "libsystem_platform.dylib",
+          "leaf_samples": 18
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution9peak_scanNtB2_21PreparedAdaptivePeaks6select",
+          "image": "_core.abi3.so",
+          "leaf_samples": 17
+        },
+        {
+          "symbol": "_RNvNtCsH7vNu8lIFZ_19phasesmith_solution5math39conjugate",
+          "image": "_core.abi3.so",
+          "leaf_samples": 16
+        },
+        {
+          "symbol": "_RNvMNtNtCsH7vNu8lIFZ_19phasesmith_solution7fourier4realNtB2_13RealTransform16restore_spectrum",
+          "image": "_core.abi3.so",
+          "leaf_samples": 15
+        },
+        {
+          "symbol": "_RNvMNtNtCsH7vNu8lIFZ_19phasesmith_solution7fourier4realNtB2_13RealTransform16prepare_spectrum",
+          "image": "_core.abi3.so",
+          "leaf_samples": 14
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution7fourierNtB2_9Transform5apply",
+          "image": "_core.abi3.so",
+          "leaf_samples": 12
+        },
+        {
+          "symbol": "_RINvMsi_NtNtNtCs8Hh7wWMBHrQ_5alloc11collections5btree3mapINtB6_8BTreeMapAlj4_NtNtB8_7set_val9SetValZSTE3getB18_ECsH7vNu8lIFZ_19phasesmith_solution",
+          "image": "_core.abi3.so",
+          "leaf_samples": 11
+        },
+        {
+          "symbol": "_platform_memmove",
+          "image": "libsystem_platform.dylib",
+          "leaf_samples": 11
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completionNtB2_22PreparedPeakCompletion8evaluate",
+          "image": "_core.abi3.so",
+          "leaf_samples": 10
+        },
+        {
+          "symbol": "_RNvMNtNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completion8chemicalNtB4_22PreparedPeakCompletion8reassign",
+          "image": "_core.abi3.so",
+          "leaf_samples": 10
+        },
+        {
+          "symbol": "_RNvMs_NtCsH7vNu8lIFZ_19phasesmith_solution7tangentNtB4_15PreparedTangent3new",
+          "image": "_core.abi3.so",
+          "leaf_samples": 10
+        },
+        {
+          "symbol": "_RINvXs0_NtNtNtCs3bJEMBXHbwl_4core4iter8adapters3mapINtB6_3MapINtNtNtBc_5slice4iter4IterAAdj3_B1q_ENCNvNtCsH7vNu8lIFZ_19phasesmith_solution5math311exponentials0_0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2A_8for_each4callB1n_NCINvMsk_NtCs8Hh7wWMBHrQ_5alloc3vecINtB3Q_3VecB1n_E14extend_trustedBN_E0E0EB1E_",
+          "image": "_core.abi3.so",
+          "leaf_samples": 9
+        },
+        {
+          "symbol": "_xzm_xzone_malloc_tiny",
+          "image": "libsystem_malloc.dylib",
+          "leaf_samples": 9
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution10dual_spaceNtB2_15AtomicWorkspace6update",
+          "image": "_core.abi3.so",
+          "leaf_samples": 8
+        },
+        {
+          "symbol": "_RNvMs_NtCsH7vNu8lIFZ_19phasesmith_solution11phase_scoreNtB4_18PreparedPhaseScore8evaluate",
+          "image": "_core.abi3.so",
+          "leaf_samples": 8
+        },
+        {
+          "symbol": "__bzero",
+          "image": "libsystem_platform.dylib",
+          "leaf_samples": 8
+        },
+        {
+          "symbol": "madvise",
+          "image": "libsystem_kernel.dylib",
+          "leaf_samples": 8
+        },
+        {
+          "symbol": "_RINvMsi_NtNtNtCs8Hh7wWMBHrQ_5alloc11collections5btree3mapINtB6_8BTreeMapAlj3_NtNtCsH7vNu8lIFZ_19phasesmith_solution7tangent9PhaseTermE3getB18_EB1h_",
+          "image": "_core.abi3.so",
+          "leaf_samples": 6
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completionNtB2_22PreparedPeakCompletion3new",
+          "image": "_core.abi3.so",
+          "leaf_samples": 6
+        },
+        {
+          "symbol": "_RNvMs0_NtCs2uIyYPVbpOr_26phasesmith_crystallography10scatteringNtB5_22PreparedXrayScattering8evaluate",
+          "image": "_core.abi3.so",
+          "leaf_samples": 6
+        },
+        {
+          "symbol": "_free",
+          "image": "libsystem_malloc.dylib",
+          "leaf_samples": 6
+        },
+        {
+          "symbol": "mach_absolute_time",
+          "image": "libsystem_kernel.dylib",
+          "leaf_samples": 6
+        },
+        {
+          "symbol": "<deduplicated_symbol>",
+          "image": "libsystem_malloc.dylib",
+          "leaf_samples": 5
+        },
+        {
+          "symbol": "_RINvMNtCs3bJEMBXHbwl_4core5sliceSAlj3_16binary_search_byNCNvB2_13binary_search0ECsH7vNu8lIFZ_19phasesmith_solution",
+          "image": "_core.abi3.so",
+          "leaf_samples": 5
+        },
+        {
+          "symbol": "_RINvMs3_NtCsgUZMp6OeHys_14matrixmultiply9threadingINtB6_18RangeChunkParallelNCINvNtB8_4gemm11gemm_packedNtNtB8_12dgemm_kernel10KernelNeonE0E8for_eachNCB1e_s_0EB8_",
+          "image": "_core.abi3.so",
+          "leaf_samples": 5
+        },
+        {
+          "symbol": "_RINvMsm_NtCs3bJEMBXHbwl_4core5arrayAAdj3_BA_7try_mapINtNtNtB8_3ops9try_trait17NeverShortCircuitBy_ENCINvMBR_BO_10wrap_mut_1By_NCNvMs0_NtCsH7vNu8lIFZ_19phasesmith_solution14adp_refinementNtB28_22PreparedSymmetricModel8evaluates2_0E0EB2a_",
+          "image": "_core.abi3.so",
+          "leaf_samples": 5
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution19refinement_familiesNtB2_18ReflectionFamilies3new",
+          "image": "_core.abi3.so",
+          "leaf_samples": 5
+        },
+        {
+          "symbol": "_RNvMNtNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completion9ambiguityNtB4_22PreparedPeakCompletion19ambiguity_neighbors",
+          "image": "_core.abi3.so",
+          "leaf_samples": 5
+        }
+      ],
+      "recorded_complete_repair_seconds": [
+        1.82352625
+      ]
+    },
+    {
+      "mode": "cache",
+      "native_sha256": "891cad9dd7f702c8066191b175ab1b29458752e88ccd3dbe373702dccfe96110",
+      "driver": "import sys,json,time,hashlib\nfrom pathlib import Path\nroot=Path(__file__).resolve().parents[2]\nsys.path.insert(0,str(root/'benchmarks'))\nfrom solution_multicore import ENABLED\nfrom phasesmith import _core\nfrom phasesmith.crystallography import UnitCell\nfrom phasesmith.experimental.solution import solve_structure_elements,SolutionOptions\nfrom phasesmith.io.hkl import read_hkl\nfrom phasesmith.io.space_groups import space_group_by_number\nbase=root/'runs/joint-assignment-final/repair/cod-2242589/phasesmith'\np=json.load(open(base/'inputs.json'));data=read_hkl(base/'sample.hkl');group=space_group_by_number(p['space_group_number']).space_group\nkwargs={k:True for k in ENABLED};kwargs.update(cell=UnitCell(*p['cell']),space_group=group,elements=p['elements'],maximum_atoms=json.load(open(base/'solution/worker.json'))['input_only_resource_atom_cap'],symmetry_recycling=True,tangent_refinement=True,joint_assignment_refinement=True,cached_repair_evaluation=True,workers=1,options=SolutionOptions(phasing='dual_space',trials=4,cycles=800,seed=0,max_seconds=13,r1_target=.06,completion=False))\nprint(json.dumps(dict(native=_core.__file__,native_sha256=hashlib.sha256(Path(_core.__file__).read_bytes()).hexdigest())),flush=True)\nfor _ in range(12):\n r=solve_structure_elements(data,**kwargs);print(r.shared_search.joint_assignment_seconds,flush=True)\n",
+      "driver_sha256": "455daadcd90589a262b15cc5e1b1b28f663e3bb6a542d3584a4e5e3768ddc359",
+      "raw_profile_sha256": "d076413d491e7bfaee1396fccd397dd18a928e44057b5902dd964facdb5fb909",
+      "main_thread_samples": 3798,
+      "collapsed_leaves": [
+        {
+          "symbol": "_RNvNtCsgUZMp6OeHys_14matrixmultiply12dgemm_kernel18kernel_target_neon",
+          "image": "_core.abi3.so",
+          "leaf_samples": 543
+        },
+        {
+          "symbol": "_RNvNtCsH7vNu8lIFZ_19phasesmith_solution11linear_step25original_residual_squared",
+          "image": "_core.abi3.so",
+          "leaf_samples": 350
+        },
+        {
+          "symbol": "_RNvMs0_NtCsH7vNu8lIFZ_19phasesmith_solution14adp_refinementNtB5_22PreparedSymmetricModel13evaluate_rows",
+          "image": "_core.abi3.so",
+          "leaf_samples": 167
+        },
+        {
+          "symbol": "__sincos_stret",
+          "image": "libsystem_m.dylib",
+          "leaf_samples": 160
+        },
+        {
+          "symbol": "_RNvMs0_NtNtNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completion5joint10evaluationNtB5_9Workspace7profile",
+          "image": "_core.abi3.so",
+          "leaf_samples": 152
+        },
+        {
+          "symbol": "exp",
+          "image": "libsystem_m.dylib",
+          "leaf_samples": 151
+        },
+        {
+          "symbol": "_RNvMs0_NtCsH7vNu8lIFZ_19phasesmith_solution14adp_refinementNtB5_22PreparedSymmetricModel8evaluate",
+          "image": "_core.abi3.so",
+          "leaf_samples": 143
+        },
+        {
+          "symbol": "_RNvMs0_NtCsH7vNu8lIFZ_19phasesmith_solution14adp_refinementNtB5_22PreparedSymmetricModel24refine_with_normal_reuse",
+          "image": "_core.abi3.so",
+          "leaf_samples": 136
+        },
+        {
+          "symbol": "_RINvNtCsi9Y0qaxCpcI_7rustfft11array_utils17validate_and_iterINtCs14PP5DI4t7A_11num_complex7ComplexdENCNvXs1J_NtNtB4_4neon16neon_butterfliesINtB1J_18NeonF64Butterfly32dEINtB4_3FftdE20process_with_scratch0ECsH7vNu8lIFZ_19phasesmith_solution",
+          "image": "_core.abi3.so",
+          "leaf_samples": 114
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completionNtB2_22PreparedPeakCompletion6search",
+          "image": "_core.abi3.so",
+          "leaf_samples": 112
+        },
+        {
+          "symbol": "_RINvNtCsgUZMp6OeHys_14matrixmultiply4gemm9gemm_loopNtNtB4_12dgemm_kernel10KernelNeonEB4_",
+          "image": "_core.abi3.so",
+          "leaf_samples": 105
+        },
+        {
+          "symbol": "_RNvNtNtCsH7vNu8lIFZ_19phasesmith_solution14adp_refinement9isotropic8evaluate",
+          "image": "_core.abi3.so",
+          "leaf_samples": 94
+        },
+        {
+          "symbol": "hypot",
+          "image": "libsystem_m.dylib",
+          "leaf_samples": 94
+        },
+        {
+          "symbol": "_RNvMNtNtCsH7vNu8lIFZ_19phasesmith_solution7fourier4realNtB2_13RealTransform2xy",
+          "image": "_core.abi3.so",
+          "leaf_samples": 92
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution11atomic_maskNtB2_12PreparedMask8add_peak",
+          "image": "_core.abi3.so",
+          "leaf_samples": 83
+        },
+        {
+          "symbol": "_RNvMs_NtCsH7vNu8lIFZ_19phasesmith_solution11linear_stepNtB4_11NormalReuse4step",
+          "image": "_core.abi3.so",
+          "leaf_samples": 76
+        },
+        {
+          "symbol": "_RINvMs3_NtCsgUZMp6OeHys_14matrixmultiply9threadingINtB6_18RangeChunkParallelNCINvNtB8_4gemm9gemm_loopNtNtB8_12dgemm_kernel10KernelNeonE0E8for_eachNCB1e_s_0EB8_",
+          "image": "_core.abi3.so",
+          "leaf_samples": 75
+        },
+        {
+          "symbol": "_RNvMNtNtNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completion5joint10evaluationNtB2_7Columns5value",
+          "image": "_core.abi3.so",
+          "leaf_samples": 71
+        },
+        {
+          "symbol": "<deduplicated_symbol>",
+          "image": "_core.abi3.so",
+          "leaf_samples": 65
+        },
+        {
+          "symbol": "_RINvXs0_NtNtNtCs3bJEMBXHbwl_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterINtCs14PP5DI4t7A_11num_complex7ComplexdEEENCNvMNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completionNtB2A_22PreparedPeakCompletion7updated0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB45_8for_each4callB1P_NCINvMsk_NtCs8Hh7wWMBHrQ_5alloc3vecINtB5l_3VecB1P_E14extend_trustedBN_E0E0EB2C_",
+          "image": "_core.abi3.so",
+          "leaf_samples": 58
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution11linear_stepNtB2_20PreparedNormalSystem7prepare",
+          "image": "_core.abi3.so",
+          "leaf_samples": 58
+        },
+        {
+          "symbol": "_RNvMs0_NtNtNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completion5joint10evaluationNtB5_9Workspace11fixed_trial",
+          "image": "_core.abi3.so",
+          "leaf_samples": 53
+        },
+        {
+          "symbol": "_RINvNtCsi9Y0qaxCpcI_7rustfft11array_utils17validate_and_iterINtCs14PP5DI4t7A_11num_complex7ComplexdENCNvXs1x_NtNtB4_4neon16neon_butterfliesINtB1J_18NeonF64Butterfly16dEINtB4_3FftdE20process_with_scratch0ECsH7vNu8lIFZ_19phasesmith_solution",
+          "image": "_core.abi3.so",
+          "leaf_samples": 52
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution7fourierNtB2_9Transform24fourier_to_density_slice",
+          "image": "_core.abi3.so",
+          "leaf_samples": 43
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution9peak_scanNtB2_21PreparedAdaptivePeaks13scan_streamed",
+          "image": "_core.abi3.so",
+          "leaf_samples": 42
+        },
+        {
+          "symbol": "_RNvMNtNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completion5jointNtB4_22PreparedPeakCompletion26joint_neighbors_with_cache",
+          "image": "_core.abi3.so",
+          "leaf_samples": 41
+        },
+        {
+          "symbol": "DYLD-STUB$$hypot",
+          "image": "_core.abi3.so",
+          "leaf_samples": 37
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution7fourierNtB2_9Transform24density_slice_to_fourier",
+          "image": "_core.abi3.so",
+          "leaf_samples": 36
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution11linear_stepNtB2_20PreparedNormalSystem14solve_with_rhs",
+          "image": "_core.abi3.so",
+          "leaf_samples": 33
+        },
+        {
+          "symbol": "_RNvNtCsH7vNu8lIFZ_19phasesmith_solution10dual_space28dual_space_guided_prediction",
+          "image": "_core.abi3.so",
+          "leaf_samples": 33
+        },
+        {
+          "symbol": "_RNvNtCsH7vNu8lIFZ_19phasesmith_solution14adp_refinement16prepare_geometry",
+          "image": "_core.abi3.so",
+          "leaf_samples": 33
+        },
+        {
+          "symbol": "_RNvNtCsH7vNu8lIFZ_19phasesmith_solution5math35eigen",
+          "image": "_core.abi3.so",
+          "leaf_samples": 30
+        },
+        {
+          "symbol": "DYLD-STUB$$exp",
+          "image": "_core.abi3.so",
+          "leaf_samples": 27
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution9peak_scanNtB2_21PreparedAdaptivePeaks6select",
+          "image": "_core.abi3.so",
+          "leaf_samples": 27
+        },
+        {
+          "symbol": "_RNvMNtNtCsH7vNu8lIFZ_19phasesmith_solution7fourier4realNtB2_13RealTransform16restore_spectrum",
+          "image": "_core.abi3.so",
+          "leaf_samples": 24
+        },
+        {
+          "symbol": "_RNvMNtNtCsH7vNu8lIFZ_19phasesmith_solution7fourier4realNtB2_13RealTransform16prepare_spectrum",
+          "image": "_core.abi3.so",
+          "leaf_samples": 21
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completionNtB2_22PreparedPeakCompletion7profile",
+          "image": "_core.abi3.so",
+          "leaf_samples": 15
+        },
+        {
+          "symbol": "_platform_memset",
+          "image": "libsystem_platform.dylib",
+          "leaf_samples": 14
+        },
+        {
+          "symbol": "_RINvMsi_NtNtNtCs8Hh7wWMBHrQ_5alloc11collections5btree3mapINtB6_8BTreeMapAlj3_NtNtCsH7vNu8lIFZ_19phasesmith_solution7tangent9PhaseTermE3getB18_EB1h_",
+          "image": "_core.abi3.so",
+          "leaf_samples": 13
+        },
+        {
+          "symbol": "_RNvNtCsH7vNu8lIFZ_19phasesmith_solution5math39conjugate",
+          "image": "_core.abi3.so",
+          "leaf_samples": 13
+        },
+        {
+          "symbol": "_xzm_free",
+          "image": "libsystem_malloc.dylib",
+          "leaf_samples": 13
+        },
+        {
+          "symbol": "atan2",
+          "image": "libsystem_m.dylib",
+          "leaf_samples": 13
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution7fourierNtB2_9Transform5apply",
+          "image": "_core.abi3.so",
+          "leaf_samples": 12
+        },
+        {
+          "symbol": "_platform_memmove",
+          "image": "libsystem_platform.dylib",
+          "leaf_samples": 11
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution10dual_spaceNtB2_15AtomicWorkspace6update",
+          "image": "_core.abi3.so",
+          "leaf_samples": 10
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completionNtB2_22PreparedPeakCompletion8evaluate",
+          "image": "_core.abi3.so",
+          "leaf_samples": 10
+        },
+        {
+          "symbol": "_RINvXs0_NtNtNtCs3bJEMBXHbwl_4core4iter8adapters3mapINtB6_3MapINtNtNtBc_5slice4iter4IterAAdj3_B1q_ENCNvNtCsH7vNu8lIFZ_19phasesmith_solution5math311exponentials0_0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2A_8for_each4callB1n_NCINvMsk_NtCs8Hh7wWMBHrQ_5alloc3vecINtB3Q_3VecB1n_E14extend_trustedBN_E0E0EB1E_",
+          "image": "_core.abi3.so",
+          "leaf_samples": 9
+        },
+        {
+          "symbol": "_RNvMNtNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completion9ambiguityNtB4_22PreparedPeakCompletion19ambiguity_neighbors",
+          "image": "_core.abi3.so",
+          "leaf_samples": 8
+        },
+        {
+          "symbol": "_xzm_xzone_malloc_tiny",
+          "image": "libsystem_malloc.dylib",
+          "leaf_samples": 8
+        },
+        {
+          "symbol": "_RNvMNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completionNtB2_22PreparedPeakCompletion3new",
+          "image": "_core.abi3.so",
+          "leaf_samples": 7
+        },
+        {
+          "symbol": "_RNvMNtNtCsH7vNu8lIFZ_19phasesmith_solution15peak_completion8chemicalNtB4_22PreparedPeakCompletion8reassign",
+          "image": "_core.abi3.so",
+          "leaf_samples": 7
+        },
+        {
+          "symbol": "_RNvMs_NtCsH7vNu8lIFZ_19phasesmith_solution11phase_scoreNtB4_18PreparedPhaseScore8evaluate",
+          "image": "_core.abi3.so",
+          "leaf_samples": 7
+        },
+        {
+          "symbol": "_RNvMs_NtCsH7vNu8lIFZ_19phasesmith_solution7tangentNtB4_15PreparedTangent3new",
+          "image": "_core.abi3.so",
+          "leaf_samples": 7
+        },
+        {
+          "symbol": "madvise",
+          "image": "libsystem_kernel.dylib",
+          "leaf_samples": 7
+        },
+        {
+          "symbol": "DYLD-STUB$$__sincos_stret",
+          "image": "_core.abi3.so",
+          "leaf_samples": 6
+        },
+        {
+          "symbol": "_RINvMsi_NtNtNtCs8Hh7wWMBHrQ_5alloc11collections5btree3mapINtB6_8BTreeMapAlj4_NtNtB8_7set_val9SetValZSTE3getB18_ECsH7vNu8lIFZ_19phasesmith_solution",
+          "image": "_core.abi3.so",
+          "leaf_samples": 6
+        },
+        {
+          "symbol": "_RINvXs2J_NtNtCs3bJEMBXHbwl_4core5slice4iterINtB7_4IterjENtNtNtNtBb_4iter6traits8iterator8Iterator4folddNCINvNtNtBY_8adapters3map8map_foldRjddNCNvNtCsH7vNu8lIFZ_19phasesmith_solution10dual_space28dual_space_guided_predictions5_0NCINvXs26_NtBW_5accumdNtB3N_3Sum3sumINtB1I_3MapBF_B2f_EE0E0EB2l_",
+          "image": "_core.abi3.so",
+          "leaf_samples": 6
+        },
+        {
+          "symbol": "_RNvNtCsH7vNu8lIFZ_19phasesmith_solution9peak_scan8lane_rms",
+          "image": "_core.abi3.so",
+          "leaf_samples": 6
+        },
+        {
+          "symbol": "__bzero",
+          "image": "libsystem_platform.dylib",
+          "leaf_samples": 6
+        }
+      ],
+      "recorded_complete_repair_seconds": [
+        1.399155292
+      ]
+    }
+  ]
+}
