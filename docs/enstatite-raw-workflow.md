@@ -410,7 +410,8 @@ identity gates.
 
 ## Continuous fitting, frame workers and native archives (v17–v19)
 
-The current default is `validation/enstatite-raw-workflow-v19.json`: four learning
+At completion of the v17–v19 pass, the default was
+`validation/enstatite-raw-workflow-v19.json`: four learning
 workers, ten native fit workers, four bounded frame-preparation workers and
 level-1 native Rust lossless NPZ output. The [full optimization report](profile-execution-optimization.md)
 records every intermediate measurement, including the 4/6/8/10 fitting study,
@@ -453,3 +454,26 @@ workspace; repeat worker peak RSS is about 2.99 GiB. All large inputs and full
 outputs remain external. Machine-readable stage and cumulative results are in
 `benchmarks/enstatite-next-execution-stage1-macos.json` through `stage3-macos.json`
 and `benchmarks/enstatite-next-execution-macos.json`.
+
+## Detection worker scaling (v20)
+
+The current default is `validation/enstatite-raw-workflow-v20.json`, with eight
+detection workers and the same four shadow/acquisition workers. All scientific
+settings and production numerical kernels remain unchanged. Three-repeat raw
+detection/linking medians at 4/6/8/10 workers are 6.568/5.041/5.003/5.048 s:
+eight is nominally best, with the 6–10 range effectively limited by loading.
+
+Two fresh full runs finish in **23.46 s** and **23.76 s** (workers 22.40/22.66 s),
+versus the prior 25.31 s CLI repeat. Both reproduce every v11 numerical array,
+full candidate record and search history bit for bit; R1 remains
+.04085182070733226 and source files stay unchanged. Fifty focused rotation/raw
+workflow tests pass, including 6/8/10-worker exact position checks.
+
+The [detection and full timing report](detection-execution-optimization.md)
+contains the complete area-by-area wall partition, detailed overlapping
+loading/detection/linking timings and ranked remaining opportunities. The main
+limit is the serial original-frame pipeline: HDF5 reading/decoding, source
+verification, repeated hashing and mask construction. Linking itself is below
+a millisecond. Shared original decoded frames and bounded per-frame validation
+are proposed next measurements; their speedups are not yet established.
+The machine-readable record is `benchmarks/enstatite-detection-execution-macos.json`.

@@ -291,3 +291,12 @@ Stage reports are `benchmarks/enstatite-next-execution-stage1-macos.json` throug
 `benchmarks/enstatite-next-execution-macos.json`, also linked by the earlier
 `benchmarks/enstatite-profile-execution-macos.json`. All large products are
 external.
+
+## Detection follow-up
+
+The subsequent v20 detection worker study measures 4/6/8/10 workers and retains
+eight as nominally fastest, with a serial-loading plateau above six. Full fresh
+runs are 23.46/23.76 s and remain bitwise identical. The complete current timing
+partition and next bottlenecks are in
+[detection execution optimization](detection-execution-optimization.md).
+The record is `benchmarks/enstatite-detection-execution-macos.json`.

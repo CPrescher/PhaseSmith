@@ -18,8 +18,18 @@ All positions and source fingerprints match bitwise. Eight workers are selected
 by measured wall time only; the six/eight/ten differences are small and serial
 loading limits further scaling. A separate example `detection_workers` control
 keeps the four-worker shadow/acquisition policy unchanged. Production numerical
-kernels, thresholds, support and linking are unchanged. Fresh v20 validation and
-a complete timing/remaining-bottleneck report follow the committed protocol.
+kernels, thresholds, support and linking are unchanged. Two fresh v20 raw runs
+take 23.46/23.76 s CLI (22.40/22.66 s worker), versus v19 25.31 s CLI. Both
+pass every bitwise array/candidate/history and source-identity gate; R1 remains
+.04085182070733226. Fifty focused tests pass. Detailed detection timings show
+about 4.79 s serial image/mask loading in a 4.90 s pipeline: HDF5 read/decode
+2.19 s, verification .89 s, other image preparation/hashing 1.02 s and masks
+.68 s, overlapping worker tasks. Linking is .00035 s and track assembly .0445 s.
+The next measured priorities are bounded loading/validation/mask pipelining and
+original decoded-frame reuse, before profile kernels. See
+`docs/detection-execution-optimization.md` and
+`benchmarks/enstatite-detection-execution-macos.json` for full wall partitions,
+all repeats and timing limits.
 
 The follow-up execution optimization is complete. Explicit profile worker
 limits are 1–32; continuous native independent-fit scheduling replaces batch
