@@ -75,6 +75,10 @@ independent numerical tasks overlap in bounded source order. Load errors are
 queued after earlier frames; later frames are not loaded after a source failure.
 Observer errors and cancellation stop further loading and join outstanding work.
 A Rust host can use `NoObserver` to retain results entirely in memory.
+The library's search time limit is cooperative. The example host additionally
+enforces the frozen 75-second hard search-process deadline; its waiting guard is
+cancelled as soon as search/output completes. The optional benchmark parent also
+limits the complete worker process to 1,800 seconds.
 
 Source-independent shape, finite-value, frame, worker, mask and payload limits
 are checked before reading image counts. Source hashes are rechecked against

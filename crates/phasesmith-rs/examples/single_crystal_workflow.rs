@@ -110,6 +110,8 @@ struct Save {
     cell: [f64; 6],
     priors: Value,
     angles: Vec<[f64; 2]>,
+    hard_search_seconds: f64,
+    search_deadline: Option<Deadline>,
 }
 impl Save {
     fn archive(&self, name: &str, a: &[Array]) -> sc::Result<()> {
@@ -127,7 +129,20 @@ impl sc::Observer for Save {
         self.json(
             &format!("timing-{name}.json"),
             json!({"stage":name,"seconds":seconds}),
-        )
+        )?;
+        if name == "profile_fitting_scaling" {
+            self.search_deadline = Some(
+                Deadline::new(self.hard_search_seconds, || {
+                    eprintln!("native search exceeded its hard process deadline");
+                    std::process::exit(124)
+                })
+                .map_err(|e| sc::Error(e.to_string()))?,
+            );
+        }
+        if name == "structure_search" {
+            self.search_deadline.take();
+        }
+        Ok(())
     }
     fn masks(&mut self, p: &frame_input::Plan, scales: &[f64]) -> sc::Result<()> {
         let a = &p.blocks[0];
@@ -565,6 +580,8 @@ fn main() -> Result<()> {
         shape: [shape[1], shape[2]],
         cell,
         priors: packet["priors"].clone(),
+        hard_search_seconds: number(&protocol["search"], "hard_seconds")?,
+        search_deadline: None,
         angles: (options.acquisition.first..=options.acquisition.last)
             .map(|i| {
                 let a = &options.acquisition;
@@ -722,6 +739,51 @@ fn validate_adapter(packet: &Value, out: &Path) -> Result<()> {
     if parent.starts_with(repository) {
         return Err("large output must stay outside the repository".into());
     }
+    let hard = number(&packet["protocol"]["search"], "hard_seconds")?;
+    if !hard.is_finite()
+        || hard <= 0.
+        || hard > 7200.
+        || hard < number(&packet["protocol"]["search"], "native_seconds")?
+    {
+        return Err("hard search deadline must cover the cooperative search budget".into());
+    }
+    let allowed = [
+        "raw_path",
+        "poni_path",
+        "raw_array",
+        "priors",
+        "rotations",
+        "protocol",
+        "output",
+        "through",
+    ];
+    if packet
+        .as_object()
+        .ok_or("expected an input record")?
+        .keys()
+        .any(|k| !allowed.contains(&k.as_str()))
+        || packet["through"] != "search"
+    {
+        return Err(
+            "unexpected native workflow input/reference field or unsupported stopping stage".into(),
+        );
+    }
+    let priors = [
+        "cell_angstrom_degrees",
+        "space_group_number",
+        "space_group_symbol",
+        "wavelength_angstrom",
+        "elements",
+        "provenance",
+    ];
+    if packet["priors"]
+        .as_object()
+        .ok_or("prior record missing")?
+        .keys()
+        .any(|k| !priors.contains(&k.as_str()))
+    {
+        return Err("unexpected atomic/reference field in supplied priors".into());
+    }
     let frozen: Value =
         serde_json::from_str(include_str!("data/native-workflow-controls-v1.json"))?;
     for name in [
@@ -836,4 +898,83 @@ fn run_diagnostic(path: &Path, options: &sc::Options, save: &mut Save) -> Result
         json!({"diagnostic_search_only":true,"r1":result.candidates.first().map(|c|c.r1),"seconds":started.elapsed().as_secs_f64()})
     );
     Ok(())
+}
+
+// The CLI owns the hard process deadline. Library callers retain cooperative
+// cancellation and can choose their own process policy. Drop cancels the waiter
+// so successful short searches never wait out the declared ceiling.
+struct Deadline {
+    state: std::sync::Arc<(std::sync::Mutex<bool>, std::sync::Condvar)>,
+    thread: Option<std::thread::JoinHandle<()>>,
+}
+impl Deadline {
+    fn new(seconds: f64, on_timeout: impl FnOnce() + Send + 'static) -> std::io::Result<Self> {
+        let state = std::sync::Arc::new((std::sync::Mutex::new(false), std::sync::Condvar::new()));
+        let guard = state.clone();
+        let thread = std::thread::Builder::new()
+            .name("phasesmith-search-deadline".into())
+            .spawn(move || {
+                let (lock, ready) = &*guard;
+                let done = lock
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                let (done, timed) = ready
+                    .wait_timeout_while(done, std::time::Duration::from_secs_f64(seconds), |done| {
+                        !*done
+                    })
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                if timed.timed_out() && !*done {
+                    drop(done);
+                    on_timeout();
+                }
+            })?;
+        Ok(Self {
+            state,
+            thread: Some(thread),
+        })
+    }
+}
+impl Drop for Deadline {
+    fn drop(&mut self) {
+        let (lock, ready) = &*self.state;
+        *lock
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = true;
+        ready.notify_all();
+        if let Some(thread) = self.thread.take() {
+            let _ = thread.join();
+        }
+    }
+}
+#[cfg(test)]
+mod deadline_tests {
+    use super::*;
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
+    #[test]
+    fn successful_search_cancels_the_waiting_deadline() {
+        let called = Arc::new(AtomicUsize::new(0));
+        let copy = called.clone();
+        let start = Instant::now();
+        let guard = Deadline::new(75., move || {
+            copy.fetch_add(1, Ordering::SeqCst);
+        })
+        .unwrap();
+        drop(guard);
+        assert_eq!(called.load(Ordering::SeqCst), 0);
+        assert!(start.elapsed().as_secs_f64() < 2.);
+    }
+    #[test]
+    fn an_expired_host_deadline_runs_its_action() {
+        let called = Arc::new(AtomicUsize::new(0));
+        let copy = called.clone();
+        let mut guard = Deadline::new(0.01, move || {
+            copy.fetch_add(1, Ordering::SeqCst);
+        })
+        .unwrap();
+        guard.thread.take().unwrap().join().unwrap();
+        assert_eq!(called.load(Ordering::SeqCst), 1);
+    }
 }
