@@ -143,3 +143,12 @@ mesh's pixel-center rectangle. Version 3 retains those rows in edge diagnostics
 and omits only those pre-flagged centers from profile learning/reduction. No
 unflagged measurement, mesh bound, scientific threshold or atomic target selects
 this repair. Earlier outcomes and both immutable protocols are retained.
+
+Version 3 completed raw reduction and search: 5,708 observations (including
+1,233 negative intensities), 278 training teachers and matching raw-frame hashes.
+All four starts failed the existing phase-origin gate `alpha <= 0.3`; no atomic
+candidate was produced and no reference model was opened. Starts 2/3 hit their
+per-start phase allowance at 396/398 of 800 cycles. Version 4 is one predeclared
+longer-time diagnostic: 60-second native safeguard/75-second process cap, with
+the same seed, four starts, 800 cycles, signed data and scientific gates. It
+reruns the full original-frame workflow in a new external directory.
