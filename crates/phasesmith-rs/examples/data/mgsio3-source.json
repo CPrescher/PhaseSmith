@@ -1,0 +1,49 @@
+{
+  "raw_array": {
+    "dataset": "/entry_0000/ESRF-ID11/eiger/data",
+    "shape": [
+      144,
+      2162,
+      2068
+    ],
+    "dtype": "uint32",
+    "historical_used_frame_indices_inclusive": [
+      2,
+      143
+    ],
+    "historical_orientation": "vertical flip; preserve explicit coordinate convention"
+  },
+  "priors": {
+    "cell_angstrom_degrees": [
+      8.8101,
+      5.1824,
+      18.2288,
+      90,
+      90,
+      90
+    ],
+    "space_group_number": 61,
+    "space_group_symbol": "P b c a",
+    "wavelength_angstrom": 0.2846,
+    "elements": [
+      "Mg",
+      "Si",
+      "O"
+    ],
+    "provenance": "Cell, symmetry and wavelength transcribed from supplied source CIF; elements from declared sample. These are supplied priors, not blind indexing results. Coordinates, ADPs and atom counts are forbidden search inputs."
+  },
+  "files": [
+    {
+      "path": "CeO2_20240620_1849_dioptas.poni",
+      "role": "initial_geometry",
+      "size_bytes": 319,
+      "sha256": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a"
+    },
+    {
+      "path": "eiger_0000.h5",
+      "role": "raw_frames",
+      "size_bytes": 450571787,
+      "sha256": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c"
+    }
+  ]
+}

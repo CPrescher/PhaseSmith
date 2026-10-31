@@ -1,0 +1,95 @@
+{
+  "detection": {},
+  "linking": {},
+  "indexing": {
+    "grid_size": 256,
+    "max_grains": 5,
+    "workers": 4
+  },
+  "selection": {
+    "max_track_observations": 8,
+    "max_q_rms": 0.03,
+    "frame_block_size": 5,
+    "folds": 5,
+    "test_fold": 0,
+    "cell_metric_relative_tolerance": 0.03,
+    "max_cell_angle_deviation_degrees": 1.0,
+    "minimum_indexed_training": 100,
+    "minimum_indexed_validation": 30
+  },
+  "geometry": {
+    "xy_scale": 0.4,
+    "omega_scale": 0.2,
+    "translation_limit_mm": 2.0,
+    "rotation_limit_deg": 2.0,
+    "max_evaluations": 150
+  },
+  "prediction": {
+    "qmax_inverse_angstrom": 2.0,
+    "minimum_abs_zeta": 0.1,
+    "max_competing_domains": 2,
+    "competing_exclusions": "measured track centres only; no full lattice enumeration from provisional competing cells"
+  },
+  "integration": {
+    "pixel_radius": 7,
+    "omega_half_width": 4.5,
+    "background_margin": 6,
+    "background_gap": 3,
+    "background_model": "plane",
+    "min_background": 20
+  },
+  "profiles": {
+    "shape": [
+      31,
+      31,
+      23
+    ],
+    "step": [
+      0.0125,
+      0.0125,
+      0.05
+    ],
+    "regions": [
+      2,
+      2,
+      2
+    ],
+    "min_references": 8,
+    "reference_snr": 20.0,
+    "cutoff": 0.0,
+    "iterations": 100,
+    "minimum_mass": 0.9,
+    "reference_weighting": "equal"
+  },
+  "reduction": {
+    "strong_policy": "strong_full",
+    "strong_snr": 50.0,
+    "polarization_axis": [
+      0,
+      1,
+      0
+    ],
+    "polarization_fraction": 0.98,
+    "response": null,
+    "equivalent_error_floor": true,
+    "empirical_grid": [
+      5,
+      5
+    ],
+    "empirical_strength": 1000.0,
+    "shape_fit_workers": 10,
+    "shape_fit_maximum_iterations": 80,
+    "assumptions": "Declared horizontal polarization and neutral detector efficiency; no diamond absorption, vendor transfer factors or atomic-model correction. Shape/scaling references use complete training families.",
+    "edge_centres": "Retain excluded records; omit only pre-existing EDGE rows outside [0,width-1]x[0,height-1] before profile learning/reduction. Mesh limits and quality gates unchanged."
+  },
+  "measurement_validity": {
+    "profile_warning_flags": [
+      "MISMATCH"
+    ],
+    "frame_validity": "Shared per-frame illumination mask; native integration/profile quality and finite-support flags remain authoritative.",
+    "criterion": "Centre eligibility additionally queried from same pixel mask; partially blocked rocking profiles remain flagged by masked native sample support. No fixed DAC centre-angle cut.",
+    "provenance": "Unchanged default illumination estimator plus v5 declared aperture geometry, now applied as shared whole-exposure pixel masks. All model/threshold/coordinate gates remain frozen; all earlier outcomes preserved.",
+    "flag_policy": "Retain MISMATCH warning with original values; all other profile/integration flags still exclude. No export significance cut."
+  },
+  "search_configuration": "validated-v1"
+}

@@ -1,7 +1,7 @@
+use super::map_frames;
 use super::{
     Error, FrameSource, Options, Result, bounds, image,
     math::{V3, dot},
-    prepared,
 };
 use phasesmith_spots::{self as spots, Bounds, frame_input, frame_validity, rotation};
 /// Owned linked tracks and source-ordered detected observations.
@@ -10,7 +10,7 @@ pub struct Positions {
     pub boxes: Vec<Bounds>,
     /// Half-open selected-frame ranges per track.
     pub ranges: Vec<[usize; 2]>,
-    /// Source-ordered numerical measurement rows; units follow the containing record.
+    /// x/y in pixels, omega and rocking RMS in degrees, then source observation count.
     pub values: Vec<[f64; 5]>,
     /// Original quality bits; source rows are retained even when excluded.
     pub flags: Vec<u32>,
@@ -61,57 +61,90 @@ pub(super) fn detect(
     let angles = bounds(o);
     let mut tables = Vec::new();
     let mut hashes = Vec::new();
-    for first in (0..plan.frames).step_by(o.detection_workers) {
-        o.checkpoint()?;
-        let batch: (Vec<_>, Vec<_>) = (first..(first + o.detection_workers).min(plan.frames))
-            .map(|i| {
-                let p = prepared(source, plan, o, i)?;
-                let data = image(&p, plan.shape);
-                Ok((p, data))
-            })
-            .collect::<Result<Vec<_>>>()?
-            .into_iter()
-            .unzip();
-        let rows = std::thread::scope(|scope| {
-            let tasks: Vec<_> = batch
-                .0
-                .iter()
-                .zip(&batch.1)
-                .map(|(p, data)| {
-                    scope.spawn(move || {
-                        spots::detect(
-                            &spots::Image {
-                                values: data,
-                                height: plan.shape[0],
-                                width: plan.shape[1],
-                                mask: &p.excluded,
-                                variance: None,
-                                gain: 1.,
-                                read_noise: 0.,
-                                saturation: None,
-                            },
-                            spots::Options::default(),
-                        )
-                    })
-                })
-                .collect();
-            tasks
-                .into_iter()
-                .map(|t| {
-                    t.join()
-                        .map_err(|_| Error("detection worker panicked".into()))?
-                        .map_err(Into::into)
-                })
-                .collect::<Result<Vec<_>>>()
-        })?;
-        for (p, row) in batch.0.into_iter().zip(rows) {
-            hashes.push(p.digest);
-            tables.push(row.spots);
-        }
-        if tables.iter().map(Vec::len).sum::<usize>() > 1_000_000 {
-            return Err(Error("rotation observation budget exceeded".into()));
+    map_frames(
+        source,
+        plan,
+        o,
+        o.detection_workers,
+        |p| {
+            let data = image(&p, plan.shape);
+            let detected = spots::detect(
+                &spots::Image {
+                    values: &data,
+                    height: plan.shape[0],
+                    width: plan.shape[1],
+                    mask: &p.excluded,
+                    variance: None,
+                    gain: 1.,
+                    read_noise: 0.,
+                    saturation: None,
+                },
+                spots::Options {
+                    threshold_sigma: 5.,
+                    threshold_absolute: 0.,
+                    inner_radius: 2,
+                    outer_radius: 8,
+                    min_pixels: 3,
+                    max_pixels: 4096,
+                    padding: 2,
+                    background_margin: 4,
+                    min_background: 12,
+                    max_spots: 10_000,
+                },
+            )?;
+            Ok((p.digest, detected.spots))
+        },
+        |_, (hash, spots)| {
+            hashes.push(hash);
+            tables.push(spots);
+            if tables.iter().map(Vec::len).sum::<usize>() > 1_000_000 {
+                return Err(Error("rotation observation budget exceeded".into()));
+            }
+            Ok(())
+        },
+    )?;
+    let mut result = summarize(tables, hashes, angles, plan.frames)?;
+    flag_invalid_tracks(&mut result, plan)?;
+    Ok(result)
+}
+pub(super) fn reciprocal(
+    p: &Positions,
+    g: phasesmith_spots::reciprocal::Geometry,
+) -> Result<(Vec<V3>, Vec<f64>)> {
+    let samples: Vec<_> = p.observations.iter().map(|x| [x[2], x[3], x[4]]).collect();
+    let qs = g.convert(&samples)?;
+    let mut sums = vec![[0.; 3]; p.values.len()];
+    let mut counts = vec![0usize; p.values.len()];
+    for (r, &q) in p.observations.iter().zip(&qs) {
+        let i = r[0] as usize;
+        counts[i] += 1;
+        for j in 0..3 {
+            sums[i][j] += q[j];
         }
     }
+    for (s, &n) in sums.iter_mut().zip(&counts) {
+        for x in s {
+            *x /= n as f64;
+        }
+    }
+    let mut rms = vec![0.; counts.len()];
+    for (r, &q) in p.observations.iter().zip(&qs) {
+        let i = r[0] as usize;
+        let d = std::array::from_fn(|j| q[j] - sums[i][j]);
+        rms[i] += dot(d, d);
+    }
+    for (v, &n) in rms.iter_mut().zip(&counts) {
+        *v = (*v / n as f64).sqrt();
+    }
+    Ok((sums, rms))
+}
+
+fn summarize(
+    tables: Vec<Vec<spots::Spot>>,
+    hashes: Vec<String>,
+    angles: Vec<[f64; 2]>,
+    frames_count: usize,
+) -> Result<Positions> {
     let mut frames = Vec::new();
     let mut xy = Vec::new();
     let mut detected = Vec::new();
@@ -178,9 +211,9 @@ pub(super) fn detect(
             flag |= 128;
         }
         if first == 0
-            || last + 1 == plan.frames
+            || last + 1 == frames_count
             || (first > 0 && segments[first - 1] != segments[first])
-            || (last + 1 < plan.frames && segments[last + 1] != segments[last])
+            || (last + 1 < frames_count && segments[last + 1] != segments[last])
         {
             flag |= 256;
         }
@@ -200,6 +233,15 @@ pub(super) fn detect(
         ]);
     }
     result.original_flags = result.flags.clone();
+    Ok(result)
+}
+
+fn flag_invalid_tracks(result: &mut Positions, plan: &frame_input::Plan) -> Result<()> {
+    let mut segments = vec![0; result.angles.len()];
+    for i in 1..segments.len() {
+        segments[i] = segments[i - 1]
+            + u32::from((result.angles[i - 1][1] - result.angles[i][0]).abs() > 1e-8);
+    }
     for frame in 0..plan.frames {
         let mask = validity_mask(plan, frame)?;
         for (id, b) in result.boxes.iter().enumerate() {
@@ -217,36 +259,5 @@ pub(super) fn detect(
             }
         }
     }
-    Ok(result)
-}
-pub(super) fn reciprocal(
-    p: &Positions,
-    g: phasesmith_spots::reciprocal::Geometry,
-) -> Result<(Vec<V3>, Vec<f64>)> {
-    let samples: Vec<_> = p.observations.iter().map(|x| [x[2], x[3], x[4]]).collect();
-    let qs = g.convert(&samples)?;
-    let mut sums = vec![[0.; 3]; p.values.len()];
-    let mut counts = vec![0usize; p.values.len()];
-    for (r, &q) in p.observations.iter().zip(&qs) {
-        let i = r[0] as usize;
-        counts[i] += 1;
-        for j in 0..3 {
-            sums[i][j] += q[j];
-        }
-    }
-    for (s, &n) in sums.iter_mut().zip(&counts) {
-        for x in s {
-            *x /= n as f64;
-        }
-    }
-    let mut rms = vec![0.; counts.len()];
-    for (r, &q) in p.observations.iter().zip(&qs) {
-        let i = r[0] as usize;
-        let d = std::array::from_fn(|j| q[j] - sums[i][j]);
-        rms[i] += dot(d, d);
-    }
-    for (v, &n) in rms.iter_mut().zip(&counts) {
-        *v = (*v / n as f64).sqrt();
-    }
-    Ok((sums, rms))
+    Ok(())
 }

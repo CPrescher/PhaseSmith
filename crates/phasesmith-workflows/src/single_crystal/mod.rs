@@ -16,7 +16,7 @@ mod math;
 mod measurement;
 mod positions;
 mod scaling;
-pub use grains::{Grain, Indexed};
+pub use grains::{Competitor, Grain, Indexed};
 pub use math::{M3, V3};
 pub use measurement::{Measurements, ProfileData};
 use phasesmith_crystallography::{SpaceGroup, UnitCell};
@@ -113,6 +113,10 @@ pub struct Options {
     pub shadows: ShadowOptions,
     /// Original-image coarse-frame worker budget, 1 through 32.
     pub mask_workers: usize,
+    /// Native original-count preparation workers, 1 through 32.
+    pub preparation_workers: usize,
+    /// Bounded source snapshots per preparation call, 1 through 32.
+    pub preparation_batch: usize,
     /// Maximum owned counts/mask/f64 payload across each frame stage, in bytes.
     pub max_in_flight_frame_bytes: usize,
     /// Cooperative stop token checked between bounded stages and numerical work.
@@ -230,12 +234,103 @@ impl Options {
                 "invalid native scan shape, selection or angular intervals".into(),
             ));
         }
+        self.check_resources(shape)?;
+        self.check_priors()?;
+        if self.priors.elements.is_empty()
+            || self.priors.elements.len() > 8
+            || !self.search_seconds.is_finite()
+            || self.search_seconds <= 0.
+            || self.search_seconds > 3600.
+            || !(1..=128).contains(&self.search_trials)
+            || !(1..=20_000).contains(&self.search_cycles)
+        {
+            return Err(Error("invalid element/search controls".into()));
+        }
+        let _ = phasesmith_solution::DenseMemoryBudget::new(self.dense_memory_bytes)?;
+        self.check_shadows(shape)?;
+        self.geometry.convert(&[[0., 0., 0.]])?;
+        Ok(())
+    }
+    fn check_priors(&self) -> Result<()> {
+        use phasesmith_crystallography::xray_species_metadata;
+        let cell = self.priors.cell;
+        let geometry = cell.geometry().map_err(|e| Error(e.to_string()))?;
+        if [cell.alpha_deg, cell.beta_deg, cell.gamma_deg]
+            .iter()
+            .any(|a| (a - 90.).abs() > 1e-8)
+        {
+            return Err(Error(
+                "native v1 requires an explicit orthorhombic metric prior".into(),
+            ));
+        }
+        let m = geometry.direct_metric;
+        let components = [m[0][0], m[1][1], m[2][2], m[1][2], m[0][2], m[0][1]];
+        let scale = components.iter().fold(1f64, |s, x| s.max(x.abs()));
+        for equation in &self.priors.group.metric_constraints().equations {
+            let residual = equation
+                .iter()
+                .zip(components)
+                .map(|(&a, b)| a as f64 * b)
+                .sum::<f64>();
+            let coefficients = equation
+                .iter()
+                .map(|a| a.unsigned_abs() as f64)
+                .sum::<f64>();
+            if residual.abs() > 1e-10 * scale * coefficients.max(1.) {
+                return Err(Error(
+                    "cell metric incompatible with supplied exact symmetry".into(),
+                ));
+            }
+        }
+        if self
+            .priors
+            .elements
+            .iter()
+            .collect::<std::collections::BTreeSet<_>>()
+            .len()
+            != self.priors.elements.len()
+        {
+            return Err(Error("duplicate supplied element".into()));
+        }
+        for e in &self.priors.elements {
+            let m =
+                xray_species_metadata(e).ok_or_else(|| Error("unknown supplied element".into()))?;
+            if m.atomic_number <= 1
+                || !(1..=2).contains(&e.len())
+                || !e.as_bytes()[0].is_ascii_uppercase()
+                || e.as_bytes().get(1).is_some_and(|c| !c.is_ascii_lowercase())
+            {
+                return Err(Error(
+                    "search needs distinct neutral non-H element symbols".into(),
+                ));
+            }
+        }
+        for &rotation in &self.null_rotations {
+            let gram = math::mul(
+                rotation,
+                std::array::from_fn(|i| std::array::from_fn(|j| rotation[j][i])),
+            );
+            if gram.iter().enumerate().any(|(i, r)| {
+                r.iter()
+                    .enumerate()
+                    .any(|(j, &v)| (v - f64::from(u8::from(i == j))).abs() > 1e-10)
+            }) || (math::det(rotation) - 1.).abs() > 1e-10
+            {
+                return Err(Error(
+                    "null controls must be proper rotation matrices".into(),
+                ));
+            }
+        }
+        Ok(())
+    }
+    fn check_resources(&self, shape: [usize; 3]) -> Result<()> {
         if [
             self.detection_workers,
             self.profile_workers,
             self.learning_workers,
             self.frame_workers,
             self.mask_workers,
+            self.preparation_workers,
         ]
         .iter()
         .any(|w| !(1..=32).contains(w))
@@ -247,6 +342,9 @@ impl Options {
             || self.max_in_flight_frame_bytes > 1024 * 1024 * 1024
         {
             return Err(Error("invalid workflow resource limits".into()));
+        }
+        if !(1..=32).contains(&self.preparation_batch) {
+            return Err(Error("invalid preparation batch".into()));
         }
         if self.priors.provenance.trim().is_empty()
             || self.null_rotations.len() != 64
@@ -269,6 +367,7 @@ impl Options {
             self.detection_workers,
             self.frame_workers,
             self.mask_workers,
+            self.preparation_workers,
         ] {
             if pixels
                 .checked_mul(13)
@@ -282,34 +381,10 @@ impl Options {
         {
             return Err(Error("native v1 requires 2D detector and at most 225 exposures for its explicit frame design".into()));
         }
-        let _ = self
-            .priors
-            .cell
-            .geometry()
-            .map_err(|e| Error(e.to_string()))?;
-        if [
-            self.priors.cell.alpha_deg,
-            self.priors.cell.beta_deg,
-            self.priors.cell.gamma_deg,
-        ]
-        .iter()
-        .any(|a| (a - 90.).abs() > 1e-8)
-        {
-            return Err(Error(
-                "native v1 requires an explicit orthorhombic metric prior".into(),
-            ));
-        }
-        if self.priors.elements.is_empty()
-            || self.priors.elements.len() > 16
-            || !self.search_seconds.is_finite()
-            || self.search_seconds <= 0.
-            || self.search_seconds > 3600.
-            || !(1..=128).contains(&self.search_trials)
-            || !(1..=20_000).contains(&self.search_cycles)
-        {
-            return Err(Error("invalid element/search controls".into()));
-        }
-        let _ = phasesmith_solution::DenseMemoryBudget::new(self.dense_memory_bytes)?;
+        Ok(())
+    }
+    fn check_shadows(&self, shape: [usize; 3]) -> Result<()> {
+        let a = &self.acquisition;
         let nframes = a.last - a.first + 1;
         if nframes < 5 {
             return Err(Error(
@@ -337,6 +412,16 @@ impl Options {
         {
             return Err(Error("invalid illumination controls".into()));
         }
+        if [
+            self.shadows.illumination.reference_first,
+            self.shadows.illumination.reference_last,
+        ]
+        .iter()
+        .flatten()
+        .any(|&i| i >= nframes)
+        {
+            return Err(Error("illumination reference outside selected scan".into()));
+        }
         frame_validity::dac_mask(
             self.geometry,
             bounds(self)[0],
@@ -347,7 +432,6 @@ impl Options {
             },
             self.shadows.aperture,
         )?;
-        self.geometry.convert(&[[0., 0., 0.]])?;
         Ok(())
     }
     fn checkpoint(&self) -> Result<()> {
@@ -370,25 +454,6 @@ pub(super) fn bounds(o: &Options) -> Vec<[f64; 2]> {
 pub(super) fn image(p: &frame_input::Prepared, shape: [usize; 2]) -> Vec<f64> {
     let _ = shape;
     p.pixels.iter().map(|&v| f64::from(v)).collect()
-}
-pub(super) fn prepared(
-    s: &mut impl FrameSource,
-    plan: &frame_input::Plan,
-    options: &Options,
-    i: usize,
-) -> Result<frame_input::Prepared> {
-    let r = plan.prepare_batch(
-        vec![frame_input::Input {
-            index: i,
-            pixels: s.read(options.acquisition.first + i)?,
-        }],
-        1,
-        options.frame_payload_bytes,
-    )?;
-    r.into_iter()
-        .next()
-        .ok_or_else(|| Error("empty prepared batch".into()))?
-        .map_err(Into::into)
 }
 /// Coordinate a complete original-frame workflow. Only its stage products reach observers;
 /// no archived intensities or atomic references can be supplied through this interface.
@@ -445,6 +510,71 @@ pub fn run(
         seconds: start.elapsed().as_secs_f64(),
     })
 }
+// At most `workers` source payloads are retained. Callers/observers consume in
+// source order; loading/preparation overlaps earlier numerical jobs. A loader
+// failure is queued after preceding frames, and later frames are not read.
+fn map_frames<T: Send>(
+    source: &mut impl FrameSource,
+    plan: &frame_input::Plan,
+    o: &Options,
+    workers: usize,
+    map: impl Fn(frame_input::Prepared) -> Result<T> + Sync,
+    mut consume: impl FnMut(usize, T) -> Result<()>,
+) -> Result<()> {
+    use std::collections::VecDeque;
+    std::thread::scope(|scope| {
+        let mut pending = VecDeque::new();
+        let batch = o.preparation_batch.min(workers);
+        plan.admit(batch, o.preparation_workers, o.frame_payload_bytes)?;
+        let mut next = 0;
+        let map = &map;
+        while next < plan.frames {
+            o.checkpoint()?;
+            let count = batch.min(plan.frames - next);
+            while pending.len() > workers - count {
+                let (index, task): (usize, std::thread::ScopedJoinHandle<'_, Result<T>>) =
+                    pending.pop_front().expect("admitted pending task");
+                let row = task
+                    .join()
+                    .map_err(|_| Error("frame worker panicked".into()))??;
+                consume(index, row)?;
+            }
+            let mut inputs = Vec::new();
+            let mut failed = None;
+            for index in next..next + count {
+                match source.read(o.acquisition.first + index) {
+                    Ok(pixels) => inputs.push(frame_input::Input { index, pixels }),
+                    Err(error) => {
+                        failed = Some((index, error));
+                        break;
+                    }
+                }
+            }
+            let prepared = if inputs.is_empty() {
+                vec![]
+            } else {
+                plan.prepare_batch(inputs, o.preparation_workers, o.frame_payload_bytes)?
+            };
+            for (offset, row) in prepared.into_iter().enumerate() {
+                let index = next + offset;
+                pending.push_back((index, scope.spawn(move || map(row?))));
+            }
+            if let Some((index, error)) = failed {
+                pending.push_back((index, scope.spawn(move || Err(error))));
+                break;
+            }
+            next += count;
+        }
+        while let Some((index, task)) = pending.pop_front() {
+            o.checkpoint()?;
+            let row = task
+                .join()
+                .map_err(|_| Error("frame worker panicked".into()))??;
+            consume(index, row)?;
+        }
+        Ok(())
+    })
+}
 fn prepare_validity(
     source: &mut impl FrameSource,
     options: &Options,
@@ -469,37 +599,23 @@ fn prepare_validity(
     let mut coarse = Vec::new();
     let mut available = Vec::new();
     let mut hashes = Vec::new();
-    for first in (0..frames).step_by(options.mask_workers) {
-        options.checkpoint()?;
-        let payloads = (first..(first + options.mask_workers).min(frames))
-            .map(|i| {
-                let p = prepared(source, &plan, options, i)?;
-                let values = image(&p, shape);
-                Ok((p, values))
-            })
-            .collect::<Result<Vec<_>>>()?;
-        let rows = std::thread::scope(|scope| {
-            let tasks: Vec<_> = payloads
-                .iter()
-                .map(|(p, values)| {
-                    scope.spawn(move || frame_validity::coarsen(values, &p.excluded, coarse_shape))
-                })
-                .collect();
-            tasks
-                .into_iter()
-                .map(|t| {
-                    t.join()
-                        .map_err(|_| Error("mask worker panicked".into()))?
-                        .map_err(Into::into)
-                })
-                .collect::<Result<Vec<_>>>()
-        })?;
-        for ((p, _), c) in payloads.into_iter().zip(rows) {
+    map_frames(
+        source,
+        &plan,
+        options,
+        options.mask_workers,
+        |p| {
+            let data = image(&p, shape);
+            let coarse = frame_validity::coarsen(&data, &p.excluded, coarse_shape)?;
+            Ok((p.digest, coarse))
+        },
+        |_, (digest, c)| {
             coarse.extend(c.values);
             available.push(c.available);
-            hashes.push(p.digest);
-        }
-    }
+            hashes.push(digest);
+            Ok(())
+        },
+    )?;
     let masks = frame_validity::estimate(
         &coarse,
         &available,
@@ -676,3 +792,6 @@ pub fn search_observations(
         .ok_or_else(|| Error("missing native search diagnostics".into()))?;
     Ok((solution, search))
 }
+
+#[cfg(test)]
+mod tests;

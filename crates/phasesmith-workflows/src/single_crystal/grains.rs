@@ -13,7 +13,7 @@ pub struct Grain {
     pub direct: M3,
     /// Integer Miller indices in the selected supplied setting.
     pub hkl: Vec<[i64; 3]>,
-    /// Frozen lattice, geometry and withheld-data evidence.
+    /// Boolean frozen-pool ownership for each supplied reciprocal point.
     pub indexed: Vec<bool>,
     /// Frozen independent training membership or retained training count.
     pub training: usize,
@@ -45,6 +45,7 @@ pub struct Indexed {
     /// Independently position-supported measured crossings for exclusion only.
     pub competitors: Vec<Competitor>,
 }
+/// A position-supported alternative used only through its measured crossings.
 pub struct Competitor {
     /// Original lattice hypothesis index.
     pub candidate: usize,
@@ -151,6 +152,7 @@ fn integer_basis(indices: &[V3]) -> Option<M3> {
         basis[2]?.map(|x| x as f64),
     ])
 }
+#[allow(clippy::float_cmp)] // Inferred HKLs are exact rounded integers.
 fn refine(e: &Engine, q: &[V3], mut a: M3) -> Result<Option<M3>> {
     for cycle in 0..8 {
         let s = score(e, q, a)?;
@@ -283,6 +285,7 @@ fn vectors(e: &Engine, q: &[V3]) -> Result<Vec<V3>> {
     }
     Ok(chosen)
 }
+#[allow(clippy::too_many_lines)] // One bounded training-only discovery round with explicit deterministic ranking.
 fn discover(q: &[V3], o: &Options) -> Result<Vec<M3>> {
     let e = Engine::new(4).map_err(Error)?;
     let mut models = Vec::new();
@@ -409,9 +412,6 @@ fn setting(models: &[Grain], target: [f64; 6]) -> Result<(usize, M3)> {
                     if v == [0; 3] || v.iter().find(|&&x| x != 0).is_some_and(|&x| x < 0) {
                         continue;
                     }
-                    fn gcd(a: i32, b: i32) -> i32 {
-                        if b == 0 { a.abs() } else { gcd(b, a % b) }
-                    }
                     if gcd(gcd(x, y), z) != 1 {
                         continue;
                     }
@@ -513,64 +513,13 @@ pub(super) fn index(p: &Positions, o: &Options, shape: [usize; 2]) -> Result<Ind
         .collect();
     let train: Vec<_> = q
         .iter()
-        .zip(&training)
+        .zip(training.iter())
         .filter_map(|(&q, &t)| t.then_some(q))
         .collect();
     if train.len() < 20 || q.len() - train.len() < 6 {
         return Err(Error("insufficient independent indexing tracks".into()));
     }
-    let models = discover(&train, o)?;
-    let e = Engine::new(4).map_err(Error)?;
-    let labels = assign(&e, &q, &models)?;
-    let held: Vec<_> = q
-        .iter()
-        .zip(&training)
-        .filter_map(|(&q, &t)| (!t).then_some(q))
-        .collect();
-    let mut null = vec![vec![]; models.len()];
-    for &rotation in &o.null_rotations {
-        let rotated: Vec<_> = held.iter().map(|&q| row(q, rotation)).collect();
-        let l = assign(&e, &rotated, &models)?;
-        for (i, n) in null.iter_mut().enumerate() {
-            n.push(l.iter().filter(|&&x| x == i as i32 + 1).count());
-        }
-    }
-    let mut grains = Vec::new();
-    for (i, &direct) in models.iter().enumerate() {
-        let s = score(&e, &q, direct)?;
-        let indexed: Vec<_> = labels.iter().map(|&l| l == i as i32 + 1).collect();
-        let ntrain = indexed
-            .iter()
-            .zip(&training)
-            .filter(|(a, b)| **a && **b)
-            .count();
-        let ntest = indexed
-            .iter()
-            .zip(&training)
-            .filter(|(a, b)| **a && !**b)
-            .count();
-        let mean = null[i].iter().sum::<usize>() as f64 / 64.;
-        let var = null[i]
-            .iter()
-            .map(|&v| (v as f64 - mean).powi(2))
-            .sum::<f64>()
-            / 63.;
-        let accepted = ntrain >= 20
-            && ntest >= 6
-            && ntest > *null[i].iter().max().unwrap()
-            && ntest as f64 >= 2. * mean.max(1.)
-            && ntest as f64 >= mean + 4. * var.max(mean).max(1.).sqrt()
-            && ntest as f64 >= 0.5 * ntrain as f64 * held.len() as f64 / train.len() as f64;
-        grains.push(Grain {
-            direct,
-            hkl: s.iter().map(|s| s.0.map(|x| x as i64)).collect(),
-            indexed,
-            training: ntrain,
-            withheld: ntest,
-            accepted,
-            null_counts: null[i].clone(),
-        });
-    }
+    let grains = discover_and_validate(&q, &training, &train, o)?;
     let cell = o.priors.cell;
     let target = [
         cell.a_angstrom,
@@ -617,16 +566,116 @@ pub(super) fn index(p: &Positions, o: &Options, shape: [usize; 2]) -> Result<Ind
             reference_cell: Some(target),
             refine_lengths: false,
         },
-        geometry::Options::default(),
+        geometry_options_v1(),
         |_, _| o.checkpoint().map_err(|e| phasesmith_spots::SpotError(e.0)),
     )?;
+    let valid = validate_geometry(&fit, &observed, &fit_training, &eligible)?;
+    let mut result = Indexed {
+        grains,
+        selected,
+        track_ids: ids,
+        hkl,
+        observed,
+        training: fit_training,
+        eligible: valid,
+        fit,
+        competitors: vec![],
+    };
+    result.competitors = competing_domains(p, &result, &training, &eligible)?;
+    Ok(result)
+}
+
+fn gcd(a: i32, b: i32) -> i32 {
+    if b == 0 { a.abs() } else { gcd(b, a % b) }
+}
+
+fn discover_and_validate(
+    q: &[V3],
+    training: &[bool],
+    train: &[V3],
+    o: &Options,
+) -> Result<Vec<Grain>> {
+    let models = discover(train, o)?;
+    let e = Engine::new(4).map_err(Error)?;
+    let labels = assign(&e, q, &models)?;
+    let held: Vec<_> = q
+        .iter()
+        .zip(training.iter())
+        .filter_map(|(&q, &t)| (!t).then_some(q))
+        .collect();
+    let mut null = vec![vec![]; models.len()];
+    for &rotation in &o.null_rotations {
+        let rotated: Vec<_> = held.iter().map(|&q| row(q, rotation)).collect();
+        let l = assign(&e, &rotated, &models)?;
+        for (i, n) in null.iter_mut().enumerate() {
+            n.push(l.iter().filter(|&&x| x == i as i32 + 1).count());
+        }
+    }
+    let mut grains = Vec::new();
+    for (i, &direct) in models.iter().enumerate() {
+        let s = score(&e, q, direct)?;
+        let indexed: Vec<_> = labels.iter().map(|&l| l == i as i32 + 1).collect();
+        let ntrain = indexed
+            .iter()
+            .zip(training.iter())
+            .filter(|(a, b)| **a && **b)
+            .count();
+        let ntest = indexed
+            .iter()
+            .zip(training.iter())
+            .filter(|(a, b)| **a && !**b)
+            .count();
+        let mean = null[i].iter().sum::<usize>() as f64 / 64.;
+        let var = null[i]
+            .iter()
+            .map(|&v| (v as f64 - mean).powi(2))
+            .sum::<f64>()
+            / 63.;
+        let trained: Vec<_> = s
+            .iter()
+            .zip(&indexed)
+            .zip(training.iter())
+            .filter_map(|((s, &own), &train)| (own && train).then_some(s.0))
+            .collect();
+        let unique = trained
+            .iter()
+            .map(|h| h.map(|x| x as i64))
+            .collect::<std::collections::BTreeSet<_>>()
+            .len();
+        let rank = unique >= 20 && least(&trained, &trained).is_ok();
+        let accepted = ntrain >= 20
+            && ntest >= 6
+            && ntest > *null[i].iter().max().unwrap()
+            && ntest as f64 >= 2. * mean.max(1.)
+            && ntest as f64 >= mean + 4. * var.max(mean).max(1.).sqrt()
+            && ntest as f64 >= 0.5 * ntrain as f64 * held.len() as f64 / train.len() as f64
+            && rank;
+        grains.push(Grain {
+            direct,
+            hkl: s.iter().map(|s| s.0.map(|x| x as i64)).collect(),
+            indexed,
+            training: ntrain,
+            withheld: ntest,
+            accepted,
+            null_counts: null[i].clone(),
+        });
+    }
+    Ok(grains)
+}
+
+fn validate_geometry(
+    fit: &geometry::Fit,
+    observed: &[V3],
+    training: &[bool],
+    eligible: &[bool],
+) -> Result<Vec<bool>> {
     let valid: Vec<_> = eligible
         .iter()
         .zip(&fit.predictions)
         .map(|(&x, p)| x && p.flags == 0)
         .collect();
-    let heldout: Vec<_> = (0..hkl.len())
-        .filter(|&i| valid[i] && !fit_training[i])
+    let heldout: Vec<_> = (0..observed.len())
+        .filter(|&i| valid[i] && !training[i])
         .collect();
     let xy = (heldout
         .iter()
@@ -645,7 +694,7 @@ pub(super) fn index(p: &Positions, o: &Options, shape: [usize; 2]) -> Result<Ind
         .sqrt();
     if valid
         .iter()
-        .zip(&fit_training)
+        .zip(training.iter())
         .filter(|(x, t)| **x && **t)
         .count()
         < 100
@@ -662,6 +711,20 @@ pub(super) fn index(p: &Positions, o: &Options, shape: [usize; 2]) -> Result<Ind
             fit.at_bounds
         )));
     }
+    Ok(valid)
+}
+
+fn competing_domains(
+    p: &Positions,
+    r: &Indexed,
+    training: &[bool],
+    eligible: &[bool],
+) -> Result<Vec<Competitor>> {
+    let fit = &r.fit;
+    let ids = &r.track_ids;
+    let grains = &r.grains;
+    let selected = r.selected;
+    let observed = &r.observed;
     let updated = positions::reciprocal(p, fit.state.geometry)?.0;
     let updated: Vec<_> = ids.iter().map(|&i| updated[i]).collect();
     let mut competitors = Vec::new();
@@ -669,19 +732,19 @@ pub(super) fn index(p: &Positions, o: &Options, shape: [usize; 2]) -> Result<Ind
         if i == selected {
             continue;
         }
-        let owntrain = (0..q.len())
+        let owntrain = (0..updated.len())
             .filter(|&j| g.indexed[j] && training[j])
             .count();
-        let overlap = (0..q.len())
+        let overlap = (0..updated.len())
             .filter(|&j| g.indexed[j] && eligible[j] && training[j])
             .count();
         if overlap as f64 > 0.2 * owntrain.max(1) as f64 {
             continue;
         }
-        let train: Vec<_> = (0..q.len())
+        let train: Vec<_> = (0..updated.len())
             .filter(|&j| g.indexed[j] && training[j])
             .collect();
-        let test: Vec<_> = (0..q.len())
+        let test: Vec<_> = (0..updated.len())
             .filter(|&j| g.indexed[j] && !training[j])
             .collect();
         if train.len() < 30 || test.len() < 10 {
@@ -719,19 +782,36 @@ pub(super) fn index(p: &Positions, o: &Options, shape: [usize; 2]) -> Result<Ind
     }
     competitors.sort_by_key(|g| std::cmp::Reverse(g.training));
     competitors.truncate(2);
-    Ok(Indexed {
-        grains,
-        selected,
-        track_ids: ids,
-        hkl,
-        observed,
-        training: fit_training,
-        eligible: valid,
-        fit,
-        competitors,
-    })
+    Ok(competitors)
 }
 
-fn gcd(a: i32, b: i32) -> i32 {
-    if b == 0 { a.abs() } else { gcd(b, a % b) }
+fn geometry_options_v1() -> geometry::Options {
+    geometry::Options {
+        xy_scale: 0.4,
+        omega_scale: 0.2,
+        huber: 2.5,
+        max_evaluations: 150,
+        translation_limit_mm: 2.,
+        rotation_limit_deg: 2.,
+        log_length_limit: 0.02,
+        initial_xy_gate: 5.,
+        initial_omega_gate: 1.,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn inferred_integer_lattice_preserves_the_index_and_rejects_rank_deficiency() {
+        let h = vec![[2., 0., 0.], [0., 3., 0.], [0., 0., 4.], [2., 3., 4.]];
+        let a = integer_basis(&h).unwrap();
+        assert!((det(a).abs() - 24.).abs() < 1e-12);
+        let mut primitive = h;
+        primitive.push([1., 1., 1.]);
+        let a = integer_basis(&primitive).unwrap();
+        assert!((det(a).abs() - 2.).abs() < 1e-12);
+        assert!(integer_basis(&[[1., 0., 0.], [0., 1., 0.]]).is_none());
+        assert!(integer_basis(&[[1e7, 0., 0.]]).is_none());
+    }
 }

@@ -2,7 +2,8 @@
 
 Starting with the 0.8 development release, single-crystal analysis is a normal
 PhaseSmith capability. Python uses `phasesmith.single_crystal`; native consumers
-use `phasesmith::spots`, `phasesmith::row_search` and `phasesmith::solution`.
+use `phasesmith::spots`, `phasesmith::row_search`, `phasesmith::solution` and
+`phasesmith::workflows::single_crystal`.
 Ordinary wheels include the kernels and the bundled native HDF5 reader. The
 canonical workflow runs from original frames through structure search and
 candidate assessment. There is no standalone single-crystal structure-refinement
@@ -26,6 +27,11 @@ correct atom count alone does not establish a correct or unique structure.
 The measured search has an existing ADP-bound stagnation limitation; report its
 termination and diagnostics rather than claiming every candidate polish converged.
 Research strategies remain opt-in and carry their documented qualifications.
+
+The [Rust-only workflow coordinator](single-crystal-native-workflow.md) runs
+the complete original-frame path without an interpreter. Its first recipe uses
+a supplied primitive-orthorhombic metric, explicit mask assumptions and the
+versioned search profile; other low-level methods retain their existing APIs.
 
 ## Python API
 

@@ -12,6 +12,10 @@ simplification on orchestration modules, configuration and documentation. The
 most consequential findings are corrected below; larger refactors remain
 explicit follow-up work.
 
+The subsequent [native coordinator implementation](single-crystal-native-workflow.md)
+addresses the Rust orchestration follow-up below. Its validation and numerical
+limits are recorded separately; this review receipt remains unchanged.
+
 ## Findings and actions
 
 | Priority | Finding | Action/state |
