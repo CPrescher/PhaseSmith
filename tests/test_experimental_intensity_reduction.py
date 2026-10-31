@@ -5,21 +5,25 @@ from dataclasses import asdict, replace
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental import intensity_reference as reference
-from phasesmith.experimental.empirical_scaling import (
+from phasesmith.single_crystal.empirical_scaling import (
     ScalingDesign,
     ScalingOptions,
     family_center,
     fit_empirical_scale,
     panel_mesh,
 )
-from phasesmith.experimental.intensity_response import SlabResponse
-from phasesmith.experimental.profile_refinement import ShapeFitOptions, _Spot, refine_profiles
-from phasesmith.experimental.profiles import evaluate_profile, evaluate_profile_shape
-from phasesmith.experimental.reduction import ReductionConfig, physical_factors, reduce_observations
-from phasesmith.experimental.reduction_cache import ReductionCache, cache_key
-from phasesmith.experimental.reduction_io import load_case, save_case
-from phasesmith.experimental.sensor_offsets import SensorLayout, fit_sensor_offsets
+from phasesmith.single_crystal.intensity_response import SlabResponse
+from phasesmith.single_crystal.profile_refinement import ShapeFitOptions, _Spot, refine_profiles
+from phasesmith.single_crystal.profiles import evaluate_profile, evaluate_profile_shape
+from phasesmith.single_crystal.reduction import (
+    ReductionConfig,
+    physical_factors,
+    reduce_observations,
+)
+from phasesmith.single_crystal.reduction_cache import ReductionCache, cache_key
+from phasesmith.single_crystal.reduction_io import load_case, save_case
+from phasesmith.single_crystal.reference import intensity_reference as reference
+from phasesmith.single_crystal.sensor_offsets import SensorLayout, fit_sensor_offsets
 from test_experimental_profiles import fixed_model, observations, truth
 
 pytestmark = pytest.mark.skipif(
@@ -254,8 +258,8 @@ def test_safe_case_roundtrip_cached_pipeline_and_invalidation(tmp_path):
 
 
 def test_physical_lp_axis_wavelength_and_scattering_map_contract():
-    from phasesmith.experimental.reciprocal import PanelGeometry
-    from phasesmith.experimental.reduction import profile_geometry
+    from phasesmith.single_crystal.reciprocal import PanelGeometry
+    from phasesmith.single_crystal.reduction import profile_geometry
 
     g = PanelGeometry(
         np.array([[-0.05, -0.04, 0.15], [0.000075, 0, 0], [0, 0.000075, 0], [0, 0, 1], [1, 0, 0]]),
@@ -277,7 +281,7 @@ def test_physical_lp_axis_wavelength_and_scattering_map_contract():
 
 
 def test_equivalent_error_recovery_derivative_and_whole_family_holdout():
-    from phasesmith.experimental.intensity_uncertainty import estimate_equivalent_error
+    from phasesmith.single_crystal.intensity_uncertainty import estimate_equivalent_error
 
     groups = np.repeat(np.arange(50), 2)
     mu = np.repeat(np.linspace(200.0, 1000.0, 50), 2)
@@ -321,7 +325,7 @@ def test_declared_recipe_fields_and_underflow_are_rejected_early():
     with pytest.raises(ValueError, match="sensor recipe"):
         ReductionConfig(sensor={"coefficients": []})
     layout = SensorLayout([[0, 0, 100, 100]], [[50, 50]])
-    from phasesmith.experimental.sensor_offsets import SensorOffsets
+    from phasesmith.single_crystal.sensor_offsets import SensorOffsets
 
     sensor = SensorOffsets(layout, np.zeros(layout.parameters), "synthetic explicit recipe")
     config = ReductionConfig(sensor=sensor.to_dict())

@@ -7,16 +7,16 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution import (
+from phasesmith.io.hkl import HklData
+from phasesmith.io.space_groups import space_group_by_symbol
+from phasesmith.scattering_reference import xray_non_resonant
+from phasesmith.single_crystal.reference.solution_shared_reference import shared_orbit_reference
+from phasesmith.single_crystal.solution import (
     SolutionCancellation,
     SolutionOptions,
     solve_structure_elements,
     write_solution,
 )
-from phasesmith.experimental.solution_shared_reference import shared_orbit_reference
-from phasesmith.io.hkl import HklData
-from phasesmith.io.space_groups import space_group_by_symbol
-from phasesmith.scattering_reference import xray_non_resonant
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_SharedOrbitPool"), reason="requires experimental-solution"

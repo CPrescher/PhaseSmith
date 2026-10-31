@@ -62,8 +62,10 @@ def test_windowed_snapshot_and_boundaries_reject_invalid_inputs():
 
 
 def test_prepared_cloud_is_an_owned_snapshot_with_exact_fused_moments_and_derivatives():
-    from phasesmith.experimental.reciprocal import lattice_fourier
-    from phasesmith.experimental.reciprocal_reference import lattice_fourier as reference
+    from phasesmith.single_crystal.reciprocal import lattice_fourier
+    from phasesmith.single_crystal.reference.reciprocal_reference import (
+        lattice_fourier as reference,
+    )
 
     rng = np.random.default_rng(518273)
     for count in (301, 1024, 1025, 2001):
@@ -106,7 +108,7 @@ def test_prepared_cloud_is_an_owned_snapshot_with_exact_fused_moments_and_deriva
 
 
 def test_hybrid_evaluator_reuses_one_small_batch_snapshot_and_keeps_large_batch_path():
-    from phasesmith.experimental.grains import _fourier_evaluator
+    from phasesmith.single_crystal.grains import _fourier_evaluator
 
     rng = np.random.default_rng(91182)
     q = rng.normal(size=(301, 3))

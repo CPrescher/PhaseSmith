@@ -8,14 +8,15 @@ The canonical API is [phasesmith.single_crystal](single-crystal.md). Normal Pyth
 builds include the native capabilities and bundled HDF5. The Rust facade defaults
 to named single-crystal capabilities, retains a minimal opt-out and keeps HDF5
 optional. Implementation crates have synchronized 0.8 metadata and notices for
-workspace publication. Old module and Cargo-feature aliases remain available.
+workspace publication. Pre-release experimental imports/features are removed after updating Dioptas;
+independent references remain under `single_crystal.reference`.
 
 The v24 raw protocol is a namespace/configuration promotion control, with the v23
 scientific and execution settings unchanged. The new explicit named search
 configuration records its complete expansion; historical protocols and API
 snapshots remain frozen. New summary schema migration changes metadata only.
 
-Required local checks are default/minimal/legacy-feature builds, strict Clippy,
+Required local checks are default/minimal/focused-feature builds, strict Clippy,
 all-feature Rust tests, complete ordinary-build Python tests, API/metadata checks,
 installed NumPy-only wheel smoke, source reconstruction, crate packaging and
 strict documentation. Fresh original-frame MgSiO3 comparison must retain all
@@ -43,10 +44,9 @@ this checks packaging/resolution, not a registry publication or independent
 build of every packaged crate. Wheel/sdist reconstruction and v24 results are
 recorded in the final receipt after execution.
 
-A whole-repository Ruff audit still reports 191 pre-existing diagnostics in
-unchanged research tools/references/tests. None is in a changed Python file;
-changed files pass targeted lint. This inherited release-CI gate remains to be
-resolved before tagging. It is not suppressed or presented as passing.
+The original candidate recorded 191 inherited Ruff diagnostics. Subsequent
+maintenance clears repository-wide lint and formatting; see the
+[package review](package-review-0.8.md) for the current checks and simplifications.
 
 
 ## Completed distribution and raw-workflow checks

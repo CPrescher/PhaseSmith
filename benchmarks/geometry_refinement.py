@@ -12,9 +12,9 @@ from pathlib import Path
 
 import numpy as np
 from phasesmith import _core
-from phasesmith.experimental.geometry_refinement import parameter_state, refine_geometry
-from phasesmith.experimental.prediction import predict_spots
-from phasesmith.experimental.reciprocal import PanelGeometry
+from phasesmith.single_crystal.geometry_refinement import parameter_state, refine_geometry
+from phasesmith.single_crystal.prediction import predict_spots
+from phasesmith.single_crystal.reciprocal import PanelGeometry
 
 
 def main(output, baseline_core=None, baseline_python=None):
@@ -118,8 +118,8 @@ print(json.dumps(dict(median_seconds=float(np.median(times[1:])),value_basis_sha
             input_path, output_path = Path(folder) / "input.npz", Path(folder) / "output.npz"
             np.savez(input_path, observed=observed, h=h, b=b, g=g.vectors, training=training)
             code = """import sys,json,time,numpy as np
-from phasesmith.experimental.reciprocal import PanelGeometry
-from phasesmith.experimental.geometry_refinement import refine_geometry
+from phasesmith.single_crystal.reciprocal import PanelGeometry
+from phasesmith.single_crystal.geometry_refinement import refine_geometry
 z=np.load(sys.argv[1]);g=PanelGeometry(z['g'],.4);times=[]
 for _ in range(3):
  start=time.perf_counter()

@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution_reference import symmetric_model_reference
 from phasesmith.scattering_reference import xray_non_resonant
+from phasesmith.single_crystal.reference.solution_reference import symmetric_model_reference
 from test_solution_refinement_families import fixture
 from test_solution_symmetry_adp import CASES
 
@@ -86,7 +86,7 @@ def test_short_rows_zero_reflection_and_u_boundaries(rows):
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
 def test_search_preserves_counts_and_exact_final_model(symbol):
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, _, species = synthetic(symbol)

@@ -6,12 +6,12 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
-from phasesmith.experimental.solution_peak_density_reference import (
+from phasesmith.single_crystal.reference.solution_peak_density_reference import (
     ball_reference,
     integrated_reference,
     label_mask_reference,
 )
+from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
 from test_solution_shared_search import synthetic
 
 pytestmark = pytest.mark.skipif(

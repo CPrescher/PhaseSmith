@@ -15,10 +15,14 @@ from pathlib import Path
 
 import numpy as np
 from enstatite_raw_workflow import RawFrames, poni_geometry
-from phasesmith.experimental.frame_validity import CombinedValidity, DacApertureMask, FrameValidity
-from phasesmith.experimental.prediction import ScanPredictions
-from phasesmith.experimental.profiles import prepare_profiles
-from phasesmith.experimental.reduction_io import load_case
+from phasesmith.single_crystal.frame_validity import (
+    CombinedValidity,
+    DacApertureMask,
+    FrameValidity,
+)
+from phasesmith.single_crystal.prediction import ScanPredictions
+from phasesmith.single_crystal.profiles import prepare_profiles
+from phasesmith.single_crystal.reduction_io import load_case
 
 
 def main():
@@ -53,7 +57,7 @@ def main():
     for workers in a.workers:
         controls = {}
         if "execution" in inspect.signature(prepare_profiles).parameters:
-            from phasesmith.experimental.integration import FrameExecution
+            from phasesmith.single_crystal.integration import FrameExecution
 
             controls["execution"] = FrameExecution(workers, 1024**3)
         else:

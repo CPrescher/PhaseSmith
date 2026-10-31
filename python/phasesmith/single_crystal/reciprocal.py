@@ -125,7 +125,7 @@ def reciprocal_vectors(xyomega, geometry):
     if not isinstance(geometry, PanelGeometry):
         raise TypeError("geometry must be PanelGeometry")
     if not hasattr(_core, "experimental_reciprocal"):
-        raise RuntimeError("build PhaseSmith with --features spots (legacy experimental-spots)")
+        raise RuntimeError("build PhaseSmith with --features spots ")
     if geometry.pixel_map is not None:
         a[:, :2] = mapped_xy(geometry.pixel_map, a[:, :2])
     return _core.experimental_reciprocal(a, geometry.vectors, geometry.wavelength)

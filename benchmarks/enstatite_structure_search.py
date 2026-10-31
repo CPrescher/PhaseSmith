@@ -45,13 +45,13 @@ def source_reflections(path):
 
 def worker(packet_path):
     from phasesmith.crystallography import UnitCell
-    from phasesmith.experimental.solution import (
+    from phasesmith.io.hkl import read_hkl
+    from phasesmith.io.space_groups import space_group_by_number
+    from phasesmith.single_crystal.solution import (
         SolutionOptions,
         solve_structure_elements,
         write_solution,
     )
-    from phasesmith.io.hkl import read_hkl
-    from phasesmith.io.space_groups import space_group_by_number
 
     packet = json.loads(packet_path.read_text())
     if set(packet) != {
@@ -94,9 +94,12 @@ def run(args):
     import numpy as np
     from phasesmith import _core
     from phasesmith.crystallography import UnitCell
-    from phasesmith.experimental.solution import estimate_solution_memory, solve_structure_elements
     from phasesmith.io.hkl import HklData
     from phasesmith.io.space_groups import space_group_by_number
+    from phasesmith.single_crystal.solution import (
+        estimate_solution_memory,
+        solve_structure_elements,
+    )
 
     manifest = json.loads(DEFAULT_MANIFEST.read_text())
     verification = verify_dataset(manifest, args.data_root)
@@ -221,7 +224,7 @@ def run(args):
                 [
                     *ROOT.joinpath("crates/phasesmith-solution/src").glob("*.rs"),
                     ROOT / "crates/phasesmith-py/src/solution.rs",
-                    ROOT / "python/phasesmith/experimental/solution.py",
+                    ROOT / "python/phasesmith/single_crystal/solution.py",
                 ]
             )
         },

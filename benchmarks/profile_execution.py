@@ -14,8 +14,8 @@ import time
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental.profiles import fit_profiles, learn_profiles
-from phasesmith.experimental.reduction_io import load_case
+from phasesmith.single_crystal.profiles import fit_profiles, learn_profiles
+from phasesmith.single_crystal.reduction_io import load_case
 
 
 def main():
@@ -32,7 +32,7 @@ def main():
     references[bank.reference_ids] = True
     controls = {}
     if "execution" in inspect.signature(learn_profiles).parameters:
-        from phasesmith.experimental.profiles import ProfileExecution
+        from phasesmith.single_crystal.profiles import ProfileExecution
 
         controls["execution"] = ProfileExecution(args.workers, args.cache_bytes)
     record = dict(

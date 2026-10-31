@@ -17,9 +17,9 @@ from pathlib import Path
 import gemmi
 import numpy as np
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution import SolutionOptions, solve_structure, write_solution
 from phasesmith.io.hkl import HklData
 from phasesmith.io.space_groups import space_group_by_symbol
+from phasesmith.single_crystal.solution import SolutionOptions, solve_structure, write_solution
 from structure_solution import _reference_error, _verify
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -73,11 +73,11 @@ def main():
             "crates/phasesmith-py/src/solution_symmetry.rs",
             "crates/phasesmith-py/src/solution_dual.rs",
             "crates/phasesmith-py/src/solution_completion.rs",
-            "python/phasesmith/experimental/solution_completion_reference.py",
-            "python/phasesmith/experimental/solution_dual_reference.py",
-            "python/phasesmith/experimental/solution.py",
-            "python/phasesmith/experimental/solution_symmetry.py",
-            "python/phasesmith/experimental/solution_reference.py",
+            "python/phasesmith/single_crystal/reference/solution_completion_reference.py",
+            "python/phasesmith/single_crystal/reference/solution_dual_reference.py",
+            "python/phasesmith/single_crystal/solution.py",
+            "python/phasesmith/single_crystal/solution_symmetry.py",
+            "python/phasesmith/single_crystal/reference/solution_reference.py",
             "benchmarks/solution_adp_transfer.py",
             "benchmarks/structure_solution.py",
         )

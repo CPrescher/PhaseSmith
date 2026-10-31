@@ -12,7 +12,7 @@ from dataclasses import asdict, replace
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental.grains import (
+from phasesmith.single_crystal.grains import (
     GrainAliasOptions,
     GrainConditioningOptions,
     GrainOwnershipOptions,
@@ -22,8 +22,8 @@ from phasesmith.experimental.grains import (
     GrainStabilityOptions,
     find_grains_ensemble,
 )
-from phasesmith.experimental.prediction import predict_spots
-from phasesmith.experimental.reciprocal import PanelGeometry, reciprocal_vectors
+from phasesmith.single_crystal.prediction import predict_spots
+from phasesmith.single_crystal.reciprocal import PanelGeometry, reciprocal_vectors
 
 
 def main():

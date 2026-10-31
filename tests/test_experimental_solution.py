@@ -11,19 +11,19 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution import (
+from phasesmith.io.hkl import HklData, parse_hkl, read_hkl
+from phasesmith.io.space_groups import space_group_by_symbol
+from phasesmith.scattering_reference import xray_non_resonant
+from phasesmith.single_crystal.reference.solution_reference import (
+    amplitude_model_reference,
+    charge_flip_reference,
+)
+from phasesmith.single_crystal.solution import (
     SolutionCancellation,
     SolutionOptions,
     solve_structure,
     write_solution,
 )
-from phasesmith.experimental.solution_reference import (
-    amplitude_model_reference,
-    charge_flip_reference,
-)
-from phasesmith.io.hkl import HklData, parse_hkl, read_hkl
-from phasesmith.io.space_groups import space_group_by_symbol
-from phasesmith.scattering_reference import xray_non_resonant
 
 NATIVE = pytest.mark.skipif(
     not hasattr(_core, "_solve_structure"),
@@ -377,7 +377,7 @@ def test_cli_preserves_source_and_reports_unmet_target(tmp_path):
     command = [
         sys.executable,
         "-m",
-        "phasesmith.experimental.solution",
+        "phasesmith.single_crystal.solution",
         str(path),
         "--cell",
         "5",

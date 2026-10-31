@@ -51,7 +51,7 @@ def test_raw_loader_preserves_zero_high_counts_reserved_mask_and_orientation():
 def test_verified_digest_reuse_preserves_orientation_and_rejects_changed_sources():
     import hashlib
 
-    from phasesmith.experimental.frame_validity import CombinedValidity, FrameValidity
+    from phasesmith.single_crystal.frame_validity import CombinedValidity, FrameValidity
 
     path = ROOT / "crates/phasesmith-hdf5/tests/data/counts-bitshuffle-lz4.h5"
     acquisition = dict(
@@ -156,7 +156,7 @@ def test_flagged_half_pixel_edge_centres_are_explicitly_excluded_from_mesh():
 
 
 def test_dac_cone_masks_incident_and_exit_rays_in_sample_frame_with_closed_boundary():
-    from phasesmith.experimental.reciprocal import PanelGeometry
+    from phasesmith.single_crystal.reciprocal import PanelGeometry
 
     geometry = PanelGeometry([[0, 0, 1], [0.001, 0, 0], [0, 0.001, 0], [0, 0, 1], [0, 1, 0]], 1.0)
     recipe = dict(axis_at_omega_zero=[0, 0, 2], half_opening_degrees=35.0)
@@ -194,7 +194,7 @@ def test_search_retains_signed_warning_rows_but_preserves_other_flags_and_visibi
 
 
 def test_selected_shoeboxes_preserve_original_joint_background_and_signed_counts():
-    from phasesmith.experimental.profiles import select_observations
+    from phasesmith.single_crystal.profiles import select_observations
     from test_experimental_profiles import observations
 
     original = observations(covariance=True)
@@ -229,9 +229,9 @@ def test_joint_profile_collection_retains_explicit_domain_ids_without_changing_c
 
     if not hasattr(_core, "experimental_integrate_reduce"):
         pytest.skip("experimental-spots native build required")
-    from phasesmith.experimental.integration import IntegrationOptions
-    from phasesmith.experimental.prediction import ScanPredictions
-    from phasesmith.experimental.profiles import prepare_profiles
+    from phasesmith.single_crystal.integration import IntegrationOptions
+    from phasesmith.single_crystal.prediction import ScanPredictions
+    from phasesmith.single_crystal.profiles import prepare_profiles
 
     predictions = ScanPredictions(
         np.array([[1, 0, 0], [1, 0, 0]]),

@@ -6,14 +6,14 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
-from phasesmith.experimental.solution_quality_reference import (
+from phasesmith.io.space_groups import space_group_by_symbol
+from phasesmith.scattering_reference import xray_non_resonant
+from phasesmith.single_crystal.reference.solution_quality_reference import (
     phase_quality_reference,
     reciprocal_s_squared,
     wilson_reference,
 )
-from phasesmith.io.space_groups import space_group_by_symbol
-from phasesmith.scattering_reference import xray_non_resonant
+from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_PhaseQualityPlan"), reason="requires experimental-solution"
@@ -268,7 +268,9 @@ def test_normalization_rejects_non_type_element_lists(elements):
 
 
 def test_checkpoint_reference_preserves_amplitude_candidate_and_excludes_omissions():
-    from phasesmith.experimental.solution_quality_reference import checkpoint_candidates_reference
+    from phasesmith.single_crystal.reference.solution_quality_reference import (
+        checkpoint_candidates_reference,
+    )
 
     assert checkpoint_candidates_reference([0.8, 0.4, 0.1, 0.6], [0.2, 0.1, 0.99, 0.3]) == [1, 3]
     assert checkpoint_candidates_reference(

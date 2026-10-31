@@ -113,3 +113,6 @@ and the proposed capability development sequence.
 Planning and historical implementation notes describe design provenance, not
 the current user contract. The documents above and `PROJECT_BRIEF.md` are the
 maintained references.
+
+For the current software assessment and retained implementation evidence, see
+the [package review](package-review-0.8.md) and [development index](development.md).

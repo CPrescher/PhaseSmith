@@ -9,9 +9,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental import rows_reference
-from phasesmith.experimental.grains import GrainSearchOptions, find_grains
-from phasesmith.experimental.rows import RowSearchOptions, group_rows
+from phasesmith.single_crystal.grains import GrainSearchOptions, find_grains
+from phasesmith.single_crystal.reference import rows_reference
+from phasesmith.single_crystal.rows import RowSearchOptions, group_rows
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "experimental_row_search"), reason="experimental-spots feature not built"

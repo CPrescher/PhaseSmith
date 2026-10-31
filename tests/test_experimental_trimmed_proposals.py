@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.grains import (
+from phasesmith.single_crystal.grains import (
     GrainOwnershipOptions,
     GrainProposalRefinementOptions,
     GrainSearchOptions,
@@ -25,8 +25,8 @@ def test_trim_fractions_validate(fractions):
 
 
 def cloud():
-    from phasesmith.experimental.prediction import predict_spots
-    from phasesmith.experimental.reciprocal import PanelGeometry, reciprocal_vectors
+    from phasesmith.single_crystal.prediction import predict_spots
+    from phasesmith.single_crystal.reciprocal import PanelGeometry, reciprocal_vectors
 
     rng = np.random.default_rng(643)
     geometry = PanelGeometry.from_poni(
@@ -96,7 +96,7 @@ def test_trim_fits_are_training_only_bounded_deterministic_and_pool_order_indepe
 
 
 def test_one_failed_trim_preserves_the_full_fit_and_other_variants(monkeypatch):
-    import phasesmith.experimental.prediction as prediction
+    import phasesmith.single_crystal.prediction as prediction
 
     _, obs, g, a, h = cloud()
     original = prediction.fit_crystal_proposal
@@ -117,7 +117,7 @@ def test_one_failed_trim_preserves_the_full_fit_and_other_variants(monkeypatch):
 def test_preserved_eligible_input_survives_a_bad_geometry_variant(monkeypatch):
     from dataclasses import replace
 
-    import phasesmith.experimental.ownership as ownership
+    import phasesmith.single_crystal.ownership as ownership
 
     q, obs, g, a, _ = cloud()
     options = GrainSearchOptions()

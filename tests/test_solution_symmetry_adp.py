@@ -6,9 +6,9 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution_reference import symmetric_model_reference
 from phasesmith.io.space_groups import space_group_by_symbol
 from phasesmith.scattering_reference import xray_non_resonant
+from phasesmith.single_crystal.reference.solution_reference import symmetric_model_reference
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_SymmetricSolutionModel"), reason="requires experimental-solution"
@@ -161,7 +161,7 @@ def test_refinement_improves_and_has_truthful_stops():
     assert result["accepted_steps"] <= 8
     timeout = native.refine(p, 8, 1e-12, None)
     assert timeout["termination"] == "max_runtime"
-    from phasesmith.experimental.solution import SolutionCancellation
+    from phasesmith.single_crystal.solution import SolutionCancellation
 
     token = SolutionCancellation()
     token.cancel()
@@ -205,7 +205,7 @@ def test_f000_counts_every_image_and_has_no_adp_derivative():
     "shift", [(-0.125, -0.25, -0.125), (0.137, 0.287, 0.391), (0.493, 0.081, 0.714)]
 )
 def test_inversion_pairs_recover_pseudosymmetric_framework_origin(shift):
-    from phasesmith.experimental.solution_count_free_reference import (
+    from phasesmith.single_crystal.reference.solution_count_free_reference import (
         inversion_origin_seeds_reference,
     )
 

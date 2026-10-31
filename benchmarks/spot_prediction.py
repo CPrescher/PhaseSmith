@@ -7,9 +7,9 @@ import time
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental.orthorhombic import find_orthorhombic_settings, project_orthorhombic
-from phasesmith.experimental.prediction import predict_spots, refine_crystal
-from phasesmith.experimental.reciprocal import PanelGeometry
+from phasesmith.single_crystal.orthorhombic import find_orthorhombic_settings, project_orthorhombic
+from phasesmith.single_crystal.prediction import predict_spots, refine_crystal
+from phasesmith.single_crystal.reciprocal import PanelGeometry
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--output", required=True)

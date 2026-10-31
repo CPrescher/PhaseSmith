@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution_fft_reference import transform_3d_reference
+from phasesmith.single_crystal.reference.solution_fft_reference import transform_3d_reference
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_solution_fft_transform"), reason="experimental-solution"
@@ -101,7 +101,7 @@ def test_complete_dual_space_trajectory_is_bitwise_equal(rank, omit):
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
 def test_shared_counts_models_histories_and_final_adp_mode_are_preserved(symbol):
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, _, species = synthetic(symbol)

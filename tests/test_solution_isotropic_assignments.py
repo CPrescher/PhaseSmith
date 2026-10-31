@@ -6,10 +6,12 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
-from phasesmith.experimental.solution_assignment_reference import assignment_neighbors_reference
 from phasesmith.io.space_groups import space_group_by_symbol
 from phasesmith.scattering_reference import xray_non_resonant
+from phasesmith.single_crystal.reference.solution_assignment_reference import (
+    assignment_neighbors_reference,
+)
+from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
 
 pytestmark = pytest.mark.skipif(
     not hasattr(getattr(_core, "_PeakCompletionPlan", object), "neighbors"),

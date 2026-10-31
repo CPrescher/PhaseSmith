@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.omega_background import (
+from phasesmith.single_crystal.omega_background import (
     ArPLSParameters,
     arpls_masked_rows,
     arpls_rows,
@@ -171,3 +171,15 @@ def test_invalid_solver_rejected(solver):
     if isinstance(solver, str):
         with pytest.raises(ValueError, match="Solver"):
             _core.ExperimentalArPLSEngine(1, solver)
+
+
+@pytest.mark.parametrize("backend", ["auto", "native"])
+def test_missing_native_capability_never_falls_back_implicitly(monkeypatch, backend):
+    from phasesmith.single_crystal import omega_background as module
+
+    monkeypatch.setattr(module, "available", lambda: False)
+    rows = np.ones((2, 16))
+    with pytest.raises(RuntimeError, match="requires the spots capability"):
+        module.arpls_rows(rows, backend=backend)
+    with pytest.raises(RuntimeError, match="requires the spots capability"):
+        module.arpls_masked_rows(rows, np.zeros(rows.shape, dtype=bool), backend=backend)

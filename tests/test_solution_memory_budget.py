@@ -7,15 +7,15 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution import (
+from phasesmith.io.hkl import HklData
+from phasesmith.io.space_groups import space_group_by_number
+from phasesmith.single_crystal.reference.solution_reference import dense_memory_atom_cap_reference
+from phasesmith.single_crystal.solution import (
     SolutionOptions,
     estimate_solution_memory,
     solve_structure,
     solve_structure_elements,
 )
-from phasesmith.experimental.solution_reference import dense_memory_atom_cap_reference
-from phasesmith.io.hkl import HklData
-from phasesmith.io.space_groups import space_group_by_number
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_solution_memory_estimate"), reason="updated experimental-solution required"

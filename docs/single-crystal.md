@@ -121,8 +121,8 @@ phasesmith = "0.8"
 
 The facade defaults to `single-crystal`, which includes `spots`, `solution` and
 `row-search`. Use `default-features = false` for a minimal powder build, or select
-those capabilities individually. Old `experimental-spots` and
-`experimental-solution` Cargo features remain aliases. HDF5 stays optional for
+those capabilities individually. Pre-release experimental Cargo feature names are removed in 0.8; use the
+capability names above. HDF5 stays optional for
 Rust: add `features = ["hdf5"]` for original detector files. It is included in
 normal Python builds through the wheel configuration.
 
@@ -134,12 +134,14 @@ I/O remain separate crates. No interpreter is required for those Rust APIs.
 
 ## Migration and saved data
 
-Replace `phasesmith.experimental.<module>` with
-`phasesmith.single_crystal.<module>`. Compatibility imports emit
-`DeprecationWarning` until 1.0 and resolve to the same module/class/function
-objects, preserving `isinstance`, monkeypatching and old class lookups.
-Independent reference modules remain validation support under `experimental`.
-New and old solution/reduction module CLIs delegate to the same implementation:
+Use `phasesmith.single_crystal.<module>`. Experimental import wrappers are
+removed in 0.8 following migration of their Dioptas consumer. Independent
+numerical references are retained under `phasesmith.single_crystal.reference`
+for validation, outside the supported production exports. Historical Python
+pickles containing experimental module paths are not migrated automatically;
+portable, pickle-free observation/recipe formats remain supported.
+
+The supported module CLIs are:
 
 ```sh
 python -m phasesmith.single_crystal.solution --help

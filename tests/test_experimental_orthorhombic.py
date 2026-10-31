@@ -3,14 +3,14 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.orthorhombic import (
+from phasesmith.single_crystal.orthorhombic import (
     find_orthorhombic_settings,
     orthorhombic_chain,
     orthorhombic_step,
     project_orthorhombic,
 )
-from phasesmith.experimental.prediction import predict_spots, refine_crystal
-from phasesmith.experimental.prediction_reference import predict as reference
+from phasesmith.single_crystal.prediction import predict_spots, refine_crystal
+from phasesmith.single_crystal.reference.prediction_reference import predict as reference
 from test_experimental_prediction import setup
 
 pytestmark = pytest.mark.skipif(
@@ -116,7 +116,7 @@ def test_orthorhombic_refinement_is_six_parameter_training_only():
 
 
 def test_centred_setting_predicts_same_physical_reciprocal_lattice():
-    from phasesmith.experimental.prediction import predict_scan
+    from phasesmith.single_crystal.prediction import predict_scan
 
     _, g, _, _, _ = setup()
     a = np.array([[0.5, 0.5, 0], [-0.5, 0.5, 0], [0, 0, 1]]) @ np.diag([4.1, 6.7, 9.3])

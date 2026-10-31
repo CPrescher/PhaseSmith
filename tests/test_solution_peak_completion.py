@@ -6,9 +6,9 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution_origin_reference import peak_completion_reference
 from phasesmith.io.space_groups import space_group_by_symbol
 from phasesmith.scattering_reference import xray_non_resonant
+from phasesmith.single_crystal.reference.solution_origin_reference import peak_completion_reference
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_PeakCompletionPlan"), reason="experimental-solution"
@@ -96,8 +96,8 @@ def test_shared_completion_removes_spurious_peaks_without_supplied_counts(symbol
 
 
 def test_full_pipeline_handles_default_cap_and_redundant_cubic_stabilizers():
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
     from phasesmith.io.hkl import HklData
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
 
     cell, group, _, hkl, observed, *_ = setup("Fm-3m", False, 6)
     intensity = observed**2

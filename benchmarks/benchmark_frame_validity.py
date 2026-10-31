@@ -19,11 +19,11 @@ from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
 import numpy as np
-from phasesmith.experimental.frame_validity import (
+from phasesmith.single_crystal.frame_validity import (
     DacApertureMask,
     estimate_seat_shadows,
 )
-from phasesmith.experimental.reciprocal import PanelGeometry
+from phasesmith.single_crystal.reciprocal import PanelGeometry
 
 
 def fixture():

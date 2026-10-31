@@ -46,9 +46,7 @@ def reduce_cell(direct_basis, *, tolerance=1e-12, max_iterations=10000):
     if type(max_iterations) is not int or not 1 <= max_iterations <= 10000:
         raise ValueError("max_iterations must be integer in [1,10000]")
     if not hasattr(_core, "experimental_reduce_lattice"):
-        raise RuntimeError(
-            "build PhaseSmith with --features spots (legacy experimental-spots) for cell reduction"
-        )
+        raise RuntimeError("build PhaseSmith with --features spots  for cell reduction")
     a, t, n = _core.experimental_reduce_lattice(a, float(tolerance), max_iterations)
     return ReducedCell(a, t, n)
 

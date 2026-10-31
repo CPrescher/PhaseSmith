@@ -2,8 +2,12 @@ import threading
 
 import numpy as np
 import pytest
-from phasesmith.experimental.integration import FrameExecution, IntegrationOptions, integrate_series
-from phasesmith.experimental.profiles import prepare_profiles
+from phasesmith.single_crystal.integration import (
+    FrameExecution,
+    IntegrationOptions,
+    integrate_series,
+)
+from phasesmith.single_crystal.profiles import prepare_profiles
 from test_experimental_integration import predictions
 
 

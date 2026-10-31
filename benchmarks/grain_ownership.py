@@ -11,13 +11,13 @@ from pathlib import Path
 
 import numpy as np
 from phasesmith import _core
-from phasesmith.experimental.grains import GrainSearchOptions
-from phasesmith.experimental.ownership import (
+from phasesmith.single_crystal.grains import GrainSearchOptions
+from phasesmith.single_crystal.ownership import (
     GrainOwnershipOptions,
     assign_observed,
     observation_charts,
 )
-from phasesmith.experimental.reciprocal import PanelGeometry, reciprocal_vectors
+from phasesmith.single_crystal.reciprocal import PanelGeometry, reciprocal_vectors
 
 
 def main():

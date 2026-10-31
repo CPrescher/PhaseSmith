@@ -5,9 +5,9 @@ from dataclasses import replace
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.grains import GrainSearchOptions, find_grains_ensemble
-from phasesmith.experimental.ownership import GrainOwnershipOptions, _physical_fields
-from phasesmith.experimental.retention import GrainPoolMergeOptions, merge_fitted_training_pools
+from phasesmith.single_crystal.grains import GrainSearchOptions, find_grains_ensemble
+from phasesmith.single_crystal.ownership import GrainOwnershipOptions, _physical_fields
+from phasesmith.single_crystal.retention import GrainPoolMergeOptions, merge_fitted_training_pools
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "ExperimentalLatticeEngine"), reason="experimental-spots not built"
@@ -87,7 +87,7 @@ def test_training_controls_reject_a_dense_uniform_noise_hypothesis():
 
 
 def test_training_pool_has_no_validation_metrics_or_reserved_coordinate_requirement(monkeypatch):
-    import phasesmith.experimental.grains as grains
+    import phasesmith.single_crystal.grains as grains
 
     q = np.random.default_rng(731).uniform(-1, 1, (301, 3))
     o = GrainSearchOptions(grid_size=64, max_length=8, max_grains=1, fft_peaks=40, basis_vectors=20)
@@ -108,7 +108,7 @@ def test_training_pool_has_no_validation_metrics_or_reserved_coordinate_requirem
 
 
 def test_fit_budget_compares_actual_rows_hkls_and_internal_training_splits():
-    from phasesmith.experimental.grains import GrainProposalRefinementOptions, _same_fit_start
+    from phasesmith.single_crystal.grains import GrainProposalRefinementOptions, _same_fit_start
 
     a = np.diag([4.0, 5.0, 6.0])
     models = [a, a * 1.00001]

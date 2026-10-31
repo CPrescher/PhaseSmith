@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution_quality_reference import phase_quality_reference
+from phasesmith.single_crystal.reference.solution_quality_reference import phase_quality_reference
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_PhaseQualityPlan"), reason="experimental-solution"
@@ -68,7 +68,7 @@ def test_score_only_rejects_the_same_invalid_amplitudes(kind):
 @pytest.mark.parametrize("shape", [(16, 16, 16), (16, 24, 8)])
 @pytest.mark.parametrize("rank,omit", [(None, 0.0), (None, 0.1), (0, 0.1)])
 def test_reused_workspaces_preserve_complete_fourier_trajectory(shape, rank, omit):
-    from phasesmith.experimental.solution_dual_reference import dual_space_reference
+    from phasesmith.single_crystal.reference.solution_dual_reference import dual_space_reference
     from test_solution_dual_space import inputs
 
     _, cell, h, amplitude, phases, support = inputs()
@@ -162,7 +162,7 @@ def test_interleaving_rotates_case_positions_and_saves_every_mode_before_audit()
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
 def test_all_execution_modes_preserve_models_counts_and_cycle_histories(symbol):
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, xyz, species = synthetic(symbol)
@@ -238,7 +238,7 @@ def test_all_execution_modes_preserve_models_counts_and_cycle_histories(symbol):
 
 @pytest.mark.parametrize("flag", ["score_only_evaluation", "reusable_fourier_workspaces"])
 def test_execution_flag_dependencies_are_explicit(flag):
-    from phasesmith.experimental.solution import solve_structure_elements
+    from phasesmith.single_crystal.solution import solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, _, _ = synthetic("P1")

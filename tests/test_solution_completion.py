@@ -6,14 +6,14 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution import SolutionOptions
-from phasesmith.experimental.solution_completion_reference import (
+from phasesmith.io.space_groups import space_group_by_symbol
+from phasesmith.scattering_reference import xray_non_resonant
+from phasesmith.single_crystal.reference.solution_completion_reference import (
     difference_reference,
     orbit_reference,
     project_reference,
 )
-from phasesmith.io.space_groups import space_group_by_symbol
-from phasesmith.scattering_reference import xray_non_resonant
+from phasesmith.single_crystal.solution import SolutionOptions
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_CompletionSearch"), reason="requires experimental-solution"
@@ -286,7 +286,7 @@ def test_complete_corrupted_weak_orbit_and_truthful_stops():
     assert best < 0.001
     timeout = _core._solution_complete_candidate(*args, 1e-12, None)
     assert timeout["completion"]["status"] == "max_runtime"
-    from phasesmith.experimental.solution import SolutionCancellation
+    from phasesmith.single_crystal.solution import SolutionCancellation
 
     token = SolutionCancellation()
     token.cancel()
@@ -355,9 +355,9 @@ def test_weak_orbit_completion_resolves_ambiguous_tetragonal_framework():
     assert best < 0.001
 
     import phasesmith as ps
-    from phasesmith.experimental.solution_symmetry import SymmetryRefinement, candidate_cif
     from phasesmith.io.cif import read_cif
     from phasesmith.scattering import XrayNonResonant
+    from phasesmith.single_crystal.solution_symmetry import SymmetryRefinement, candidate_cif
     from phasesmith.symmetry import SpaceGroup
 
     refined = SymmetryRefinement.from_native(candidate["refinement"], group)

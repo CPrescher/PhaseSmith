@@ -1,4 +1,4 @@
-# Experimental profile intensity reduction
+# profile intensity reduction
 
 **Supported namespace:** this method is included in the 0.8 single-crystal
 capability. Use `phasesmith.single_crystal`; ordinary builds include the native
@@ -31,11 +31,11 @@ intensity accuracy, identify detector hardware, or validate a crystal structure.
 | `single_crystal/reduction.py` | Configuration, orchestration, separated outputs and CLI |
 | `single_crystal/reduction_io.py` | Pickle-free portable observation/profile-bank snapshots |
 | `single_crystal/reduction_cache.py` | Immutable, atomic, content-addressed numerical artifacts |
-| `experimental/intensity_reference.py` | Independent readable NumPy equations and dense small GLS reference |
+| `single_crystal/reference/intensity_reference.py` | Independent readable NumPy equations and dense small GLS reference |
 
 Python module paths in this table are relative to
 `python/phasesmith/`. None imports a research dataset or another experiment's
-script. SciPy is optional orchestration; it is needed for shape/scaling fits.
+script. Strong-profile and empirical-scaling fits execute in Rust. SciPy is independent validation support.
 The normal package requires no external integration or structure-refinement
 program. Build native experimental functionality with
 `maturin build --release --features spots` and install that wheel

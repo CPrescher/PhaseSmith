@@ -9,8 +9,8 @@ from pathlib import Path
 
 import numpy as np
 from phasesmith import _core
-from phasesmith.experimental.solution_dual_reference import peaks_reference
 from phasesmith.io.space_groups import space_group_by_symbol
+from phasesmith.single_crystal.reference.solution_dual_reference import peaks_reference
 
 
 def main():

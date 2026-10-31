@@ -104,12 +104,12 @@ def replay(root, output):
     import time
     from dataclasses import asdict
 
-    from phasesmith.experimental.solution import (
+    from phasesmith.io.hkl import HklData
+    from phasesmith.single_crystal.solution import (
         SolutionOptions,
         solve_structure_elements,
         write_solution,
     )
-    from phasesmith.io.hkl import HklData
 
     config = json.loads((root / "search-input.json").read_text())
     z = np.load(root / "reduced-observations.npz", allow_pickle=False)

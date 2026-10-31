@@ -1,4 +1,4 @@
-# Experimental FFT grain search
+# FFT grain search
 
 **Supported namespace:** this method is included in the 0.8 single-crystal
 capability. Use `phasesmith.single_crystal`; ordinary builds include the native
@@ -23,7 +23,7 @@ Several orientations can describe grains of the same cell. This is not a space
 group solver, a chemical identification or an exact DAFi implementation.
 For primitive hypotheses and all 14 Bravais metric types after discovery, see
 [experimental cell comparison](experimental-cell-comparison.md).
-The feature remains opt-in (`experimental-spots`), outside default releases.
+The native `spots` capability is included in ordinary 0.8 builds.
 
 ## Ownership and provenance
 

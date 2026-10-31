@@ -6,8 +6,7 @@ from itertools import product
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental import grains_reference as ref
-from phasesmith.experimental.grains import (
+from phasesmith.single_crystal.grains import (
     GrainAliasOptions,
     GrainConditioningOptions,
     GrainProposalRefinementOptions,
@@ -20,6 +19,7 @@ from phasesmith.experimental.grains import (
     integer_lattice_basis,
     prime_congruence_bases,
 )
+from phasesmith.single_crystal.reference import grains_reference as ref
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "ExperimentalLatticeEngine"), reason="experimental-spots feature not built"
@@ -27,8 +27,8 @@ pytestmark = pytest.mark.skipif(
 
 
 def positional_cloud():
-    from phasesmith.experimental.prediction import predict_spots
-    from phasesmith.experimental.reciprocal import PanelGeometry, reciprocal_vectors
+    from phasesmith.single_crystal.prediction import predict_spots
+    from phasesmith.single_crystal.reciprocal import PanelGeometry, reciprocal_vectors
 
     rng = np.random.default_rng(643)
     geometry = PanelGeometry.from_poni(
@@ -54,7 +54,7 @@ def positional_cloud():
 
 
 def test_early_polishing_rescues_below_core_cutoff_and_is_bounded():
-    from phasesmith.experimental.grains import _polish_proposals, _score
+    from phasesmith.single_crystal.grains import _polish_proposals, _score
 
     q, observed, geometry, truth = positional_cloud()
     engine = _core.ExperimentalLatticeEngine(2)
@@ -138,9 +138,9 @@ def test_exact_prime_congruences_against_independent_residue_enumeration():
 
 
 def test_positional_congruence_recovers_smaller_cell_despite_q_contamination():
-    from phasesmith.experimental.grains import _alias_proposals, _score
-    from phasesmith.experimental.prediction import predict_spots
-    from phasesmith.experimental.reciprocal import reciprocal_vectors
+    from phasesmith.single_crystal.grains import _alias_proposals, _score
+    from phasesmith.single_crystal.prediction import predict_spots
+    from phasesmith.single_crystal.reciprocal import reciprocal_vectors
 
     q, observed, geometry, b = positional_cloud()
     truth = np.linalg.inv(b).T

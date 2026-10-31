@@ -7,9 +7,9 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution_reference import symmetric_model_reference
 from phasesmith.io.space_groups import space_group_by_symbol
 from phasesmith.scattering_reference import xray_non_resonant
+from phasesmith.single_crystal.reference.solution_reference import symmetric_model_reference
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_SymmetricSolutionModel"), reason="experimental-solution"
@@ -154,7 +154,7 @@ def test_independent_concurrent_calls_restore_context_and_invalid_workers():
 
 @pytest.mark.parametrize("workers", [0, 65, True, 1.5, "2"])
 def test_public_worker_validation(workers):
-    from phasesmith.experimental.solution import solve_structure_elements
+    from phasesmith.single_crystal.solution import solve_structure_elements
 
     with pytest.raises(ValueError, match="workers"):
         solve_structure_elements(None, cell=None, elements=["Si"], workers=workers)
@@ -162,7 +162,7 @@ def test_public_worker_validation(workers):
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
 def test_full_search_retains_counts_coordinates_and_phasing_prefixes(symbol):
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, _, species = synthetic(symbol)

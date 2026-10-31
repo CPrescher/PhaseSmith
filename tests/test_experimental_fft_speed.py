@@ -3,10 +3,12 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental import grains_reference as ref
-from phasesmith.experimental.grains import GrainSearchOptions, _triplets, _vectors
-from phasesmith.experimental.reciprocal import lattice_fourier
-from phasesmith.experimental.reciprocal_reference import lattice_fourier as fourier_reference
+from phasesmith.single_crystal.grains import GrainSearchOptions, _triplets, _vectors
+from phasesmith.single_crystal.reciprocal import lattice_fourier
+from phasesmith.single_crystal.reference import grains_reference as ref
+from phasesmith.single_crystal.reference.reciprocal_reference import (
+    lattice_fourier as fourier_reference,
+)
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "ExperimentalLatticeEngine"), reason="experimental-spots feature not built"
@@ -166,7 +168,7 @@ def test_cached_newton_matches_original_full_batch_serial_ascent():
             improved |= better
         if not improved.any():
             break
-    from phasesmith.experimental.grains import _fourier_peaks
+    from phasesmith.single_crystal.grains import _fourier_peaks
 
     for workers in (1, 4):
         actual, scores, _ = _fourier_peaks(_core.ExperimentalLatticeEngine(workers), q, options)
@@ -195,7 +197,7 @@ def test_lazy_triplets_equal_full_prefix_including_rejected_geometry():
 
 
 def test_conditional_population_rank_and_prepared_direction_reuse():
-    from phasesmith.experimental.grains import GrainConditioningOptions, _conditioned_proposals
+    from phasesmith.single_crystal.grains import GrainConditioningOptions, _conditioned_proposals
 
     rng = np.random.default_rng(382913)
     q = rng.uniform(-0.7, 0.7, (301, 3))
@@ -243,7 +245,7 @@ def test_small_serial_score_path_matches_parallel_path_at_dispatch_boundary():
 
 @pytest.mark.parametrize("cosine", [np.nextafter(0.9995, 0), 0.9995, np.nextafter(0.9995, 1)])
 def test_vector_shortlist_preserves_scalar_collinearity_boundary(monkeypatch, cosine):
-    import phasesmith.experimental.grains as grains
+    import phasesmith.single_crystal.grains as grains
 
     v = np.array([[4.0, 0, 0], [4 * cosine, 4 * np.sqrt(1 - cosine**2), 0], [0, 4, 0], [0, 0, 4]])
     scores = np.array([0.4, 0.3, 0.2, 0.1])

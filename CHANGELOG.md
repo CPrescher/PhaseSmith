@@ -10,15 +10,24 @@ development versions.
 
 Development release candidate; not yet published.
 
+- Clear repository-wide Ruff lint and formatting; preserve numerical golden data.
+- Correct the Rust minimum to 1.89.0 to match the locked dependency graph and
+  add an actual minimum-toolchain CI check. Freeze every named v1 search control
+  literally, and reject silent SciPy fallback when native omega fitting is absent.
+- Separate current documentation from historical evidence, add a single-crystal
+  navigation section and development index, and archive the original long brief.
+
+
 - Promote single-crystal diffraction to the normal package. Ordinary Python
   builds include native spot detection, masking, lattice/grain search, geometry,
   learned profile integration, empirical scaling and structure search. The
   canonical Python API is `phasesmith.single_crystal`, with explicit submodules
-  and exports. Old experimental imports forward to the same objects with
-  deprecation warnings until 1.0; module CLIs continue to delegate.
+  and exports. Pre-release experimental import wrappers are removed after migrating Dioptas.
+  Independent references live in `single_crystal.reference`; portable data
+  schemas and explicit migrations remain supported.
 - Enable the Rust facade's `single-crystal` capability by default. Keep focused
   `spots`, `solution`, `row-search` features, `--no-default-features`, optional
-  bundled `hdf5`, and old experimental feature aliases. Prepare the implementation
+  bundled `hdf5`. Pre-release experimental Cargo feature names are removed. Prepare the implementation
   crates for publication alongside the facade.
 - Add an explicit versioned element-search configuration. Preserve low-level
   algorithm defaults and record the named configuration's complete expansion.

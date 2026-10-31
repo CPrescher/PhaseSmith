@@ -3,7 +3,9 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution_fft_reference import real_density_transform_reference
+from phasesmith.single_crystal.reference.solution_fft_reference import (
+    real_density_transform_reference,
+)
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_solution_real_fft_transform"), reason="experimental-solution"
@@ -110,7 +112,7 @@ def test_short_phase_trajectory_agrees_and_repeats_deterministically(cycles, ran
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
 def test_complete_element_only_search_preserves_counts_and_final_anisotropic_mode(symbol):
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, _, species = synthetic(symbol)

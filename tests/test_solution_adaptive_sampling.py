@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution_checkpoint_reference import (
+from phasesmith.single_crystal.reference.solution_checkpoint_reference import (
     checkpoint_reference,
     origin_sampling_reference,
 )
@@ -79,7 +79,7 @@ def test_origin_grid_is_frequency_derived_and_padding_independent(symbol):
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
 @pytest.mark.parametrize("adaptive,independent", [(True, False), (False, True), (True, True)])
 def test_both_controls_recover_full_models(symbol, adaptive, independent):
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, xyz, species = synthetic(symbol)
@@ -169,7 +169,7 @@ def test_plateau_requires_quality_fit_and_map_agreement(quality, score, perturb,
 
 @pytest.mark.parametrize("flag", ["adaptive_checkpoints", "independent_origin_sampling"])
 def test_new_options_reject_invalid_dependencies_and_nonbooleans(flag):
-    from phasesmith.experimental.solution import solve_structure_elements
+    from phasesmith.single_crystal.solution import solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, _, _ = synthetic("P1")

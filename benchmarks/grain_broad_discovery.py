@@ -13,7 +13,7 @@ from time import perf_counter
 
 import numpy as np
 from phasesmith import _core
-from phasesmith.experimental.grains import _fourier_evaluator
+from phasesmith.single_crystal.grains import _fourier_evaluator
 
 
 def main(args):

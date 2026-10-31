@@ -13,7 +13,7 @@ from dataclasses import asdict, fields, replace
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental.rows import RowSearchOptions, group_rows
+from phasesmith.single_crystal.rows import RowSearchOptions, group_rows
 
 
 def digest(array):

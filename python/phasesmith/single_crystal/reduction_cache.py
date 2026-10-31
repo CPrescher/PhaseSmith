@@ -39,7 +39,7 @@ def cache_key(stage, configuration, arrays, *, implementation):
 class ReductionCache:
     """Disposable cache; corrupt/partial entries raise instead of reusing data."""
 
-    schema = "phasesmith.experimental.reduction-cache.v1"
+    schema = "phasesmith.single_crystal.reduction-cache.v1"
 
     def __init__(self, root):
         self.root = Path(root)

@@ -12,7 +12,7 @@ import platform
 from pathlib import Path
 
 from grain_remaining import control
-from phasesmith.experimental import grains
+from phasesmith.single_crystal import grains
 
 
 def main():
@@ -27,7 +27,7 @@ def main():
     execution = []
 
     def find(*a, **kw):
-        from phasesmith.experimental.search_execution import parallel_searches
+        from phasesmith.single_crystal.search_execution import parallel_searches
 
         with parallel_searches(args.ensemble_workers, fit_tasks=not args.serial_fits):
             result = original(*a, **kw, ensemble_workers=args.ensemble_workers)

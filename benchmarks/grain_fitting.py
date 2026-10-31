@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 from phasesmith import _core
-from phasesmith.experimental import grains as G
+from phasesmith.single_crystal import grains as G
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--legacy-dir", type=Path, required=True)

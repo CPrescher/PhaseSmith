@@ -8,7 +8,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
-from phasesmith.experimental.grains import (
+from phasesmith.single_crystal.grains import (
     GrainConditioningOptions,
     GrainSearchOptions,
     find_grains,

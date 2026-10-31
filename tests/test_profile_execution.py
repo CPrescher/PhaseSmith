@@ -5,7 +5,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.profiles import ProfileExecution, ProfileOptions, learn_profiles
+from phasesmith.single_crystal.profiles import ProfileExecution, ProfileOptions, learn_profiles
 from test_experimental_profiles import observations
 
 pytestmark = pytest.mark.skipif(
@@ -89,7 +89,7 @@ def test_parallel_learning_banks_preserve_every_scalar_sum(workers):
 @pytest.mark.parametrize("expected", [False, True])
 @pytest.mark.parametrize("affine", [False, True])
 def test_baseline_integration_cache_and_workers_are_bitwise_exact(expected, affine):
-    from phasesmith.experimental.profiles import fit_profiles
+    from phasesmith.single_crystal.profiles import fit_profiles
     from test_experimental_profiles import fixed_model
 
     obs = observations((5000.0, -20.0, 0.0, 8000.0), covariance=True)

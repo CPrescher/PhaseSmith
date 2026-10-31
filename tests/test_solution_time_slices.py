@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
-from phasesmith.experimental.solution_schedule_reference import phase_cycle_quotas
+from phasesmith.single_crystal.reference.solution_schedule_reference import phase_cycle_quotas
+from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_phase_cycle_quota"), reason="experimental-solution"

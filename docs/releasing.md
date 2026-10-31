@@ -42,15 +42,15 @@ cargo publish --workspace --locked \
 Publishing is permanent. Do not run the second command until the packaged
 sources, ownership, version, and release commit have been reviewed.
 
-After the first upload, add the same trusted publisher to all nine public
-crates (`phasesmith` and its eight `phasesmith-*` dependencies), using workflow
+After the first upload, add the same trusted publisher to all thirteen public
+crates (`phasesmith` and its twelve `phasesmith-*` dependencies), using workflow
 `release.yml` and environment `crates-io`. Do not create the repository
 variable yet: the initial tag must not try to upload version 0.1.0 twice. The
 crates.io job remains safely skipped while the variable is absent.
 
 ## Release checklist
 
-1. Update `CHANGELOG.md` and synchronize the versions in `Cargo.toml` and
+1. Review the [current package audit](package-review-0.8.md), then update `CHANGELOG.md` and synchronize the versions in `Cargo.toml` and
    `pyproject.toml`.
 2. Generate the new versioned public API snapshot when the version changes,
    review its diff, and run `python scripts/public_api_snapshot.py --check`.

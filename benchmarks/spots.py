@@ -8,7 +8,7 @@ import platform
 import time
 
 import numpy as np
-from phasesmith.experimental.spots import SpotOptions, detect_spots
+from phasesmith.single_crystal.spots import SpotOptions, detect_spots
 
 
 def main():

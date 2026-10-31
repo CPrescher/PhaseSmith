@@ -202,7 +202,7 @@ def _run(
     if not available():
         raise RuntimeError(
             "This build has no spot engine; build PhaseSmith with "
-            "maturin develop --release --features spots (legacy experimental-spots)"
+            "maturin develop --release --features spots "
         )
     if not isinstance(options, SpotOptions):
         raise TypeError("options must be SpotOptions")

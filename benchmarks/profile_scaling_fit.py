@@ -16,14 +16,14 @@ from pathlib import Path
 
 import numpy as np
 from phasesmith import _core
-from phasesmith.experimental.empirical_scaling import (
+from phasesmith.single_crystal.empirical_scaling import (
     ScalingDesign,
     ScalingOptions,
     fit_empirical_scale,
 )
-from phasesmith.experimental.profile_refinement import ShapeFitOptions, refine_profiles
-from phasesmith.experimental.profiles import _reference_observations
-from phasesmith.experimental.reduction_io import load_case
+from phasesmith.single_crystal.profile_refinement import ShapeFitOptions, refine_profiles
+from phasesmith.single_crystal.profiles import _reference_observations
+from phasesmith.single_crystal.reduction_io import load_case
 
 
 def main():

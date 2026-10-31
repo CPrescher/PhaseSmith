@@ -5,8 +5,8 @@ from dataclasses import replace
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental import scan_scaling_reference as reference
-from phasesmith.experimental.scan_scaling import ScanScaleOptions, fit_scan_scale
+from phasesmith.single_crystal.reference import scan_scaling_reference as reference
+from phasesmith.single_crystal.scan_scaling import ScanScaleOptions, fit_scan_scale
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "experimental_scan_scale_fit"), reason="experimental scaling build"

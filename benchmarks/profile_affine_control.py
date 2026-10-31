@@ -6,8 +6,8 @@ from pathlib import Path
 
 import numpy as np
 from benchmark_3d_profiles import load_case
-from phasesmith.experimental.profiles import fit_profiles, learn_profiles, scattering_transforms
-from phasesmith.experimental.reciprocal import PanelGeometry
+from phasesmith.single_crystal.profiles import fit_profiles, learn_profiles, scattering_transforms
+from phasesmith.single_crystal.reciprocal import PanelGeometry
 
 root = Path("runs/learned-3d-profiles-20261025-final")
 obs, model, a = load_case(root)

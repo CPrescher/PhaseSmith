@@ -14,7 +14,7 @@ from pathlib import Path
 
 import numpy as np
 from phasesmith import _core
-from phasesmith.experimental.omega_background import arpls_masked_rows, arpls_rows
+from phasesmith.single_crystal.omega_background import arpls_masked_rows, arpls_rows
 
 
 def main():

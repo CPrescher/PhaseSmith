@@ -14,8 +14,8 @@ from time import perf_counter
 
 import numpy as np
 from phasesmith import _core
-from phasesmith.experimental.grains import GrainSearchOptions
-from phasesmith.experimental.ownership import GrainOwnershipOptions, _physical_fields
+from phasesmith.single_crystal.grains import GrainSearchOptions
+from phasesmith.single_crystal.ownership import GrainOwnershipOptions, _physical_fields
 
 
 def main(args):

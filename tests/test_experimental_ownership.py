@@ -5,7 +5,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.grains import (
+from phasesmith.single_crystal.grains import (
     GrainAliasOptions,
     GrainConditioningOptions,
     GrainOwnershipOptions,
@@ -15,12 +15,12 @@ from phasesmith.experimental.grains import (
     _rotations,
     find_grains_ensemble,
 )
-from phasesmith.experimental.ownership import (
+from phasesmith.single_crystal.ownership import (
     assign_observed,
     observation_charts,
     reciprocal_with_jacobian,
 )
-from phasesmith.experimental.reciprocal import reciprocal_vectors
+from phasesmith.single_crystal.reciprocal import reciprocal_vectors
 from test_experimental_grains import positional_cloud
 
 pytestmark = pytest.mark.skipif(
@@ -205,7 +205,7 @@ def test_observation_charts_inverse_and_invalid_shapes():
 
 @pytest.mark.parametrize("mixture", [False, True])
 def test_normal_reference_and_derivatives(mixture):
-    from phasesmith.experimental.grains_reference import observation_normal
+    from phasesmith.single_crystal.reference.grains_reference import observation_normal
 
     rng = np.random.default_rng(818)
     n = 81
@@ -237,7 +237,7 @@ def test_normal_reference_and_derivatives(mixture):
 
 
 def test_integer_family_deferral_requires_independent_training_support():
-    from phasesmith.experimental.ownership import _select
+    from phasesmith.single_crystal.ownership import _select
 
     rng = np.random.default_rng(992)
     a = np.diag([4.1, 5.3, 7.7])

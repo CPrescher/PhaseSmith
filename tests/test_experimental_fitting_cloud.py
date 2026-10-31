@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental import grains as G
-from phasesmith.experimental.grains_reference import fitting_selection
+from phasesmith.single_crystal import grains as G
+from phasesmith.single_crystal.reference.grains_reference import fitting_selection
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "ExperimentalLatticeEngine"), reason="experimental-spots not built"

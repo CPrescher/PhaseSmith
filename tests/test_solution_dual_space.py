@@ -7,17 +7,17 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution import (
+from phasesmith.io.hkl import HklData
+from phasesmith.single_crystal.reference.solution_dual_reference import (
+    atomic_projection_reference,
+    dual_space_reference,
+)
+from phasesmith.single_crystal.solution import (
     SolutionCancellation,
     SolutionOptions,
     solve_structure,
     write_solution,
 )
-from phasesmith.experimental.solution_dual_reference import (
-    atomic_projection_reference,
-    dual_space_reference,
-)
-from phasesmith.io.hkl import HklData
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_solution_dual_space"), reason="requires experimental-solution"

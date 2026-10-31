@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.experimental.solution_dual_reference import atomic_projection_reference
+from phasesmith.single_crystal.reference.solution_dual_reference import atomic_projection_reference
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_SharedOrbitPool"), reason="experimental-solution"
@@ -109,7 +109,7 @@ def test_complete_current_trajectories_remain_bitwise_equal(rank, omit, real):
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
 def test_complete_structure_and_counts_are_unchanged(symbol):
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, _, species = synthetic(symbol)

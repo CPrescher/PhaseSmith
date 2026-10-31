@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
-from phasesmith.experimental.solution_reference import symmetric_model_reference
 from phasesmith.io.space_groups import space_group_by_symbol
+from phasesmith.single_crystal.reference.solution_reference import symmetric_model_reference
+from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
 from test_solution_shared_search import synthetic
 from test_solution_symmetry_adp import CASES, model_case
 
@@ -127,7 +127,7 @@ def test_cache_control_requires_a_boolean():
 
 
 def test_geometry_factorization_matches_moved_image_and_tensor():
-    from phasesmith.experimental.solution_reference import image_geometry_reference
+    from phasesmith.single_crystal.reference.solution_reference import image_geometry_reference
 
     _, metadata, hkl, _, _ = model_case(*CASES[3][:3])
     cell = CASES[3][1]

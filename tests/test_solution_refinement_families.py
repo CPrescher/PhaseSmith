@@ -6,9 +6,9 @@ import gemmi
 import numpy as np
 import pytest
 from phasesmith import _core
-from phasesmith.experimental.solution_reference import symmetric_model_reference
 from phasesmith.io.space_groups import space_group_by_symbol
 from phasesmith.scattering_reference import xray_non_resonant
+from phasesmith.single_crystal.reference.solution_reference import symmetric_model_reference
 from test_solution_symmetry_adp import CASES
 
 pytestmark = pytest.mark.skipif(
@@ -164,7 +164,7 @@ def test_original_row_and_jacobian_limits_apply_before_reduction():
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
 def test_complete_search_retains_structure_counts_and_final_mode(symbol):
-    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
+    from phasesmith.single_crystal.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
     cell, group, data, _xyz, species = synthetic(symbol)
