@@ -1,0 +1,406 @@
+{
+  "schema": "phasesmith.enstatite-next-execution-stage.v1",
+  "stage": 2,
+  "protocol": "validation/enstatite-raw-workflow-v18.json",
+  "baseline_benchmark": {
+    "schema": "phasesmith.frame-preparation-execution.v1",
+    "records": [
+      {
+        "workers": 1,
+        "seconds": [
+          8.940225375001319,
+          8.964236958010588,
+          9.073021833959501
+        ],
+        "median_seconds": 8.964236958010588,
+        "sha256": "ac205dc30b5b83c0bbb19b17581544644124cc32cd750c43270154760ae7ac27",
+        "execution": null
+      }
+    ],
+    "cohort": "7277 frozen target predictions; no competing-domain exclusions",
+    "all_outputs_bitwise_identical": true,
+    "maximum_resident_bytes": 3802136576
+  },
+  "current_benchmark": {
+    "schema": "phasesmith.frame-preparation-execution.v1",
+    "records": [
+      {
+        "workers": 1,
+        "seconds": [
+          9.057589041010942,
+          8.849497375020292,
+          8.828705625026487
+        ],
+        "median_seconds": 8.849497375020292,
+        "sha256": "ac205dc30b5b83c0bbb19b17581544644124cc32cd750c43270154760ae7ac27",
+        "execution": {
+          "requested_workers": 1,
+          "maximum_in_flight_frames": 1,
+          "payload_budget_bytes": 1073741824,
+          "peak_payload_bytes": 102833368
+        }
+      },
+      {
+        "workers": 4,
+        "seconds": [
+          5.017112666973844,
+          5.039274415990803,
+          5.065499417018145
+        ],
+        "median_seconds": 5.039274415990803,
+        "sha256": "ac205dc30b5b83c0bbb19b17581544644124cc32cd750c43270154760ae7ac27",
+        "execution": {
+          "requested_workers": 4,
+          "maximum_in_flight_frames": 4,
+          "payload_budget_bytes": 1073741824,
+          "peak_payload_bytes": 411333472
+        }
+      },
+      {
+        "workers": 10,
+        "seconds": [
+          5.056238666991703,
+          5.072421916993335,
+          5.0715963750262745
+        ],
+        "median_seconds": 5.0715963750262745,
+        "sha256": "ac205dc30b5b83c0bbb19b17581544644124cc32cd750c43270154760ae7ac27",
+        "execution": {
+          "requested_workers": 10,
+          "maximum_in_flight_frames": 10,
+          "payload_budget_bytes": 1073741824,
+          "peak_payload_bytes": 1028333680
+        }
+      }
+    ],
+    "cohort": "7277 frozen target predictions; no competing-domain exclusions",
+    "all_outputs_bitwise_identical": true,
+    "maximum_resident_bytes": 3466854400
+  },
+  "equivalence": {
+    "schema": "phasesmith.enstatite-execution-equivalence.v1",
+    "baseline": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v11-timing",
+    "candidate": "/Users/clemens/ChatGPT/PhaseSmith/enstatite-raw-workflow-20261031-v18",
+    "passed": true,
+    "gates": {
+      "all_numerical_arrays_bitwise_identical": true,
+      "full_candidate_records_identical": true,
+      "phasing_histories_identical": true,
+      "source_files_unchanged": true,
+      "structure_recovered": true,
+      "worker_isolation": true,
+      "no_optional_python_numerics": true
+    },
+    "array_identity": {
+      "frame-validity.npz": {
+        "excluded": true,
+        "metadata": true,
+        "omega_bounds": true
+      },
+      "positions.npz": {
+        "boxes": true,
+        "flags": true,
+        "frame_ranges": true,
+        "observations": true,
+        "omega_bounds": true,
+        "original_flags": true,
+        "values": true
+      },
+      "indexed-positions.npz": {
+        "eligible": true,
+        "hkl": true,
+        "observed": true,
+        "predicted": true,
+        "track_ids": true,
+        "training": true
+      },
+      "edge-exclusions.npz": {
+        "aperture": true,
+        "flags": true,
+        "hkl": true,
+        "predicted": true
+      },
+      "raw-observations-and-bank.npz": {
+        "bank_counts": true,
+        "bank_profiles": true,
+        "bank_reference_centres": true,
+        "bank_reference_ids": true,
+        "bank_shifts": true,
+        "obs_centres": true,
+        "obs_covariance": true,
+        "obs_offsets": true,
+        "obs_planar_transforms": true,
+        "obs_samples": true,
+        "obs_scales": true,
+        "obs_valid": true,
+        "table_angular_half_widths": true,
+        "table_background_models": true,
+        "table_boxes": true,
+        "table_flags": true,
+        "table_frame_flags": true,
+        "table_frame_indices": true,
+        "table_frame_values": true,
+        "table_grain_ids": true,
+        "table_hkl": true,
+        "table_observation_ids": true,
+        "table_omega_bounds": true,
+        "table_predicted": true,
+        "table_values": true
+      },
+      "reduced-observations.npz": {
+        "aperture": true,
+        "choices": true,
+        "dac_entry_degrees": true,
+        "dac_exit_degrees": true,
+        "flags": true,
+        "hkl": true,
+        "intensity": true,
+        "parameters": true,
+        "raw_profiles": true,
+        "sigma": true,
+        "statistical_sigma": true,
+        "use": true,
+        "visible": true
+      }
+    },
+    "r1": 0.04085182070733226,
+    "reference_assessment": {
+      "counts_match": true,
+      "rms_error_angstrom": 0.004538501994491189,
+      "maximum_error_angstrom": 0.007523594148997598,
+      "hand": -1,
+      "shift": [
+        0.836137362336214,
+        0.31599369727651205,
+        0.47339919140711983
+      ],
+      "correct": true,
+      "strict_002_angstrom": true,
+      "reference_read_after_worker_stopped": true
+    },
+    "execution": {
+      "profile_learning_execution": {
+        "workers": 4,
+        "requested_workers": 4,
+        "cache_budget_bytes": 268435456,
+        "cache_bytes": 181907500,
+        "cache_rows": 506475,
+        "cache_entries": 13808351
+      },
+      "profile_integration_execution": {
+        "workers": 10,
+        "requested_workers": 10,
+        "cache_budget_bytes": 268435456,
+        "maximum_reflection_cache_bytes": 1583672,
+        "cache_peak_bound_bytes": 15836720,
+        "cached_reflections": 4701,
+        "uncached_reflections": 2576,
+        "maximum_exposure_overlap_pixels": 17928
+      }
+    },
+    "worker": {
+      "stage": "search",
+      "seconds": 29.413319166982546,
+      "reference_model_read": false,
+      "source_hkls_read": false,
+      "archived_arrays_read": false,
+      "blocked_python_packages": [
+        "scipy",
+        "h5py",
+        "hdf5plugin"
+      ],
+      "loaded_blocked_python_packages": []
+    },
+    "timings": {
+      "schema": "phasesmith.enstatite-wall-timings.v1",
+      "wall_seconds": 29.53593124996405,
+      "maximum_resident_bytes": 3234234368,
+      "accounted_exclusive_seconds": 29.414302749966737,
+      "exclusive_by_name": {
+        "shadow_estimation": 3.3251259170356207,
+        "compressed_archives": 5.155822751054075,
+        "stage_validity": 0.002211415965575725,
+        "detection_and_linking": 6.622556624992285,
+        "stage_positions": 0.23542375001125038,
+        "grain_indexing": 1.417400166974403,
+        "geometry_fit": 0.004795332963112742,
+        "stage_indexing": 0.030506833049003035,
+        "pixel_collection_and_background": 5.131866207986604,
+        "profile_learning": 2.5481159160262905,
+        "observation_archive": 0.000895082950592041,
+        "profile_fitting": 2.7705772920162417,
+        "physical_corrections": 0.0008117500110529363,
+        "empirical_design": 0.031707208952866495,
+        "empirical_scaling": 0.21195504203205928,
+        "equivalent_error_model": 0.021856250008568168,
+        "reduction_other": 0.01332266494864598,
+        "stage_integrate": 1.12971245899098,
+        "search_process": 0.7584805419901386,
+        "process_main": 0.0011595420073717833
+      },
+      "events": [
+        {
+          "name": "shadow_estimation",
+          "start_seconds": 0.12294179096352309,
+          "inclusive_seconds": 3.3251259170356207,
+          "exclusive_seconds": 3.3251259170356207
+        },
+        {
+          "name": "compressed_archives",
+          "start_seconds": 3.4483692909707315,
+          "inclusive_seconds": 0.007890124979894608,
+          "exclusive_seconds": 0.007890124979894608
+        },
+        {
+          "name": "stage_validity",
+          "start_seconds": 0.12202137499116361,
+          "inclusive_seconds": 3.335227457981091,
+          "exclusive_seconds": 0.002211415965575725
+        },
+        {
+          "name": "detection_and_linking",
+          "start_seconds": 3.4578039159532636,
+          "inclusive_seconds": 6.622556624992285,
+          "exclusive_seconds": 6.622556624992285
+        },
+        {
+          "name": "compressed_archives",
+          "start_seconds": 10.314875582989771,
+          "inclusive_seconds": 0.008432374976109713,
+          "exclusive_seconds": 0.008432374976109713
+        },
+        {
+          "name": "stage_positions",
+          "start_seconds": 3.457250749983359,
+          "inclusive_seconds": 6.866412749979645,
+          "exclusive_seconds": 0.23542375001125038
+        },
+        {
+          "name": "grain_indexing",
+          "start_seconds": 10.324057707970496,
+          "inclusive_seconds": 1.417400166974403,
+          "exclusive_seconds": 1.417400166974403
+        },
+        {
+          "name": "geometry_fit",
+          "start_seconds": 11.769663457991555,
+          "inclusive_seconds": 0.004795332963112742,
+          "exclusive_seconds": 0.004795332963112742
+        },
+        {
+          "name": "compressed_archives",
+          "start_seconds": 11.775265499949455,
+          "inclusive_seconds": 0.005887375038582832,
+          "exclusive_seconds": 0.005887375038582832
+        },
+        {
+          "name": "stage_indexing",
+          "start_seconds": 10.323666374955792,
+          "inclusive_seconds": 1.4585897080251016,
+          "exclusive_seconds": 0.030506833049003035
+        },
+        {
+          "name": "pixel_collection_and_background",
+          "start_seconds": 11.805982457997743,
+          "inclusive_seconds": 5.131866207986604,
+          "exclusive_seconds": 5.131866207986604
+        },
+        {
+          "name": "compressed_archives",
+          "start_seconds": 16.937969582970254,
+          "inclusive_seconds": 0.0004485420067794621,
+          "exclusive_seconds": 0.0004485420067794621
+        },
+        {
+          "name": "profile_learning",
+          "start_seconds": 17.385104874963872,
+          "inclusive_seconds": 2.5481159160262905,
+          "exclusive_seconds": 2.5481159160262905
+        },
+        {
+          "name": "compressed_archives",
+          "start_seconds": 19.933467332972214,
+          "inclusive_seconds": 5.109111417026725,
+          "exclusive_seconds": 5.109111417026725
+        },
+        {
+          "name": "observation_archive",
+          "start_seconds": 19.933233790972736,
+          "inclusive_seconds": 5.110006499977317,
+          "exclusive_seconds": 0.000895082950592041
+        },
+        {
+          "name": "profile_fitting",
+          "start_seconds": 25.056041582953185,
+          "inclusive_seconds": 2.7705772920162417,
+          "exclusive_seconds": 2.7705772920162417
+        },
+        {
+          "name": "physical_corrections",
+          "start_seconds": 27.82662458298728,
+          "inclusive_seconds": 0.0008117500110529363,
+          "exclusive_seconds": 0.0008117500110529363
+        },
+        {
+          "name": "empirical_design",
+          "start_seconds": 27.827489165996667,
+          "inclusive_seconds": 0.031707208952866495,
+          "exclusive_seconds": 0.031707208952866495
+        },
+        {
+          "name": "empirical_scaling",
+          "start_seconds": 27.85921508294996,
+          "inclusive_seconds": 0.21195504203205928,
+          "exclusive_seconds": 0.21195504203205928
+        },
+        {
+          "name": "equivalent_error_model",
+          "start_seconds": 28.071690915967338,
+          "inclusive_seconds": 0.021856250008568168,
+          "exclusive_seconds": 0.021856250008568168
+        },
+        {
+          "name": "reduction_other",
+          "start_seconds": 25.04341420799028,
+          "inclusive_seconds": 3.0502302079694346,
+          "exclusive_seconds": 0.01332266494864598
+        },
+        {
+          "name": "compressed_archives",
+          "start_seconds": 28.751573957968503,
+          "inclusive_seconds": 0.024052917025983334,
+          "exclusive_seconds": 0.024052917025983334
+        },
+        {
+          "name": "stage_integrate",
+          "start_seconds": 11.782259040977806,
+          "inclusive_seconds": 16.99443274998339,
+          "exclusive_seconds": 1.12971245899098
+        },
+        {
+          "name": "search_process",
+          "start_seconds": 28.77677966596093,
+          "inclusive_seconds": 0.7584805419901386,
+          "exclusive_seconds": 0.7584805419901386
+        },
+        {
+          "name": "process_main",
+          "start_seconds": 0.12154974997974932,
+          "inclusive_seconds": 29.414302749966737,
+          "exclusive_seconds": 0.0011595420073717833
+        }
+      ],
+      "interpretation": "Nested inclusive times overlap; exclusive seconds partition each process's recorded wall time. Native parallel tasks and original-count I/O are included in the owning function. Timing observer changes no numerical arguments."
+    }
+  },
+  "cli_wall_seconds": 37.8,
+  "previous_cli_wall_seconds": 42.49,
+  "previous_worker_seconds": 33.905202791967895,
+  "frame_execution": {
+    "requested_workers": 4,
+    "maximum_in_flight_frames": 4,
+    "payload_budget_bytes": 536870912,
+    "peak_payload_bytes": 411333472
+  },
+  "interpretation": "Real target-only raw-frame cohort improves from 8.964 seconds to 5.039 seconds with four workers (1.78x). Ten workers gives no gain (5.072 seconds) and needs more queued memory. Four chosen, full cap 512 MiB. Fresh all-domain full run remains bitwise identical to v11; frame preparation 5.132 seconds, full worker 29.41 seconds. CLI still includes larger cold parent overhead; do not attribute all CLI changes to this numerical stage."
+}
