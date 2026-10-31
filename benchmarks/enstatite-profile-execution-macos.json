@@ -42,6 +42,35 @@
       "cli_wall_seconds": 52.89,
       "cli_speedup_over_previous": 1.1688409907354886,
       "all_results_bitwise_identical": true
+    },
+    {
+      "stage": "3b",
+      "report": "benchmarks/enstatite-profile-execution-stage3b-macos.json",
+      "integration_speedup_over_previous": 3.6480729698816656,
+      "integration_speedup_over_baseline": 8.142895114056477,
+      "previous_worker_seconds": 44.7490357090137,
+      "worker_seconds": 37.86375349998707,
+      "worker_speedup_over_previous": 1.181843625435312,
+      "worker_speedup_over_baseline": 2.318011042116952,
+      "previous_cli_wall_seconds": 52.89,
+      "cli_wall_seconds": 38.95,
+      "cli_speedup_over_baseline": 2.2798459563543,
+      "all_results_bitwise_identical": true
     }
-  ]
+  ],
+  "measurement_conventions": {
+    "machine": "Apple M4 Pro, macOS arm64",
+    "component_benchmarks": "Median of three isolated sequential real-bank repeats; 7,277 reflections / 13,267,065 pixel samples. Numeric-library thread limits fixed at one.",
+    "full_runs": "One fresh raw-frame run at each admitted configuration; CLI includes parent setup/verification. Parent cold-start overhead varies, especially v13-v15. Use isolated component medians for attribution.",
+    "correctness": "All archived numerical arrays, full candidate records and phasing histories bitwise identical to retained v11; no tolerance changes.",
+    "memory": "Additional cache capacities are capped independently per phase, with streaming fallback. Total process RSS includes inputs, outputs and ordinary workspace and is recorded separately."
+  },
+  "final": {
+    "r1": 0.04085182070733226,
+    "numerical_worker_seconds": 37.86375349998707,
+    "cli_wall_seconds": 38.95,
+    "worker_peak_resident_bytes": 3246407680,
+    "all_results_bitwise_identical": true,
+    "large_data_policy": "All raw frames, shoebox archives, wheels and output products remain outside Git."
+  }
 }
