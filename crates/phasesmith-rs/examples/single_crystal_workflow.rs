@@ -1206,6 +1206,7 @@ fn decode_discovery(
             total_seconds: number(p, "total_search_seconds")?,
             ambiguity_delta: number(p, "ambiguity_delta_bic")?,
             phase: sc::PhaseScreenOptions {
+                workers: usize::try_from(ph["workers"].as_u64().unwrap_or(1))?,
                 starts: int(ph, "starts")?,
                 cycles: int(ph, "cycles")?,
                 maximum_settings: int(ph, "maximum_settings")?,
