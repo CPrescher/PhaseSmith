@@ -13,6 +13,8 @@ keywords = ["diffraction", "rietveld", "crystallography", "powder", "science"]
 categories = ["science"]
 
 [dependencies]
+serde_json = { version = "1", optional = true }
+sha2 = { version = "0.10", optional = true }
 phasesmith-row-search = { version = "0.8.0", path = "../phasesmith-row-search", optional = true }
 phasesmith-hdf5 = { version = "0.8.0", path = "../phasesmith-hdf5", optional = true }
 phasesmith-solution = { version = "0.8.0", path = "../phasesmith-solution", optional = true }
@@ -32,7 +34,8 @@ workspace = true
 [features]
 default = ["single-crystal"]
 single-crystal = ["spots", "solution", "row-search", "phasesmith-workflows/single-crystal"]
-hdf5 = ["dep:phasesmith-hdf5"]
+single-crystal-files = ["single-crystal", "hdf5"]
+hdf5 = ["dep:phasesmith-hdf5", "dep:serde_json", "dep:sha2"]
 spots = ["dep:phasesmith-spots"]
 solution = ["dep:phasesmith-solution"]
 row-search = ["dep:phasesmith-row-search"]

@@ -10,6 +10,12 @@ development versions.
 
 Development release candidate; not yet published.
 
+- Expose the complete native HDF5-to-structure workflow to application hosts and
+  the ordinary Python wheel. Share file protocols/output with the standalone
+  example, release the GIL, report completed stages and use cooperative GUI
+  cancellation. Preserve the numerical coordinator and search acceptance rules.
+  Validate the Dioptas integration against fresh complete MgSiO3 runs.
+
 - Add bounded native tensor/element recovery, known-centring phase maps and
   validated candidate-origin reuse. Respect the requested target for consensus
   stopping and use inversion evidence only to prefer plausible candidate models.

@@ -123,6 +123,22 @@ unresolved. Acceptance criteria are byte-identical. Fast median time falls
 SHELXT is a reference for reliable recovery, not an outperformance target.
 See the [staged recovery report](docs/structure-search-recovery.md).
 
+The Dioptas integration exposes this existing coordinator through the optional
+`single-crystal-files` Rust facade adapter and the normal Python
+`single_crystal.workflow` frontend. File protocol decoding and lossless output
+move out of the example into that adapter; the numerical coordinator is unchanged.
+The CLI retains its hard process guard; in-process hosts use cooperative native
+cancellation and stage callbacks and never terminate the GUI process. Large
+products remain in a new external directory. The first application recipe retains
+the HDF5/primitive-orthorhombic supplied-cell and explicit acquisition/DAC limits;
+it is not a general TIFF/multigrain-to-structure or structure-refinement promise.
+The complete Dioptas MgSiO3 replay accepts Pbca, Mg16 Si16 O48 at R1
+0.0514043045582282. Both GUI runs preserve all 68 arrays in ten NPZ archives,
+complete candidates/histories and both CIFs bitwise against a fresh standalone
+v40 control. The final native coordinator takes 15.14 s; the GUI job takes
+15.74 s and 15.85 s through its verified raw-frame/spot preview. See the
+[application validation](docs/dioptas-native-validation.md).
+
 ## Ownership and dependency direction
 
 | Layer | Owner |

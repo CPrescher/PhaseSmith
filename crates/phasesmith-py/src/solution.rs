@@ -461,8 +461,8 @@ fn model<'py>(
 }
 
 #[pyclass(name = "_SolutionCancellation", frozen)]
-struct NativeCancellation {
-    inner: phasesmith_solution::Cancellation,
+pub(crate) struct NativeCancellation {
+    pub(crate) inner: phasesmith_solution::Cancellation,
 }
 #[pymethods]
 impl NativeCancellation {

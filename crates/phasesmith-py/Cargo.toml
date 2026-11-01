@@ -16,6 +16,7 @@ name = "_core"
 crate-type = ["cdylib"]
 
 [dependencies]
+phasesmith = { version = "0.8.0", path = "../phasesmith-rs", default-features = false, optional = true }
 phasesmith-hdf5 = { version = "0.8.0", path = "../phasesmith-hdf5", optional = true }
 phasesmith-solution = { version = "0.8.0", path = "../phasesmith-solution", optional = true }
 phasesmith-spots = { version = "0.8.0", path = "../phasesmith-spots", optional = true }
@@ -38,7 +39,7 @@ workspace = true
 [features]
 default = ["single-crystal"]
 single-crystal = ["spots", "solution", "row-search"]
-hdf5 = ["dep:phasesmith-hdf5"]
+hdf5 = ["dep:phasesmith-hdf5", "dep:phasesmith", "phasesmith/single-crystal-files", "dep:serde_json"]
 spots = ["dep:phasesmith-spots"]
 solution = ["dep:phasesmith-solution"]
 row-search = ["dep:phasesmith-row-search", "dep:serde_json"]

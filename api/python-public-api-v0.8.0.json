@@ -2359,6 +2359,12 @@
           "name": "spots",
           "signature": null,
           "target": "phasesmith.single_crystal.spots"
+        },
+        {
+          "kind": "module",
+          "name": "workflow",
+          "signature": null,
+          "target": "phasesmith.single_crystal.workflow"
         }
       ],
       "module": "phasesmith.single_crystal",
@@ -3418,6 +3424,36 @@
         }
       ],
       "module": "phasesmith.single_crystal.spots",
+      "tier": "single-crystal"
+    },
+    {
+      "exports": [
+        {
+          "kind": "class",
+          "name": "WorkflowConfig",
+          "signature": "(raw_path: 'str', poni_path: 'str', output: 'str', dataset: 'str', cell: 'tuple[float, float, float, float, float, float]', elements: 'tuple[str, ...]', first: 'int', last: 'int', omega_zero: 'float', omega_step: 'float', exposure: 'float', rotation_axis: 'tuple[float, float, float]', dac_axis: 'tuple[float, float, float]', dac_half_opening: 'float', vertical_flip: 'bool', effort: 'str' = 'auto', provenance: 'str' = 'User-supplied cell/elements and explicitly declared acquisition/DAC geometry.') -> None",
+          "target": "phasesmith.single_crystal.workflow.WorkflowConfig"
+        },
+        {
+          "kind": "class",
+          "name": "WorkflowResult",
+          "signature": "(output: 'Path', report: 'Mapping') -> None",
+          "target": "phasesmith.single_crystal.workflow.WorkflowResult"
+        },
+        {
+          "kind": "function",
+          "name": "available",
+          "signature": "() -> 'bool'",
+          "target": "phasesmith.single_crystal.workflow.available"
+        },
+        {
+          "kind": "function",
+          "name": "run_workflow",
+          "signature": "(config: 'WorkflowConfig', *, cancellation: 'SolutionCancellation | None' = None, progress: 'Callable[[str, float], None] | None' = None) -> 'WorkflowResult'",
+          "target": "phasesmith.single_crystal.workflow.run_workflow"
+        }
+      ],
+      "module": "phasesmith.single_crystal.workflow",
       "tier": "single-crystal"
     }
   ],

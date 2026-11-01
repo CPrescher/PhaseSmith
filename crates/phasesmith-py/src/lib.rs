@@ -4294,6 +4294,8 @@ fn run_native_validation(py: Python<'_>, runner: String, directory: String) -> P
 #[pymodule]
 #[allow(clippy::too_many_lines)] // Explicit registration of the extension's independent modules.
 fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    #[cfg(all(feature = "hdf5", feature = "solution"))]
+    single_crystal_workflow::register(module)?;
     #[cfg(feature = "solution")]
     solution::register(module)?;
     #[cfg(feature = "spots")]
@@ -4422,3 +4424,6 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add("NATIVE_CIF_BACKEND_VERSION", NATIVE_CIF_BACKEND_VERSION)?;
     Ok(())
 }
+
+#[cfg(all(feature = "hdf5", feature = "solution"))]
+mod single_crystal_workflow;
