@@ -12,6 +12,9 @@ pub struct PhaseOnlyPolicy {
     pub minimum_d_angstrom: Option<f64>,
     /// Use the existing measured correlation/weak-score merit and checkpoint handoff.
     pub adaptive_quality: bool,
+    /// Optional initial portfolio ceiling, 32..=maximum cycles. A best quality below
+    /// 0.9 earns a full restart with the original seeds and remaining deadline.
+    pub first_pass_cycles: Option<usize>,
 }
 /// A shared P1 map and actual starts, independent of exact space-group translations.
 #[derive(Clone, Debug)]
@@ -36,6 +39,10 @@ pub struct PhaseOnlyResult {
     pub checkpoints: Vec<Vec<crate::PhaseCheckpoint>>,
     /// Score histories for every attempted start.
     pub histories: Vec<Vec<f64>>,
+    /// Actual seed for every attempted history, including any repeated full pass.
+    pub start_seeds: Vec<u64>,
+    /// Admitted per-start cycle ceiling, distinct from completed history length.
+    pub cycle_limits: Vec<usize>,
     /// Selected by mixed-amplitude misfit, or measured quality when explicitly enabled.
     pub selected_start: usize,
     /// Actual phase-only seconds, including unsuccessful starts.
@@ -102,27 +109,7 @@ pub fn phase_only_with_policy(
     workers: usize,
     policy: &PhaseOnlyPolicy,
 ) -> Result<PhaseOnlyResult, SolutionError> {
-    if policy
-        .minimum_d_angstrom
-        .is_some_and(|d| !d.is_finite() || d <= 0.)
-    {
-        return Err(error("phase-only minimum d must be finite and positive"));
-    }
-    if !(1..=10).contains(&workers) {
-        return Err(error("phase-only workers must lie in 1..=10"));
-    }
-    crate::solver::validate_options(options)?;
-    if elements.is_empty()
-        || elements.len() > 8
-        || rotational_group
-            .operations()
-            .iter()
-            .any(|op| op.translation().iter().any(|t| t.numerator() != 0))
-    {
-        return Err(error(
-            "phase-only input needs element types and a translation-free intensity group",
-        ));
-    }
+    validate_phase_input(rotational_group, elements, options, workers, policy)?;
     let started = Instant::now();
     let deadline = started + Duration::from_secs_f64(options.max_seconds);
     let full_data = prepare_data(observations, cell, rotational_group)?;
@@ -156,6 +143,10 @@ pub fn phase_only_with_policy(
     } else {
         None
     };
+    let first_options = SolveOptions {
+        cycles: policy.first_pass_cycles.unwrap_or(options.cycles),
+        ..options.clone()
+    };
     let input = PhaseInput {
         cell,
         shape,
@@ -163,11 +154,18 @@ pub fn phase_only_with_policy(
         mixed: &mixed,
         support: &support,
         d_min: data.d_min,
-        options,
+        options: &first_options,
         deadline,
         quality: quality.as_ref(),
     };
-    let selection = select_starts(&input, workers)?;
+    let mut selection = select_starts(&input, workers)?;
+    if policy.first_pass_cycles.is_some_and(|n| n < options.cycles)
+        && selection.rank > -0.9
+        && !crate::stopped(Some(deadline), options.cancellation.as_ref())
+    {
+        let full = PhaseInput { options, ..input };
+        selection.append(select_starts(&full, workers)?);
+    }
     Ok(PhaseOnlyResult {
         cell,
         elements: elements.to_vec(),
@@ -185,9 +183,50 @@ pub fn phase_only_with_policy(
         quality: selection.quality,
         checkpoints: selection.checkpoints,
         histories: selection.histories,
+        start_seeds: selection.start_seeds,
+        cycle_limits: selection.cycle_limits,
         selected_start: selection.start,
         seconds: started.elapsed().as_secs_f64(),
     })
+}
+
+fn validate_phase_input(
+    rotational_group: &SpaceGroup,
+    elements: &[String],
+    options: &SolveOptions,
+    workers: usize,
+    policy: &PhaseOnlyPolicy,
+) -> Result<(), SolutionError> {
+    if policy
+        .minimum_d_angstrom
+        .is_some_and(|d| !d.is_finite() || d <= 0.)
+    {
+        return Err(error("phase-only minimum d must be finite and positive"));
+    }
+    if policy
+        .first_pass_cycles
+        .is_some_and(|n| !policy.adaptive_quality || n < 32 || n > options.cycles)
+    {
+        return Err(error(
+            "initial phase portfolio needs adaptive quality and 32..maximum cycles",
+        ));
+    }
+    if !(1..=10).contains(&workers) {
+        return Err(error("phase-only workers must lie in 1..=10"));
+    }
+    crate::solver::validate_options(options)?;
+    if elements.is_empty()
+        || elements.len() > 8
+        || rotational_group
+            .operations()
+            .iter()
+            .any(|op| op.translation().iter().any(|t| t.numerator() != 0))
+    {
+        return Err(error(
+            "phase-only input needs element types and a translation-free intensity group",
+        ));
+    }
+    Ok(())
 }
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // Finite extent is explicitly bounded below 64.
@@ -280,21 +319,40 @@ impl PhaseInput<'_> {
     }
 }
 struct PhaseSelection {
+    rank: f64,
+    start_seeds: Vec<u64>,
+    cycle_limits: Vec<usize>,
     quality: Vec<Option<crate::PhaseQualityTrace>>,
     checkpoints: Vec<Vec<crate::PhaseCheckpoint>>,
     histories: Vec<Vec<f64>>,
     density: Option<Vec<f64>>,
     start: usize,
 }
+impl PhaseSelection {
+    fn append(&mut self, mut other: Self) {
+        if other.rank < self.rank {
+            self.start = self.histories.len() + other.start;
+            self.rank = other.rank;
+            self.density = other.density.take();
+        }
+        self.histories.extend(other.histories);
+        self.quality.extend(other.quality);
+        self.checkpoints.extend(other.checkpoints);
+        self.start_seeds.extend(other.start_seeds);
+        self.cycle_limits.extend(other.cycle_limits);
+    }
+}
 fn select_starts(input: &PhaseInput<'_>, workers: usize) -> Result<PhaseSelection, SolutionError> {
     let mut selected = PhaseSelection {
+        rank: f64::INFINITY,
+        start_seeds: Vec::new(),
+        cycle_limits: Vec::new(),
         quality: Vec::new(),
         checkpoints: Vec::new(),
         histories: Vec::new(),
         density: None,
         start: 0,
     };
-    let mut best = f64::INFINITY;
     for first in (0..input.options.trials).step_by(workers) {
         if crate::stopped(Some(input.deadline), input.options.cancellation.as_ref()) {
             break;
@@ -348,12 +406,16 @@ fn select_starts(input: &PhaseInput<'_>, workers: usize) -> Result<PhaseSelectio
                     .get(result.trial.best_cycle)
                     .map_or(f64::INFINITY, |v| -v)
             });
-            if score < best {
-                best = score;
+            if score < selected.rank {
+                selected.rank = score;
                 selected.start = first + offset;
                 selected.density = Some(result.trial.density);
             }
             selected.histories.push(result.trial.history);
+            selected
+                .start_seeds
+                .push(input.options.seed.wrapping_add((first + offset) as u64));
+            selected.cycle_limits.push(input.options.cycles);
             selected.quality.push(result.quality);
             selected.checkpoints.push(result.phase_checkpoints);
         }
@@ -468,6 +530,7 @@ mod tests {
         let policy = PhaseOnlyPolicy {
             minimum_d_angstrom: Some(1.),
             adaptive_quality: true,
+            first_pass_cycles: None,
         };
         let a = phase_only_with_policy(&rows, cell, &group, &["Si".into()], &options, 1, &policy)
             .unwrap();
@@ -512,7 +575,8 @@ mod tests {
                     1,
                     &PhaseOnlyPolicy {
                         minimum_d_angstrom: Some(cutoff),
-                        adaptive_quality: true
+                        adaptive_quality: true,
+                        first_pass_cycles: None,
                     }
                 )
                 .is_err()
@@ -524,6 +588,75 @@ mod tests {
         assert!(
             phase_only_with_policy(&rows, cell, &group, &["Si".into()], &options, 2, &policy)
                 .is_err()
+        );
+    }
+    #[test]
+    fn portfolio_retains_restart_seeds_ceiling_and_ordered_selection_without_reference_data() {
+        let (cell, group, rows, mut options) = fixture();
+        options.trials = 1;
+        options.cycles = 64;
+        let policy = PhaseOnlyPolicy {
+            adaptive_quality: true,
+            first_pass_cycles: Some(32),
+            ..PhaseOnlyPolicy::default()
+        };
+        let result =
+            phase_only_with_policy(&rows, cell, &group, &["Si".into()], &options, 1, &policy)
+                .unwrap();
+        assert_eq!(result.cycle_limits, vec![32, 64]);
+        assert_eq!(result.start_seeds, vec![options.seed, options.seed]);
+        assert_eq!(result.histories.len(), 2);
+        assert_eq!(result.histories[0].len(), 32);
+        assert_eq!(result.observations.len(), rows.len());
+        assert!(result.quality.iter().all(Option::is_some));
+        let repeated =
+            phase_only_with_policy(&rows, cell, &group, &["Si".into()], &options, 1, &policy)
+                .unwrap();
+        assert_eq!(result.histories, repeated.histories);
+        assert_eq!(result.selected_start, repeated.selected_start);
+        assert_eq!(
+            result
+                .density
+                .iter()
+                .map(|v| v.to_bits())
+                .collect::<Vec<_>>(),
+            repeated
+                .density
+                .iter()
+                .map(|v| v.to_bits())
+                .collect::<Vec<_>>()
+        );
+        for first in [0, 31, 65] {
+            assert!(
+                phase_only_with_policy(
+                    &rows,
+                    cell,
+                    &group,
+                    &["Si".into()],
+                    &options,
+                    1,
+                    &PhaseOnlyPolicy {
+                        first_pass_cycles: Some(first),
+                        ..policy.clone()
+                    }
+                )
+                .is_err()
+            );
+        }
+        assert!(
+            phase_only_with_policy(
+                &rows,
+                cell,
+                &group,
+                &["Si".into()],
+                &options,
+                1,
+                &PhaseOnlyPolicy {
+                    adaptive_quality: false,
+                    ..policy
+                }
+            )
+            .is_err()
         );
     }
     #[test]

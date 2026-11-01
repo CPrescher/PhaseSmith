@@ -53,8 +53,11 @@ impl DiscoveryOptions {
     pub(super) fn check(&self) -> Result<()> {
         let p = &self.phase;
         if p.phasing
-            .minimum_d_angstrom
-            .is_some_and(|d| !d.is_finite() || d <= 0.)
+            .first_pass_cycles
+            .is_some_and(|n| !p.phasing.adaptive_quality || n < 32 || n > p.cycles)
+            || p.phasing
+                .minimum_d_angstrom
+                .is_some_and(|d| !d.is_finite() || d <= 0.)
             || !(1..=10).contains(&p.workers)
             || !(1..=16).contains(&p.starts)
             || !(1..=20000).contains(&p.cycles)
