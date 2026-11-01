@@ -240,6 +240,7 @@ fn common_score(
 }
 /// Complete bounded discovery outcome, retaining evidence even when no model is found.
 pub type SearchRun = (Option<(Solution, SharedSearchSummary)>, DiscoveryReport);
+#[allow(clippy::too_many_lines)] // Ordered bounded state machine; numerical stages have separate owners.
 pub(super) fn search(
     observations: &[Observation],
     original: &Options,

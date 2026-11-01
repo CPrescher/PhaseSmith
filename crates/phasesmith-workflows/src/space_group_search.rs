@@ -150,6 +150,57 @@ fn validate(options: &AssessmentOptions, candidates: &[Hypothesis]) -> Result<()
     }
     Ok(())
 }
+// Character orthogonality on the exact stabilizer, derived in space-group-speed-plan.md.
+// Admission below bounds all integer products for the assessment's |HKL|<=1024 contract.
+struct AbsenceTest {
+    rotation: Rotation,
+    translation24: [i64; 3],
+}
+struct PreparedAbsences<'a> {
+    group: &'a SpaceGroup,
+    tests: Option<Vec<AbsenceTest>>,
+}
+impl<'a> PreparedAbsences<'a> {
+    fn new(group: &'a SpaceGroup) -> Self {
+        let admitted = group.operations().iter().all(|op| {
+            op.rotation()
+                .iter()
+                .flatten()
+                .all(|r| r.unsigned_abs() <= 8)
+                && op.translation().iter().all(|t| 24 % t.denominator() == 0)
+        });
+        let tests = admitted.then(|| {
+            group
+                .operations()
+                .iter()
+                .filter(|op| op.translation().iter().any(|t| t.numerator() != 0))
+                .map(|op| AbsenceTest {
+                    rotation: op.rotation(),
+                    translation24: op
+                        .translation()
+                        .map(|t| t.numerator() * (24 / t.denominator())),
+                })
+                .collect()
+        });
+        Self { group, tests }
+    }
+    fn absent(&self, h: [i32; 3]) -> Result<bool> {
+        let Some(tests) = &self.tests else {
+            return self
+                .group
+                .is_systematically_absent(h)
+                .map_err(|e| Error(e.to_string()));
+        };
+        Ok(tests.iter().any(|op| {
+            (0..3).all(|j| (0..3).map(|i| op.rotation[i][j] * h[i]).sum::<i32>() == h[j])
+                && (0..3)
+                    .map(|i| op.translation24[i] * i64::from(h[i]))
+                    .sum::<i64>()
+                    .rem_euclid(24)
+                    != 0
+        }))
+    }
+}
 /// Assess signed, genuinely measured rows with no exact space group supplied.
 /// Every catalogue setting must preserve the supplied cell metric. Inputs are never mutated.
 /// # Errors
@@ -185,8 +236,19 @@ pub fn assess(
         })
         .ok_or_else(|| Error("Friedel baseline missing".into()))?;
     let (bins, means) = shell_model(&rows, &geometry, options.shells)?;
+    let contributions: Vec<_> = rows
+        .iter()
+        .enumerate()
+        .map(|(i, r)| {
+            let z = r.intensity / r.sigma;
+            let mu = means[bins[i]] / r.sigma;
+            let ratio = 1. + mu * mu;
+            0.5 * (ratio.ln() + ((z - mu) / ratio.sqrt()).powi(2) - z * z)
+        })
+        .collect();
     let mut evidence = Vec::new();
     for c in candidates {
+        let absence = PreparedAbsences::new(&c.group);
         let rotations = laue_rotations(&c.group);
         let li = laue
             .iter()
@@ -199,20 +261,12 @@ pub fn assess(
             absence_log_evidence: 0.,
         };
         for (i, r) in rows.iter().enumerate() {
-            if !c
-                .group
-                .is_systematically_absent(r.hkl)
-                .map_err(|e| Error(e.to_string()))?
-            {
+            if !absence.absent(r.hkl)? {
                 continue;
             }
             e.absent_families += 1;
             e.strong_violations += usize::from(r.intensity > 5. * r.sigma);
-            let z = r.intensity / r.sigma;
-            let mu = means[bins[i]] / r.sigma;
-            // Ratios keep finite observation units from entering an avoidable square overflow.
-            let ratio = 1. + mu * mu;
-            let raw = 0.5 * (ratio.ln() + ((z - mu) / ratio.sqrt()).powi(2) - z * z);
+            let raw = contributions[i];
             if raw.is_nan() {
                 return Err(Error("absence evidence overflow".into()));
             }
@@ -444,4 +498,76 @@ fn shell_model(
             .max(f64::MIN_POSITIVE);
     }
     Ok((bins, means))
+}
+
+#[cfg(test)]
+mod absence_tests {
+    use super::*;
+    #[test]
+    fn prepared_stabilizer_matches_original_cyclotomic_detector_for_all_standard_groups() {
+        for number in 1..=230 {
+            let h = phasesmith_io::space_group_by_number(number).unwrap();
+            let prepared = PreparedAbsences::new(&h.space_group);
+            for a in -3..=3 {
+                for b in -3..=3 {
+                    for c in -3..=3 {
+                        let hkl = [a, b, c];
+                        assert_eq!(
+                            prepared.absent(hkl).unwrap(),
+                            h.space_group.is_systematically_absent(hkl).unwrap(),
+                            "group {number} HKL {hkl:?}"
+                        );
+                    }
+                }
+            }
+        }
+        let cell = UnitCell {
+            a_angstrom: 7.,
+            b_angstrom: 8.,
+            c_angstrom: 9.,
+            alpha_deg: 90.,
+            beta_deg: 90.,
+            gamma_deg: 90.,
+        };
+        for h in phasesmith_io::space_group_settings_for_cell(cell).unwrap() {
+            let prepared = PreparedAbsences::new(&h.space_group);
+            for hkl in [
+                [1, 0, 0],
+                [0, 1, 0],
+                [0, 0, 1],
+                [1, 2, 3],
+                [-3, 2, 0],
+                [1024, -1023, 1022],
+            ] {
+                assert_eq!(
+                    prepared.absent(hkl).unwrap(),
+                    h.space_group.is_systematically_absent(hkl).unwrap(),
+                    "Hall {} HKL {hkl:?}",
+                    h.hall_symbol
+                );
+            }
+        }
+        let ops = (0..5)
+            .map(|i| {
+                SymmetryOperation::new(
+                    [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+                    [
+                        Rational::new(i, 5).unwrap(),
+                        Rational::zero(),
+                        Rational::zero(),
+                    ],
+                )
+                .unwrap()
+            })
+            .collect();
+        let group = SpaceGroup::new(ops).unwrap();
+        let p = PreparedAbsences::new(&group);
+        assert!(p.tests.is_none());
+        for hkl in [[1, 0, 0], [5, 0, 0], [0; 3]] {
+            assert_eq!(
+                p.absent(hkl).unwrap(),
+                group.is_systematically_absent(hkl).unwrap()
+            );
+        }
+    }
 }

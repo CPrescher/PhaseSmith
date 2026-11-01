@@ -36,7 +36,7 @@ pub struct PhaseOnlyResult {
     pub checkpoints: Vec<Vec<crate::PhaseCheckpoint>>,
     /// Score histories for every attempted start.
     pub histories: Vec<Vec<f64>>,
-    /// Selected start, by common mixed-amplitude misfit; no atomic-reference ranking.
+    /// Selected by mixed-amplitude misfit, or measured quality when explicitly enabled.
     pub selected_start: usize,
     /// Actual phase-only seconds, including unsuccessful starts.
     pub seconds: f64,
@@ -221,7 +221,7 @@ fn phasing_subset(
                 crate::math3::dot(q, q) <= 1. / (d * d)
             })
         })
-        .cloned()
+        .copied()
         .collect())
 }
 
@@ -431,6 +431,100 @@ mod tests {
             ..SolveOptions::default()
         };
         (cell, group, rows, options)
+    }
+    #[test]
+    fn coarse_phasing_keeps_original_identity_and_full_grid_with_exact_cutoff_and_stop_controls() {
+        let (mut cell, group, mut rows, mut options) = fixture();
+        cell.a_angstrom = 4.;
+        cell.b_angstrom = 4.;
+        cell.c_angstrom = 4.;
+        options.trials = 2;
+        rows.clear();
+        for h in -5i32..=5 {
+            for k in -5i32..=5 {
+                for l in -5i32..=5 {
+                    if [h, k, l] != [0; 3] {
+                        rows.push(Observation {
+                            hkl: [h, k, l],
+                            intensity: f64::from(1 + h * h + 2 * k * k + 3 * l * l),
+                            sigma: 1.,
+                        });
+                    }
+                }
+            }
+        }
+        rows.iter_mut()
+            .find(|r| r.hkl == [2, 0, 0])
+            .unwrap()
+            .intensity = -1.;
+        let subset = phasing_subset(&rows, cell, Some(2.)).unwrap();
+        assert!(
+            subset
+                .iter()
+                .any(|r| r.hkl == [2, 0, 0] && r.intensity < 0.)
+        );
+        assert!(subset.iter().any(|r| r.hkl == [-2, 0, 0]));
+        assert!(!subset.iter().any(|r| r.hkl == [2, 1, 0]));
+        let policy = PhaseOnlyPolicy {
+            minimum_d_angstrom: Some(1.),
+            adaptive_quality: true,
+        };
+        let a = phase_only_with_policy(&rows, cell, &group, &["Si".into()], &options, 1, &policy)
+            .unwrap();
+        let b = phase_only_with_policy(&rows, cell, &group, &["Si".into()], &options, 2, &policy)
+            .unwrap();
+        assert_eq!(a.shape, [32; 3]);
+        assert_eq!(a.phasing_shape, [16; 3]);
+        assert_eq!(
+            a.phasing_observations,
+            phasing_subset(&rows, cell, Some(1.)).unwrap().len()
+        );
+        assert_eq!(a.observations.len(), rows.len());
+        assert_eq!(
+            a.observations
+                .iter()
+                .map(|r| r.intensity.to_bits())
+                .collect::<Vec<_>>(),
+            rows.iter()
+                .map(|r| r.intensity.to_bits())
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            a.density.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+            b.density.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
+        );
+        assert_eq!(a.histories, b.histories);
+        assert_eq!(a.selected_start, b.selected_start);
+        assert!(a.quality.iter().all(Option::is_some));
+        assert!(
+            a.checkpoints
+                .iter()
+                .all(|v| v.last().is_some_and(|c| c.selected))
+        );
+        for cutoff in [0., -1., f64::NAN, f64::INFINITY, 1000.] {
+            assert!(
+                phase_only_with_policy(
+                    &rows,
+                    cell,
+                    &group,
+                    &["Si".into()],
+                    &options,
+                    1,
+                    &PhaseOnlyPolicy {
+                        minimum_d_angstrom: Some(cutoff),
+                        adaptive_quality: true
+                    }
+                )
+                .is_err()
+            );
+        }
+        let token = crate::Cancellation::default();
+        assert!(token.cancel());
+        options.cancellation = Some(token);
+        assert!(
+            phase_only_with_policy(&rows, cell, &group, &["Si".into()], &options, 2, &policy)
+                .is_err()
+        );
     }
     #[test]
     fn shared_map_reuse_skips_phasing_and_rejects_other_source_data() {

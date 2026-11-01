@@ -620,21 +620,41 @@ fn main() -> Result<()> {
     let args: Vec<_> = std::env::args().collect();
     dispatch(&args)
 }
+fn interpolate_packet(args: &[String]) -> Result<()> {
+    if args.len() != 4 {
+        return Err("usage: --interpolate-phase-density INPUT.json NEW_OUTPUT.json".into());
+    }
+    let packet: Value = serde_json::from_slice(&fs::read(&args[2])?)?;
+    let shape: [usize; 3] = serde_json::from_value(packet["shape"].clone())?;
+    let target: [usize; 3] = serde_json::from_value(packet["target"].clone())?;
+    let density: Vec<f64> = serde_json::from_value(packet["density"].clone())?;
+    let interpolated = solution::interpolate_phase_density(&density, shape, target)?;
+    json_file(
+        Path::new(&args[3]),
+        &json!({"shape":target,"density":interpolated}),
+    )?;
+    Ok(())
+}
 fn dispatch(args: &[String]) -> Result<()> {
-    if args.get(1).is_some_and(|a| a == "--help") {
-        print_help();
-        return Ok(());
+    match args.get(1).map(String::as_str) {
+        Some("--help") => {
+            print_help();
+            return Ok(());
+        }
+        Some("--interpolate-phase-density") => return interpolate_packet(args),
+        Some("--assess-symmetry") => return assess_packet(args),
+        _ => {}
     }
-    if args.get(1).is_some_and(|a| a == "--assess-symmetry") {
-        return assess_packet(args);
-    }
+    run_request(request(args)?)
+}
+fn run_request(request: Request) -> Result<()> {
     let Request {
         mut packet,
         rotations,
         out,
         diagnostic,
         registered,
-    } = request(args)?;
+    } = request;
     verify_registered(&registered)?;
     if out.exists() {
         return Err("output directory must be new".into());
