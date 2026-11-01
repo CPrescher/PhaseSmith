@@ -4,6 +4,9 @@ use crate::space_group_search::{self as sg, Assessment, AssessmentOptions, Hypot
 use phasesmith_crystallography::UnitCell;
 use phasesmith_solution::{Candidate, Observation, SharedSearchSummary, Solution};
 use std::time::{Duration, Instant};
+#[path = "unknown_effort.rs"]
+mod effort;
+pub use effort::{EffortOptions, EffortPass, EffortTrace, FastSearchLimits, SearchEffort};
 /// Shared P1 phase-map and bounded origin-screen controls.
 #[derive(Clone, Debug)]
 pub struct PhaseScreenOptions {
@@ -29,6 +32,10 @@ pub struct PhaseScreenOptions {
 /// Explicit catalogue and bounded discovery controls; exact symmetry is withheld.
 #[derive(Clone, Debug)]
 pub struct DiscoveryOptions {
+    /// Optional explicit fast/auto/thorough policy; absent preserves frozen legacy execution.
+    pub effort: Option<EffortOptions>,
+    /// Allow independent phasing after unsuccessful shared-map assignment.
+    pub allow_independent_restarts: bool,
     /// Published light-element heuristic: stop after an accepted plausible centric model.
     /// Unsearched alternatives remain explicit and uniqueness is never inferred.
     pub plausible_centrosymmetric_exit: bool,
@@ -51,6 +58,9 @@ pub struct DiscoveryOptions {
 }
 impl DiscoveryOptions {
     pub(super) fn check(&self) -> Result<()> {
+        if let Some(effort) = &self.effort {
+            effort.check(self.total_seconds)?;
+        }
         let p = &self.phase;
         if p.phasing
             .first_pass_cycles
@@ -138,6 +148,8 @@ pub struct GroupAttempt {
 /// Rank and bounded coverage, explicitly distinct from a proven space-group determination.
 #[derive(Clone, Debug)]
 pub struct DiscoveryReport {
+    /// Optional chronological effort and complete nonselected pass.
+    pub effort: Option<EffortTrace>,
     /// Shared exact-group-free P1 map, phases and cycle histories.
     pub phase_map: Option<phasesmith_solution::PhaseOnlyResult>,
     /// Phase-map failure/limit diagnostic, retained independently of candidate searches.
@@ -243,8 +255,21 @@ fn common_score(
 }
 /// Complete bounded discovery outcome, retaining evidence even when no model is found.
 pub type SearchRun = (Option<(Solution, SharedSearchSummary)>, DiscoveryReport);
-#[allow(clippy::too_many_lines)] // Ordered bounded state machine; numerical stages have separate owners.
 pub(super) fn search(
+    observations: &[Observation],
+    original: &Options,
+    processing: &Options,
+    assessment: Assessment,
+) -> Result<SearchRun> {
+    if let Some(effort) = original.discovery.as_ref().and_then(|d| d.effort.as_ref()) {
+        original.discovery.as_ref().expect("discovery").check()?;
+        effort::search(observations, original, processing, assessment, effort)
+    } else {
+        search_pass(observations, original, processing, assessment)
+    }
+}
+#[allow(clippy::too_many_lines)] // Ordered bounded state machine; numerical stages have separate owners.
+pub(super) fn search_pass(
     observations: &[Observation],
     original: &Options,
     processing: &Options,
@@ -384,6 +409,7 @@ pub(super) fn search(
     Ok((
         best,
         DiscoveryReport {
+            effort: None,
             phase_map,
             phase_diagnostic,
             hypotheses: policy.hypotheses.clone(),
@@ -593,7 +619,15 @@ fn attempt_model(
         (options, common),
     );
     let remaining = end.saturating_duration_since(Instant::now()).as_secs_f64();
-    if map.is_some() && !target_met && remaining > 0.01 && !options.cancellation.is_cancelled() {
+    if map.is_some()
+        && !target_met
+        && remaining > 0.01
+        && !options.cancellation.is_cancelled()
+        && options
+            .discovery
+            .as_ref()
+            .is_none_or(|d| d.allow_independent_restarts)
+    {
         let mut fallback = options.clone();
         fallback.search_seconds = remaining;
         let started = Instant::now();

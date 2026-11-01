@@ -38,14 +38,19 @@ def main():
     p.add_argument("--output", required=True, type=Path)
     p.add_argument("--executable", required=True, type=Path)
     p.add_argument(
-        "--protocol", type=Path, default=ROOT / "validation/enstatite-raw-workflow-v33.json"
+        "--protocol", type=Path, default=ROOT / "validation/enstatite-raw-workflow-v40.json"
     )
+    p.add_argument("--effort", choices=("fast", "auto", "thorough"))
     args = p.parse_args()
     started = time.perf_counter()
     out = args.output.resolve()
     if out.is_relative_to(ROOT):
         p.error("large output must be outside the repository")
     protocol = json.loads(args.protocol.read_text())
+    if args.effort is not None:
+        if "effort" not in protocol.get("space_group_search", {}):
+            p.error("--effort requires explicit effort controls (v40 or later)")
+        protocol["space_group_search"]["effort"]["mode"] = args.effort
     manifest = json.loads((ROOT / protocol["dataset_manifest"]).read_text())
     rotations = protocol["native_coordinator"]["null_rotations"]
     rotation_path = ROOT / rotations["path"]
@@ -147,6 +152,8 @@ def main():
             alternatives=symmetry["alternatives"],
             unique_space_group_proven=symmetry["unique_space_group_proven"],
             termination=symmetry["termination"],
+            accepted=(symmetry.get("effort") or {}).get("accepted", True),
+            effort={k: v for k, v in (symmetry.get("effort") or {}).items() if k != "other_pass"},
             reference_number=manifest["search_inputs"]["space_group_number"],
             reference_number_matches=(
                 symmetry["selected"] is not None
@@ -160,7 +167,9 @@ def main():
         save(out / "native/report.json", report)
         save(out / "native/provenance.json", json.loads((out / "provenance.json").read_text()))
     print(json.dumps(report, indent=2))
-    symmetry_passed = report.get("space_group_search", {}).get("reference_number_matches", True)
+    symmetry_passed = report.get("space_group_search", {}).get(
+        "reference_number_matches", True
+    ) and report.get("space_group_search", {}).get("accepted", True)
     return (
         0
         if result.returncode == 0 and report["raw_to_structure_search_passed"] and symmetry_passed
