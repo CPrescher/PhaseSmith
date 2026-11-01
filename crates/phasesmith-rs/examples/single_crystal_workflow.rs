@@ -1222,7 +1222,14 @@ fn decode_discovery(
             beta_deg: cell[4],
             gamma_deg: cell[5],
         };
+        let plausible_centrosymmetric_exit = match p.get("plausible_centrosymmetric_exit") {
+            None => false,
+            Some(v) => v
+                .as_bool()
+                .ok_or("plausible_centrosymmetric_exit must be boolean")?,
+        };
         Some(sc::DiscoveryOptions {
+            plausible_centrosymmetric_exit,
             reuse_phase_map,
             hypotheses: catalogue(cell_value)?,
             assessment: phasesmith::workflows::space_group_search::AssessmentOptions {
