@@ -2044,6 +2044,9 @@ fn validate_shared_map(
         })
         || !search.phase_origin_selection
         || options.grid_shape.is_some_and(|s| s != map.shape)
+        || map.start_seeds.len() != map.histories.len()
+        || map.cycle_limits.len() != map.histories.len()
+        || map.selected_start >= map.start_seeds.len()
         || map.density.len() != crate::fourier::grid_len(map.shape)?
         || map
             .density
@@ -2444,7 +2447,7 @@ fn solve_elements_inner(
             method: "shared_p1",
             initialization: "reused_exact_group_free_map",
             patterson_vector: None,
-            seed: options.seed.wrapping_add(map.selected_start as u64),
+            seed: map.start_seeds[map.selected_start],
             cycles: 0,
             best_cycle: 0,
             score_kind: "external_phase_map",
