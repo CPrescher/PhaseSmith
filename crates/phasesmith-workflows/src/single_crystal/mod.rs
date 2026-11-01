@@ -26,7 +26,8 @@ pub use positions::Positions;
 pub use scaling::Reduced;
 use std::{fmt, time::Instant};
 pub use unknown::{
-    DiscoveryOptions, DiscoveryReport, GroupAttempt, GroupRun, PhaseScreenOptions, SearchRun,
+    DiscoveryOptions, DiscoveryReport, EffortOptions, EffortPass, EffortTrace, FastSearchLimits,
+    GroupAttempt, GroupRun, PhaseScreenOptions, SearchEffort, SearchRun,
 };
 /// Workflow validation, numerical, I/O-adapter, cancellation or observer failure.
 #[derive(Debug)]

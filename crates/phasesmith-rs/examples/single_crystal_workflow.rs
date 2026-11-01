@@ -134,6 +134,16 @@ fn assessment_json(
     "laue":a.laue.iter().map(|l|json!({"rotations":l.rotations,"families":l.families,"constraints":l.constraints,"reduced_chi_square":l.reduced_chi_square,"r_int":l.r_int,"status":l.status})).collect::<Vec<_>>(),
     "ranking":a.ranking,"settings":hypotheses.iter().zip(&a.evidence).enumerate().map(|(i,(h,e))|json!({"index":i,"number":h.number,"symbol":h.symbol,"hall":h.hall,"operations":h.group.operations().iter().map(|op|json!({"rotation":op.rotation(),"translation":op.translation().map(|t|[t.numerator(),t.denominator()])})).collect::<Vec<_>>(),"laue":e.laue,"absent_families":e.absent_families,"strong_violations":e.strong_violations,"absence_log_evidence":e.absence_log_evidence})).collect::<Vec<_>>()})
 }
+fn discovery_json(report: &sc::DiscoveryReport) -> Value {
+    let selected_group = report.selected.map(|i| {
+        let h = &report.hypotheses[i];
+        json!({"index":i,"number":h.number,"symbol":h.symbol,"hall":h.hall})
+    });
+    json!({"schema":"phasesmith.space-group-search.v1","space_group_supplied":false,"laue_group_supplied":false,"selected":selected_group,"alternatives":report.alternatives,"termination":report.termination,"seconds":report.seconds,"unique_space_group_proven":false,
+            "phase_map":report.phase_map.as_ref().map(|p|json!({"shape":p.shape,"phasing_shape":p.phasing_shape,"phasing_observations":p.phasing_observations,"quality":p.quality.iter().map(|q|q.as_ref().map(|q|json!({"correlation":q.correlation,"r_weak":q.r_weak,"cfom":q.cfom}))).collect::<Vec<_>>(),"checkpoints":p.checkpoints.iter().map(|v|v.iter().map(|c|json!({"cycles":c.cycles,"cfom":c.cfom,"best_cfom":c.best_cfom,"score":c.score,"map_cosine":c.map_cosine,"selected":c.selected,"reason":c.reason})).collect::<Vec<_>>()).collect::<Vec<_>>(),"histories":p.histories,"start_seeds":p.start_seeds,"cycle_limits":p.cycle_limits,"selected_start":p.selected_start,"seconds":p.seconds})),"phase_diagnostic":report.phase_diagnostic,
+            "effort":report.effort.as_ref().map(|e|json!({"requested":e.requested.as_str(),"selected_pass":e.selected_pass.as_str(),"accepted":e.accepted,"escalation_reason":e.escalation_reason,"passes":e.passes.iter().map(|p|json!({"mode":p.mode.as_str(),"accepted":p.accepted,"reason":p.reason,"seconds":p.seconds,"termination":p.termination,"phasing_shape":p.phasing_shape,"phase_cycles":p.phase_cycles,"model_attempts":p.model_attempts})).collect::<Vec<_>>(),"other_pass":e.other_pass.as_deref().map(discovery_json)})),
+            "attempts":report.attempts.iter().map(|a|json!({"hypothesis":a.hypothesis,"runs":a.runs.iter().map(|r|json!({"initialization":r.initialization,"seconds":r.seconds,"diagnostic":r.diagnostic,"candidates":r.candidates,"phasing_starts":r.phasing_starts,"target_met":r.target_met})).collect::<Vec<_>>(),"status":a.status,"seconds":a.seconds,"diagnostic":a.diagnostic,"common_r1":a.common_r1,"common_objective":a.common_objective,"parameters":a.parameters,"bic":a.bic,"phase_status":a.phase_status,"phase_seconds":a.phase_seconds,"origins":a.origins.iter().map(|o|json!({"hand":o.hand,"shift":o.shift,"alpha":o.alpha,"chord":o.chord})).collect::<Vec<_>>(),"candidate":a.candidate.as_ref().map(candidate)})).collect::<Vec<_>>() })
+}
 impl sc::Observer for Save {
     fn symmetry(
         &mut self,
@@ -184,9 +194,22 @@ impl sc::Observer for Save {
                 )],
             )?;
         }
-        self.json("space-group-search.json",json!({"schema":"phasesmith.space-group-search.v1","space_group_supplied":false,"laue_group_supplied":false,"selected":self.selected_group,"alternatives":report.alternatives,"termination":report.termination,"seconds":report.seconds,"unique_space_group_proven":false,
-            "phase_map":report.phase_map.as_ref().map(|p|json!({"shape":p.shape,"phasing_shape":p.phasing_shape,"phasing_observations":p.phasing_observations,"quality":p.quality.iter().map(|q|q.as_ref().map(|q|json!({"correlation":q.correlation,"r_weak":q.r_weak,"cfom":q.cfom}))).collect::<Vec<_>>(),"checkpoints":p.checkpoints.iter().map(|v|v.iter().map(|c|json!({"cycles":c.cycles,"cfom":c.cfom,"best_cfom":c.best_cfom,"score":c.score,"map_cosine":c.map_cosine,"selected":c.selected,"reason":c.reason})).collect::<Vec<_>>()).collect::<Vec<_>>(),"histories":p.histories,"start_seeds":p.start_seeds,"cycle_limits":p.cycle_limits,"selected_start":p.selected_start,"seconds":p.seconds})),"phase_diagnostic":report.phase_diagnostic,
-            "attempts":report.attempts.iter().map(|a|json!({"hypothesis":a.hypothesis,"runs":a.runs.iter().map(|r|json!({"initialization":r.initialization,"seconds":r.seconds,"diagnostic":r.diagnostic,"candidates":r.candidates,"phasing_starts":r.phasing_starts,"target_met":r.target_met})).collect::<Vec<_>>(),"status":a.status,"seconds":a.seconds,"diagnostic":a.diagnostic,"common_r1":a.common_r1,"common_objective":a.common_objective,"parameters":a.parameters,"bic":a.bic,"phase_status":a.phase_status,"phase_seconds":a.phase_seconds,"origins":a.origins.iter().map(|o|json!({"hand":o.hand,"shift":o.shift,"alpha":o.alpha,"chord":o.chord})).collect::<Vec<_>>(),"candidate":a.candidate.as_ref().map(candidate)})).collect::<Vec<_>>() }))
+        if let Some(map) = report
+            .effort
+            .as_ref()
+            .and_then(|e| e.other_pass.as_deref())
+            .and_then(|p| p.phase_map.as_ref())
+        {
+            self.archive(
+                "space-group-other-pass-phase-map.npz",
+                &[f64s(
+                    "density",
+                    map.shape.to_vec(),
+                    map.density.iter().copied(),
+                )],
+            )?;
+        }
+        self.json("space-group-search.json", discovery_json(report))
     }
 
     fn stage(&mut self, name: &str, seconds: f64) -> sc::Result<()> {
@@ -968,11 +991,19 @@ struct Request {
 }
 fn request(args: &[String]) -> Result<Request> {
     if args.get(1).is_some_and(|a| a == "--mgsio3") {
-        if args.len() != 5 {
-            return Err("usage: --mgsio3 DATA_ROOT PROTOCOL.json NEW_EXTERNAL_OUTPUT".into());
+        if args.len() != 5 && !(args.len() == 7 && args[5] == "--effort") {
+            return Err("usage: --mgsio3 DATA_ROOT PROTOCOL.json NEW_EXTERNAL_OUTPUT [--effort fast|auto|thorough]".into());
         }
         let source: Value = serde_json::from_str(include_str!("data/mgsio3-source.json"))?;
-        let protocol: Value = serde_json::from_slice(&fs::read(&args[3])?)?;
+        let mut protocol: Value = serde_json::from_slice(&fs::read(&args[3])?)?;
+        if let Some(mode) = args.get(6) {
+            if !protocol["space_group_search"]["effort"].is_object() {
+                return Err(
+                    "--effort needs a protocol with explicit effort controls (v40 or later)".into(),
+                );
+            }
+            protocol["space_group_search"]["effort"]["mode"] = json!(mode);
+        }
         let root = Path::new(&args[2]).canonicalize()?;
         let rotations = serde_json::from_str(include_str!("data/grain-null-rotations-v1.json"))?;
         let registered = source["files"]
@@ -1209,10 +1240,34 @@ fn assess_packet(args: &[String]) -> Result<()> {
 
 fn print_help() {
     println!(
-        "Rust-only MgSiO3: single_crystal_workflow --mgsio3 DATA_ROOT PROTOCOL.json NEW_EXTERNAL_OUTPUT\nPortable input: single_crystal_workflow INPUT.json NULL_ROTATIONS.json NEW_EXTERNAL_OUTPUT [DIAGNOSTIC_OBSERVATIONS.json]"
+        "Rust-only MgSiO3: single_crystal_workflow --mgsio3 DATA_ROOT PROTOCOL.json NEW_EXTERNAL_OUTPUT [--effort fast|auto|thorough]\nPortable input: single_crystal_workflow INPUT.json NULL_ROTATIONS.json NEW_EXTERNAL_OUTPUT [DIAGNOSTIC_OBSERVATIONS.json]"
     );
 }
 
+fn decode_effort(p: &Value) -> Result<Option<sc::EffortOptions>> {
+    let Some(e) = p.get("effort") else {
+        return Ok(None);
+    };
+    let mode = match e["mode"].as_str() {
+        Some("fast") => sc::SearchEffort::Fast,
+        Some("auto") => sc::SearchEffort::Auto,
+        Some("thorough") => sc::SearchEffort::Thorough,
+        _ => return Err("effort mode must be fast, auto or thorough".into()),
+    };
+    let f = &e["fast"];
+    Ok(Some(sc::EffortOptions {
+        mode,
+        maximum_common_r1: number(e, "maximum_common_r1")?,
+        fast: sc::FastSearchLimits {
+            starts: int(f, "starts")?,
+            cycles: int(f, "cycles")?,
+            minimum_d_angstrom: number(f, "minimum_d_angstrom")?,
+            maximum_candidates: int(f, "maximum_candidates")?,
+            candidate_seconds: number(f, "candidate_seconds")?,
+            total_seconds: number(f, "total_seconds")?,
+        },
+    }))
+}
 fn decode_discovery(
     packet: &Value,
     cell: [f64; 6],
@@ -1251,6 +1306,8 @@ fn decode_discovery(
                 .ok_or("plausible_centrosymmetric_exit must be boolean")?,
         };
         Some(sc::DiscoveryOptions {
+            effort: decode_effort(p)?,
+            allow_independent_restarts: true,
             plausible_centrosymmetric_exit,
             reuse_phase_map,
             hypotheses: catalogue(cell_value)?,
@@ -1355,6 +1412,24 @@ fn write_setting_cif(
 #[cfg(test)]
 mod discovery_input_tests {
     use super::*;
+    #[test]
+    fn effort_modes_are_explicit_and_invalid_modes_or_counts_are_rejected() {
+        assert!(decode_effort(&json!({})).unwrap().is_none());
+        let mut p = json!({"effort":{"mode":"auto","maximum_common_r1":0.08,"fast":{"starts":4,"cycles":256,"minimum_d_angstrom":0.8,"maximum_candidates":4,"candidate_seconds":2.,"total_seconds":8.}}});
+        for (name, mode) in [
+            ("fast", sc::SearchEffort::Fast),
+            ("auto", sc::SearchEffort::Auto),
+            ("thorough", sc::SearchEffort::Thorough),
+        ] {
+            p["effort"]["mode"] = json!(name);
+            assert_eq!(decode_effort(&p).unwrap().unwrap().mode, mode);
+        }
+        p["effort"]["mode"] = json!("unbounded");
+        assert!(decode_effort(&p).is_err());
+        p["effort"]["mode"] = json!("auto");
+        p["effort"]["fast"]["cycles"] = json!(256.5);
+        assert!(decode_effort(&p).is_err());
+    }
     #[test]
     fn unknown_search_rejects_ignored_or_mistyped_controls() {
         let cell = [8., 7., 6., 90., 90., 90.];
