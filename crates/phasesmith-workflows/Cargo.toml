@@ -40,5 +40,10 @@ harness = false
 name = "rietveld"
 harness = false
 
+[[bench]]
+name = "space_group"
+harness = false
+required-features = ["single-crystal"]
+
 [lints]
 workspace = true

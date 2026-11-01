@@ -80,6 +80,19 @@ fn benchmark(c: &mut Criterion) {
     )
     .unwrap()
     .density;
+    c.bench_function(
+        "phase_interpolate_32cubed_to_64cubed_multi_peak_field",
+        |b| {
+            b.iter(|| {
+                phasesmith_solution::interpolate_phase_density(
+                    std::hint::black_box(&source),
+                    shape,
+                    [64; 3],
+                )
+                .unwrap()
+            });
+        },
+    );
     let integrated =
         IntegratedPeakDensity::new(cell, shape, &hkl, &amplitudes, &source, 0.7).unwrap();
     c.bench_function("integrated_peak_map_32cubed_2108_reflections", |b| {

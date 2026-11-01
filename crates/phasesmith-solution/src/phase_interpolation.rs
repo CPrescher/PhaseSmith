@@ -9,7 +9,11 @@ use rustfft::num_complex::Complex;
 /// invented observed coefficients is performed. Preserve the density scale.
 /// # Errors
 /// Invalid grid/length, decreasing axes, or nonfinite/excessive source values.
-#[allow(clippy::cast_precision_loss, clippy::cast_possible_wrap)] // Admitted axes are 8..128.
+#[allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_wrap,
+    clippy::cast_possible_truncation
+)] // Admitted axes are 8..128.
 pub fn interpolate_phase_density(
     density: &[f64],
     source: [usize; 3],
