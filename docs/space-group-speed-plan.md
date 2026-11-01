@@ -125,3 +125,9 @@ No coarse-only quality failure spends 800 cycles before model testing in this mo
 v41 is a frozen resource-negative control: deliberately exhaust the fast budget
 after one microsecond and verify automatic full-resolution recovery with the
 remaining original deadline. Its timing is not a normal performance claim.
+
+V42 is a second negative control using the same archived measured rows: an
+intentionally unattainable common R1 ceiling of 1e-12 must reject a complete fast
+candidate, trigger full-resolution work, retain both candidates/maps, and leave
+the final outcome explicitly unaccepted. This checks acceptance rejection as
+well as v41's no-model timeout; it is not a normal performance profile.

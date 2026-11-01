@@ -22,11 +22,13 @@ cargo build --release -p phasesmith --features hdf5 --example single_crystal_wor
 
 target/release/examples/single_crystal_workflow --mgsio3 \
   '/path/to/MgSiO3 Enstatite Calibration Crystal' \
-  validation/enstatite-raw-workflow-v33.json \
+  validation/enstatite-raw-workflow-v40.json \
   /path/outside/the/repository/new-native-run
 ```
 
-Protocol v33 selects automatic symmetry assessment. It removes
+Protocol v40 selects automatic symmetry assessment and `auto` search effort.
+It tries a short coarse-grid search first and uses finer phasing/more candidate
+settings only if that attempt fails the explicit acceptance checks. It removes
 the exact space group from the input and supplies no Laue group. Predictions
 retain all primitive reflections. The worker assesses measured intensity
 symmetry before empirical scaling, screens conventional settings using a shared
@@ -34,6 +36,16 @@ P1 phase map and retains candidate models, alternatives and all budget omissions
 New products include `preliminary-symmetry.json`, `space-group-evidence.json`,
 `space-group-phase-map.npz` and `space-group-search.json`. Their selected setting
 is a ranked hypothesis; the report does not assert uniqueness.
+Use `--effort fast`, `--effort auto` or `--effort thorough` after the standalone
+command's output argument. The optional benchmark observer accepts the same flag.
+`fast` permits no deeper attempt; `auto` escalates after numerical rejection;
+`thorough` starts with the full-resolution bounded profile. The original signed
+measurements always enter final model fitting and assessment. Effort, acceptance,
+escalation reason and both actual pass records are saved in `space-group-search.json`.
+The [speed and adaptive-effort report](space-group-search-speed.md) gives the
+limits, measured comparison and forced-fallback check. Protocols before v40 keep
+their frozen execution and do not accept this flag without explicit effort controls.
+
 The selected conventional setting and asymmetric sites are saved separately as
 `candidate/space-group.cif`; `candidate/best.cif` preserves the full P1 model in
 the density frame. Measured inputs to both symmetry assessments are archived
@@ -61,7 +73,7 @@ saved candidates only after the executable exits:
 ```sh
 python benchmarks/enstatite_native_workflow.py \
   --data-root '/path/to/MgSiO3 Enstatite Calibration Crystal' \
-  --protocol validation/enstatite-raw-workflow-v33.json \
+  --protocol validation/enstatite-raw-workflow-v40.json \
   --executable target/release/examples/single_crystal_workflow \
   --output /path/outside/the/repository/new-observed-run
 ```
@@ -95,7 +107,7 @@ Observer errors and cancellation stop further loading and join outstanding work.
 A Rust host can use `NoObserver` to retain results entirely in memory.
 The library's search time limit is cooperative. The example host additionally
 enforces the frozen hard search-process deadline (75 seconds for v29, 210 seconds
-for v33); its waiting guard is
+for unknown-group protocols including v40); its waiting guard is
 cancelled as soon as search/output completes. The optional benchmark parent also
 limits the complete worker process to 1,800 seconds.
 
@@ -154,7 +166,7 @@ Python `SolutionResult` serialization. Large arrays and all trial outputs remain
 outside the repository.
 
 Labelled structure recovery and numerical parity are separate checks. The
-supplied-group comparison below uses v29. The current unknown-group v33 replay,
+supplied-group comparison below uses v29. The current unknown-group v40 replay,
 its alternatives and measured speed improvements are recorded in the
 [space-group search validation](space-group-search-validation.md).
 The initial missing angular-flag handoff was corrected and the failed trial retained. The

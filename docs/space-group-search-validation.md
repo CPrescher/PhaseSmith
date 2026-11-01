@@ -1,5 +1,9 @@
 # Unknown space-group search: MgSiO3 validation
 
+The subsequent [fast/auto/thorough effort report](space-group-search-speed.md)
+records the current execution and timings. This page preserves the original
+v31–v33 experiments and their bounded-coverage evidence.
+
 The native original-frame workflow now ranks **Pbca, number 61**, and recovers
 **Mg16 Si16 O48** with exact space group and Laue group withheld. The measured
 full command takes **36.16–36.50 seconds** after shared-map reuse and four-worker

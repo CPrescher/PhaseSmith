@@ -28,6 +28,8 @@ in the repository archive, outside the documentation search index.
 - [Native single-crystal profile and empirical-scale fitting](native-profile-scaling-fitting.md)
 - [Rust-only workflow coordinator: MgSiO3 validation and timing](single-crystal-native-validation.md)
 - [Unknown space-group search: MgSiO3 validation and SHELXT comparison](space-group-search-validation.md)
+- [Fast/auto/thorough search: measured speed and escalation validation](space-group-search-speed.md)
+- [Frozen staged search-speed experiments and equations](space-group-speed-plan.md)
 - [Measured space-group evidence and shared P1 phase screening](space-group-search.md)
 - [Pawley feasibility at small steps](pawley-boundary-feasibility.md)
 - [Pawley consolidation review, 2026-09-21](pawley-consolidation-review.md)

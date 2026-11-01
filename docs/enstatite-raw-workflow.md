@@ -1,5 +1,10 @@
 # MgSiO3 raw-frame-to-structure-search example
 
+For the current interpreter-free example with automatic space-group discovery
+and fast-first effort, use the [native workflow](single-crystal-native-workflow.md)
+and [adaptive-effort validation](space-group-search-speed.md). The Python-led
+protocols below remain independent historical regression controls.
+
 This explicit example coordinates PhaseSmith's existing detector, reciprocal,
 indexing, position-refinement, integration, profile, scaling and structure-search
 APIs. It reads original HDF5 counts and generates new measurements throughout.

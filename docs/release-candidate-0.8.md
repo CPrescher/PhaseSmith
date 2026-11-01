@@ -2,7 +2,9 @@
 
 The later [unknown-symmetry validation](space-group-search-validation.md) adds
 native space-group assessment, shared-map model search and measured v33 timings.
-Earlier protocols and receipts below remain historical records.
+The later [adaptive-effort report](space-group-search-speed.md) adds explicit
+fast/auto/thorough modes and subsecond MgSiO3 search measurements. Earlier
+protocols and receipts below remain historical records.
 
 This development candidate promotes the validated single-crystal workflow into
 the main PhaseSmith package. It is not a publication receipt. No tag, upload or
