@@ -32,9 +32,11 @@ impl sc::FrameSource for Source {
     }
 }
 fn json_file(path: &Path, v: &Value) -> Result<()> {
-    let mut f = OpenOptions::new().write(true).create_new(true).open(path)?;
+    let file = OpenOptions::new().write(true).create_new(true).open(path)?;
+    let mut f = std::io::BufWriter::new(file);
     serde_json::to_writer_pretty(&mut f, v)?;
     f.write_all(b"\n")?;
+    f.flush()?;
     Ok(())
 }
 struct Array {
