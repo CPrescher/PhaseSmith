@@ -742,6 +742,11 @@ fn decode_options(
     let protocol = &packet["protocol"];
     let acquisition = &protocol["acquisition"];
     let cell: [f64; 6] = serde_json::from_value(packet["priors"]["cell_angstrom_degrees"].clone())?;
+    if protocol.get("space_group_search").is_some()
+        && protocol["space_group_search"]["mode"] != "unknown"
+    {
+        return Err("unsupported space-group workflow mode".into());
+    }
     let unknown = protocol["space_group_search"]["mode"] == "unknown";
     let discovery = decode_discovery(packet, cell, unknown)?;
     let options = sc::Options {
@@ -1183,6 +1188,20 @@ fn decode_discovery(
     let discovery = if unknown {
         let p = &protocol["space_group_search"];
         let ph = &p["phase_screen"];
+        if p["candidate_refinement"] != "isotropic" {
+            return Err(
+                "unknown-symmetry model search currently requires explicit isotropic refinement"
+                    .into(),
+            );
+        }
+        let reuse_phase_map = match p.get("reuse_phase_map") {
+            None => false,
+            Some(v) => v.as_bool().ok_or("reuse_phase_map must be boolean")?,
+        };
+        let workers = match ph.get("workers") {
+            None => 1,
+            Some(v) => usize::try_from(v.as_u64().ok_or("phase workers must be an integer")?)?,
+        };
         let cell_value = UnitCell {
             a_angstrom: cell[0],
             b_angstrom: cell[1],
@@ -1192,7 +1211,7 @@ fn decode_discovery(
             gamma_deg: cell[5],
         };
         Some(sc::DiscoveryOptions {
-            reuse_phase_map: p["reuse_phase_map"].as_bool().unwrap_or(false),
+            reuse_phase_map,
             hypotheses: catalogue(cell_value)?,
             assessment: phasesmith::workflows::space_group_search::AssessmentOptions {
                 relative_error: number(p, "relative_intensity_error")?,
@@ -1206,7 +1225,7 @@ fn decode_discovery(
             total_seconds: number(p, "total_search_seconds")?,
             ambiguity_delta: number(p, "ambiguity_delta_bic")?,
             phase: sc::PhaseScreenOptions {
-                workers: usize::try_from(ph["workers"].as_u64().unwrap_or(1))?,
+                workers,
                 starts: int(ph, "starts")?,
                 cycles: int(ph, "cycles")?,
                 maximum_settings: int(ph, "maximum_settings")?,
@@ -1270,4 +1289,36 @@ fn write_setting_cif(
     let mut file = OpenOptions::new().write(true).create_new(true).open(path)?;
     file.write_all(text.as_bytes())?;
     Ok(())
+}
+
+#[cfg(test)]
+mod discovery_input_tests {
+    use super::*;
+    #[test]
+    fn unknown_search_rejects_ignored_or_mistyped_controls() {
+        let cell = [8., 7., 6., 90., 90., 90.];
+        let mut packet = json!({"protocol":{"space_group_search":{"candidate_refinement":"anisotropic"}},"priors":{}});
+        assert!(
+            decode_discovery(&packet, cell, true)
+                .unwrap_err()
+                .to_string()
+                .contains("isotropic")
+        );
+        packet["protocol"]["space_group_search"]["candidate_refinement"] = json!("isotropic");
+        packet["protocol"]["space_group_search"]["reuse_phase_map"] = json!("yes");
+        assert!(
+            decode_discovery(&packet, cell, true)
+                .unwrap_err()
+                .to_string()
+                .contains("boolean")
+        );
+        packet["protocol"]["space_group_search"]["reuse_phase_map"] = json!(true);
+        packet["protocol"]["space_group_search"]["phase_screen"] = json!({"workers":2.5});
+        assert!(
+            decode_discovery(&packet, cell, true)
+                .unwrap_err()
+                .to_string()
+                .contains("integer")
+        );
+    }
 }
