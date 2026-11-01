@@ -75,6 +75,8 @@ pub struct Evidence {
 /// Complete prescreen; the chosen processing Laue set remains provisional.
 #[derive(Clone, Debug)]
 pub struct Assessment {
+    /// Original supplied measured rows, in source order, for independent replay/audit.
+    pub observations: Vec<Observation>,
     /// Number of supplied measured rows.
     pub rows: usize,
     /// Independent measured Friedel families.
@@ -231,6 +233,7 @@ pub fn assess(
             .then_with(|| candidates[a].hall.cmp(&candidates[b].hall))
     });
     Ok(Assessment {
+        observations: observations.to_vec(),
         rows: observations.len(),
         friedel_families: rows.len(),
         laue,
