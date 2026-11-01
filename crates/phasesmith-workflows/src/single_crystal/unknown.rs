@@ -25,6 +25,8 @@ pub struct PhaseScreenOptions {
 /// Explicit catalogue and bounded discovery controls; exact symmetry is withheld.
 #[derive(Clone, Debug)]
 pub struct DiscoveryOptions {
+    /// Feed the shared P1 map directly into model assignment, with bounded fallback.
+    pub reuse_phase_map: bool,
     /// Published phase-equivalence screening before full model searches.
     pub phase: PhaseScreenOptions,
     /// All settings admitted by the host's stated catalogue/index-basis policy.
@@ -73,9 +75,27 @@ impl DiscoveryOptions {
         Ok(())
     }
 }
+/// Actual model-search work from either a reused phase map or an independent restart.
+#[derive(Clone, Debug)]
+pub struct GroupRun {
+    /// `shared_p1_map` or `independent_phasing`.
+    pub initialization: &'static str,
+    /// Actual seconds including unsuccessful numerical work.
+    pub seconds: f64,
+    /// Numerical termination or error text.
+    pub diagnostic: String,
+    /// Number of returned complete model candidates before common-set evaluation.
+    pub candidates: usize,
+    /// Actual new phase starts; zero when reusing the shared map.
+    pub phasing_starts: usize,
+    /// Whether this run met its own group-filtered numerical R1 target.
+    pub target_met: bool,
+}
 /// Every catalogue setting retains its actual search status; budgets never imply rejection.
 #[derive(Clone, Debug)]
 pub struct GroupAttempt {
+    /// Every actual model-search initialization, including failed seeded/fallback work.
+    pub runs: Vec<GroupRun>,
     /// Shared-map phase screening status, distinct from model-search success.
     pub phase_status: &'static str,
     /// Retained origin/hand alternatives and alpha/chord values.
@@ -283,6 +303,11 @@ pub(super) fn search(
             hypothesis,
             &attempts[index],
             clock,
+            if policy.reuse_phase_map {
+                phase_map.as_ref()
+            } else {
+                None
+            },
         );
         attempts[index] = attempt;
         if let (Some(score), Some(result)) = (attempts[index].bic, result)
@@ -421,14 +446,75 @@ fn attempt_model(
     hypothesis: &Hypothesis,
     prior: &GroupAttempt,
     clock: Instant,
+    map: Option<&phasesmith_solution::PhaseOnlyResult>,
 ) -> (GroupAttempt, Option<(Solution, SharedSearchSummary)>) {
     let mut a = prior.clone();
-    let mut result = None;
-    match super::search_observations(observations, options) {
+    let mut best = None;
+    let end = clock + Duration::from_secs_f64(options.search_seconds);
+    let started = Instant::now();
+    let result = if let Some(map) = map {
+        super::search_observations_seeded(observations, options, map)
+    } else {
+        super::search_observations(observations, options)
+    };
+    let target_met = result.as_ref().is_ok_and(|(s, _)| s.target_met);
+    record_run(
+        &mut a,
+        &mut best,
+        result,
+        if map.is_some() {
+            "shared_p1_map"
+        } else {
+            "independent_phasing"
+        },
+        started.elapsed().as_secs_f64(),
+        hypothesis,
+        (options, common),
+    );
+    let remaining = end.saturating_duration_since(Instant::now()).as_secs_f64();
+    if map.is_some() && !target_met && remaining > 0.01 && !options.cancellation.is_cancelled() {
+        let mut fallback = options.clone();
+        fallback.search_seconds = remaining;
+        let started = Instant::now();
+        let result = super::search_observations(observations, &fallback);
+        record_run(
+            &mut a,
+            &mut best,
+            result,
+            "independent_phasing",
+            started.elapsed().as_secs_f64(),
+            hypothesis,
+            (options, common),
+        );
+    }
+    a.seconds = clock.elapsed().as_secs_f64();
+    (a, best)
+}
+fn record_run(
+    a: &mut GroupAttempt,
+    best: &mut Option<(Solution, SharedSearchSummary)>,
+    result: Result<(Solution, SharedSearchSummary)>,
+    initialization: &'static str,
+    seconds: f64,
+    hypothesis: &Hypothesis,
+    context: (&Options, &phasesmith_solution::PreparedData),
+) {
+    let (options, common) = context;
+    let mut run = GroupRun {
+        initialization,
+        seconds,
+        diagnostic: String::new(),
+        candidates: 0,
+        phasing_starts: 0,
+        target_met: false,
+    };
+    match result {
         Ok((solution, audit)) => {
-            a.diagnostic = Some(solution.termination.into());
+            run.diagnostic = solution.termination.into();
+            run.candidates = solution.candidates.len();
+            run.phasing_starts = audit.phasing_starts;
+            run.target_met = solution.target_met;
             if let Some(candidate) = solution.candidates.first() {
-                a.candidate = Some(candidate.clone());
                 match common_score(
                     candidate,
                     &hypothesis.group,
@@ -437,29 +523,39 @@ fn attempt_model(
                     options.dense_memory_bytes,
                 ) {
                     Ok((r1, objective, parameters, bic)) => {
-                        a.status = "candidate";
-                        a.common_r1 = Some(r1);
-                        a.common_objective = Some(objective);
-                        a.parameters = Some(parameters);
-                        a.bic = Some(bic);
-                        result = Some((solution, audit));
+                        if a.bic.is_none_or(|old| bic < old) {
+                            a.status = "candidate";
+                            a.diagnostic = Some(solution.termination.into());
+                            a.common_r1 = Some(r1);
+                            a.common_objective = Some(objective);
+                            a.parameters = Some(parameters);
+                            a.bic = Some(bic);
+                            a.candidate = Some(candidate.clone());
+                            *best = Some((solution, audit));
+                        }
                     }
                     Err(e) => {
-                        a.status = "error";
-                        a.diagnostic = Some(e.to_string());
+                        run.diagnostic = format!("common-set model rejection: {e}");
+                        if a.candidate.is_none() {
+                            a.status = "error";
+                            a.diagnostic = Some(e.to_string());
+                        }
                     }
                 }
-            } else {
+            } else if a.candidate.is_none() {
                 a.status = "no_model";
+                a.diagnostic = Some(solution.termination.into());
             }
         }
         Err(e) => {
-            a.status = "error";
-            a.diagnostic = Some(e.to_string());
+            run.diagnostic = e.to_string();
+            if a.candidate.is_none() {
+                a.status = "error";
+                a.diagnostic = Some(e.to_string());
+            }
         }
     }
-    a.seconds = clock.elapsed().as_secs_f64();
-    (a, result)
+    a.runs.push(run);
 }
 
 fn initial_attempts(assessment: &Assessment) -> Vec<GroupAttempt> {
@@ -469,6 +565,7 @@ fn initial_attempts(assessment: &Assessment) -> Vec<GroupAttempt> {
         .enumerate()
         .map(|(i, e)| GroupAttempt {
             hypothesis: i,
+            runs: Vec::new(),
             phase_status: "not_attempted",
             origins: vec![],
             phase_seconds: 0.,

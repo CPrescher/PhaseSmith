@@ -25,7 +25,9 @@ use phasesmith_spots::{frame_input, frame_validity, reciprocal::Geometry};
 pub use positions::Positions;
 pub use scaling::Reduced;
 use std::{fmt, time::Instant};
-pub use unknown::{DiscoveryOptions, DiscoveryReport, GroupAttempt, PhaseScreenOptions, SearchRun};
+pub use unknown::{
+    DiscoveryOptions, DiscoveryReport, GroupAttempt, GroupRun, PhaseScreenOptions, SearchRun,
+};
 /// Workflow validation, numerical, I/O-adapter, cancellation or observer failure.
 #[derive(Debug)]
 pub struct Error(pub String);
@@ -779,6 +781,26 @@ pub fn search_observations(
     phasesmith_solution::Solution,
     phasesmith_solution::SharedSearchSummary,
 )> {
+    search_observations_impl(observations, o, None)
+}
+pub(super) fn search_observations_seeded(
+    observations: &[phasesmith_solution::Observation],
+    o: &Options,
+    map: &phasesmith_solution::PhaseOnlyResult,
+) -> Result<(
+    phasesmith_solution::Solution,
+    phasesmith_solution::SharedSearchSummary,
+)> {
+    search_observations_impl(observations, o, Some(map))
+}
+fn search_observations_impl(
+    observations: &[phasesmith_solution::Observation],
+    o: &Options,
+    map: Option<&phasesmith_solution::PhaseOnlyResult>,
+) -> Result<(
+    phasesmith_solution::Solution,
+    phasesmith_solution::SharedSearchSummary,
+)> {
     use phasesmith_solution::{
         AdpMode, DenseMemoryBudget, PhasingMethod, SolveOptions, estimate_solution_memory,
         solve_elements,
@@ -819,14 +841,26 @@ pub fn search_observations(
         symmetry_iterations: 80,
     };
     let shared = shared_search_options(memory.maximum_atoms);
-    let solution = solve_elements(
-        observations,
-        o.priors.cell,
-        group,
-        &o.priors.elements,
-        &options,
-        &shared,
-    )?;
+    let solution = if let Some(map) = map {
+        phasesmith_solution::solve_elements_from_phase_map(
+            observations,
+            o.priors.cell,
+            group,
+            &o.priors.elements,
+            &options,
+            &shared,
+            map,
+        )?
+    } else {
+        solve_elements(
+            observations,
+            o.priors.cell,
+            group,
+            &o.priors.elements,
+            &options,
+            &shared,
+        )?
+    };
     let search = solution
         .shared_search
         .clone()

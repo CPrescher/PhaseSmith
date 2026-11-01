@@ -1965,7 +1965,7 @@ pub fn solve_elements(
     search: &SharedSearchOptions,
 ) -> Result<Solution, SolutionError> {
     let (mut result, stats) = crate::with_solution_workers(search.workers, || {
-        solve_elements_inner(observations, cell, group, elements, options, search)
+        solve_elements_inner(observations, cell, group, elements, options, search, None)
     })?;
     if let Some(a) = &mut result.shared_search {
         a.requested_workers = stats.requested;
@@ -1975,6 +1975,86 @@ pub fn solve_elements(
         a.max_active_workers = stats.maximum_active;
     }
     Ok(result)
+}
+/// Assign elements and fit a setting directly from a previously calculated P1 map.
+/// Exact cell, element and unmerged source-data identity are required; no new
+/// phase start runs inside this call. Shared map provenance stays with the caller.
+/// # Errors
+/// Invalid/mismatched map, conflicting grid, unsupported search or ordinary solver errors.
+/// # Panics
+/// Only if an internal refined-state invariant is violated, as for `solve_elements`.
+pub fn solve_elements_from_phase_map(
+    observations: &[Observation],
+    cell: UnitCell,
+    group: &SpaceGroup,
+    elements: &[String],
+    options: &SolveOptions,
+    search: &SharedSearchOptions,
+    map: &crate::PhaseOnlyResult,
+) -> Result<Solution, SolutionError> {
+    validate_shared_map(observations, cell, elements, options, search, map)?;
+    let mut selected = options.clone();
+    selected.grid_shape = Some(map.shape);
+    let (mut result, stats) = crate::with_solution_workers(search.workers, || {
+        solve_elements_inner(
+            observations,
+            cell,
+            group,
+            elements,
+            &selected,
+            search,
+            Some(map),
+        )
+    })?;
+    if let Some(a) = &mut result.shared_search {
+        a.requested_workers = stats.requested;
+        a.workers = stats.resolved;
+        a.parallel_maps = stats.maps;
+        a.parallel_tasks = stats.tasks;
+        a.max_active_workers = stats.maximum_active;
+    }
+    Ok(result)
+}
+fn validate_shared_map(
+    observations: &[Observation],
+    cell: UnitCell,
+    elements: &[String],
+    options: &SolveOptions,
+    search: &SharedSearchOptions,
+    map: &crate::PhaseOnlyResult,
+) -> Result<(), SolutionError> {
+    let values = |c: UnitCell| {
+        [
+            c.a_angstrom,
+            c.b_angstrom,
+            c.c_angstrom,
+            c.alpha_deg,
+            c.beta_deg,
+            c.gamma_deg,
+        ]
+        .map(f64::to_bits)
+    };
+    if values(cell) != values(map.cell)
+        || elements != map.elements
+        || observations.len() != map.observations.len()
+        || observations.iter().zip(&map.observations).any(|(a, b)| {
+            a.hkl != b.hkl
+                || a.intensity.to_bits() != b.intensity.to_bits()
+                || a.sigma.to_bits() != b.sigma.to_bits()
+        })
+        || !search.phase_origin_selection
+        || options.grid_shape.is_some_and(|s| s != map.shape)
+        || map.density.len() != crate::fourier::grid_len(map.shape)?
+        || map
+            .density
+            .iter()
+            .any(|v| !v.is_finite() || v.abs() > 1e100)
+    {
+        return Err(error(
+            "shared P1 map identity/grid/search does not match candidate inputs",
+        ));
+    }
+    Ok(())
 }
 #[allow(
     clippy::too_many_lines,
@@ -1989,6 +2069,7 @@ fn solve_elements_inner(
     elements: &[String],
     options: &SolveOptions,
     search: &SharedSearchOptions,
+    shared_map: Option<&crate::PhaseOnlyResult>,
 ) -> Result<Solution, SolutionError> {
     crate::solver::validate_options(options)?;
     if search.cached_repair_evaluation && !search.joint_assignment_refinement {
@@ -2357,7 +2438,45 @@ fn solve_elements_inner(
     };
     let mut winners: Vec<State> = Vec::new();
     let mut phase_pool: Vec<(f64, usize, Vec<f64>)> = Vec::new();
-    for trial in 0..options.trials {
+    if let Some(map) = shared_map {
+        result.histories.push(Vec::new());
+        result.phasing_trials.push(PhasingTrial {
+            method: "shared_p1",
+            initialization: "reused_exact_group_free_map",
+            patterson_vector: None,
+            seed: options.seed.wrapping_add(map.selected_start as u64),
+            cycles: 0,
+            best_cycle: 0,
+            score_kind: "external_phase_map",
+            mask_sigma: None,
+            adaptive_peaks: None,
+            checkpoints: Vec::new(),
+        });
+        audit.phase_model_trials.push(0);
+        search_phase_map(
+            cell,
+            group,
+            options,
+            search,
+            shape,
+            minimum,
+            &elements,
+            0,
+            &map.density,
+            deadline,
+            deadline,
+            &mut winners,
+            &mut result,
+            &mut audit,
+            recycle_tangent,
+            phase_context.as_ref(),
+        )?;
+    }
+    for trial in 0..if shared_map.is_some() {
+        0
+    } else {
+        options.trials
+    } {
         if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
             result.termination = crate::solver::stop_reason(options);
             break;
@@ -2803,6 +2922,13 @@ fn solve_elements_inner(
         result.target_met = audit.required_elements_present
             && best.recycling_validated
             && best.candidate.r1 <= options.r1_target;
+    }
+    if shared_map.is_some() {
+        result.termination = if result.target_met {
+            "r1_target"
+        } else {
+            "shared_map_exhausted"
+        };
     }
     result.candidates = winners
         .into_iter()
