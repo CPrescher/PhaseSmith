@@ -1030,7 +1030,19 @@ fn run_diagnostic(path: &Path, options: &sc::Options, save: &mut Save) -> Result
             sigma: v[1],
         })
         .collect();
-    let (result, audit) = sc::search_observations(&observations, options)?;
+    let (result, audit) = if options.discovery.is_some() {
+        let (found, report) = sc::search_unknown_observations(&observations, options)?;
+        sc::Observer::symmetry(
+            save,
+            "space-group-evidence",
+            &report.assessment,
+            &report.hypotheses,
+        )?;
+        sc::Observer::group_search(save, &report)?;
+        found.ok_or("unknown-symmetry diagnostic found no model")?
+    } else {
+        sc::search_observations(&observations, options)?
+    };
     sc::Observer::solution(save, &result, &audit)?;
     println!(
         "{}",

@@ -62,6 +62,29 @@ pub struct PhaseOriginMap {
     pub pairs: usize,
 }
 
+/// Immutable Fourier coefficients of one real density, reusable across settings/hands.
+/// The transform and coefficient normalization exactly match `PreparedPhaseOrigin::map`.
+#[derive(Clone, Debug)]
+pub struct PhaseOriginDensity {
+    values: Vec<Complex<f64>>,
+    shape: [usize; 3],
+}
+impl PhaseOriginDensity {
+    /// Transform a finite density once. No observations or symmetry are imposed.
+    /// # Errors
+    /// Invalid grid, nonfinite or excessive density, or mismatched array length.
+    pub fn new(density: &[f64], shape: [usize; 3]) -> Result<Self, SolutionError> {
+        if density.len() != grid_len(shape)?
+            || density.iter().any(|v| !v.is_finite() || v.abs() > 1e100)
+        {
+            return Err(error("invalid cached phase-origin density/grid"));
+        }
+        let mut values: Vec<_> = density.iter().map(|&v| Complex::new(v, 0.)).collect();
+        Transform::new(shape).apply(&mut values, true);
+        Ok(Self { values, shape })
+    }
+}
+
 impl PreparedPhaseOrigin {
     /// Prepare unique-family F-squared weights and equivalent-reflection pairs.
     /// # Errors
@@ -175,21 +198,28 @@ impl PreparedPhaseOrigin {
         shape: [usize; 3],
         hand: i32,
     ) -> Result<PhaseOriginMap, SolutionError> {
-        if density.len() != grid_len(shape)?
-            || !matches!(hand, -1 | 1)
-            || density.iter().any(|v| !v.is_finite() || v.abs() > 1e100)
+        self.map_cached(&PhaseOriginDensity::new(density, shape)?, hand)
+    }
+    /// Extract phase relations from one checked immutable Fourier density.
+    /// # Errors
+    /// Invalid hand or measured HKLs outside strict Nyquist support.
+    pub fn map_cached(
+        &self,
+        density: &PhaseOriginDensity,
+        hand: i32,
+    ) -> Result<PhaseOriginMap, SolutionError> {
+        let shape = density.shape;
+        if !matches!(hand, -1 | 1)
             || self.hkl.iter().any(|h| {
                 (0..3).any(|a| 2 * i64::from(h[a]).abs() >= i64::try_from(shape[a]).unwrap_or(0))
             })
         {
-            return Err(error("invalid phase-origin density/hand/support"));
+            return Err(error("invalid phase-origin hand/support"));
         }
-        let mut values: Vec<_> = density.iter().map(|&v| Complex::new(v, 0.)).collect();
-        Transform::new(shape).apply(&mut values, true);
         let phases: Vec<_> = self
             .hkl
             .iter()
-            .map(|h| values[grid_index(h.map(|v| v * hand), shape)])
+            .map(|h| density.values[grid_index(h.map(|v| v * hand), shape)])
             .collect();
         let threshold = phases.iter().map(|v| v.norm()).fold(0., f64::max) * 1e-12;
         let mut terms = Vec::new();
@@ -263,6 +293,54 @@ impl PreparedPhaseOrigin {
         cancellation: Option<&Cancellation>,
         independent: bool,
     ) -> Result<Vec<PhaseOriginCandidate>, SolutionError> {
+        self.search_impl(
+            density,
+            shape,
+            maximum,
+            deadline,
+            cancellation,
+            independent,
+            None,
+        )
+    }
+    /// Same origin search using a Fourier density cached across settings and hands.
+    /// No phase relation, seed, derivative or hypothesis ordering changes.
+    /// # Errors
+    /// Invalid search budget, coefficient support or phase relations.
+    #[allow(clippy::too_many_arguments)]
+    pub fn search_cached(
+        &self,
+        density: &PhaseOriginDensity,
+        maximum: usize,
+        deadline: Option<Instant>,
+        cancellation: Option<&Cancellation>,
+        independent: bool,
+    ) -> Result<Vec<PhaseOriginCandidate>, SolutionError> {
+        self.search_impl(
+            &[],
+            density.shape,
+            maximum,
+            deadline,
+            cancellation,
+            independent,
+            Some(density),
+        )
+    }
+    #[allow(
+        clippy::too_many_arguments,
+        clippy::too_many_lines,
+        clippy::cast_precision_loss
+    )]
+    fn search_impl(
+        &self,
+        density: &[f64],
+        shape: [usize; 3],
+        maximum: usize,
+        deadline: Option<Instant>,
+        cancellation: Option<&Cancellation>,
+        independent: bool,
+        cached: Option<&PhaseOriginDensity>,
+    ) -> Result<Vec<PhaseOriginCandidate>, SolutionError> {
         if !(1..=8).contains(&maximum) {
             return Err(error("phase-origin hypothesis bound must be 1..8"));
         }
@@ -292,7 +370,11 @@ impl PreparedPhaseOrigin {
             if crate::stopped(deadline, cancellation) {
                 break;
             }
-            let map = self.map(density, shape, hand)?;
+            let map = if let Some(cached) = cached {
+                self.map_cached(cached, hand)?
+            } else {
+                self.map(density, shape, hand)?
+            };
             let mut harmonics = vec![Complex::default(); grid_len(coarse)?];
             for (q, z) in &map.terms {
                 harmonics[grid_index(*q, coarse)] += z;
@@ -479,5 +561,103 @@ impl PhaseOriginMap {
             }
         }
         Ok(out)
+    }
+}
+
+#[cfg(test)]
+mod cache_tests {
+    use super::*;
+    use phasesmith_crystallography::{Rational, SymmetryOperation};
+    #[test]
+    fn cached_fourier_preserves_both_hands_origins_and_fused_derivatives_bitwise() {
+        let shape = [16; 3];
+        let density: Vec<_> = (0..4096)
+            .map(|i| {
+                let node = [i / 256, i / 16 % 16, i % 16];
+                [[0.13, 0.27, 0.41], [0.71, 0.39, 0.11], [0.37, 0.63, 0.83]]
+                    .iter()
+                    .map(|p| {
+                        let d2: f64 = (0..3)
+                            .map(|a| {
+                                let d =
+                                    (f64::from(node[a]) / 16. - p[a] + 0.5).rem_euclid(1.) - 0.5;
+                                d * d
+                            })
+                            .sum();
+                        (-d2 / 0.004).exp()
+                    })
+                    .sum::<f64>()
+            })
+            .collect();
+        let cached = PhaseOriginDensity::new(&density, shape).unwrap();
+        for rotation in [
+            [[-1, 0, 0], [0, -1, 0], [0, 0, -1]],
+            [[-1, 0, 0], [0, 1, 0], [0, 0, 1]],
+        ] {
+            let group = SpaceGroup::new(vec![
+                SymmetryOperation::identity(),
+                SymmetryOperation::new(rotation, [Rational::zero(); 3]).unwrap(),
+            ])
+            .unwrap();
+            let mut hkl = Vec::new();
+            let mut observed = Vec::new();
+            for h in -2i32..=2 {
+                for k in -2i32..=2 {
+                    for l in -2i32..=2 {
+                        if [h, k, l] != [0; 3] {
+                            hkl.push([h, k, l]);
+                            observed.push(f64::from(1 + h * h + 2 * k * k + 3 * l * l).sqrt());
+                        }
+                    }
+                }
+            }
+            let plan = PreparedPhaseOrigin::new(&group, &hkl, &observed).unwrap();
+            for hand in [1, -1] {
+                let a = plan
+                    .map(&density, shape, hand)
+                    .unwrap()
+                    .evaluate([0.17, 0.29, 0.43])
+                    .unwrap();
+                let b = plan
+                    .map_cached(&cached, hand)
+                    .unwrap()
+                    .evaluate([0.17, 0.29, 0.43])
+                    .unwrap();
+                assert_eq!(a.alpha.to_bits(), b.alpha.to_bits());
+                assert_eq!(a.chord.to_bits(), b.chord.to_bits());
+                assert_eq!(a.gradient.map(f64::to_bits), b.gradient.map(f64::to_bits));
+                assert_eq!(
+                    a.hessian.map(|v| v.map(f64::to_bits)),
+                    b.hessian.map(|v| v.map(f64::to_bits))
+                );
+                assert_eq!(
+                    a.alpha_gradient.map(f64::to_bits),
+                    b.alpha_gradient.map(f64::to_bits)
+                );
+            }
+            let a = plan
+                .search_sampled(&density, shape, 4, None, None, true)
+                .unwrap();
+            let b = plan.search_cached(&cached, 4, None, None, true).unwrap();
+            assert_eq!(a.len(), b.len());
+            for (a, b) in a.iter().zip(b) {
+                assert_eq!(a.hand, b.hand);
+                assert_eq!(a.shift.map(f64::to_bits), b.shift.map(f64::to_bits));
+                assert_eq!(a.alpha.to_bits(), b.alpha.to_bits());
+                assert_eq!(a.chord.to_bits(), b.chord.to_bits());
+            }
+            assert!(plan.map_cached(&cached, 0).is_err());
+            assert!(PhaseOriginDensity::new(&[0.; 64], [4; 3]).is_err());
+            let edge =
+                PreparedPhaseOrigin::new(&group, &[[-4, 0, 0], [4, 0, 0]], &[1., 1.]).unwrap();
+            assert!(
+                edge.map_cached(&PhaseOriginDensity::new(&[0.; 512], [8; 3]).unwrap(), 1)
+                    .is_err()
+            );
+        }
+        assert!(PhaseOriginDensity::new(&density[..4095], shape).is_err());
+        let mut bad = density;
+        bad[0] = f64::NAN;
+        assert!(PhaseOriginDensity::new(&bad, shape).is_err());
     }
 }

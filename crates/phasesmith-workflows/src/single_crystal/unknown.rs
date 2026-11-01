@@ -380,6 +380,7 @@ fn screen_phases(
         Err(e) => (None, Some(e.to_string())),
     };
     if let Some(map) = &phase_map {
+        let coefficients = phasesmith_solution::PhaseOriginDensity::new(&map.density, map.shape)?;
         for &index in assessment
             .ranking
             .iter()
@@ -404,9 +405,8 @@ fn screen_phases(
                     &data.hkl,
                     &data.amplitudes,
                 )?;
-                Ok(plan.search_sampled(
-                    &map.density,
-                    map.shape,
+                Ok(plan.search_cached(
+                    &coefficients,
                     policy.phase.maximum_origins,
                     Some(
                         (Instant::now() + Duration::from_secs_f64(policy.phase.origin_seconds))
