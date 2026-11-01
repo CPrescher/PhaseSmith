@@ -67,3 +67,20 @@ their independent reference/finite-difference coverage.
 
 Large arrays, source files, binaries and trials stay outside Git under
 `/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101`.
+
+## v37: exact absence assessment execution
+
+The v36 replay exposes about 1.4 s between the complete search stage and its
+0.65 s model-search coordinator. Test a fourth stage with identical scientific
+controls and bitwise gates. For a validated closed space group, operations fixing
+h form its stabilizer; `exp(2 pi i h.t)` is a one-dimensional character of that
+finite group. Its sum vanishes exactly iff at least one stabilizer operation has
+`h.t` nonintegral. Cosets have the same cancellation, proving the general-position
+absence criterion. Prepare integer translation numerators over 24 for conventional
+operations with denominators dividing 24 and bounded rotations. Use the existing
+exact cyclotomic implementation as fallback for every other operation set.
+Cross-check all 230 standard groups and alternative settings against that original
+implementation and the independent Python complex-sum reference. This changes no
+reflection decision, measurement, likelihood or accumulation order. Compute the
+common shell contribution once per measured family rather than once per setting;
+retain the existing deferred overflow rejection when an absent family uses it.
