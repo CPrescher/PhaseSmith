@@ -18,7 +18,10 @@ Three protocols are frozen before their new replays:
    candidate satisfying the existing own-group R1 target, an accepted common-set
    symmetry model, and no supplied element heavier than Sc. Report this heuristic
    termination and all unsearched groups; never infer uniqueness. Disable it for
-   continued bounded alternative searches. This follows Sheldrick (2015), section
+   continued bounded alternative searches. Interleave phase tests and model
+   attempts in measured-evidence order, first checking the inversion-only phase
+   diagnostic, so an accepted early model also avoids later origin tests.
+   This follows Sheldrick (2015), section
    5, independently implemented using existing tested kernels.
 3. **v36:** phase only genuine measured reflections with d >= 0.8 A (inclusive),
    retaining the original measurements for identity and all final assessment.

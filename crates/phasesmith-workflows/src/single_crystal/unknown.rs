@@ -27,6 +27,9 @@ pub struct PhaseScreenOptions {
 /// Explicit catalogue and bounded discovery controls; exact symmetry is withheld.
 #[derive(Clone, Debug)]
 pub struct DiscoveryOptions {
+    /// Published light-element heuristic: stop after an accepted plausible centric model.
+    /// Unsearched alternatives remain explicit and uniqueness is never inferred.
+    pub plausible_centrosymmetric_exit: bool,
     /// Feed the shared P1 map directly into model assignment, with bounded fallback.
     pub reuse_phase_map: bool,
     /// Published phase-equivalence screening before full model searches.
@@ -141,7 +144,7 @@ pub struct DiscoveryReport {
     pub selected: Option<usize>,
     /// Successful alternatives within the caller's BIC-like difference.
     pub alternatives: Vec<usize>,
-    /// `candidate_budget`, `max_runtime`, `cancelled`, or `catalogue_completed`.
+    /// `plausible_centrosymmetric`, `candidate_budget`, `max_runtime`, `cancelled`, or `catalogue_completed`.
     pub termination: &'static str,
     /// Complete wall time including failed work.
     pub seconds: f64,
@@ -263,7 +266,18 @@ pub(super) fn search(
         "not_attempted" | "budget_exhausted" => 2,
         _ => 3,
     };
-    ranking.sort_by_key(|&i| priority(attempts[i].phase_status)); // stable within the measured prescreen order
+    if !policy.plausible_centrosymmetric_exit {
+        ranking.sort_by_key(|&i| priority(attempts[i].phase_status)); // stable within measured evidence order
+    }
+    let coefficients = if policy.plausible_centrosymmetric_exit {
+        phase_map
+            .as_ref()
+            .map(|m| phasesmith_solution::PhaseOriginDensity::new(&m.density, m.shape))
+            .transpose()?
+    } else {
+        None
+    };
+    let phase_deadline = (started + Duration::from_secs_f64(policy.phase.seconds)).min(deadline);
     let mut best: Option<(Solution, SharedSearchSummary)> = None;
     let mut best_score = f64::INFINITY;
     let mut selected = None;
@@ -284,6 +298,28 @@ pub(super) fn search(
         }
         if attempts[index].status == "laue_contradicted" {
             continue;
+        }
+        if let Some(coefficients) = &coefficients {
+            if attempts[index].phase_status == "not_attempted"
+                && attempts
+                    .iter()
+                    .filter(|a| a.phase_status != "not_attempted")
+                    .count()
+                    < policy.phase.maximum_settings
+                && Instant::now() < phase_deadline
+            {
+                screen_setting(
+                    observations,
+                    original,
+                    &mut attempts[index],
+                    &policy.hypotheses[index],
+                    coefficients,
+                    phase_deadline,
+                );
+            }
+            if matches!(attempts[index].phase_status, "inconsistent" | "error") {
+                continue;
+            }
         }
         count += 1;
         let clock = Instant::now();
@@ -320,6 +356,20 @@ pub(super) fn search(
             selected = Some(index);
             best = Some(result);
         }
+        if policy.plausible_centrosymmetric_exit
+            && selected == Some(index)
+            && best.as_ref().is_some_and(|(s, _)| s.target_met)
+            && plausible_centric(
+                &original.priors.elements,
+                &policy.hypotheses,
+                &attempts,
+                index,
+                policy.phase.maximum_alpha,
+            )
+        {
+            termination = "plausible_centrosymmetric";
+            break;
+        }
     }
     let alternatives = ranked_alternatives(&attempts, best_score, policy.ambiguity_delta);
     Ok((
@@ -336,6 +386,42 @@ pub(super) fn search(
             seconds: started.elapsed().as_secs_f64(),
         },
     ))
+}
+
+fn is_centric(group: &phasesmith_crystallography::SpaceGroup) -> bool {
+    group
+        .operations()
+        .iter()
+        .any(|op| op.rotation() == [[-1, 0, 0], [0, -1, 0], [0, 0, -1]])
+}
+fn plausible_centric(
+    elements: &[String],
+    hypotheses: &[Hypothesis],
+    attempts: &[GroupAttempt],
+    index: usize,
+    maximum_alpha: f64,
+) -> bool {
+    let alpha = maximum_alpha.min(0.3);
+    if elements.is_empty()
+        || elements.iter().any(|e| {
+            phasesmith_crystallography::xray_species_metadata(e)
+                .is_none_or(|m| m.atomic_number > 21)
+        })
+        || !is_centric(&hypotheses[index].group)
+        || attempts[index].status != "candidate"
+        || !attempts[index].origins.iter().any(|o| o.alpha < alpha)
+    {
+        return false;
+    }
+    hypotheses.iter().zip(attempts).any(|(h, a)| {
+        h.group.operations().len() == 2
+            && is_centric(&h.group)
+            && h.group
+                .operations()
+                .iter()
+                .all(|op| op.translation().iter().all(|v| v.numerator() == 0))
+            && a.origins.iter().any(|o| o.alpha < alpha)
+    })
 }
 
 fn screen_phases(
@@ -391,56 +477,77 @@ fn screen_phases(
             if original.cancellation.is_cancelled() || Instant::now() >= phase_deadline {
                 break;
             }
-            let clock = Instant::now();
-            let h = &policy.hypotheses[index];
-            let a = &mut attempts[index];
-            let result = (|| -> Result<Vec<phasesmith_solution::PhaseOriginCandidate>> {
-                let data = phasesmith_solution::prepare_data(
-                    observations,
-                    original.priors.cell,
-                    &h.group,
-                )?;
-                let plan = phasesmith_solution::PreparedPhaseOrigin::new(
-                    &h.group,
-                    &data.hkl,
-                    &data.amplitudes,
-                )?;
-                Ok(plan.search_cached(
-                    &coefficients,
-                    policy.phase.maximum_origins,
-                    Some(
-                        (Instant::now() + Duration::from_secs_f64(policy.phase.origin_seconds))
-                            .min(phase_deadline),
-                    ),
-                    Some(&original.cancellation),
-                    true,
-                )?)
-            })();
-            match result {
-                Ok(origins) => {
-                    a.phase_status = if h.group.rotations().len() == 1 {
-                        "uninformative"
-                    } else if origins.is_empty() {
-                        "budget_exhausted"
-                    } else if origins
-                        .iter()
-                        .any(|o| o.alpha <= policy.phase.maximum_alpha)
-                    {
-                        "consistent"
-                    } else {
-                        "inconsistent"
-                    };
-                    a.origins = origins;
-                }
-                Err(e) => {
-                    a.phase_status = "error";
-                    a.diagnostic = Some(e.to_string());
-                }
+            if policy.plausible_centrosymmetric_exit
+                && !inversion_only(&policy.hypotheses[index].group)
+            {
+                continue;
             }
-            a.phase_seconds = clock.elapsed().as_secs_f64();
+            screen_setting(
+                observations,
+                original,
+                &mut attempts[index],
+                &policy.hypotheses[index],
+                &coefficients,
+                phase_deadline,
+            );
         }
     }
     Ok((phase_map, phase_diagnostic))
+}
+
+fn inversion_only(group: &phasesmith_crystallography::SpaceGroup) -> bool {
+    group.operations().len() == 2
+        && is_centric(group)
+        && group
+            .operations()
+            .iter()
+            .all(|op| op.translation().iter().all(|v| v.numerator() == 0))
+}
+fn screen_setting(
+    observations: &[Observation],
+    original: &Options,
+    a: &mut GroupAttempt,
+    h: &Hypothesis,
+    coefficients: &phasesmith_solution::PhaseOriginDensity,
+    deadline: Instant,
+) {
+    let clock = Instant::now();
+    let policy = &original
+        .discovery
+        .as_ref()
+        .expect("checked discovery")
+        .phase;
+    let result = (|| -> Result<Vec<phasesmith_solution::PhaseOriginCandidate>> {
+        let data = phasesmith_solution::prepare_data(observations, original.priors.cell, &h.group)?;
+        let plan =
+            phasesmith_solution::PreparedPhaseOrigin::new(&h.group, &data.hkl, &data.amplitudes)?;
+        Ok(plan.search_cached(
+            coefficients,
+            policy.maximum_origins,
+            Some((Instant::now() + Duration::from_secs_f64(policy.origin_seconds)).min(deadline)),
+            Some(&original.cancellation),
+            true,
+        )?)
+    })();
+    match result {
+        Ok(origins) => {
+            a.phase_status = if h.group.rotations().len() == 1 {
+                "uninformative"
+            } else if origins.is_empty() {
+                "budget_exhausted"
+            } else if origins.iter().any(|o| o.alpha <= policy.maximum_alpha) {
+                "consistent"
+            } else {
+                "inconsistent"
+            };
+            a.origins = origins;
+        }
+        Err(e) => {
+            a.phase_status = "error";
+            a.diagnostic = Some(e.to_string());
+        }
+    }
+    a.phase_seconds = clock.elapsed().as_secs_f64();
 }
 
 fn attempt_model(
@@ -605,4 +712,68 @@ fn ranked_alternatives(attempts: &[GroupAttempt], best_score: f64, delta: f64) -
             .then(a.cmp(&b))
     });
     alternatives
+}
+
+#[cfg(test)]
+mod fast_exit_tests {
+    use super::*;
+    fn h(number: i32) -> Hypothesis {
+        let h = phasesmith_io::space_group_by_number(number).unwrap();
+        Hypothesis {
+            number,
+            symbol: h.hm_symbol,
+            hall: h.hall_symbol,
+            group: h.space_group,
+        }
+    }
+    fn a(index: usize) -> GroupAttempt {
+        GroupAttempt {
+            runs: Vec::new(),
+            phase_status: "consistent",
+            origins: vec![phasesmith_solution::PhaseOriginCandidate {
+                hand: 1,
+                shift: [0.; 3],
+                alpha: 0.1,
+                chord: 0.1,
+            }],
+            phase_seconds: 0.,
+            hypothesis: index,
+            status: "candidate",
+            seconds: 0.,
+            diagnostic: None,
+            common_r1: Some(0.05),
+            common_objective: Some(0.002),
+            parameters: Some(4),
+            bic: Some(-100.),
+            candidate: None,
+        }
+    }
+    #[test]
+    fn centric_shortcut_rejects_heavy_elements_acentric_models_and_bad_or_missing_phases() {
+        let hs = vec![h(2), h(61), h(19)];
+        let mut attempts = vec![a(0), a(1), a(2)];
+        let light = vec!["Mg".into(), "Si".into(), "O".into()];
+        assert!(plausible_centric(&light, &hs, &attempts, 1, 0.3));
+        assert!(!plausible_centric(&["Fe".into()], &hs, &attempts, 1, 0.3));
+        assert!(!plausible_centric(&[], &hs, &attempts, 1, 0.3));
+        assert!(!plausible_centric(
+            &["unknown".into()],
+            &hs,
+            &attempts,
+            1,
+            0.3
+        ));
+        assert!(!plausible_centric(&light, &hs, &attempts, 2, 0.3));
+        attempts[0].origins.clear();
+        assert!(!plausible_centric(&light, &hs, &attempts, 1, 0.3));
+        attempts[0] = a(0);
+        attempts[0].origins[0].alpha = 0.3;
+        assert!(!plausible_centric(&light, &hs, &attempts, 1, 0.3));
+        attempts[0] = a(0);
+        attempts[1].origins[0].alpha = 0.3;
+        assert!(!plausible_centric(&light, &hs, &attempts, 1, 0.3));
+        attempts[1] = a(1);
+        attempts[1].status = "error";
+        assert!(!plausible_centric(&light, &hs, &attempts, 1, 0.3));
+    }
 }
