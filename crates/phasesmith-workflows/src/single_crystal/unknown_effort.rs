@@ -1,6 +1,6 @@
 //! Explicit bounded fast-first effort; escalation depends only on saved numerical candidates.
 use super::{Assessment, DiscoveryReport, Error, Observation, Options, Result, SearchRun};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 /// Requested search effort; automatic effort shares one total deadline.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SearchEffort {
@@ -185,10 +185,17 @@ fn execute(
     original: &Options,
     processing: &Options,
     assessment: Assessment,
+    deadline: Instant,
 ) -> Result<SearchRun> {
     let mut processing = processing.clone();
     processing.discovery.clone_from(&original.discovery);
-    super::search_pass(observations, original, &processing, assessment)
+    super::search_pass(
+        observations,
+        original,
+        &processing,
+        assessment,
+        Some(deadline),
+    )
 }
 fn score(run: &SearchRun) -> f64 {
     run.1
@@ -240,6 +247,7 @@ pub(super) fn search(
             &pass_options(original, controls, false, total),
             processing,
             assessment,
+            started + Duration::from_secs_f64(total),
         )?;
         let pass = summary(&deep, SearchEffort::Thorough, controls.maximum_common_r1);
         return Ok(finish(
@@ -257,6 +265,7 @@ pub(super) fn search(
         &pass_options(original, controls, true, total),
         processing,
         assessment.clone(),
+        started + Duration::from_secs_f64(total.min(controls.fast.total_seconds)),
     )?;
     let fast_summary = summary(&fast, SearchEffort::Fast, controls.maximum_common_r1);
     let remaining = total - started.elapsed().as_secs_f64();
@@ -281,6 +290,7 @@ pub(super) fn search(
         &pass_options(original, controls, false, remaining),
         processing,
         assessment,
+        started + Duration::from_secs_f64(total),
     ) {
         Ok(deep) => deep,
         Err(error) => {
