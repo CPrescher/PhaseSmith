@@ -27,6 +27,15 @@ orchestration remains an independent regression path. See
 budgets and measured numerical differences; strict final-search parity is not
 implied by successful labelled recovery.
 
+Unknown symmetry is the next native workflow mode. It must not use an exact
+space group to filter predictions or define scaling families before discovery.
+Retain all measured signed reflections; masks/unmeasured crossings never supply
+absence evidence. Assess intensity symmetry before empirical scaling, enumerate
+metric-compatible conventional Hall settings, and report ranked alternatives,
+origin/model evidence and bounded-search omissions. Exact-symmetry input remains
+an explicit supported mode. Automatic discovery is not proof of uniqueness or a
+complete SHELXT implementation. Freeze data-run controls before frame reads.
+
 ## Ownership and dependency direction
 
 | Layer | Owner |
