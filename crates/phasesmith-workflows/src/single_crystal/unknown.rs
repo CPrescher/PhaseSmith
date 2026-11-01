@@ -36,7 +36,7 @@ pub struct PhaseScreenOptions {
 pub struct DiscoveryOptions {
     /// Optional supplied Laue/centring prior in the original index basis; no exact group.
     pub symmetry_prior: Option<super::SymmetryPrior>,
-    /// Optional explicit fast/auto/thorough policy; absent preserves frozen legacy execution.
+    /// Optional explicit fast/auto/thorough policy; absent retains single-pass effort scheduling.
     pub effort: Option<EffortOptions>,
     /// Allow independent phasing after unsuccessful shared-map assignment.
     pub allow_independent_restarts: bool,
@@ -106,6 +106,18 @@ impl DiscoveryOptions {
         Ok(())
     }
 }
+/// Proposed source-frame recovery and its independent verification outcome.
+#[derive(Clone, Debug, Default)]
+pub struct CommonFrameAudit {
+    /// Candidate carried an explicit refinement hand/origin.
+    pub stored_frame_available: bool,
+    /// The explicit frame passed the original full symmetry validation.
+    pub stored_frame_used: bool,
+    /// Failure of the explicit proposal, retained even if blind recovery succeeds.
+    pub stored_frame_diagnostic: Option<String>,
+    /// Original arbitrary-origin recovery was attempted as fallback.
+    pub blind_recovery_attempted: bool,
+}
 /// Actual model-search work from either a reused phase map or an independent restart.
 #[derive(Clone, Debug)]
 pub struct GroupRun {
@@ -121,6 +133,20 @@ pub struct GroupRun {
     pub phasing_starts: usize,
     /// Whether this run met its own group-filtered numerical R1 target.
     pub target_met: bool,
+    /// Additional bounded tensor/element recovery work, including failed attempts.
+    pub polishing_seconds: f64,
+    /// Number of final tensor promotions attempted.
+    pub polishing_attempts: usize,
+    /// Number of promotions retained by the penalized internal score.
+    pub polishing_adopted: usize,
+    /// Tensor proposal diagnostics, including unsuccessful promotions.
+    pub polishing_trials: Vec<phasesmith_solution::CandidatePolishingTrial>,
+    /// Numerical rejection from polishing, if any.
+    pub polishing_diagnostic: Option<String>,
+    /// Source-frame validation details on common data.
+    pub frame: Option<CommonFrameAudit>,
+    /// Retain the actual first candidate when common-set assessment rejects it.
+    pub rejected_candidate: Option<Candidate>,
 }
 /// Every catalogue setting retains its actual search status; budgets never imply rejection.
 #[derive(Clone, Debug)]
@@ -173,7 +199,8 @@ pub struct DiscoveryReport {
     pub attempts: Vec<GroupAttempt>,
     /// Index of the best common-set model, if one was found.
     pub selected: Option<usize>,
-    /// Successful alternatives within the caller's BIC-like difference.
+    /// Successful alternatives no worse than the selected score plus the caller's
+    /// BIC-like allowance, including lower-scoring models with unresolved phase evidence.
     pub alternatives: Vec<usize>,
     /// `plausible_centrosymmetric`, `candidate_budget`, `max_runtime`, `cancelled`, or `catalogue_completed`.
     pub termination: &'static str,
@@ -219,48 +246,59 @@ pub(super) fn aperture_assessment(
     super::symmetry_prior::apply(&mut assessment, policy)?;
     Ok(assessment)
 }
+#[allow(clippy::too_many_arguments)] // Common observations, resources and independent frame audit.
 fn common_score(
     candidate: &Candidate,
     group: &phasesmith_crystallography::SpaceGroup,
     cell: UnitCell,
     data: &phasesmith_solution::PreparedData,
     memory: usize,
+    frame: &mut CommonFrameAudit,
+    deadline: Instant,
+    cancellation: &phasesmith_solution::Cancellation,
 ) -> Result<(f64, f64, usize, f64, Vec<f64>)> {
-    use phasesmith_solution::{
-        AdpMode, DenseMemoryBudget, PreparedSymmetricModel, recover_symmetry,
+    use phasesmith_solution::{AdpMode, DenseMemoryBudget, PreparedSymmetricModel};
+    let model = common_model(candidate, group, cell, frame, deadline, cancellation)?;
+    let anisotropic = candidate
+        .refinement
+        .as_ref()
+        .is_some_and(|r| r.mode == "anisotropic");
+    let mode = if anisotropic {
+        AdpMode::Anisotropic
+    } else {
+        AdpMode::Isotropic
     };
-    let model = recover_symmetry(
-        cell,
-        group,
-        &candidate.species,
-        &candidate.fractional_xyz,
-        0.15,
-        None,
-        None,
-    )?;
-    let site_u: Vec<_> = model
-        .sites
-        .iter()
-        .map(|site| {
-            candidate.refinement.as_ref().map_or(candidate.u_iso, |r| {
-                site.images
-                    .iter()
-                    .map(|image| r.full_u_equiv[image.source_index])
-                    .sum::<f64>()
-                    / site.images.len() as f64
-            })
-        })
-        .collect();
     let p = PreparedSymmetricModel::new_with_memory_budget(
         model,
         &data.hkl,
         &data.amplitudes,
-        AdpMode::Isotropic,
+        mode,
         true,
         false,
         DenseMemoryBudget::new(memory)?,
     )?;
-    let evaluated = p.evaluate(&p.initial_site_parameters(&site_u)?)?;
+    let initial = if anisotropic {
+        let summary = candidate.refinement.as_ref().expect("anisotropic summary");
+        let tensors = common_site_tensors(&p.symmetry, &summary.full_u_cartesian)?;
+        p.initial_tensor_parameters(&tensors)?
+    } else {
+        let site_u: Vec<_> = p
+            .symmetry
+            .sites
+            .iter()
+            .map(|site| {
+                candidate.refinement.as_ref().map_or(candidate.u_iso, |r| {
+                    site.images
+                        .iter()
+                        .map(|image| r.full_u_equiv[image.source_index])
+                        .sum::<f64>()
+                        / site.images.len() as f64
+                })
+            })
+            .collect();
+        p.initial_site_parameters(&site_u)?
+    };
+    let evaluated = p.evaluate(&initial)?;
     let parameters = p.parameter_count + 1;
     let n = data.family_count as f64;
     let bic = n * evaluated.objective.max(1e-300).ln() + parameters as f64 * n.ln();
@@ -271,6 +309,74 @@ fn common_score(
         bic,
         evaluated.residual,
     ))
+}
+fn common_model(
+    candidate: &Candidate,
+    group: &phasesmith_crystallography::SpaceGroup,
+    cell: UnitCell,
+    audit: &mut CommonFrameAudit,
+    deadline: Instant,
+    cancellation: &phasesmith_solution::Cancellation,
+) -> Result<phasesmith_solution::SymmetryModel> {
+    if let Some(r) = &candidate.refinement {
+        audit.stored_frame_available = true;
+        match phasesmith_solution::recover_symmetry_in_frame(
+            cell,
+            group,
+            &candidate.species,
+            &candidate.fractional_xyz,
+            0.15,
+            (r.hand, r.origin_shift),
+            Some(deadline),
+            Some(cancellation),
+        ) {
+            Ok(model) => {
+                audit.stored_frame_used = true;
+                return Ok(model);
+            }
+            Err(error) => audit.stored_frame_diagnostic = Some(error.to_string()),
+        }
+    }
+    audit.blind_recovery_attempted = true;
+    Ok(phasesmith_solution::recover_symmetry(
+        cell,
+        group,
+        &candidate.species,
+        &candidate.fractional_xyz,
+        0.15,
+        Some(deadline),
+        Some(cancellation),
+    )?)
+}
+// Full tensors share the input Cartesian basis: origin shifts and inversion do
+// not rotate U. Pull each image tensor back with Q^T U Q and average its orbit.
+#[allow(clippy::cast_precision_loss)] // Physical orbit multiplicity <=192.
+fn common_site_tensors(
+    model: &phasesmith_solution::SymmetryModel,
+    full: &[super::M3],
+) -> Result<Vec<super::M3>> {
+    if full.len() != model.full_count || full.iter().flatten().flatten().any(|v| !v.is_finite()) {
+        return Err(Error("common tensor topology/nonfiniteness differs".into()));
+    }
+    Ok(model
+        .sites
+        .iter()
+        .map(|site| {
+            let mut tensor = [[0.; 3]; 3];
+            for image in &site.images {
+                let q = image.cartesian_rotation;
+                let transpose = std::array::from_fn(|i| std::array::from_fn(|j| q[j][i]));
+                let pulled =
+                    super::math::mul(super::math::mul(transpose, full[image.source_index]), q);
+                for i in 0..3 {
+                    for j in 0..3 {
+                        tensor[i][j] += pulled[i][j] / site.images.len() as f64;
+                    }
+                }
+            }
+            tensor
+        })
+        .collect())
 }
 /// Complete bounded discovery outcome, retaining evidence even when no model is found.
 pub type SearchRun = (Option<(Solution, SharedSearchSummary)>, DiscoveryReport);
@@ -336,6 +442,7 @@ pub(super) fn search_pass(
     let phase_deadline = (started + Duration::from_secs_f64(policy.phase.seconds)).min(deadline);
     let mut best: Option<(Solution, SharedSearchSummary)> = None;
     let mut best_score = f64::INFINITY;
+    let mut best_phase_rank = usize::MAX;
     let mut selected = None;
     let mut count = 0;
     let mut termination = "catalogue_completed";
@@ -401,6 +508,7 @@ pub(super) fn search_pass(
             hypothesis,
             &attempts[index],
             clock,
+            deadline,
             if policy.reuse_phase_map {
                 phase_map.as_ref()
             } else {
@@ -408,9 +516,11 @@ pub(super) fn search_pass(
             },
         );
         attempts[index] = attempt;
+        let phase_rank = phase_selection_rank(&policy.hypotheses, &attempts, index);
         if let (Some(score), Some(result)) = (attempts[index].bic, result)
-            && score < best_score
+            && preferred_model(phase_rank, score, best_phase_rank, best_score)
         {
+            best_phase_rank = phase_rank;
             best_score = score;
             selected = Some(index);
             best = Some(result);
@@ -447,6 +557,30 @@ pub(super) fn search_pass(
             seconds: started.elapsed().as_secs_f64(),
         },
     ))
+}
+
+// Selection must not let a lower-SSE candidate that fails the existing
+// inversion-consistency gate displace an available plausible compatible model.
+// A poor compatible model has no such preference: use the existing 0.18
+// promising-model work ceiling, rather than privileging symmetry alone.
+// Every candidate remains in the report; ambiguity/acceptance checks are unchanged.
+fn phase_selection_rank(
+    hypotheses: &[Hypothesis],
+    attempts: &[GroupAttempt],
+    index: usize,
+) -> usize {
+    let unresolved = hypotheses
+        .iter()
+        .zip(attempts)
+        .any(|(h, a)| inversion_only(&h.group) && a.origins.iter().any(|o| o.alpha <= 0.3));
+    let plausible_centric = is_centric(&hypotheses[index].group)
+        && attempts[index]
+            .common_r1
+            .is_some_and(|r| r.is_finite() && (0. ..=0.18).contains(&r));
+    usize::from(unresolved && !plausible_centric)
+}
+fn preferred_model(rank: usize, score: f64, previous_rank: usize, previous_score: f64) -> bool {
+    rank < previous_rank || (rank == previous_rank && score < previous_score)
 }
 
 fn is_centric(group: &phasesmith_crystallography::SpaceGroup) -> bool {
@@ -646,6 +780,7 @@ fn screen_setting(
     a.phase_seconds = clock.elapsed().as_secs_f64();
 }
 
+#[allow(clippy::too_many_arguments)] // Candidate clock and global scoring deadline have different owners.
 fn attempt_model(
     observations: &[Observation],
     options: &Options,
@@ -653,6 +788,7 @@ fn attempt_model(
     hypothesis: &Hypothesis,
     prior: &GroupAttempt,
     clock: Instant,
+    scoring_deadline: Instant,
     map: Option<&phasesmith_solution::PhaseOnlyResult>,
 ) -> (GroupAttempt, Option<(Solution, SharedSearchSummary)>) {
     let mut a = prior.clone();
@@ -676,7 +812,7 @@ fn attempt_model(
         },
         started.elapsed().as_secs_f64(),
         hypothesis,
-        (options, common),
+        (options, common, scoring_deadline),
     );
     let remaining = end.saturating_duration_since(Instant::now()).as_secs_f64();
     if map.is_some()
@@ -699,7 +835,7 @@ fn attempt_model(
             "independent_phasing",
             started.elapsed().as_secs_f64(),
             hypothesis,
-            (options, common),
+            (options, common, scoring_deadline),
         );
     }
     a.seconds = clock.elapsed().as_secs_f64();
@@ -712,9 +848,9 @@ fn record_run(
     initialization: &'static str,
     seconds: f64,
     hypothesis: &Hypothesis,
-    context: (&Options, &phasesmith_solution::PreparedData),
+    context: (&Options, &phasesmith_solution::PreparedData, Instant),
 ) {
-    let (options, common) = context;
+    let (options, common, deadline) = context;
     let mut run = GroupRun {
         initialization,
         seconds,
@@ -722,20 +858,38 @@ fn record_run(
         candidates: 0,
         phasing_starts: 0,
         target_met: false,
+        polishing_seconds: 0.,
+        polishing_attempts: 0,
+        polishing_adopted: 0,
+        polishing_trials: Vec::new(),
+        polishing_diagnostic: None,
+        frame: None,
+        rejected_candidate: None,
     };
     match result {
         Ok((solution, audit)) => {
             run.diagnostic = solution.termination.into();
             run.candidates = solution.candidates.len();
             run.phasing_starts = audit.phasing_starts;
+            run.polishing_seconds = audit.candidate_polishing_seconds;
+            run.polishing_attempts = audit.candidate_polishing_attempts;
+            run.polishing_adopted = audit.candidate_polishing_adopted;
+            run.polishing_trials
+                .clone_from(&audit.candidate_polishing_trials);
+            run.polishing_diagnostic
+                .clone_from(&audit.candidate_polishing_diagnostic);
             run.target_met = solution.target_met;
             if let Some(candidate) = solution.candidates.first() {
+                let mut frame = CommonFrameAudit::default();
                 match common_score(
                     candidate,
                     &hypothesis.group,
                     options.priors.cell,
                     common,
                     options.dense_memory_bytes,
+                    &mut frame,
+                    deadline,
+                    &options.cancellation,
                 ) {
                     Ok((r1, objective, parameters, bic, residuals)) => {
                         if a.bic.is_none_or(|old| bic < old) {
@@ -751,6 +905,7 @@ fn record_run(
                         }
                     }
                     Err(e) => {
+                        run.rejected_candidate = Some(candidate.clone());
                         run.diagnostic = format!("common-set model rejection: {e}");
                         if a.candidate.is_none() {
                             a.status = "error";
@@ -758,6 +913,7 @@ fn record_run(
                         }
                     }
                 }
+                run.frame = Some(frame);
             } else if a.candidate.is_none() {
                 a.status = "no_model";
                 a.diagnostic = Some(solution.termination.into());
@@ -829,6 +985,77 @@ fn ranked_alternatives(attempts: &[GroupAttempt], best_score: f64, delta: f64) -
 #[cfg(test)]
 mod fast_exit_tests {
     use super::*;
+    #[test]
+    fn common_tensor_pullback_preserves_off_diagonal_signs_and_rejects_bad_topology() {
+        use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation};
+        let cell = UnitCell {
+            a_angstrom: 7.,
+            b_angstrom: 8.,
+            c_angstrom: 9.,
+            alpha_deg: 90.,
+            beta_deg: 90.,
+            gamma_deg: 90.,
+        };
+        let group = SpaceGroup::new(vec![
+            SymmetryOperation::identity(),
+            SymmetryOperation::new([[1, 0, 0], [0, -1, 0], [0, 0, -1]], [Rational::zero(); 3])
+                .unwrap(),
+        ])
+        .unwrap();
+        let model = phasesmith_solution::recover_symmetry(
+            cell,
+            &group,
+            &["O".into(), "O".into()],
+            &[[0.13, 0.24, 0.37], [0.13, 0.76, 0.63]],
+            0.01,
+            None,
+            None,
+        )
+        .unwrap();
+        let u = [
+            [0.02, 0.003, 0.004],
+            [0.003, 0.03, 0.005],
+            [0.004, 0.005, 0.04],
+        ];
+        let image = [
+            [0.02, -0.003, -0.004],
+            [-0.003, 0.03, 0.005],
+            [-0.004, 0.005, 0.04],
+        ];
+        let actual = common_site_tensors(&model, &[u, image]).unwrap();
+        assert_eq!(actual.len(), 1);
+        for i in 0..3 {
+            for j in 0..3 {
+                assert!((actual[0][i][j] - u[i][j]).abs() < 1e-14);
+            }
+        }
+        assert!(common_site_tensors(&model, &[u]).is_err());
+        let mut bad = image;
+        bad[0][0] = f64::NAN;
+        assert!(common_site_tensors(&model, &[u, bad]).is_err());
+    }
+    #[test]
+    fn lower_residual_cannot_displace_a_phase_compatible_model_with_unresolved_inversion() {
+        let hypotheses = vec![h(2), h(194), h(187)];
+        let mut attempts = vec![a(0), a(1), a(2)];
+        attempts[1].common_r1 = Some(0.12);
+        assert_eq!(phase_selection_rank(&hypotheses, &attempts, 1), 0);
+        assert_eq!(phase_selection_rank(&hypotheses, &attempts, 2), 1);
+        assert!(!preferred_model(1, -10_000., 0, -1_000.));
+        assert!(preferred_model(0, -1_000., 1, -10_000.));
+        attempts[1].common_r1 = Some(0.25);
+        assert_eq!(phase_selection_rank(&hypotheses, &attempts, 1), 1);
+        assert!(preferred_model(1, -10_000., 1, -1_000.));
+        attempts[1].common_r1 = Some(0.18);
+        assert_eq!(phase_selection_rank(&hypotheses, &attempts, 1), 0);
+        attempts[1].common_r1 = Some(f64::NAN);
+        assert_eq!(phase_selection_rank(&hypotheses, &attempts, 1), 1);
+        attempts[0].origins[0].alpha = 0.8;
+        assert_eq!(phase_selection_rank(&hypotheses, &attempts, 2), 0);
+        assert!(preferred_model(0, -10_000., 0, -1_000.));
+        attempts[0].origins.clear();
+        assert_eq!(phase_selection_rank(&hypotheses, &attempts, 2), 0);
+    }
     fn h(number: i32) -> Hypothesis {
         let h = phasesmith_io::space_group_by_number(number).unwrap();
         Hypothesis {

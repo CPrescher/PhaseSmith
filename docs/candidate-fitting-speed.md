@@ -232,9 +232,9 @@ residual vectors are retained as bounded report metadata, outside the dense
 Jacobian budget: at most two rows per source observation for each bounded model
 attempt. The deferral example saves only the compared vectors in its NPZ receipt.
 
-The versioned [policy](../validation/candidate-fitting-speed-policy-v1.json) was
+The versioned [policy](https://github.com/CPrescher/PhaseSmith/blob/main/validation/candidate-fitting-speed-policy-v1.json) was
 frozen before final collection. The compact
-[receipt](../validation/results/candidate-fitting-speed-v1-macos.json) records
+[receipt](https://github.com/CPrescher/PhaseSmith/blob/main/validation/results/candidate-fitting-speed-v1-macos.json) records
 stage timings, grading, bitwise checks, source/executable hashes and controls.
 The original matched-prior receipts remain intact. Source snapshots, benchmark
 outputs/samples, executable copies, complete predictions, barriers, wheels,
@@ -246,7 +246,7 @@ executables. No source datasets or prior receipts are removed.
 ## Remaining-case extra-effort diagnostic
 
 After the implementation was committed as `797ecfc`, a separately frozen
-[diagnostic plan](../validation/hard-case-diagnostic-policy-v1.json) tested the
+[diagnostic plan](https://github.com/CPrescher/PhaseSmith/blob/main/validation/hard-case-diagnostic-policy-v1.json) tested the
 three remaining labelled-structure failures. The same executable, numerical
 observations, cell, element list and Laue/centring priors were retained. Exact
 space group, element counts and reference coordinates were withheld. Direct
@@ -306,7 +306,7 @@ separate benchmark protocol; these reference counts were never solver inputs.
 Any implementation should replay this exposed regression set and then undergo
 fresh validation after development is frozen.
 
-The compact [diagnostic receipt](../validation/results/hard-case-diagnostic-v1-macos.json)
+The compact [diagnostic receipt](https://github.com/CPrescher/PhaseSmith/blob/main/validation/results/hard-case-diagnostic-v1-macos.json)
 retains every run, count comparison, geometric error, failed attempt and source
 identity. Full inputs, executable, predictions, barrier, runner and grader stay
 outside Git at

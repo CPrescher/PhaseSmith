@@ -3,6 +3,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
 use phasesmith_solution::{AdpMode, PreparedSymmetricModel, recover_symmetry};
 
+#[allow(clippy::too_many_lines)] // One shared realistic fixture and paired full-grid workloads.
 fn benchmark(c: &mut Criterion) {
     let cell = UnitCell {
         a_angstrom: 8.,
@@ -75,6 +76,39 @@ fn benchmark(c: &mut Criterion) {
                 .unwrap()
         });
     });
+    for (name, stored_frame) in [
+        (
+            "candidate_common_10_atoms_4168_rows_arbitrary_origin",
+            false,
+        ),
+        ("candidate_common_10_atoms_4168_rows_validated_frame", true),
+    ] {
+        c.bench_function(name, |b| {
+            b.iter(|| {
+                let model = if stored_frame {
+                    phasesmith_solution::recover_symmetry_in_frame(
+                        cell,
+                        &group,
+                        &labels,
+                        &points,
+                        0.01,
+                        (1, [0.; 3]),
+                        None,
+                        None,
+                    )
+                } else {
+                    recover_symmetry(cell, &group, &labels, &points, 0.01, None, None)
+                }
+                .unwrap();
+                let prepared =
+                    PreparedSymmetricModel::new(model, &hkl, &observed, AdpMode::Isotropic)
+                        .unwrap();
+                prepared
+                    .evaluate(&prepared.initial_parameters(0.015).unwrap())
+                    .unwrap()
+            });
+        });
+    }
 }
 criterion_group!(benches, benchmark);
 criterion_main!(benches);

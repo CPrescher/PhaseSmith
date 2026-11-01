@@ -10,6 +10,13 @@ development versions.
 
 Development release candidate; not yet published.
 
+- Add bounded native tensor/element recovery, known-centring phase maps and
+  validated candidate-origin reuse. Respect the requested target for consensus
+  stopping and use inversion evidence only to prefer plausible candidate models.
+  Preserve acceptance criteria, rejected candidates and alternative groups;
+  record staged recovery, performance and remaining failures on the same exposed
+  matched-prior corpus, with SHELXT as a reference.
+
 - Reuse initial candidate evaluations, identical reciprocal weights, fixed-site
   phases and unchanged orbit checks in native fitting. Defer redundant automatic
   phasing for numerically equivalent group descriptions while preserving the

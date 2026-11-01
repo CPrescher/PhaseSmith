@@ -107,6 +107,21 @@ should investigate joint element/ADP correction, the centred-prior/translation-f
 phasing contract mismatch, common-score origin recovery and target-aware consensus
 stopping. These diagnostics preserve the frozen 14-case results; see the
 [remaining-case evidence](docs/candidate-fitting-speed.md#remaining-case-extra-effort-diagnostic).
+The recovery revision adds an explicit native `ElementSearchPolicy` while
+preserving the legacy entry points and named profiles. Bounded final anisotropic
+polishing/reassignment retains its isotropic parent and uses actual tensor
+parameter counts on the unchanged common data. Subsequent stages repair centred
+intensity-group validation, verify saved candidate origins before blind recovery,
+and require the requested R1 target for native consensus stopping. Inversion
+evidence can prefer a compatible centric candidate only within the existing
+promising-model R1 work ceiling; both selection regressions are retained.
+The same 14 exposed cases now recover 12 labelled structures and 11 with the
+published group, versus 11/10 before, preserving every previously correct model.
+Five are accepted, all correct; nickel/lithium labels and the Hg/I group remain
+unresolved. Acceptance criteria are byte-identical. Fast median time falls
+1.083 to 0.944 s, but auto total stays essentially flat (117.019 to 116.802 s).
+SHELXT is a reference for reliable recovery, not an outperformance target.
+See the [staged recovery report](docs/structure-search-recovery.md).
 
 ## Ownership and dependency direction
 

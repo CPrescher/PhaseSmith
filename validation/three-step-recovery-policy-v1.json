@@ -1,0 +1,50 @@
+{
+  "schema": "phasesmith.three-step-recovery-policy.v1",
+  "created_utc": "2026-11-01T10:34:47.161695+00:00",
+  "source_commit": "22bfa3f",
+  "scope": "Same exposed fourteen COD cases with identical numeric HKL values, cell/element and matched Laue/centring priors. Exact group, counts and coordinates withheld. No reference-based output selection.",
+  "acceptance_module_sha256": "e8fcd5c542dad771b31cfc0691a416bbd11a8fe057582abf3d595cbecef2093a",
+  "acceptance": "All original checks and thresholds unchanged; count actual anisotropic parameters for BIC and independent-family admission.",
+  "stages": [
+    "baseline",
+    "polishing",
+    "centring",
+    "final"
+  ],
+  "polishing": {
+    "trigger": "Full fallback effort only; promising isotropic parent with all required elements, validated recycling, no assignment disfavour and R1 <=0.18, including good own-target models so competing groups receive comparable displacement flexibility. Successful fast searches bypass extra work.",
+    "parents": 1,
+    "additional_seconds_ceiling": 2.0,
+    "anisotropic_iterations_ceiling": 20,
+    "replacement": "Retain original parent; compare actual parameter-penalized score and existing replacement-supported criterion after tensor-informed categorical repair.",
+    "legacy_api": "Old entry points/named Python numerical profiles keep their explicit previous policy.",
+    "review_before_first_revised_run": "Uniform full-effort tensor opportunity avoids comparing a successful isotropic group against a selectively richer competing group."
+  },
+  "centring": "Admit only symmorphic intensity groups: every operation translation belongs to the exact pure-translation lattice subgroup. Keep screw/glide translations unknown; full measured common-set scoring unchanged.",
+  "origin_and_stopping": "Validate stored candidate hand/origin using the original bijective group-matching tolerance before retrying blind recovery. Preserve rejected candidate diagnostics. Native policy consensus limit min(original 0.1 ceiling, requested target).",
+  "repeats": {
+    "baseline": {
+      "fast": 3,
+      "auto": 1,
+      "shelxt4": 1,
+      "shelxt10": 3
+    },
+    "polishing": {
+      "fast": 3,
+      "auto": 1
+    },
+    "centring": {
+      "fast": 3,
+      "auto": 1
+    },
+    "final": {
+      "fast": 3,
+      "auto": 1,
+      "shelxt4": 1,
+      "shelxt10": 3
+    }
+  },
+  "grading": "Same exact counts, common-origin/inversion, RMS <=0.025 A and max <=0.05 A; strict <=0.02 A and position-only secondary. All predictions saved before reference grading. Preserve failures.",
+  "controls": "Normal MgSiO3 with/without prior plus forced fast timeout for MgSiO3 and acentric COD 2021040. After final normal comparison, repeat the six previously frozen extra-effort diagnostic jobs unchanged.",
+  "artifact_root": "/Users/clemens/ChatGPT/PhaseSmith/three-step-search-recovery-0.8-20261101"
+}

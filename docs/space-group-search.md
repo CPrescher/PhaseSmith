@@ -12,6 +12,8 @@ Laue/centring inputs and conservative acceptance/upgrade handling, with a new
 fixed comparison and successful accepted-fallback controls beyond MgSiO3.
 The [candidate fitting report](candidate-fitting-speed.md) measures exact fitting
 reuse and conservative deferral of numerically equivalent group descriptions.
+The [recovery protocol and validation](structure-search-recovery.md) tests bounded
+tensor/element correction, centred intensity groups and validated candidate frames.
 
 The unknown-symmetry path retains all predicted reflections, including signed
 weak measurements. It accepts cell and element priors without an exact space
