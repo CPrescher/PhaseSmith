@@ -41,6 +41,11 @@ ranks Pbca first and recovers Mg16 Si16 O48. Shared-map assignment and four
 ordered independent P1 workers reduce observed full time from about 47.7 to
 36.2–36.5 s. Its bounded coverage does not prove uniqueness; the supplied-group
 control remains bitwise unchanged. See [the assessment guide](docs/space-group-search.md).
+Further speed experiments preserve full-resolution final measurements and freeze
+cache reuse, a published optional light-element centrosymmetric exit, and coarse
+quality-controlled P1 phasing separately. See the
+[speed experiment plan](docs/space-group-speed-plan.md); success and generality
+must be measured rather than inferred from the reduced workload.
 
 ## Ownership and dependency direction
 
