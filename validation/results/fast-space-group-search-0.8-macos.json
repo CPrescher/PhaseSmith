@@ -1,0 +1,4641 @@
+{
+  "schema": "phasesmith.fast-auto-thorough-space-group-search-validation.v1",
+  "validation_date": "2026-11-01",
+  "version": "0.8.0",
+  "numerical_source_commit": "b900612b8f070525176f3d582195d77738af0863",
+  "external_root": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101",
+  "environment": {
+    "cpu": "Apple M4 Pro",
+    "logical_cpus": 14,
+    "memory_bytes": 51539607552,
+    "os": "macOS 26.6.2 (25G83)",
+    "native_architecture": "arm64",
+    "benchmark_rust": "1.99.1",
+    "tested_minimum_rust": "1.89.0",
+    "timing_policy": "Sequential warm-cache replays with no compilation/test jobs during timing. All observed times and first-launch overhead retained; no confidence interval or equal-work cross-architecture claim."
+  },
+  "input_manifest": {
+    "schema": "phasesmith.local-single-crystal-data.v1",
+    "dataset_id": "enstatite-mgsio3-id11-2024",
+    "title": "MgSiO3 enstatite calibration crystal in a diamond-anvil cell",
+    "purpose": "exposed development and regression data; complete workflow validation pending",
+    "redistribution": {
+      "status": "not_established",
+      "network_urls": [],
+      "policy": "Keep raw frames, source/reference files and derived observations external; no automatic download or upload."
+    },
+    "files": [
+      {
+        "path": "CeO2_20240620_1849.edf",
+        "role": "calibrant_image",
+        "size_bytes": 17884576,
+        "sha256": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393"
+      },
+      {
+        "path": "CeO2_20240620_1849_dioptas.poni",
+        "role": "initial_geometry",
+        "size_bytes": 319,
+        "sha256": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a"
+      },
+      {
+        "path": "dom1_v9.cif",
+        "role": "reference_structure",
+        "size_bytes": 190103,
+        "sha256": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9"
+      },
+      {
+        "path": "dom1_v9.hkl",
+        "role": "external_integrated_observations",
+        "size_bytes": 162125,
+        "sha256": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce"
+      },
+      {
+        "path": "eiger_0000.h5",
+        "role": "raw_frames",
+        "size_bytes": 450571787,
+        "sha256": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c"
+      },
+      {
+        "path": "frame.par",
+        "role": "vendor_geometry_reference",
+        "size_bytes": 14980,
+        "sha256": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e"
+      },
+      {
+        "path": "info.txt",
+        "role": "acquisition_notes",
+        "size_bytes": 318,
+        "sha256": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc"
+      },
+      {
+        "path": "peak_search_before_DAFi.tabbin",
+        "role": "external_peak_search_reference",
+        "size_bytes": 1228586,
+        "sha256": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+      }
+    ],
+    "total_size_bytes": 470052794,
+    "raw_array": {
+      "dataset": "/entry_0000/ESRF-ID11/eiger/data",
+      "shape": [
+        144,
+        2162,
+        2068
+      ],
+      "dtype": "uint32",
+      "historical_used_frame_indices_inclusive": [
+        2,
+        143
+      ],
+      "historical_orientation": "vertical flip; preserve explicit coordinate convention"
+    },
+    "search_inputs": {
+      "cell_angstrom_degrees": [
+        8.8101,
+        5.1824,
+        18.2288,
+        90,
+        90,
+        90
+      ],
+      "space_group_number": 61,
+      "space_group_symbol": "P b c a",
+      "wavelength_angstrom": 0.2846,
+      "elements": [
+        "Mg",
+        "Si",
+        "O"
+      ],
+      "provenance": "Cell, symmetry and wavelength transcribed from supplied source CIF; elements from declared sample. These are supplied priors, not blind indexing results. Coordinates, ADPs and atom counts are forbidden search inputs."
+    },
+    "source_hkl_conversion": {
+      "policy": "Use reflection block through the first exact zero-index terminator; reject malformed/nonzero terminator intensity or sigma; archive trailer separately without parsing it as solver input.",
+      "reason": "The supplied HKL appends SHELX instructions, including atomic model information, after the terminator. The strict public reader correctly rejects the unsplit file."
+    },
+    "derived_observations": {
+      "name": "ours-own-sigma-observations.npz",
+      "sha256": "f65f9d8c647a07a31b8d148b699413a6c97d6496f03435ac1ab9e172e1a7cac8",
+      "size_bytes": 138789,
+      "origin": "2026-10-29 enstatite-from-raw-sensor-refit; previously calibrated and assigned raw-count rerun",
+      "array_fields": [
+        "hkl",
+        "intensity",
+        "sigma"
+      ],
+      "qualification": "An existing PhaseSmith reduction under fixed historical geometry/assignments; not a fresh end-to-end run."
+    },
+    "historical_evidence": [
+      {
+        "path": "analysis-2026-10-29/enstatite-from-raw-sensor-refit/protocol.json",
+        "sha256": "3b3ac63f3373ba43866b5e41b296821bef3dbc1e0b62ac14b2d366a66acf589d"
+      },
+      {
+        "path": "analysis-2026-10-29/enstatite-from-raw-sensor-refit/prepare.json",
+        "sha256": "84a97a82c686d94806b24834f93b07e25e25101e1abd8a21a7361cd060769839"
+      },
+      {
+        "path": "analysis-2026-10-29/enstatite-from-raw-sensor-refit/comparison.json",
+        "sha256": "7c97fc22abc9dca14f26d3d87c4cb543f2fa14bbb1dc6f43a09003402a53895d"
+      },
+      {
+        "path": "analysis-2026-10-29/enstatite-from-raw-sensor-refit/validation-summary.json",
+        "sha256": "fc18c53a569adf331f4ba89f036c07fd4a54de06439a84e17a307ac23a7aaf0d"
+      }
+    ],
+    "assessment": {
+      "full_raw_to_search_workflow": "not_yet_run",
+      "standalone_single_crystal_refinement": "not_implemented",
+      "reference_full_cell_non_h_atoms": 80,
+      "reference_atom_count_use": "post-search grading only; never used to set maximum_atoms",
+      "capacity_preflight": {
+        "allowed_symmetry_expanded_measured_rows": 10694,
+        "existing_dense_element_limit": 2000000,
+        "input_only_maximum_atoms": 36,
+        "scope": "Both source reflection block and archived PhaseSmith-reduced observations; unchanged corpus resource_atom_cap policy."
+      }
+    }
+  },
+  "protocols": [
+    {
+      "path": "/Users/clemens/Programming/PhaseSmith-single-crystal-promotion/validation/enstatite-raw-workflow-v34.json",
+      "bytes": 14640,
+      "sha256": "67d7a7dc47ce7df12a85d1ee1fbe279b1c89817fb3eb510ce236d7c023de37c5"
+    },
+    {
+      "path": "/Users/clemens/Programming/PhaseSmith-single-crystal-promotion/validation/enstatite-raw-workflow-v35.json",
+      "bytes": 14639,
+      "sha256": "67878f841f154a78059419f0f3b3a7cd264be952de1ac8aa221971c9c695bc36"
+    },
+    {
+      "path": "/Users/clemens/Programming/PhaseSmith-single-crystal-promotion/validation/enstatite-raw-workflow-v36.json",
+      "bytes": 14637,
+      "sha256": "3e44d0d4d664c96e57bf6e2b59eeafeb6b6014874f99dbb4e383cfde4f0f46d0"
+    },
+    {
+      "path": "/Users/clemens/Programming/PhaseSmith-single-crystal-promotion/validation/enstatite-raw-workflow-v37.json",
+      "bytes": 14635,
+      "sha256": "21dc11e50f312272bc91756c96adcbd9da42af162deaad0293b37c3f112ebdbf"
+    },
+    {
+      "path": "/Users/clemens/Programming/PhaseSmith-single-crystal-promotion/validation/enstatite-raw-workflow-v38.json",
+      "bytes": 14472,
+      "sha256": "6f6ff361e0b2706135e4f483d8741779b4410749f877b12e2bd91f5b8287c163"
+    },
+    {
+      "path": "/Users/clemens/Programming/PhaseSmith-single-crystal-promotion/validation/enstatite-raw-workflow-v39.json",
+      "bytes": 14794,
+      "sha256": "fae8d83486f6ea87892f12d4b7eb944bfc330acd33e81117e7ba6f6c160004ba"
+    },
+    {
+      "path": "/Users/clemens/Programming/PhaseSmith-single-crystal-promotion/validation/enstatite-raw-workflow-v40.json",
+      "bytes": 15076,
+      "sha256": "f2d7ae99d433d92c9e1270af3ebdeb334a3c3ea100952f4403c5a6a16567da06"
+    },
+    {
+      "path": "/Users/clemens/Programming/PhaseSmith-single-crystal-promotion/validation/enstatite-raw-workflow-v41.json",
+      "bytes": 14832,
+      "sha256": "3a8b8b0022a59e27efeac3b213a0b19ec689f00eda3411b4560ca4dec730c3da"
+    },
+    {
+      "path": "/Users/clemens/Programming/PhaseSmith-single-crystal-promotion/validation/enstatite-raw-workflow-v42.json",
+      "bytes": 14891,
+      "sha256": "f5edc448460db41d977e067c537015d6ee1d9fbf6db5d6c6a4f0b68b2e92578e"
+    }
+  ],
+  "binaries": [
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/bin/workflow-budget-final",
+      "bytes": 9982640,
+      "sha256": "cab27bcc44391ffb86932f33c1d0a4f6d86fa842d347c585d9bf41e92e2ab323"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/bin/workflow-final",
+      "bytes": 9982336,
+      "sha256": "abf0c719ded759bed43f231c047cc34924f10613f15a36eb8a2a14fee1423799"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/bin/workflow-v34",
+      "bytes": 9900880,
+      "sha256": "e0266f969346926765c6d57061509f258d9657ece1c98370ba46f037ddfc2f69"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/bin/workflow-v35",
+      "bytes": 9901888,
+      "sha256": "bb8077194ab05d0f5d94337743d8ea31699520fca81922e780fe5e63e4219b93"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/bin/workflow-v36",
+      "bytes": 9948384,
+      "sha256": "715166be653d16338711817b411685e30467a69895af29c0820b60845a0b2b97"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/bin/workflow-v37",
+      "bytes": 9947952,
+      "sha256": "22db1c1e2de5438906caef1b382e6a8f5658daa23e733f0b90342566683bc9e4"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/bin/workflow-v38",
+      "bytes": 9948048,
+      "sha256": "5b21a5bd9acf7697e93beb78f69a2233fee323d8e6b22b3a418e45dd98ce6325"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/bin/workflow-v39",
+      "bytes": 9945856,
+      "sha256": "dfab30a67625d3a5c858522cd430a6dd673569a9ac626c0d74a9f9fe92b83e90"
+    }
+  ],
+  "runs": [
+    {
+      "name": "v34-full-01",
+      "command_seconds": 36.81,
+      "report": {
+        "schema": "phasesmith.enstatite-native-workflow.v1",
+        "execution_returncode": 0,
+        "source_files_unchanged": true,
+        "raw_to_structure_search_passed": true,
+        "reference_assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.004436473695615757,
+          "maximum_error_angstrom": 0.006124758476224042,
+          "hand": 1,
+          "shift": [
+            0.3289143599917974,
+            0.10913475152948386,
+            0.660412873869529
+          ],
+          "correct": true,
+          "strict_002_angstrom": true,
+          "reference_read_after_worker_stopped": true
+        },
+        "standalone_structure_refinement": "not_implemented",
+        "native_worker_seconds": 35.83946925000055,
+        "source_verification_seconds": 0.37287754204589874,
+        "reference_assessment_seconds": 0.19495608302531764,
+        "space_group_search": {
+          "selected": {
+            "hall": "-P 2ac 2ab",
+            "index": 289,
+            "number": 61,
+            "symbol": "P b c a"
+          },
+          "alternatives": [
+            289
+          ],
+          "unique_space_group_proven": false,
+          "termination": "candidate_budget",
+          "reference_number": 61,
+          "reference_number_matches": true
+        },
+        "observed_wall_seconds": 36.76531966699986
+      },
+      "provenance": {
+        "protocol_sha256": "67d7a7dc47ce7df12a85d1ee1fbe279b1c89817fb3eb510ce236d7c023de37c5",
+        "executable_sha256": "e0266f969346926765c6d57061509f258d9657ece1c98370ba46f037ddfc2f69",
+        "observer_sha256": "7d2d9db01eb00bad2cb42aeb3b0d3499e642a26e338f7065ba03ab2579bd8854",
+        "git_commit": "3189ed06cdc7dc1667a93b6837c060bfc056ebb5",
+        "source_hashes": {
+          "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+          "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+          "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+          "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+          "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+          "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+          "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+          "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+        }
+      },
+      "timings": {
+        "coordinator_seconds": 35.453245084,
+        "native_only": true,
+        "seconds": 35.453283833,
+        "stages": [
+          [
+            "shadow_masks",
+            2.984771625
+          ],
+          [
+            "detection_linking",
+            3.125720416
+          ],
+          [
+            "indexing_geometry",
+            0.146169959
+          ],
+          [
+            "integration_profile_learning",
+            5.7863919169999996
+          ],
+          [
+            "profile_fitting_scaling",
+            4.3204485
+          ],
+          [
+            "structure_search",
+            19.0865555
+          ]
+        ]
+      },
+      "search": {
+        "amplitude_r1": 0.051433695723409355,
+        "model_saved_before_reference": true,
+        "target_met": true,
+        "termination": "r1_target",
+        "timing_record": "timing-structure_search.json"
+      },
+      "artifacts": [
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v34-full-01/native/candidate/result.json",
+          "bytes": 73251,
+          "sha256": "f4e78862cbc58ac27a4551d2d2780ac3495fc2bd023711108c4090061b539af1"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v34-full-01/native/candidate/best.cif",
+          "bytes": 15985,
+          "sha256": "69373a655d9e11f8504387578c4bbf038883214ef1221cbb346525b1bfd8474b"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v34-full-01/native/candidate/density.npz",
+          "bytes": 137469,
+          "sha256": "79862bd5e03a84c532450b67658bcf18c8e8858beb7262705f5c02485452cd0a"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v34-full-01/native/candidate/space-group.cif",
+          "bytes": 1261,
+          "sha256": "f33b3e5b7de0a00ff83cf38966ad622701c99daf3c542df843e8685bed348ac6"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v34-full-01/native/space-group-search.json",
+          "bytes": 1003352,
+          "sha256": "b67a2f9db610dc46f01a5fb4251de134db24bdb00c9a3b8e27c0ee71fdf5dcb0"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v34-full-01/native/reduced-observations.npz",
+          "bytes": 732193,
+          "sha256": "dd99b6c7714b62d995c37c1a4f72c5e745eba6bf8420394f541f8cddbf592c04"
+        }
+      ],
+      "discovery": {
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "candidate_budget",
+        "seconds": 17.449892792,
+        "unique_space_group_proven": false,
+        "phase": {
+          "shape": [
+            64,
+            32,
+            128
+          ],
+          "phasing_shape": [
+            64,
+            32,
+            128
+          ],
+          "seconds": 2.040070292,
+          "selected_start": 3,
+          "cycles": [
+            800,
+            800,
+            800,
+            800
+          ]
+        },
+        "phase_setting_count": 64,
+        "phase_setting_seconds": 2.381068955,
+        "model_seconds": 13.023259499,
+        "model_setting_count": 12,
+        "effort": null
+      }
+    },
+    {
+      "name": "v35-full-01",
+      "command_seconds": 21.69,
+      "report": {
+        "schema": "phasesmith.enstatite-native-workflow.v1",
+        "execution_returncode": 0,
+        "source_files_unchanged": true,
+        "raw_to_structure_search_passed": true,
+        "reference_assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.004436473695615757,
+          "maximum_error_angstrom": 0.006124758476224042,
+          "hand": 1,
+          "shift": [
+            0.3289143599917974,
+            0.10913475152948386,
+            0.660412873869529
+          ],
+          "correct": true,
+          "strict_002_angstrom": true,
+          "reference_read_after_worker_stopped": true
+        },
+        "standalone_structure_refinement": "not_implemented",
+        "native_worker_seconds": 20.700736749975476,
+        "source_verification_seconds": 0.3553852930199355,
+        "reference_assessment_seconds": 0.18948050000471994,
+        "space_group_search": {
+          "selected": {
+            "hall": "-P 2ac 2ab",
+            "index": 289,
+            "number": 61,
+            "symbol": "P b c a"
+          },
+          "alternatives": [
+            289
+          ],
+          "unique_space_group_proven": false,
+          "termination": "plausible_centrosymmetric",
+          "reference_number": 61,
+          "reference_number_matches": true
+        },
+        "observed_wall_seconds": 21.64575170900207
+      },
+      "provenance": {
+        "protocol_sha256": "67878f841f154a78059419f0f3b3a7cd264be952de1ac8aa221971c9c695bc36",
+        "executable_sha256": "bb8077194ab05d0f5d94337743d8ea31699520fca81922e780fe5e63e4219b93",
+        "observer_sha256": "7d2d9db01eb00bad2cb42aeb3b0d3499e642a26e338f7065ba03ab2579bd8854",
+        "git_commit": "7f317403c0ed1269df895f9fdca22608ec1cb8d2",
+        "source_hashes": {
+          "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+          "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+          "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+          "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+          "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+          "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+          "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+          "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+        }
+      },
+      "timings": {
+        "coordinator_seconds": 20.244157375,
+        "native_only": true,
+        "seconds": 20.245038416,
+        "stages": [
+          [
+            "shadow_masks",
+            2.9567660829999998
+          ],
+          [
+            "detection_linking",
+            3.243127584
+          ],
+          [
+            "indexing_geometry",
+            0.145611375
+          ],
+          [
+            "integration_profile_learning",
+            5.791517292
+          ],
+          [
+            "profile_fitting_scaling",
+            4.323683833
+          ],
+          [
+            "structure_search",
+            3.7793998330000003
+          ]
+        ]
+      },
+      "search": {
+        "amplitude_r1": 0.051433695723409355,
+        "model_saved_before_reference": true,
+        "target_met": true,
+        "termination": "r1_target",
+        "timing_record": "timing-structure_search.json"
+      },
+      "artifacts": [
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v35-full-01/native/candidate/result.json",
+          "bytes": 73251,
+          "sha256": "f4e78862cbc58ac27a4551d2d2780ac3495fc2bd023711108c4090061b539af1"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v35-full-01/native/candidate/best.cif",
+          "bytes": 15985,
+          "sha256": "69373a655d9e11f8504387578c4bbf038883214ef1221cbb346525b1bfd8474b"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v35-full-01/native/candidate/density.npz",
+          "bytes": 137469,
+          "sha256": "79862bd5e03a84c532450b67658bcf18c8e8858beb7262705f5c02485452cd0a"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v35-full-01/native/candidate/space-group.cif",
+          "bytes": 1261,
+          "sha256": "f33b3e5b7de0a00ff83cf38966ad622701c99daf3c542df843e8685bed348ac6"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v35-full-01/native/space-group-search.json",
+          "bytes": 296388,
+          "sha256": "8390c3e4a7e6e723226a127c05910001703a5cbc075ea847a690d87912dab6d2"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v35-full-01/native/reduced-observations.npz",
+          "bytes": 732193,
+          "sha256": "dd99b6c7714b62d995c37c1a4f72c5e745eba6bf8420394f541f8cddbf592c04"
+        }
+      ],
+      "discovery": {
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "plausible_centrosymmetric",
+        "seconds": 2.378079208,
+        "unique_space_group_proven": false,
+        "phase": {
+          "shape": [
+            64,
+            32,
+            128
+          ],
+          "phasing_shape": [
+            64,
+            32,
+            128
+          ],
+          "seconds": 2.026544958,
+          "selected_start": 3,
+          "cycles": [
+            800,
+            800,
+            800,
+            800
+          ]
+        },
+        "phase_setting_count": 2,
+        "phase_setting_seconds": 0.07212120799999999,
+        "model_seconds": 0.271605292,
+        "model_setting_count": 1,
+        "effort": null
+      }
+    },
+    {
+      "name": "v36-full-01",
+      "command_seconds": 19.76,
+      "report": {
+        "schema": "phasesmith.enstatite-native-workflow.v1",
+        "execution_returncode": 0,
+        "source_files_unchanged": true,
+        "raw_to_structure_search_passed": true,
+        "reference_assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.004263317421385164,
+          "maximum_error_angstrom": 0.006178782769371211,
+          "hand": 1,
+          "shift": [
+            0.33662913283576146,
+            0.5525355683518222,
+            0.223875033734233
+          ],
+          "correct": true,
+          "strict_002_angstrom": true,
+          "reference_read_after_worker_stopped": true
+        },
+        "standalone_structure_refinement": "not_implemented",
+        "native_worker_seconds": 18.83340683300048,
+        "source_verification_seconds": 0.34986579103861004,
+        "reference_assessment_seconds": 0.1951933330274187,
+        "space_group_search": {
+          "selected": {
+            "hall": "-P 2ac 2ab",
+            "index": 289,
+            "number": 61,
+            "symbol": "P b c a"
+          },
+          "alternatives": [
+            289
+          ],
+          "unique_space_group_proven": false,
+          "termination": "plausible_centrosymmetric",
+          "reference_number": 61,
+          "reference_number_matches": true
+        },
+        "observed_wall_seconds": 19.717655916989315
+      },
+      "provenance": {
+        "protocol_sha256": "3e44d0d4d664c96e57bf6e2b59eeafeb6b6014874f99dbb4e383cfde4f0f46d0",
+        "executable_sha256": "715166be653d16338711817b411685e30467a69895af29c0820b60845a0b2b97",
+        "observer_sha256": "7d2d9db01eb00bad2cb42aeb3b0d3499e642a26e338f7065ba03ab2579bd8854",
+        "git_commit": "9c3869f984c64b8c049f171685164ded84b5e069",
+        "source_hashes": {
+          "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+          "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+          "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+          "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+          "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+          "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+          "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+          "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+        }
+      },
+      "timings": {
+        "coordinator_seconds": 18.430945708,
+        "native_only": true,
+        "seconds": 18.430980791,
+        "stages": [
+          [
+            "shadow_masks",
+            2.933510375
+          ],
+          [
+            "detection_linking",
+            3.187128084
+          ],
+          [
+            "indexing_geometry",
+            0.129089792
+          ],
+          [
+            "integration_profile_learning",
+            5.715873333
+          ],
+          [
+            "profile_fitting_scaling",
+            4.393111208
+          ],
+          [
+            "structure_search",
+            2.069526417
+          ]
+        ]
+      },
+      "search": {
+        "amplitude_r1": 0.0514043045582282,
+        "model_saved_before_reference": true,
+        "target_met": true,
+        "termination": "r1_target",
+        "timing_record": "timing-structure_search.json"
+      },
+      "artifacts": [
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v36-full-01/native/candidate/result.json",
+          "bytes": 73226,
+          "sha256": "7ab98494fb7501a166f7c143ea0f499c99a5beb2cce5423c1d7c9338b35efb97"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v36-full-01/native/candidate/best.cif",
+          "bytes": 15985,
+          "sha256": "63e79cdcd0dae4e80e45e3ff9e152f64b0e325d0aecdd6e4f02c49e40632bdaa"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v36-full-01/native/candidate/density.npz",
+          "bytes": 2019484,
+          "sha256": "709e3e82dee54a1054172b62b9999a8be91cb9b0b5d5a96b5b10810a33b8e481"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v36-full-01/native/candidate/space-group.cif",
+          "bytes": 1261,
+          "sha256": "d1c2ed430df1290c3d169c8fb4b28991e906f9404c902d0a01f53930596fa7d2"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v36-full-01/native/space-group-search.json",
+          "bytes": 447534,
+          "sha256": "9ba9efeacaa02945957b289cee2bc15acab31178d88dca4c4429086a9c771287"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v36-full-01/native/reduced-observations.npz",
+          "bytes": 732193,
+          "sha256": "dd99b6c7714b62d995c37c1a4f72c5e745eba6bf8420394f541f8cddbf592c04"
+        }
+      ],
+      "discovery": {
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "plausible_centrosymmetric",
+        "seconds": 0.652741917,
+        "unique_space_group_proven": false,
+        "phase": {
+          "shape": [
+            64,
+            32,
+            128
+          ],
+          "phasing_shape": [
+            32,
+            16,
+            64
+          ],
+          "seconds": 0.321802959,
+          "selected_start": 1,
+          "cycles": [
+            800,
+            140,
+            731,
+            343
+          ]
+        },
+        "phase_setting_count": 2,
+        "phase_setting_seconds": 0.063743084,
+        "model_seconds": 0.259606667,
+        "model_setting_count": 1,
+        "effort": null
+      }
+    },
+    {
+      "name": "v37-full-01",
+      "command_seconds": 19.01,
+      "report": {
+        "schema": "phasesmith.enstatite-native-workflow.v1",
+        "execution_returncode": 0,
+        "source_files_unchanged": true,
+        "raw_to_structure_search_passed": true,
+        "reference_assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.004263317421385164,
+          "maximum_error_angstrom": 0.006178782769371211,
+          "hand": 1,
+          "shift": [
+            0.33662913283576146,
+            0.5525355683518222,
+            0.223875033734233
+          ],
+          "correct": true,
+          "strict_002_angstrom": true,
+          "reference_read_after_worker_stopped": true
+        },
+        "standalone_structure_refinement": "not_implemented",
+        "native_worker_seconds": 17.99640800000634,
+        "source_verification_seconds": 0.3528497919905931,
+        "reference_assessment_seconds": 0.19102962501347065,
+        "space_group_search": {
+          "selected": {
+            "hall": "-P 2ac 2ab",
+            "index": 289,
+            "number": 61,
+            "symbol": "P b c a"
+          },
+          "alternatives": [
+            289
+          ],
+          "unique_space_group_proven": false,
+          "termination": "plausible_centrosymmetric",
+          "reference_number": 61,
+          "reference_number_matches": true
+        },
+        "observed_wall_seconds": 18.96704433398554
+      },
+      "provenance": {
+        "protocol_sha256": "21dc11e50f312272bc91756c96adcbd9da42af162deaad0293b37c3f112ebdbf",
+        "executable_sha256": "22db1c1e2de5438906caef1b382e6a8f5658daa23e733f0b90342566683bc9e4",
+        "observer_sha256": "7d2d9db01eb00bad2cb42aeb3b0d3499e642a26e338f7065ba03ab2579bd8854",
+        "git_commit": "ae26849a8e452969fd9e6303c721f9b6af8a34a7",
+        "source_hashes": {
+          "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+          "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+          "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+          "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+          "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+          "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+          "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+          "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+        }
+      },
+      "timings": {
+        "coordinator_seconds": 17.477121292,
+        "native_only": true,
+        "seconds": 17.477181208,
+        "stages": [
+          [
+            "shadow_masks",
+            2.938043334
+          ],
+          [
+            "detection_linking",
+            3.211096042
+          ],
+          [
+            "indexing_geometry",
+            0.133199042
+          ],
+          [
+            "integration_profile_learning",
+            5.706293875
+          ],
+          [
+            "profile_fitting_scaling",
+            3.912270167
+          ],
+          [
+            "structure_search",
+            1.572884833
+          ]
+        ]
+      },
+      "search": {
+        "amplitude_r1": 0.0514043045582282,
+        "model_saved_before_reference": true,
+        "target_met": true,
+        "termination": "r1_target",
+        "timing_record": "timing-structure_search.json"
+      },
+      "artifacts": [
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v37-full-01/native/candidate/result.json",
+          "bytes": 73226,
+          "sha256": "7ab98494fb7501a166f7c143ea0f499c99a5beb2cce5423c1d7c9338b35efb97"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v37-full-01/native/candidate/best.cif",
+          "bytes": 15985,
+          "sha256": "63e79cdcd0dae4e80e45e3ff9e152f64b0e325d0aecdd6e4f02c49e40632bdaa"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v37-full-01/native/candidate/density.npz",
+          "bytes": 2019484,
+          "sha256": "709e3e82dee54a1054172b62b9999a8be91cb9b0b5d5a96b5b10810a33b8e481"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v37-full-01/native/candidate/space-group.cif",
+          "bytes": 1261,
+          "sha256": "d1c2ed430df1290c3d169c8fb4b28991e906f9404c902d0a01f53930596fa7d2"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v37-full-01/native/space-group-search.json",
+          "bytes": 447534,
+          "sha256": "ab7b590639a1933200fc2249c59fdf2377271e0a8b156df41e89f054972672d8"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v37-full-01/native/reduced-observations.npz",
+          "bytes": 732193,
+          "sha256": "dd99b6c7714b62d995c37c1a4f72c5e745eba6bf8420394f541f8cddbf592c04"
+        }
+      ],
+      "discovery": {
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "plausible_centrosymmetric",
+        "seconds": 0.650669916,
+        "unique_space_group_proven": false,
+        "phase": {
+          "shape": [
+            64,
+            32,
+            128
+          ],
+          "phasing_shape": [
+            32,
+            16,
+            64
+          ],
+          "seconds": 0.320445416,
+          "selected_start": 1,
+          "cycles": [
+            800,
+            140,
+            731,
+            343
+          ]
+        },
+        "phase_setting_count": 2,
+        "phase_setting_seconds": 0.063034834,
+        "model_seconds": 0.259639166,
+        "model_setting_count": 1,
+        "effort": null
+      }
+    },
+    {
+      "name": "v37-full-02",
+      "command_seconds": 18.58,
+      "report": {
+        "schema": "phasesmith.enstatite-native-workflow.v1",
+        "execution_returncode": 0,
+        "source_files_unchanged": true,
+        "raw_to_structure_search_passed": true,
+        "reference_assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.004263317421385164,
+          "maximum_error_angstrom": 0.006178782769371211,
+          "hand": 1,
+          "shift": [
+            0.33662913283576146,
+            0.5525355683518222,
+            0.223875033734233
+          ],
+          "correct": true,
+          "strict_002_angstrom": true,
+          "reference_read_after_worker_stopped": true
+        },
+        "standalone_structure_refinement": "not_implemented",
+        "native_worker_seconds": 17.64530187501805,
+        "source_verification_seconds": 0.349470040993765,
+        "reference_assessment_seconds": 0.1883387499838136,
+        "space_group_search": {
+          "selected": {
+            "hall": "-P 2ac 2ab",
+            "index": 289,
+            "number": 61,
+            "symbol": "P b c a"
+          },
+          "alternatives": [
+            289
+          ],
+          "unique_space_group_proven": false,
+          "termination": "plausible_centrosymmetric",
+          "reference_number": 61,
+          "reference_number_matches": true
+        },
+        "observed_wall_seconds": 18.53873966599349
+      },
+      "provenance": {
+        "protocol_sha256": "21dc11e50f312272bc91756c96adcbd9da42af162deaad0293b37c3f112ebdbf",
+        "executable_sha256": "22db1c1e2de5438906caef1b382e6a8f5658daa23e733f0b90342566683bc9e4",
+        "observer_sha256": "7d2d9db01eb00bad2cb42aeb3b0d3499e642a26e338f7065ba03ab2579bd8854",
+        "git_commit": "ae26849a8e452969fd9e6303c721f9b6af8a34a7",
+        "source_hashes": {
+          "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+          "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+          "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+          "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+          "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+          "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+          "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+          "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+        }
+      },
+      "timings": {
+        "coordinator_seconds": 17.581681167,
+        "native_only": true,
+        "seconds": 17.581729334,
+        "stages": [
+          [
+            "shadow_masks",
+            2.948462917
+          ],
+          [
+            "detection_linking",
+            3.217884042
+          ],
+          [
+            "indexing_geometry",
+            0.138772875
+          ],
+          [
+            "integration_profile_learning",
+            5.721983292
+          ],
+          [
+            "profile_fitting_scaling",
+            3.966203208
+          ],
+          [
+            "structure_search",
+            1.585976209
+          ]
+        ]
+      },
+      "search": {
+        "amplitude_r1": 0.0514043045582282,
+        "model_saved_before_reference": true,
+        "target_met": true,
+        "termination": "r1_target",
+        "timing_record": "timing-structure_search.json"
+      },
+      "artifacts": [
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v37-full-02/native/candidate/result.json",
+          "bytes": 73226,
+          "sha256": "7ab98494fb7501a166f7c143ea0f499c99a5beb2cce5423c1d7c9338b35efb97"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v37-full-02/native/candidate/best.cif",
+          "bytes": 15985,
+          "sha256": "63e79cdcd0dae4e80e45e3ff9e152f64b0e325d0aecdd6e4f02c49e40632bdaa"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v37-full-02/native/candidate/density.npz",
+          "bytes": 2019484,
+          "sha256": "709e3e82dee54a1054172b62b9999a8be91cb9b0b5d5a96b5b10810a33b8e481"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v37-full-02/native/candidate/space-group.cif",
+          "bytes": 1261,
+          "sha256": "d1c2ed430df1290c3d169c8fb4b28991e906f9404c902d0a01f53930596fa7d2"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v37-full-02/native/space-group-search.json",
+          "bytes": 447531,
+          "sha256": "73c1fe4f6a171ae845a7d5c4d80c44002a805d488cd49f05c8c3f72c272f1599"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v37-full-02/native/reduced-observations.npz",
+          "bytes": 732193,
+          "sha256": "dd99b6c7714b62d995c37c1a4f72c5e745eba6bf8420394f541f8cddbf592c04"
+        }
+      ],
+      "discovery": {
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "plausible_centrosymmetric",
+        "seconds": 0.653794709,
+        "unique_space_group_proven": false,
+        "phase": {
+          "shape": [
+            64,
+            32,
+            128
+          ],
+          "phasing_shape": [
+            32,
+            16,
+            64
+          ],
+          "seconds": 0.32179975,
+          "selected_start": 1,
+          "cycles": [
+            800,
+            140,
+            731,
+            343
+          ]
+        },
+        "phase_setting_count": 2,
+        "phase_setting_seconds": 0.06260750000000001,
+        "model_seconds": 0.2621155,
+        "model_setting_count": 1,
+        "effort": null
+      }
+    },
+    {
+      "name": "v38-full-01",
+      "command_seconds": 17.08,
+      "report": {
+        "schema": "phasesmith.enstatite-native-workflow.v1",
+        "execution_returncode": 0,
+        "source_files_unchanged": true,
+        "raw_to_structure_search_passed": true,
+        "reference_assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.004263317421385164,
+          "maximum_error_angstrom": 0.006178782769371211,
+          "hand": 1,
+          "shift": [
+            0.33662913283576146,
+            0.5525355683518222,
+            0.223875033734233
+          ],
+          "correct": true,
+          "strict_002_angstrom": true,
+          "reference_read_after_worker_stopped": true
+        },
+        "standalone_structure_refinement": "not_implemented",
+        "native_worker_seconds": 16.064284583029803,
+        "source_verification_seconds": 0.3636351670138538,
+        "reference_assessment_seconds": 0.18845583399524912,
+        "space_group_search": {
+          "selected": {
+            "hall": "-P 2ac 2ab",
+            "index": 289,
+            "number": 61,
+            "symbol": "P b c a"
+          },
+          "alternatives": [
+            289
+          ],
+          "unique_space_group_proven": false,
+          "termination": "plausible_centrosymmetric",
+          "reference_number": 61,
+          "reference_number_matches": true
+        },
+        "observed_wall_seconds": 17.029292582999915
+      },
+      "provenance": {
+        "protocol_sha256": "6f6ff361e0b2706135e4f483d8741779b4410749f877b12e2bd91f5b8287c163",
+        "executable_sha256": "5b21a5bd9acf7697e93beb78f69a2233fee323d8e6b22b3a418e45dd98ce6325",
+        "observer_sha256": "7d2d9db01eb00bad2cb42aeb3b0d3499e642a26e338f7065ba03ab2579bd8854",
+        "git_commit": "8310b5a2d04f68d048817cb57e2072018ad27329",
+        "source_hashes": {
+          "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+          "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+          "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+          "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+          "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+          "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+          "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+          "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+        }
+      },
+      "timings": {
+        "coordinator_seconds": 15.997376208,
+        "native_only": true,
+        "seconds": 15.997412416,
+        "stages": [
+          [
+            "shadow_masks",
+            3.006488167
+          ],
+          [
+            "detection_linking",
+            3.176453
+          ],
+          [
+            "indexing_geometry",
+            0.138965833
+          ],
+          [
+            "integration_profile_learning",
+            5.820352584
+          ],
+          [
+            "profile_fitting_scaling",
+            3.169269458
+          ],
+          [
+            "structure_search",
+            0.683522666
+          ]
+        ]
+      },
+      "search": {
+        "amplitude_r1": 0.0514043045582282,
+        "model_saved_before_reference": true,
+        "target_met": true,
+        "termination": "r1_target",
+        "timing_record": "timing-structure_search.json"
+      },
+      "artifacts": [
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v38-full-01/native/candidate/result.json",
+          "bytes": 73226,
+          "sha256": "7ab98494fb7501a166f7c143ea0f499c99a5beb2cce5423c1d7c9338b35efb97"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v38-full-01/native/candidate/best.cif",
+          "bytes": 15985,
+          "sha256": "63e79cdcd0dae4e80e45e3ff9e152f64b0e325d0aecdd6e4f02c49e40632bdaa"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v38-full-01/native/candidate/density.npz",
+          "bytes": 2019484,
+          "sha256": "709e3e82dee54a1054172b62b9999a8be91cb9b0b5d5a96b5b10810a33b8e481"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v38-full-01/native/candidate/space-group.cif",
+          "bytes": 1261,
+          "sha256": "d1c2ed430df1290c3d169c8fb4b28991e906f9404c902d0a01f53930596fa7d2"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v38-full-01/native/space-group-search.json",
+          "bytes": 447534,
+          "sha256": "21d2b41d79a9e6dd632be2dd078db4cd8f2562b5f47cb17c0d48f6fe1b304760"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v38-full-01/native/reduced-observations.npz",
+          "bytes": 732193,
+          "sha256": "dd99b6c7714b62d995c37c1a4f72c5e745eba6bf8420394f541f8cddbf592c04"
+        }
+      ],
+      "discovery": {
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "plausible_centrosymmetric",
+        "seconds": 0.652541166,
+        "unique_space_group_proven": false,
+        "phase": {
+          "shape": [
+            64,
+            32,
+            128
+          ],
+          "phasing_shape": [
+            32,
+            16,
+            64
+          ],
+          "seconds": 0.315528667,
+          "selected_start": 1,
+          "cycles": [
+            800,
+            140,
+            731,
+            343
+          ]
+        },
+        "phase_setting_count": 2,
+        "phase_setting_seconds": 0.062879168,
+        "model_seconds": 0.266724167,
+        "model_setting_count": 1,
+        "effort": null
+      }
+    },
+    {
+      "name": "v39-full-01",
+      "command_seconds": 17.0,
+      "report": {
+        "schema": "phasesmith.enstatite-native-workflow.v1",
+        "execution_returncode": 0,
+        "source_files_unchanged": true,
+        "raw_to_structure_search_passed": true,
+        "reference_assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.004263317421385164,
+          "maximum_error_angstrom": 0.006178782769371211,
+          "hand": 1,
+          "shift": [
+            0.33662913283576146,
+            0.5525355683518222,
+            0.223875033734233
+          ],
+          "correct": true,
+          "strict_002_angstrom": true,
+          "reference_read_after_worker_stopped": true
+        },
+        "standalone_structure_refinement": "not_implemented",
+        "native_worker_seconds": 15.97298691701144,
+        "source_verification_seconds": 0.3705416669836268,
+        "reference_assessment_seconds": 0.19410112500190735,
+        "space_group_search": {
+          "selected": {
+            "hall": "-P 2ac 2ab",
+            "index": 289,
+            "number": 61,
+            "symbol": "P b c a"
+          },
+          "alternatives": [
+            289
+          ],
+          "unique_space_group_proven": false,
+          "termination": "plausible_centrosymmetric",
+          "reference_number": 61,
+          "reference_number_matches": true
+        },
+        "observed_wall_seconds": 16.94533091702033
+      },
+      "provenance": {
+        "protocol_sha256": "fae8d83486f6ea87892f12d4b7eb944bfc330acd33e81117e7ba6f6c160004ba",
+        "executable_sha256": "dfab30a67625d3a5c858522cd430a6dd673569a9ac626c0d74a9f9fe92b83e90",
+        "observer_sha256": "7d2d9db01eb00bad2cb42aeb3b0d3499e642a26e338f7065ba03ab2579bd8854",
+        "git_commit": "f8a313f36a262af0561e0252601738ef7f99075f",
+        "source_hashes": {
+          "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+          "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+          "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+          "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+          "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+          "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+          "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+          "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+        }
+      },
+      "timings": {
+        "coordinator_seconds": 15.864499042,
+        "native_only": true,
+        "seconds": 15.864542875,
+        "stages": [
+          [
+            "shadow_masks",
+            2.984903709
+          ],
+          [
+            "detection_linking",
+            3.234640375
+          ],
+          [
+            "indexing_geometry",
+            0.123882334
+          ],
+          [
+            "integration_profile_learning",
+            5.772593084
+          ],
+          [
+            "profile_fitting_scaling",
+            3.258933375
+          ],
+          [
+            "structure_search",
+            0.487152667
+          ]
+        ]
+      },
+      "search": {
+        "amplitude_r1": 0.0514043045582282,
+        "model_saved_before_reference": true,
+        "target_met": true,
+        "termination": "r1_target",
+        "timing_record": "timing-structure_search.json"
+      },
+      "artifacts": [
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v39-full-01/native/candidate/result.json",
+          "bytes": 73226,
+          "sha256": "7ab98494fb7501a166f7c143ea0f499c99a5beb2cce5423c1d7c9338b35efb97"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v39-full-01/native/candidate/best.cif",
+          "bytes": 15985,
+          "sha256": "63e79cdcd0dae4e80e45e3ff9e152f64b0e325d0aecdd6e4f02c49e40632bdaa"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v39-full-01/native/candidate/density.npz",
+          "bytes": 2019484,
+          "sha256": "709e3e82dee54a1054172b62b9999a8be91cb9b0b5d5a96b5b10810a33b8e481"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v39-full-01/native/candidate/space-group.cif",
+          "bytes": 1261,
+          "sha256": "d1c2ed430df1290c3d169c8fb4b28991e906f9404c902d0a01f53930596fa7d2"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v39-full-01/native/space-group-search.json",
+          "bytes": 314707,
+          "sha256": "30fb2b83f94f81549de9078b9419a34fb55d855cb29b4df40e22af6c2d1386d3"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v39-full-01/native/reduced-observations.npz",
+          "bytes": 732193,
+          "sha256": "dd99b6c7714b62d995c37c1a4f72c5e745eba6bf8420394f541f8cddbf592c04"
+        }
+      ],
+      "discovery": {
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "plausible_centrosymmetric",
+        "seconds": 0.457344292,
+        "unique_space_group_proven": false,
+        "phase": {
+          "shape": [
+            64,
+            32,
+            128
+          ],
+          "phasing_shape": [
+            32,
+            16,
+            64
+          ],
+          "seconds": 0.116745292,
+          "selected_start": 1,
+          "cycles": [
+            256,
+            140,
+            256,
+            256
+          ]
+        },
+        "phase_setting_count": 2,
+        "phase_setting_seconds": 0.0672375,
+        "model_seconds": 0.2655445,
+        "model_setting_count": 1,
+        "effort": null
+      }
+    },
+    {
+      "name": "v39-full-02",
+      "command_seconds": 17.24,
+      "report": {
+        "schema": "phasesmith.enstatite-native-workflow.v1",
+        "execution_returncode": 0,
+        "source_files_unchanged": true,
+        "raw_to_structure_search_passed": true,
+        "reference_assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.004263317421385164,
+          "maximum_error_angstrom": 0.006178782769371211,
+          "hand": 1,
+          "shift": [
+            0.33662913283576146,
+            0.5525355683518222,
+            0.223875033734233
+          ],
+          "correct": true,
+          "strict_002_angstrom": true,
+          "reference_read_after_worker_stopped": true
+        },
+        "standalone_structure_refinement": "not_implemented",
+        "native_worker_seconds": 16.19326212501619,
+        "source_verification_seconds": 0.3645507089677267,
+        "reference_assessment_seconds": 0.18985691701527685,
+        "space_group_search": {
+          "selected": {
+            "hall": "-P 2ac 2ab",
+            "index": 289,
+            "number": 61,
+            "symbol": "P b c a"
+          },
+          "alternatives": [
+            289
+          ],
+          "unique_space_group_proven": false,
+          "termination": "plausible_centrosymmetric",
+          "reference_number": 61,
+          "reference_number_matches": true
+        },
+        "observed_wall_seconds": 17.180114084039815
+      },
+      "provenance": {
+        "protocol_sha256": "fae8d83486f6ea87892f12d4b7eb944bfc330acd33e81117e7ba6f6c160004ba",
+        "executable_sha256": "dfab30a67625d3a5c858522cd430a6dd673569a9ac626c0d74a9f9fe92b83e90",
+        "observer_sha256": "7d2d9db01eb00bad2cb42aeb3b0d3499e642a26e338f7065ba03ab2579bd8854",
+        "git_commit": "f8a313f36a262af0561e0252601738ef7f99075f",
+        "source_hashes": {
+          "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+          "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+          "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+          "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+          "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+          "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+          "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+          "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+        }
+      },
+      "timings": {
+        "coordinator_seconds": 16.125850709,
+        "native_only": true,
+        "seconds": 16.125892834,
+        "stages": [
+          [
+            "shadow_masks",
+            2.977787375
+          ],
+          [
+            "detection_linking",
+            3.379838583
+          ],
+          [
+            "indexing_geometry",
+            0.136044625
+          ],
+          [
+            "integration_profile_learning",
+            5.827650042
+          ],
+          [
+            "profile_fitting_scaling",
+            3.305979959
+          ],
+          [
+            "structure_search",
+            0.493587084
+          ]
+        ]
+      },
+      "search": {
+        "amplitude_r1": 0.0514043045582282,
+        "model_saved_before_reference": true,
+        "target_met": true,
+        "termination": "r1_target",
+        "timing_record": "timing-structure_search.json"
+      },
+      "artifacts": [
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v39-full-02/native/candidate/result.json",
+          "bytes": 73226,
+          "sha256": "7ab98494fb7501a166f7c143ea0f499c99a5beb2cce5423c1d7c9338b35efb97"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v39-full-02/native/candidate/best.cif",
+          "bytes": 15985,
+          "sha256": "63e79cdcd0dae4e80e45e3ff9e152f64b0e325d0aecdd6e4f02c49e40632bdaa"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v39-full-02/native/candidate/density.npz",
+          "bytes": 2019484,
+          "sha256": "709e3e82dee54a1054172b62b9999a8be91cb9b0b5d5a96b5b10810a33b8e481"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v39-full-02/native/candidate/space-group.cif",
+          "bytes": 1261,
+          "sha256": "d1c2ed430df1290c3d169c8fb4b28991e906f9404c902d0a01f53930596fa7d2"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v39-full-02/native/space-group-search.json",
+          "bytes": 314714,
+          "sha256": "0ed010958c9450c6f9e6f6d001cb3c56d09e5bf72c0a72c88e2f83ccaa952162"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v39-full-02/native/reduced-observations.npz",
+          "bytes": 732193,
+          "sha256": "dd99b6c7714b62d995c37c1a4f72c5e745eba6bf8420394f541f8cddbf592c04"
+        }
+      ],
+      "discovery": {
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "plausible_centrosymmetric",
+        "seconds": 0.464465584,
+        "unique_space_group_proven": false,
+        "phase": {
+          "shape": [
+            64,
+            32,
+            128
+          ],
+          "phasing_shape": [
+            32,
+            16,
+            64
+          ],
+          "seconds": 0.111767708,
+          "selected_start": 1,
+          "cycles": [
+            256,
+            140,
+            256,
+            256
+          ]
+        },
+        "phase_setting_count": 2,
+        "phase_setting_seconds": 0.06993675,
+        "model_seconds": 0.275412167,
+        "model_setting_count": 1,
+        "effort": null
+      }
+    },
+    {
+      "name": "auto-full-01",
+      "command_seconds": 17.36,
+      "report": {
+        "schema": "phasesmith.enstatite-native-workflow.v1",
+        "execution_returncode": 0,
+        "source_files_unchanged": true,
+        "raw_to_structure_search_passed": true,
+        "reference_assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.004263317421385164,
+          "maximum_error_angstrom": 0.006178782769371211,
+          "hand": 1,
+          "shift": [
+            0.33662913283576146,
+            0.5525355683518222,
+            0.223875033734233
+          ],
+          "correct": true,
+          "strict_002_angstrom": true,
+          "reference_read_after_worker_stopped": true
+        },
+        "standalone_structure_refinement": "not_implemented",
+        "native_worker_seconds": 16.258515709021594,
+        "source_verification_seconds": 0.3787733329809271,
+        "reference_assessment_seconds": 0.1940544579993002,
+        "space_group_search": {
+          "selected": {
+            "hall": "-P 2ac 2ab",
+            "index": 289,
+            "number": 61,
+            "symbol": "P b c a"
+          },
+          "alternatives": [
+            289
+          ],
+          "unique_space_group_proven": false,
+          "termination": "plausible_centrosymmetric",
+          "accepted": true,
+          "effort": {
+            "accepted": true,
+            "escalation_reason": null,
+            "passes": [
+              {
+                "accepted": true,
+                "mode": "fast",
+                "model_attempts": 1,
+                "phase_cycles": [
+                  256,
+                  140,
+                  256,
+                  256
+                ],
+                "phasing_shape": [
+                  32,
+                  16,
+                  64
+                ],
+                "reason": "accepted",
+                "seconds": 0.454731708,
+                "termination": "plausible_centrosymmetric"
+              }
+            ],
+            "requested": "auto",
+            "selected_pass": "fast"
+          },
+          "reference_number": 61,
+          "reference_number_matches": true
+        },
+        "observed_wall_seconds": 17.31283412501216
+      },
+      "provenance": {
+        "protocol_sha256": "f2d7ae99d433d92c9e1270af3ebdeb334a3c3ea100952f4403c5a6a16567da06",
+        "executable_sha256": "abf0c719ded759bed43f231c047cc34924f10613f15a36eb8a2a14fee1423799",
+        "observer_sha256": "3775fdbde68c6668e9ef55adbb6910fee12191ee752f15a5010190d5f65b060e",
+        "git_commit": "eb9e021ab61a55656dd5106f08ff45103b4cc36d",
+        "source_hashes": {
+          "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+          "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+          "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+          "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+          "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+          "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+          "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+          "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+        }
+      },
+      "timings": {
+        "coordinator_seconds": 15.832248292,
+        "native_only": true,
+        "seconds": 15.832303083,
+        "stages": [
+          [
+            "shadow_masks",
+            2.959830084
+          ],
+          [
+            "detection_linking",
+            3.139245958
+          ],
+          [
+            "indexing_geometry",
+            0.134081334
+          ],
+          [
+            "integration_profile_learning",
+            5.865051333
+          ],
+          [
+            "profile_fitting_scaling",
+            3.244753084
+          ],
+          [
+            "structure_search",
+            0.485666042
+          ]
+        ]
+      },
+      "search": {
+        "amplitude_r1": 0.0514043045582282,
+        "model_saved_before_reference": true,
+        "target_met": true,
+        "termination": "r1_target",
+        "timing_record": "timing-structure_search.json"
+      },
+      "artifacts": [
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/auto-full-01/native/candidate/result.json",
+          "bytes": 73226,
+          "sha256": "7ab98494fb7501a166f7c143ea0f499c99a5beb2cce5423c1d7c9338b35efb97"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/auto-full-01/native/candidate/best.cif",
+          "bytes": 15985,
+          "sha256": "63e79cdcd0dae4e80e45e3ff9e152f64b0e325d0aecdd6e4f02c49e40632bdaa"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/auto-full-01/native/candidate/density.npz",
+          "bytes": 2019484,
+          "sha256": "709e3e82dee54a1054172b62b9999a8be91cb9b0b5d5a96b5b10810a33b8e481"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/auto-full-01/native/candidate/space-group.cif",
+          "bytes": 1261,
+          "sha256": "d1c2ed430df1290c3d169c8fb4b28991e906f9404c902d0a01f53930596fa7d2"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/auto-full-01/native/space-group-search.json",
+          "bytes": 315268,
+          "sha256": "bc4b609cb6f1ab7df4ac35caefcc8c8f7ae20aeb3e381352b9591a64336e2841"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/auto-full-01/native/reduced-observations.npz",
+          "bytes": 732193,
+          "sha256": "dd99b6c7714b62d995c37c1a4f72c5e745eba6bf8420394f541f8cddbf592c04"
+        }
+      ],
+      "discovery": {
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "plausible_centrosymmetric",
+        "seconds": 0.455015959,
+        "unique_space_group_proven": false,
+        "phase": {
+          "shape": [
+            64,
+            32,
+            128
+          ],
+          "phasing_shape": [
+            32,
+            16,
+            64
+          ],
+          "seconds": 0.116863958,
+          "selected_start": 1,
+          "cycles": [
+            256,
+            140,
+            256,
+            256
+          ]
+        },
+        "phase_setting_count": 2,
+        "phase_setting_seconds": 0.065866709,
+        "model_seconds": 0.263791625,
+        "model_setting_count": 1,
+        "effort": {
+          "accepted": true,
+          "escalation_reason": null,
+          "passes": [
+            {
+              "accepted": true,
+              "mode": "fast",
+              "model_attempts": 1,
+              "phase_cycles": [
+                256,
+                140,
+                256,
+                256
+              ],
+              "phasing_shape": [
+                32,
+                16,
+                64
+              ],
+              "reason": "accepted",
+              "seconds": 0.454731708,
+              "termination": "plausible_centrosymmetric"
+            }
+          ],
+          "requested": "auto",
+          "selected_pass": "fast"
+        }
+      }
+    },
+    {
+      "name": "auto-full-02",
+      "command_seconds": 17.85,
+      "report": {
+        "schema": "phasesmith.enstatite-native-workflow.v1",
+        "execution_returncode": 0,
+        "source_files_unchanged": true,
+        "raw_to_structure_search_passed": true,
+        "reference_assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.004263317421385164,
+          "maximum_error_angstrom": 0.006178782769371211,
+          "hand": 1,
+          "shift": [
+            0.33662913283576146,
+            0.5525355683518222,
+            0.223875033734233
+          ],
+          "correct": true,
+          "strict_002_angstrom": true,
+          "reference_read_after_worker_stopped": true
+        },
+        "standalone_structure_refinement": "not_implemented",
+        "native_worker_seconds": 16.761666290985886,
+        "source_verification_seconds": 0.3699770839884877,
+        "reference_assessment_seconds": 0.2001811660011299,
+        "space_group_search": {
+          "selected": {
+            "hall": "-P 2ac 2ab",
+            "index": 289,
+            "number": 61,
+            "symbol": "P b c a"
+          },
+          "alternatives": [
+            289
+          ],
+          "unique_space_group_proven": false,
+          "termination": "plausible_centrosymmetric",
+          "accepted": true,
+          "effort": {
+            "accepted": true,
+            "escalation_reason": null,
+            "passes": [
+              {
+                "accepted": true,
+                "mode": "fast",
+                "model_attempts": 1,
+                "phase_cycles": [
+                  256,
+                  140,
+                  256,
+                  256
+                ],
+                "phasing_shape": [
+                  32,
+                  16,
+                  64
+                ],
+                "reason": "accepted",
+                "seconds": 0.460640084,
+                "termination": "plausible_centrosymmetric"
+              }
+            ],
+            "requested": "auto",
+            "selected_pass": "fast"
+          },
+          "reference_number": 61,
+          "reference_number_matches": true
+        },
+        "observed_wall_seconds": 17.793343083991203
+      },
+      "provenance": {
+        "protocol_sha256": "f2d7ae99d433d92c9e1270af3ebdeb334a3c3ea100952f4403c5a6a16567da06",
+        "executable_sha256": "abf0c719ded759bed43f231c047cc34924f10613f15a36eb8a2a14fee1423799",
+        "observer_sha256": "3775fdbde68c6668e9ef55adbb6910fee12191ee752f15a5010190d5f65b060e",
+        "git_commit": "eb9e021ab61a55656dd5106f08ff45103b4cc36d",
+        "source_hashes": {
+          "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+          "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+          "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+          "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+          "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+          "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+          "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+          "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+        }
+      },
+      "timings": {
+        "coordinator_seconds": 16.688493042,
+        "native_only": true,
+        "seconds": 16.688530542,
+        "stages": [
+          [
+            "shadow_masks",
+            2.97967775
+          ],
+          [
+            "detection_linking",
+            3.247974458
+          ],
+          [
+            "indexing_geometry",
+            0.132746458
+          ],
+          [
+            "integration_profile_learning",
+            5.795123542
+          ],
+          [
+            "profile_fitting_scaling",
+            4.036296042
+          ],
+          [
+            "structure_search",
+            0.492513958
+          ]
+        ]
+      },
+      "search": {
+        "amplitude_r1": 0.0514043045582282,
+        "model_saved_before_reference": true,
+        "target_met": true,
+        "termination": "r1_target",
+        "timing_record": "timing-structure_search.json"
+      },
+      "artifacts": [
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/auto-full-02/native/candidate/result.json",
+          "bytes": 73226,
+          "sha256": "7ab98494fb7501a166f7c143ea0f499c99a5beb2cce5423c1d7c9338b35efb97"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/auto-full-02/native/candidate/best.cif",
+          "bytes": 15985,
+          "sha256": "63e79cdcd0dae4e80e45e3ff9e152f64b0e325d0aecdd6e4f02c49e40632bdaa"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/auto-full-02/native/candidate/density.npz",
+          "bytes": 2019484,
+          "sha256": "709e3e82dee54a1054172b62b9999a8be91cb9b0b5d5a96b5b10810a33b8e481"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/auto-full-02/native/candidate/space-group.cif",
+          "bytes": 1261,
+          "sha256": "d1c2ed430df1290c3d169c8fb4b28991e906f9404c902d0a01f53930596fa7d2"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/auto-full-02/native/space-group-search.json",
+          "bytes": 315266,
+          "sha256": "e9e68c6c5a72f107310428fa0216dd455f1716f203efc56b2bb04b95cfc9fdcc"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/auto-full-02/native/reduced-observations.npz",
+          "bytes": 732193,
+          "sha256": "dd99b6c7714b62d995c37c1a4f72c5e745eba6bf8420394f541f8cddbf592c04"
+        }
+      ],
+      "discovery": {
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "plausible_centrosymmetric",
+        "seconds": 0.46093475,
+        "unique_space_group_proven": false,
+        "phase": {
+          "shape": [
+            64,
+            32,
+            128
+          ],
+          "phasing_shape": [
+            32,
+            16,
+            64
+          ],
+          "seconds": 0.114808709,
+          "selected_start": 1,
+          "cycles": [
+            256,
+            140,
+            256,
+            256
+          ]
+        },
+        "phase_setting_count": 2,
+        "phase_setting_seconds": 0.06567954200000001,
+        "model_seconds": 0.272430541,
+        "model_setting_count": 1,
+        "effort": {
+          "accepted": true,
+          "escalation_reason": null,
+          "passes": [
+            {
+              "accepted": true,
+              "mode": "fast",
+              "model_attempts": 1,
+              "phase_cycles": [
+                256,
+                140,
+                256,
+                256
+              ],
+              "phasing_shape": [
+                32,
+                16,
+                64
+              ],
+              "reason": "accepted",
+              "seconds": 0.460640084,
+              "termination": "plausible_centrosymmetric"
+            }
+          ],
+          "requested": "auto",
+          "selected_pass": "fast"
+        }
+      }
+    },
+    {
+      "name": "forced-escalation-full",
+      "command_seconds": 34.45,
+      "report": {
+        "schema": "phasesmith.enstatite-native-workflow.v1",
+        "execution_returncode": 0,
+        "source_files_unchanged": true,
+        "raw_to_structure_search_passed": true,
+        "reference_assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.004436473695615757,
+          "maximum_error_angstrom": 0.006124758476224042,
+          "hand": 1,
+          "shift": [
+            0.3289143599917974,
+            0.10913475152948386,
+            0.660412873869529
+          ],
+          "correct": true,
+          "strict_002_angstrom": true,
+          "reference_read_after_worker_stopped": true
+        },
+        "standalone_structure_refinement": "not_implemented",
+        "native_worker_seconds": 33.36853412503842,
+        "source_verification_seconds": 0.3701956239528954,
+        "reference_assessment_seconds": 0.19644979102304205,
+        "space_group_search": {
+          "selected": {
+            "hall": "-P 2ac 2ab",
+            "index": 289,
+            "number": 61,
+            "symbol": "P b c a"
+          },
+          "alternatives": [
+            289
+          ],
+          "unique_space_group_proven": false,
+          "termination": "candidate_budget",
+          "accepted": true,
+          "effort": {
+            "accepted": true,
+            "escalation_reason": "no_model",
+            "passes": [
+              {
+                "accepted": false,
+                "mode": "fast",
+                "model_attempts": 0,
+                "phase_cycles": [],
+                "phasing_shape": null,
+                "reason": "no_model",
+                "seconds": 0.014702541,
+                "termination": "max_runtime"
+              },
+              {
+                "accepted": true,
+                "mode": "thorough",
+                "model_attempts": 12,
+                "phase_cycles": [
+                  800,
+                  800,
+                  800,
+                  800
+                ],
+                "phasing_shape": [
+                  64,
+                  32,
+                  128
+                ],
+                "reason": "accepted",
+                "seconds": 17.467286916,
+                "termination": "candidate_budget"
+              }
+            ],
+            "requested": "auto",
+            "selected_pass": "thorough"
+          },
+          "reference_number": 61,
+          "reference_number_matches": true
+        },
+        "observed_wall_seconds": 34.38840654102387
+      },
+      "provenance": {
+        "protocol_sha256": "3a8b8b0022a59e27efeac3b213a0b19ec689f00eda3411b4560ca4dec730c3da",
+        "executable_sha256": "abf0c719ded759bed43f231c047cc34924f10613f15a36eb8a2a14fee1423799",
+        "observer_sha256": "3775fdbde68c6668e9ef55adbb6910fee12191ee752f15a5010190d5f65b060e",
+        "git_commit": "eb9e021ab61a55656dd5106f08ff45103b4cc36d",
+        "source_hashes": {
+          "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+          "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+          "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+          "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+          "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+          "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+          "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+          "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+        }
+      },
+      "timings": {
+        "coordinator_seconds": 33.328185708,
+        "native_only": true,
+        "seconds": 33.328224292,
+        "stages": [
+          [
+            "shadow_masks",
+            2.999317333
+          ],
+          [
+            "detection_linking",
+            3.404543708
+          ],
+          [
+            "indexing_geometry",
+            0.134193833
+          ],
+          [
+            "integration_profile_learning",
+            5.826105709
+          ],
+          [
+            "profile_fitting_scaling",
+            3.452921584
+          ],
+          [
+            "structure_search",
+            17.507034375
+          ]
+        ]
+      },
+      "search": {
+        "amplitude_r1": 0.051433695723409355,
+        "model_saved_before_reference": true,
+        "target_met": true,
+        "termination": "r1_target",
+        "timing_record": "timing-structure_search.json"
+      },
+      "artifacts": [
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/forced-escalation-full/native/candidate/result.json",
+          "bytes": 73251,
+          "sha256": "f4e78862cbc58ac27a4551d2d2780ac3495fc2bd023711108c4090061b539af1"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/forced-escalation-full/native/candidate/best.cif",
+          "bytes": 15985,
+          "sha256": "69373a655d9e11f8504387578c4bbf038883214ef1221cbb346525b1bfd8474b"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/forced-escalation-full/native/candidate/density.npz",
+          "bytes": 137469,
+          "sha256": "79862bd5e03a84c532450b67658bcf18c8e8858beb7262705f5c02485452cd0a"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/forced-escalation-full/native/candidate/space-group.cif",
+          "bytes": 1261,
+          "sha256": "f33b3e5b7de0a00ff83cf38966ad622701c99daf3c542df843e8685bed348ac6"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/forced-escalation-full/native/space-group-search.json",
+          "bytes": 1146660,
+          "sha256": "40dbe76875dbae7e7005d85a7075ea16da76d47bac8454ef8bb2c8db06d3f156"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/forced-escalation-full/native/reduced-observations.npz",
+          "bytes": 732193,
+          "sha256": "dd99b6c7714b62d995c37c1a4f72c5e745eba6bf8420394f541f8cddbf592c04"
+        }
+      ],
+      "discovery": {
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "candidate_budget",
+        "seconds": 17.482592583,
+        "unique_space_group_proven": false,
+        "phase": {
+          "shape": [
+            64,
+            32,
+            128
+          ],
+          "phasing_shape": [
+            64,
+            32,
+            128
+          ],
+          "seconds": 2.075334084,
+          "selected_start": 3,
+          "cycles": [
+            800,
+            800,
+            800,
+            800
+          ]
+        },
+        "phase_setting_count": 64,
+        "phase_setting_seconds": 2.399514253,
+        "model_seconds": 12.987109459000001,
+        "model_setting_count": 12,
+        "effort": {
+          "accepted": true,
+          "escalation_reason": "no_model",
+          "passes": [
+            {
+              "accepted": false,
+              "mode": "fast",
+              "model_attempts": 0,
+              "phase_cycles": [],
+              "phasing_shape": null,
+              "reason": "no_model",
+              "seconds": 0.014702541,
+              "termination": "max_runtime"
+            },
+            {
+              "accepted": true,
+              "mode": "thorough",
+              "model_attempts": 12,
+              "phase_cycles": [
+                800,
+                800,
+                800,
+                800
+              ],
+              "phasing_shape": [
+                64,
+                32,
+                128
+              ],
+              "reason": "accepted",
+              "seconds": 17.467286916,
+              "termination": "candidate_budget"
+            }
+          ],
+          "requested": "auto",
+          "selected_pass": "thorough"
+        }
+      }
+    },
+    {
+      "name": "absolute-auto-full",
+      "command_seconds": 17.37,
+      "report": {
+        "schema": "phasesmith.enstatite-native-workflow.v1",
+        "execution_returncode": 0,
+        "source_files_unchanged": true,
+        "raw_to_structure_search_passed": true,
+        "reference_assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.004263317421385164,
+          "maximum_error_angstrom": 0.006178782769371211,
+          "hand": 1,
+          "shift": [
+            0.33662913283576146,
+            0.5525355683518222,
+            0.223875033734233
+          ],
+          "correct": true,
+          "strict_002_angstrom": true,
+          "reference_read_after_worker_stopped": true
+        },
+        "standalone_structure_refinement": "not_implemented",
+        "native_worker_seconds": 16.240391250001267,
+        "source_verification_seconds": 0.3922670000465587,
+        "reference_assessment_seconds": 0.19912833301350474,
+        "space_group_search": {
+          "selected": {
+            "hall": "-P 2ac 2ab",
+            "index": 289,
+            "number": 61,
+            "symbol": "P b c a"
+          },
+          "alternatives": [
+            289
+          ],
+          "unique_space_group_proven": false,
+          "termination": "plausible_centrosymmetric",
+          "accepted": true,
+          "effort": {
+            "accepted": true,
+            "escalation_reason": null,
+            "passes": [
+              {
+                "accepted": true,
+                "mode": "fast",
+                "model_attempts": 1,
+                "phase_cycles": [
+                  256,
+                  140,
+                  256,
+                  256
+                ],
+                "phasing_shape": [
+                  32,
+                  16,
+                  64
+                ],
+                "reason": "accepted",
+                "seconds": 0.455626833,
+                "termination": "plausible_centrosymmetric"
+              }
+            ],
+            "requested": "auto",
+            "selected_pass": "fast"
+          },
+          "reference_number": 61,
+          "reference_number_matches": true
+        },
+        "observed_wall_seconds": 17.31317079201108
+      },
+      "provenance": {
+        "protocol_sha256": "f2d7ae99d433d92c9e1270af3ebdeb334a3c3ea100952f4403c5a6a16567da06",
+        "executable_sha256": "cab27bcc44391ffb86932f33c1d0a4f6d86fa842d347c585d9bf41e92e2ab323",
+        "observer_sha256": "3775fdbde68c6668e9ef55adbb6910fee12191ee752f15a5010190d5f65b060e",
+        "git_commit": "b900612b8f070525176f3d582195d77738af0863",
+        "source_hashes": {
+          "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+          "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+          "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+          "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+          "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+          "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+          "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+          "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+        }
+      },
+      "timings": {
+        "coordinator_seconds": 16.171341666,
+        "native_only": true,
+        "seconds": 16.17138475,
+        "stages": [
+          [
+            "shadow_masks",
+            3.0440695
+          ],
+          [
+            "detection_linking",
+            3.314783917
+          ],
+          [
+            "indexing_geometry",
+            0.135505417
+          ],
+          [
+            "integration_profile_learning",
+            5.863535083
+          ],
+          [
+            "profile_fitting_scaling",
+            3.322229666
+          ],
+          [
+            "structure_search",
+            0.487054917
+          ]
+        ]
+      },
+      "search": {
+        "amplitude_r1": 0.0514043045582282,
+        "model_saved_before_reference": true,
+        "target_met": true,
+        "termination": "r1_target",
+        "timing_record": "timing-structure_search.json"
+      },
+      "artifacts": [
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/absolute-auto-full/native/candidate/result.json",
+          "bytes": 73226,
+          "sha256": "7ab98494fb7501a166f7c143ea0f499c99a5beb2cce5423c1d7c9338b35efb97"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/absolute-auto-full/native/candidate/best.cif",
+          "bytes": 15985,
+          "sha256": "63e79cdcd0dae4e80e45e3ff9e152f64b0e325d0aecdd6e4f02c49e40632bdaa"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/absolute-auto-full/native/candidate/density.npz",
+          "bytes": 2019484,
+          "sha256": "709e3e82dee54a1054172b62b9999a8be91cb9b0b5d5a96b5b10810a33b8e481"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/absolute-auto-full/native/candidate/space-group.cif",
+          "bytes": 1261,
+          "sha256": "d1c2ed430df1290c3d169c8fb4b28991e906f9404c902d0a01f53930596fa7d2"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/absolute-auto-full/native/space-group-search.json",
+          "bytes": 315267,
+          "sha256": "ab8c99248200782671e5468e3238783833944f5d6331c68a1a4304cfe7837326"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/absolute-auto-full/native/reduced-observations.npz",
+          "bytes": 732193,
+          "sha256": "dd99b6c7714b62d995c37c1a4f72c5e745eba6bf8420394f541f8cddbf592c04"
+        }
+      ],
+      "discovery": {
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "plausible_centrosymmetric",
+        "seconds": 0.455910958,
+        "unique_space_group_proven": false,
+        "phase": {
+          "shape": [
+            64,
+            32,
+            128
+          ],
+          "phasing_shape": [
+            32,
+            16,
+            64
+          ],
+          "seconds": 0.1139915,
+          "selected_start": 1,
+          "cycles": [
+            256,
+            140,
+            256,
+            256
+          ]
+        },
+        "phase_setting_count": 2,
+        "phase_setting_seconds": 0.066296875,
+        "model_seconds": 0.267551334,
+        "model_setting_count": 1,
+        "effort": {
+          "accepted": true,
+          "escalation_reason": null,
+          "passes": [
+            {
+              "accepted": true,
+              "mode": "fast",
+              "model_attempts": 1,
+              "phase_cycles": [
+                256,
+                140,
+                256,
+                256
+              ],
+              "phasing_shape": [
+                32,
+                16,
+                64
+              ],
+              "reason": "accepted",
+              "seconds": 0.455626833,
+              "termination": "plausible_centrosymmetric"
+            }
+          ],
+          "requested": "auto",
+          "selected_pass": "fast"
+        }
+      }
+    },
+    {
+      "name": "absolute-forced-escalation-full",
+      "command_seconds": 34.92,
+      "report": {
+        "schema": "phasesmith.enstatite-native-workflow.v1",
+        "execution_returncode": 0,
+        "source_files_unchanged": true,
+        "raw_to_structure_search_passed": true,
+        "reference_assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.004436473695615757,
+          "maximum_error_angstrom": 0.006124758476224042,
+          "hand": 1,
+          "shift": [
+            0.3289143599917974,
+            0.10913475152948386,
+            0.660412873869529
+          ],
+          "correct": true,
+          "strict_002_angstrom": true,
+          "reference_read_after_worker_stopped": true
+        },
+        "standalone_structure_refinement": "not_implemented",
+        "native_worker_seconds": 33.90493445796892,
+        "source_verification_seconds": 0.37441354198381305,
+        "reference_assessment_seconds": 0.1953127080341801,
+        "space_group_search": {
+          "selected": {
+            "hall": "-P 2ac 2ab",
+            "index": 289,
+            "number": 61,
+            "symbol": "P b c a"
+          },
+          "alternatives": [
+            289
+          ],
+          "unique_space_group_proven": false,
+          "termination": "candidate_budget",
+          "accepted": true,
+          "effort": {
+            "accepted": true,
+            "escalation_reason": "no_model",
+            "passes": [
+              {
+                "accepted": false,
+                "mode": "fast",
+                "model_attempts": 0,
+                "phase_cycles": [],
+                "phasing_shape": null,
+                "reason": "no_model",
+                "seconds": 0.014536875,
+                "termination": "max_runtime"
+              },
+              {
+                "accepted": true,
+                "mode": "thorough",
+                "model_attempts": 12,
+                "phase_cycles": [
+                  800,
+                  800,
+                  800,
+                  800
+                ],
+                "phasing_shape": [
+                  64,
+                  32,
+                  128
+                ],
+                "reason": "accepted",
+                "seconds": 17.799356500000002,
+                "termination": "candidate_budget"
+              }
+            ],
+            "requested": "auto",
+            "selected_pass": "thorough"
+          },
+          "reference_number": 61,
+          "reference_number_matches": true
+        },
+        "observed_wall_seconds": 34.8648885829607
+      },
+      "provenance": {
+        "protocol_sha256": "3a8b8b0022a59e27efeac3b213a0b19ec689f00eda3411b4560ca4dec730c3da",
+        "executable_sha256": "cab27bcc44391ffb86932f33c1d0a4f6d86fa842d347c585d9bf41e92e2ab323",
+        "observer_sha256": "3775fdbde68c6668e9ef55adbb6910fee12191ee752f15a5010190d5f65b060e",
+        "git_commit": "b900612b8f070525176f3d582195d77738af0863",
+        "source_hashes": {
+          "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+          "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+          "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+          "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+          "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+          "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+          "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+          "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+        }
+      },
+      "timings": {
+        "coordinator_seconds": 33.836510416,
+        "native_only": true,
+        "seconds": 33.836558667,
+        "stages": [
+          [
+            "shadow_masks",
+            2.998265958
+          ],
+          [
+            "detection_linking",
+            3.379982083
+          ],
+          [
+            "indexing_geometry",
+            0.135637375
+          ],
+          [
+            "integration_profile_learning",
+            6.018038125
+          ],
+          [
+            "profile_fitting_scaling",
+            3.462550875
+          ],
+          [
+            "structure_search",
+            17.838339875
+          ]
+        ]
+      },
+      "search": {
+        "amplitude_r1": 0.051433695723409355,
+        "model_saved_before_reference": true,
+        "target_met": true,
+        "termination": "r1_target",
+        "timing_record": "timing-structure_search.json"
+      },
+      "artifacts": [
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/absolute-forced-escalation-full/native/candidate/result.json",
+          "bytes": 73251,
+          "sha256": "f4e78862cbc58ac27a4551d2d2780ac3495fc2bd023711108c4090061b539af1"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/absolute-forced-escalation-full/native/candidate/best.cif",
+          "bytes": 15985,
+          "sha256": "69373a655d9e11f8504387578c4bbf038883214ef1221cbb346525b1bfd8474b"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/absolute-forced-escalation-full/native/candidate/density.npz",
+          "bytes": 137469,
+          "sha256": "79862bd5e03a84c532450b67658bcf18c8e8858beb7262705f5c02485452cd0a"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/absolute-forced-escalation-full/native/candidate/space-group.cif",
+          "bytes": 1261,
+          "sha256": "f33b3e5b7de0a00ff83cf38966ad622701c99daf3c542df843e8685bed348ac6"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/absolute-forced-escalation-full/native/space-group-search.json",
+          "bytes": 1146664,
+          "sha256": "1357f49d53098682ee7af7aebcb07a3e970415830e215b08ae5ba71d5dfd5a6c"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/absolute-forced-escalation-full/native/reduced-observations.npz",
+          "bytes": 732193,
+          "sha256": "dd99b6c7714b62d995c37c1a4f72c5e745eba6bf8420394f541f8cddbf592c04"
+        }
+      ],
+      "discovery": {
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "candidate_budget",
+        "seconds": 17.814432,
+        "unique_space_group_proven": false,
+        "phase": {
+          "shape": [
+            64,
+            32,
+            128
+          ],
+          "phasing_shape": [
+            64,
+            32,
+            128
+          ],
+          "seconds": 2.15309775,
+          "selected_start": 3,
+          "cycles": [
+            800,
+            800,
+            800,
+            800
+          ]
+        },
+        "phase_setting_count": 64,
+        "phase_setting_seconds": 2.418968214,
+        "model_seconds": 13.1916735,
+        "model_setting_count": 12,
+        "effort": {
+          "accepted": true,
+          "escalation_reason": "no_model",
+          "passes": [
+            {
+              "accepted": false,
+              "mode": "fast",
+              "model_attempts": 0,
+              "phase_cycles": [],
+              "phasing_shape": null,
+              "reason": "no_model",
+              "seconds": 0.014536875,
+              "termination": "max_runtime"
+            },
+            {
+              "accepted": true,
+              "mode": "thorough",
+              "model_attempts": 12,
+              "phase_cycles": [
+                800,
+                800,
+                800,
+                800
+              ],
+              "phasing_shape": [
+                64,
+                32,
+                128
+              ],
+              "reason": "accepted",
+              "seconds": 17.799356500000002,
+              "termination": "candidate_budget"
+            }
+          ],
+          "requested": "auto",
+          "selected_pass": "thorough"
+        }
+      }
+    },
+    {
+      "name": "known-final-control",
+      "command_seconds": 16.8,
+      "report": {
+        "schema": "phasesmith.enstatite-native-workflow.v1",
+        "execution_returncode": 0,
+        "source_files_unchanged": true,
+        "raw_to_structure_search_passed": true,
+        "reference_assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.004658545807664023,
+          "maximum_error_angstrom": 0.006832344326047763,
+          "hand": 1,
+          "shift": [
+            0.16404860227039686,
+            0.04893871742383303,
+            0.2279215496499517
+          ],
+          "correct": true,
+          "strict_002_angstrom": true,
+          "reference_read_after_worker_stopped": true
+        },
+        "standalone_structure_refinement": "not_implemented",
+        "native_worker_seconds": 15.90425854199566,
+        "source_verification_seconds": 0.37554045795695856,
+        "reference_assessment_seconds": 0.183743332978338,
+        "observed_wall_seconds": 16.74383549997583
+      },
+      "provenance": {
+        "protocol_sha256": "2caedc973158565ff6224da3b4ff27f74fa972863dd190fe0dd04feea5ea0ef0",
+        "executable_sha256": "dfab30a67625d3a5c858522cd430a6dd673569a9ac626c0d74a9f9fe92b83e90",
+        "observer_sha256": "7d2d9db01eb00bad2cb42aeb3b0d3499e642a26e338f7065ba03ab2579bd8854",
+        "git_commit": "f8a313f36a262af0561e0252601738ef7f99075f",
+        "source_hashes": {
+          "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+          "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+          "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+          "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+          "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+          "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+          "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+          "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+        }
+      },
+      "timings": {
+        "coordinator_seconds": 15.821084042,
+        "native_only": true,
+        "seconds": 15.821091833,
+        "stages": [
+          [
+            "shadow_masks",
+            2.989398666
+          ],
+          [
+            "detection_linking",
+            3.349662042
+          ],
+          [
+            "indexing_geometry",
+            0.130339833
+          ],
+          [
+            "integration_profile_learning",
+            5.582029542
+          ],
+          [
+            "profile_fitting_scaling",
+            3.15812275
+          ],
+          [
+            "structure_search",
+            0.609502459
+          ]
+        ]
+      },
+      "search": {
+        "amplitude_r1": 0.041128354912261904,
+        "model_saved_before_reference": true,
+        "target_met": true,
+        "termination": "r1_target",
+        "timing_record": "timing-structure_search.json"
+      },
+      "artifacts": [
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/known-final-control/native/candidate/result.json",
+          "bytes": 78067,
+          "sha256": "9a9a64e2b1cd08e21e8c1307d7d75787d228cfbc91cc710e464341de38a01f74"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/known-final-control/native/candidate/best.cif",
+          "bytes": 15985,
+          "sha256": "ab4219d71b0a19a10618ca33e415eed6f08fe2c26f409b18d114a9d8a6746d48"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/known-final-control/native/candidate/density.npz",
+          "bytes": 162907,
+          "sha256": "e358890a0858c3bd6f8667c454dc7ff2821ce866f0b3010ab7d5617e89d5b698"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/known-final-control/native/reduced-observations.npz",
+          "bytes": 633184,
+          "sha256": "cf809a7abb644a1d044c208130218fffca23a302b2cc6825079b4a70362b5bf0"
+        }
+      ]
+    },
+    {
+      "name": "bounded-final-control",
+      "command_seconds": 33.99,
+      "report": {
+        "schema": "phasesmith.enstatite-native-workflow.v1",
+        "execution_returncode": 0,
+        "source_files_unchanged": true,
+        "raw_to_structure_search_passed": true,
+        "reference_assessment": {
+          "counts_match": true,
+          "rms_error_angstrom": 0.004436473695615757,
+          "maximum_error_angstrom": 0.006124758476224042,
+          "hand": 1,
+          "shift": [
+            0.3289143599917974,
+            0.10913475152948386,
+            0.660412873869529
+          ],
+          "correct": true,
+          "strict_002_angstrom": true,
+          "reference_read_after_worker_stopped": true
+        },
+        "standalone_structure_refinement": "not_implemented",
+        "native_worker_seconds": 33.106194583990145,
+        "source_verification_seconds": 0.36076362401945516,
+        "reference_assessment_seconds": 0.18982191698160022,
+        "space_group_search": {
+          "selected": {
+            "hall": "-P 2ac 2ab",
+            "index": 289,
+            "number": 61,
+            "symbol": "P b c a"
+          },
+          "alternatives": [
+            289
+          ],
+          "unique_space_group_proven": false,
+          "termination": "candidate_budget",
+          "reference_number": 61,
+          "reference_number_matches": true
+        },
+        "observed_wall_seconds": 33.947210207988974
+      },
+      "provenance": {
+        "protocol_sha256": "67d7a7dc47ce7df12a85d1ee1fbe279b1c89817fb3eb510ce236d7c023de37c5",
+        "executable_sha256": "dfab30a67625d3a5c858522cd430a6dd673569a9ac626c0d74a9f9fe92b83e90",
+        "observer_sha256": "7d2d9db01eb00bad2cb42aeb3b0d3499e642a26e338f7065ba03ab2579bd8854",
+        "git_commit": "f8a313f36a262af0561e0252601738ef7f99075f",
+        "source_hashes": {
+          "CeO2_20240620_1849.edf": "a5f175aaaedc1ef9742401f37f3a60d62fcb8957114feb73d8e63c6351a2f393",
+          "CeO2_20240620_1849_dioptas.poni": "3379885eab3fa523b0004a47880a85f4e5676dd28099e30a641b541e9436bd4a",
+          "dom1_v9.cif": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+          "dom1_v9.hkl": "900542457de0702ae90fd2ad213b0b683bb3398f5a17d0360ce38480184e41ce",
+          "eiger_0000.h5": "f1c15243075672edc8208f38c032ddb299ec8ea3126d83d283b9f601e4e4de3c",
+          "frame.par": "9243dc0bfb9a3a402c559700d4d9f9694063f58e1ff9346bf99f9fcfd813978e",
+          "info.txt": "d45c479e25b0193c128288f3d35720cee5e09710605314f2002216309b2a23bc",
+          "peak_search_before_DAFi.tabbin": "796a294e14cdff6cee195dcfb98a533c1ff5d3f556f931feaaadc8c1edbe47e5"
+        }
+      },
+      "timings": {
+        "coordinator_seconds": 33.059024,
+        "native_only": true,
+        "seconds": 33.059066167,
+        "stages": [
+          [
+            "shadow_masks",
+            2.983366291
+          ],
+          [
+            "detection_linking",
+            3.394864
+          ],
+          [
+            "indexing_geometry",
+            0.144702333
+          ],
+          [
+            "integration_profile_learning",
+            5.738866084
+          ],
+          [
+            "profile_fitting_scaling",
+            3.405434125
+          ],
+          [
+            "structure_search",
+            17.389523708
+          ]
+        ]
+      },
+      "search": {
+        "amplitude_r1": 0.051433695723409355,
+        "model_saved_before_reference": true,
+        "target_met": true,
+        "termination": "r1_target",
+        "timing_record": "timing-structure_search.json"
+      },
+      "artifacts": [
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/bounded-final-control/native/candidate/result.json",
+          "bytes": 73251,
+          "sha256": "f4e78862cbc58ac27a4551d2d2780ac3495fc2bd023711108c4090061b539af1"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/bounded-final-control/native/candidate/best.cif",
+          "bytes": 15985,
+          "sha256": "69373a655d9e11f8504387578c4bbf038883214ef1221cbb346525b1bfd8474b"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/bounded-final-control/native/candidate/density.npz",
+          "bytes": 137469,
+          "sha256": "79862bd5e03a84c532450b67658bcf18c8e8858beb7262705f5c02485452cd0a"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/bounded-final-control/native/candidate/space-group.cif",
+          "bytes": 1261,
+          "sha256": "f33b3e5b7de0a00ff83cf38966ad622701c99daf3c542df843e8685bed348ac6"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/bounded-final-control/native/space-group-search.json",
+          "bytes": 1003711,
+          "sha256": "bc567e2e8c95d030c59aaed5d8e976024f0a107571ddfb565a9e9b97770d228b"
+        },
+        {
+          "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/bounded-final-control/native/reduced-observations.npz",
+          "bytes": 732193,
+          "sha256": "dd99b6c7714b62d995c37c1a4f72c5e745eba6bf8420394f541f8cddbf592c04"
+        }
+      ],
+      "discovery": {
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "candidate_budget",
+        "seconds": 17.367502583,
+        "unique_space_group_proven": false,
+        "phase": {
+          "shape": [
+            64,
+            32,
+            128
+          ],
+          "phasing_shape": [
+            64,
+            32,
+            128
+          ],
+          "seconds": 2.029338875,
+          "selected_start": 3,
+          "cycles": [
+            800,
+            800,
+            800,
+            800
+          ]
+        },
+        "phase_setting_count": 64,
+        "phase_setting_seconds": 2.3855186280000003,
+        "model_seconds": 12.947263959,
+        "model_setting_count": 12,
+        "effort": null
+      }
+    }
+  ],
+  "standalone_direct": [
+    {
+      "name": "native-direct-final",
+      "timings": {
+        "coordinator_seconds": 16.243044667,
+        "native_only": true,
+        "seconds": 16.446081042,
+        "stages": [
+          [
+            "shadow_masks",
+            2.978422542
+          ],
+          [
+            "detection_linking",
+            3.433673583
+          ],
+          [
+            "indexing_geometry",
+            0.128225833
+          ],
+          [
+            "integration_profile_learning",
+            5.80744575
+          ],
+          [
+            "profile_fitting_scaling",
+            3.417633042
+          ],
+          [
+            "structure_search",
+            0.475458125
+          ]
+        ]
+      },
+      "command_log": {
+        "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/native-direct-final.log",
+        "bytes": 608,
+        "sha256": "db6f71865ba2c541fdf28b19a4c7bbad6cd8fed029aa9d6bd1a755bdfd7f3962"
+      }
+    },
+    {
+      "name": "auto-native-direct-final",
+      "timings": {
+        "coordinator_seconds": 16.032858416,
+        "native_only": true,
+        "seconds": 16.236523458,
+        "stages": [
+          [
+            "shadow_masks",
+            2.986655541
+          ],
+          [
+            "detection_linking",
+            3.2515358340000002
+          ],
+          [
+            "indexing_geometry",
+            0.137918208
+          ],
+          [
+            "integration_profile_learning",
+            5.8606
+          ],
+          [
+            "profile_fitting_scaling",
+            3.314026667
+          ],
+          [
+            "structure_search",
+            0.479816625
+          ]
+        ]
+      },
+      "command_log": {
+        "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/auto-native-direct-final.log",
+        "bytes": 607,
+        "sha256": "8bc1cc13d8908f536267e1cbdf0aee2f27c53aa3c09d4b72e10b3bde0a70151b"
+      }
+    }
+  ],
+  "standalone_comparison": {
+    "executable_sha256": "cab27bcc44391ffb86932f33c1d0a4f6d86fa842d347c585d9bf41e92e2ab323",
+    "source_archive": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/v37-full-02/native/reduced-observations.npz",
+    "measured_rows": 4844,
+    "negative_rows": 594,
+    "exact_symmetry_or_laue_supplied": false,
+    "phasing_workers": 4,
+    "models_and_origin_workers": 1,
+    "qualification": "Same complete signed native measurement rows used for SHELXT export, in original native precision. Input corrected intensities; no raw reduction. Native assesses all metric settings and infers intensity symmetry; SHELXT receives inferred mmm. Different coverage/objectives/architectures. Archives included in native process time.",
+    "results": [
+      {
+        "repeat": 1,
+        "seconds": 0.8763407910009846,
+        "internal_with_assessment_and_archives": 0.481170292,
+        "model_search_seconds": 0.449131834,
+        "phase_seconds": 0.114374792,
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "plausible_centrosymmetric",
+        "returncode": 0,
+        "r1": 0.0514043045582282
+      },
+      {
+        "repeat": 2,
+        "seconds": 0.510018749977462,
+        "internal_with_assessment_and_archives": 0.480446,
+        "model_search_seconds": 0.44887525,
+        "phase_seconds": 0.113611125,
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "plausible_centrosymmetric",
+        "returncode": 0,
+        "r1": 0.0514043045582282
+      },
+      {
+        "repeat": 3,
+        "seconds": 0.5084233329980634,
+        "internal_with_assessment_and_archives": 0.477565834,
+        "model_search_seconds": 0.445302042,
+        "phase_seconds": 0.113254167,
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "termination": "plausible_centrosymmetric",
+        "returncode": 0,
+        "r1": 0.0514043045582282
+      },
+      {
+        "repeat": 4,
+        "seconds": 0.5028864159830846,
+        "returncode": 0,
+        "model_search_seconds": 0.445257041,
+        "selected": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "effort": {
+          "accepted": true,
+          "escalation_reason": null,
+          "passes": [
+            {
+              "accepted": true,
+              "mode": "fast",
+              "model_attempts": 1,
+              "phase_cycles": [
+                256,
+                140,
+                256,
+                256
+              ],
+              "phasing_shape": [
+                32,
+                16,
+                64
+              ],
+              "reason": "accepted",
+              "seconds": 0.444973958,
+              "termination": "plausible_centrosymmetric"
+            }
+          ],
+          "requested": "auto",
+          "selected_pass": "fast"
+        }
+      }
+    ]
+  },
+  "shelxt_comparison": {
+    "executable": "/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt",
+    "sha256": "4d712cb17f8952e1f59f476af7c61ad4ab5261e594c75441c7f81dcefe7b5560",
+    "binary": "SHELXT 2018/2 x86_64 via Rosetta",
+    "hkl_sha256": "091aba6bc49a6c2a81b14d1358992762735a13de20fb4c5f94cf32da7d6d0f7f",
+    "ins_sha256": "3c44cae96a43fe43e37ccf501f68209c3208219314604ea6d99cd8a1ecb3d632",
+    "source": "Same 4844 signed v33-v37 native observations; fixed-width export identical to previous comparison. Neutral TITLE; cell/elements and inferred mmm; dummy UNIT 1 1 1; no exact group, formula, counts or coordinates.",
+    "qualification": "Solution/group stage only; different numerical objectives, grids, coverage, candidate schedules and architecture. All timing runs sequential after compilation/tests stop.",
+    "results": [
+      {
+        "workers": 1,
+        "repeat": 1,
+        "seconds": 2.3250602079788223,
+        "returncode": 0,
+        "stages": {
+          "p1": 0.775,
+          "space_group": 1.412,
+          "isotropic": 0.05,
+          "total": 2.262
+        },
+        "candidates": [
+          {
+            "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/shelxt-workers/w1-1/sample_a.res",
+            "group": "Pbca",
+            "r1": 0.033,
+            "rweak": 0.0,
+            "alpha": 0.081,
+            "composition": {
+              "Si": 24,
+              "Mg": 8,
+              "O": 48
+            },
+            "reference_assessment": {
+              "counts_match": false,
+              "correct": false
+            },
+            "positions_without_element_labels": {
+              "counts_match": true,
+              "rms_error_angstrom": 0.006625986253105334,
+              "maximum_error_angstrom": 0.011021883664951085,
+              "hand": -1,
+              "shift": [
+                0.5,
+                0.5,
+                0.0
+              ],
+              "correct": true,
+              "strict_002_angstrom": true
+            }
+          }
+        ]
+      },
+      {
+        "workers": 1,
+        "repeat": 2,
+        "seconds": 2.308779333019629,
+        "returncode": 0,
+        "stages": {
+          "p1": 0.79,
+          "space_group": 1.401,
+          "isotropic": 0.046,
+          "total": 2.249
+        },
+        "candidates": [
+          {
+            "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/shelxt-workers/w1-2/sample_a.res",
+            "group": "Pbca",
+            "r1": 0.033,
+            "rweak": 0.0,
+            "alpha": 0.081,
+            "composition": {
+              "Si": 24,
+              "Mg": 8,
+              "O": 48
+            },
+            "reference_assessment": {
+              "counts_match": false,
+              "correct": false
+            },
+            "positions_without_element_labels": {
+              "counts_match": true,
+              "rms_error_angstrom": 0.006625986253105334,
+              "maximum_error_angstrom": 0.011021883664951085,
+              "hand": -1,
+              "shift": [
+                0.5,
+                0.5,
+                0.0
+              ],
+              "correct": true,
+              "strict_002_angstrom": true
+            }
+          }
+        ]
+      },
+      {
+        "workers": 1,
+        "repeat": 3,
+        "seconds": 2.318759332993068,
+        "returncode": 0,
+        "stages": {
+          "p1": 0.777,
+          "space_group": 1.423,
+          "isotropic": 0.047,
+          "total": 2.263
+        },
+        "candidates": [
+          {
+            "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/shelxt-workers/w1-3/sample_a.res",
+            "group": "Pbca",
+            "r1": 0.033,
+            "rweak": 0.0,
+            "alpha": 0.081,
+            "composition": {
+              "Si": 24,
+              "Mg": 8,
+              "O": 48
+            },
+            "reference_assessment": {
+              "counts_match": false,
+              "correct": false
+            },
+            "positions_without_element_labels": {
+              "counts_match": true,
+              "rms_error_angstrom": 0.006625986253105334,
+              "maximum_error_angstrom": 0.011021883664951085,
+              "hand": -1,
+              "shift": [
+                0.5,
+                0.5,
+                0.0
+              ],
+              "correct": true,
+              "strict_002_angstrom": true
+            }
+          }
+        ]
+      },
+      {
+        "workers": 4,
+        "repeat": 1,
+        "seconds": 0.8605080000124872,
+        "returncode": 0,
+        "stages": {
+          "p1": 0.245,
+          "space_group": 0.435,
+          "isotropic": 0.03,
+          "total": 0.721
+        },
+        "candidates": [
+          {
+            "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/shelxt-workers/w4-1/sample_a.res",
+            "group": "Pbca",
+            "r1": 0.038,
+            "rweak": 0.0,
+            "alpha": 0.084,
+            "composition": {
+              "Si": 16,
+              "Mg": 16,
+              "O": 48
+            },
+            "reference_assessment": {
+              "counts_match": true,
+              "rms_error_angstrom": 0.010323127750675669,
+              "maximum_error_angstrom": 0.02022327657202279,
+              "hand": -1,
+              "shift": [
+                0.5,
+                0.5,
+                0.0
+              ],
+              "correct": true,
+              "strict_002_angstrom": false
+            }
+          }
+        ]
+      },
+      {
+        "workers": 4,
+        "repeat": 2,
+        "seconds": 0.8887162909959443,
+        "returncode": 0,
+        "stages": {
+          "p1": 0.241,
+          "space_group": 0.441,
+          "isotropic": 0.03,
+          "total": 0.721
+        },
+        "candidates": [
+          {
+            "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/shelxt-workers/w4-2/sample_a.res",
+            "group": "Pbca",
+            "r1": 0.038,
+            "rweak": 0.0,
+            "alpha": 0.084,
+            "composition": {
+              "Si": 16,
+              "Mg": 16,
+              "O": 48
+            },
+            "reference_assessment": {
+              "counts_match": true,
+              "rms_error_angstrom": 0.010323127750675669,
+              "maximum_error_angstrom": 0.02022327657202279,
+              "hand": -1,
+              "shift": [
+                0.5,
+                0.5,
+                0.0
+              ],
+              "correct": true,
+              "strict_002_angstrom": false
+            }
+          }
+        ]
+      },
+      {
+        "workers": 4,
+        "repeat": 3,
+        "seconds": 0.8976189580280334,
+        "returncode": 0,
+        "stages": {
+          "p1": 0.247,
+          "space_group": 0.434,
+          "isotropic": 0.027,
+          "total": 0.721
+        },
+        "candidates": [
+          {
+            "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/shelxt-workers/w4-3/sample_a.res",
+            "group": "Pbca",
+            "r1": 0.038,
+            "rweak": 0.0,
+            "alpha": 0.084,
+            "composition": {
+              "Si": 16,
+              "Mg": 16,
+              "O": 48
+            },
+            "reference_assessment": {
+              "counts_match": true,
+              "rms_error_angstrom": 0.010323127750675669,
+              "maximum_error_angstrom": 0.02022327657202279,
+              "hand": -1,
+              "shift": [
+                0.5,
+                0.5,
+                0.0
+              ],
+              "correct": true,
+              "strict_002_angstrom": false
+            }
+          }
+        ]
+      },
+      {
+        "workers": 10,
+        "repeat": 1,
+        "seconds": 0.6605470840004273,
+        "returncode": 0,
+        "stages": {
+          "p1": 0.26,
+          "space_group": 0.242,
+          "isotropic": 0.047,
+          "total": 0.566
+        },
+        "candidates": [
+          {
+            "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/shelxt-workers/w10-1/sample_a.res",
+            "group": "Pbca",
+            "r1": 0.037,
+            "rweak": 0.0,
+            "alpha": 0.093,
+            "composition": {
+              "Si": 16,
+              "Mg": 16,
+              "O": 48
+            },
+            "reference_assessment": {
+              "counts_match": true,
+              "rms_error_angstrom": 0.010282688483953327,
+              "maximum_error_angstrom": 0.020041942894920076,
+              "hand": 1,
+              "shift": [
+                1.0,
+                0.5,
+                0.5
+              ],
+              "correct": true,
+              "strict_002_angstrom": false
+            }
+          }
+        ]
+      },
+      {
+        "workers": 10,
+        "repeat": 2,
+        "seconds": 0.6441251250216737,
+        "returncode": 0,
+        "stages": {
+          "p1": 0.258,
+          "space_group": 0.233,
+          "isotropic": 0.045,
+          "total": 0.55
+        },
+        "candidates": [
+          {
+            "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/shelxt-workers/w10-2/sample_a.res",
+            "group": "Pbca",
+            "r1": 0.037,
+            "rweak": 0.0,
+            "alpha": 0.093,
+            "composition": {
+              "Si": 16,
+              "Mg": 16,
+              "O": 48
+            },
+            "reference_assessment": {
+              "counts_match": true,
+              "rms_error_angstrom": 0.010282688483953327,
+              "maximum_error_angstrom": 0.020041942894920076,
+              "hand": 1,
+              "shift": [
+                1.0,
+                0.5,
+                0.5
+              ],
+              "correct": true,
+              "strict_002_angstrom": false
+            }
+          }
+        ]
+      },
+      {
+        "workers": 10,
+        "repeat": 3,
+        "seconds": 0.6676463749608956,
+        "returncode": 0,
+        "stages": {
+          "p1": 0.252,
+          "space_group": 0.222,
+          "isotropic": 0.045,
+          "total": 0.534
+        },
+        "candidates": [
+          {
+            "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/shelxt-workers/w10-3/sample_a.res",
+            "group": "Pbca",
+            "r1": 0.037,
+            "rweak": 0.0,
+            "alpha": 0.093,
+            "composition": {
+              "Si": 16,
+              "Mg": 16,
+              "O": 48
+            },
+            "reference_assessment": {
+              "counts_match": true,
+              "rms_error_angstrom": 0.010282688483953327,
+              "maximum_error_angstrom": 0.020041942894920076,
+              "hand": 1,
+              "shift": [
+                1.0,
+                0.5,
+                0.5
+              ],
+              "correct": true,
+              "strict_002_angstrom": false
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "effort_mode_controls": [
+    {
+      "name": "fast_no_escalation",
+      "seconds": 0.07663304201560095,
+      "returncode": 1,
+      "passed": true,
+      "effort": {
+        "accepted": false,
+        "escalation_reason": null,
+        "passes": [
+          {
+            "accepted": false,
+            "mode": "fast",
+            "model_attempts": 0,
+            "phase_cycles": [],
+            "phasing_shape": null,
+            "reason": "no_model",
+            "seconds": 0.014383042,
+            "termination": "max_runtime"
+          }
+        ],
+        "requested": "fast",
+        "selected_pass": "fast"
+      },
+      "selected": null
+    },
+    {
+      "name": "thorough_direct",
+      "seconds": 17.786723874974996,
+      "returncode": 0,
+      "passed": true,
+      "effort": {
+        "accepted": true,
+        "escalation_reason": null,
+        "passes": [
+          {
+            "accepted": true,
+            "mode": "thorough",
+            "model_attempts": 12,
+            "phase_cycles": [
+              800,
+              800,
+              800,
+              800
+            ],
+            "phasing_shape": [
+              64,
+              32,
+              128
+            ],
+            "reason": "accepted",
+            "seconds": 17.710087875,
+            "termination": "candidate_budget"
+          }
+        ],
+        "requested": "thorough",
+        "selected_pass": "thorough"
+      },
+      "selected": {
+        "hall": "-P 2ac 2ab",
+        "index": 289,
+        "number": 61,
+        "symbol": "P b c a"
+      }
+    }
+  ],
+  "acceptance_negative_control": {
+    "passed": true,
+    "not_a_performance_result": true,
+    "returncode": 0,
+    "effort": {
+      "accepted": false,
+      "escalation_reason": "common_r1_not_met",
+      "passes": [
+        {
+          "accepted": false,
+          "mode": "fast",
+          "model_attempts": 1,
+          "phase_cycles": [
+            256,
+            140,
+            256,
+            256
+          ],
+          "phasing_shape": [
+            32,
+            16,
+            64
+          ],
+          "reason": "common_r1_not_met",
+          "seconds": 0.515415125,
+          "termination": "plausible_centrosymmetric"
+        },
+        {
+          "accepted": false,
+          "mode": "thorough",
+          "model_attempts": 12,
+          "phase_cycles": [
+            800,
+            800,
+            800,
+            800
+          ],
+          "phasing_shape": [
+            64,
+            32,
+            128
+          ],
+          "reason": "common_r1_not_met",
+          "seconds": 31.029185625,
+          "termination": "candidate_budget"
+        }
+      ],
+      "requested": "auto",
+      "selected_pass": "fast"
+    },
+    "retained_other_map": true,
+    "selected": {
+      "hall": "-P 2ac 2ab",
+      "index": 289,
+      "number": 61,
+      "symbol": "P b c a"
+    }
+  },
+  "checks": {
+    "rust_workspace": {
+      "toolchain": "1.89.0",
+      "all_features": true,
+      "locked": true,
+      "passed": 543,
+      "failed": 0,
+      "ignored": 34
+    },
+    "native_example_passed": 4,
+    "python_installed_wheel": {
+      "passed": 3297,
+      "skipped": 11,
+      "deselected": 34,
+      "seconds": 111.63,
+      "native_reference_executable_enabled": true
+    },
+    "strict_workspace_clippy": "passed all-targets/all-features with warnings denied",
+    "rustfmt": "passed",
+    "rustdoc": "passed workspace/all-features with warnings denied",
+    "minimal_rust_features": "passed facade and Python crate with no-default-features",
+    "ruff": "passed lint and formatting, 806 Python files",
+    "public_api_snapshot": "passed unchanged",
+    "version": "0.8.0",
+    "math_docs_and_skill_sync": "passed",
+    "numpy_only_installed_wheel": "passed native detection/row search/solution and bundled-filter HDF5 decoding",
+    "clean_source_build": {
+      "passed": true,
+      "workspace": {
+        "passed": true,
+        "source": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0",
+        "workspace_root": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0",
+        "local_manifests": [
+          "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0/crates/phasesmith-hdf5/Cargo.toml",
+          "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0/crates/phasesmith-solution/Cargo.toml",
+          "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0/crates/phasesmith-crystallography/Cargo.toml",
+          "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0/crates/phasesmith-execution/Cargo.toml",
+          "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0/crates/phasesmith-spots/Cargo.toml",
+          "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0/crates/phasesmith-row-search/Cargo.toml",
+          "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0/crates/phasesmith-core/Cargo.toml",
+          "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0/crates/phasesmith-engine/Cargo.toml",
+          "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0/crates/phasesmith-io/Cargo.toml",
+          "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0/crates/phasesmith-model/Cargo.toml",
+          "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0/crates/phasesmith-persistence/Cargo.toml",
+          "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0/crates/phasesmith-workflows/Cargo.toml",
+          "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0/crates/phasesmith-py/Cargo.toml",
+          "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction/phasesmith-0.8.0/crates/phasesmith-validation/Cargo.toml"
+        ]
+      },
+      "fresh_target": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/source-build",
+      "numpy_only_smoke": "passed"
+    },
+    "docs": {
+      "html_pages": 187,
+      "internal_link_instances_checked": 23424,
+      "broken_internal_links": [],
+      "unreachable_html_pages": [],
+      "external_urls_live_checked": false
+    },
+    "remote_ci_executed": false,
+    "post_cleanup_smoke": {
+      "standalone_help_after_build_removal": true,
+      "source_built_numpy_only_hdf5_smoke_after_build_removal": true,
+      "binary_sha256": "cab27bcc44391ffb86932f33c1d0a4f6d86fa842d347c585d9bf41e92e2ab323"
+    }
+  },
+  "gates": {
+    "execution_equivalence": {
+      "v34-full-01": {
+        "frame-validity.npz": true,
+        "positions.npz": true,
+        "indexed-positions.npz": true,
+        "edge-exclusions.npz": true,
+        "raw-observations-and-bank.npz": true,
+        "reduced-observations.npz": true
+      },
+      "v35-full-01": {
+        "frame-validity.npz": true,
+        "positions.npz": true,
+        "indexed-positions.npz": true,
+        "edge-exclusions.npz": true,
+        "raw-observations-and-bank.npz": true,
+        "reduced-observations.npz": true
+      },
+      "v36-full-01": {
+        "frame-validity.npz": true,
+        "positions.npz": true,
+        "indexed-positions.npz": true,
+        "edge-exclusions.npz": true,
+        "raw-observations-and-bank.npz": true,
+        "reduced-observations.npz": true
+      },
+      "v37-full-01": {
+        "frame-validity.npz": true,
+        "positions.npz": true,
+        "indexed-positions.npz": true,
+        "edge-exclusions.npz": true,
+        "raw-observations-and-bank.npz": true,
+        "reduced-observations.npz": true,
+        "full_candidate_records": true,
+        "selected_density_bitwise": true
+      },
+      "v37-full-02": {
+        "frame-validity.npz": true,
+        "positions.npz": true,
+        "indexed-positions.npz": true,
+        "edge-exclusions.npz": true,
+        "raw-observations-and-bank.npz": true,
+        "reduced-observations.npz": true,
+        "full_candidate_records": true,
+        "selected_density_bitwise": true
+      },
+      "v38-full-01": {
+        "frame-validity.npz": true,
+        "positions.npz": true,
+        "indexed-positions.npz": true,
+        "edge-exclusions.npz": true,
+        "raw-observations-and-bank.npz": true,
+        "reduced-observations.npz": true,
+        "full_candidate_records": true,
+        "selected_density_bitwise": true
+      },
+      "v39-full-01": {
+        "frame-validity.npz": true,
+        "positions.npz": true,
+        "indexed-positions.npz": true,
+        "edge-exclusions.npz": true,
+        "raw-observations-and-bank.npz": true,
+        "reduced-observations.npz": true,
+        "full_candidate_records": true,
+        "selected_density_bitwise": true
+      },
+      "v39-full-02": {
+        "frame-validity.npz": true,
+        "positions.npz": true,
+        "indexed-positions.npz": true,
+        "edge-exclusions.npz": true,
+        "raw-observations-and-bank.npz": true,
+        "reduced-observations.npz": true,
+        "full_candidate_records": true,
+        "selected_density_bitwise": true
+      },
+      "auto-full-01": {
+        "frame-validity.npz": true,
+        "positions.npz": true,
+        "indexed-positions.npz": true,
+        "edge-exclusions.npz": true,
+        "raw-observations-and-bank.npz": true,
+        "reduced-observations.npz": true,
+        "full_candidate_records": true,
+        "selected_density_bitwise": true
+      },
+      "auto-full-02": {
+        "frame-validity.npz": true,
+        "positions.npz": true,
+        "indexed-positions.npz": true,
+        "edge-exclusions.npz": true,
+        "raw-observations-and-bank.npz": true,
+        "reduced-observations.npz": true,
+        "full_candidate_records": true,
+        "selected_density_bitwise": true
+      },
+      "forced-escalation-full": {
+        "frame-validity.npz": true,
+        "positions.npz": true,
+        "indexed-positions.npz": true,
+        "edge-exclusions.npz": true,
+        "raw-observations-and-bank.npz": true,
+        "reduced-observations.npz": true
+      },
+      "direct": {
+        "frame-validity.npz": true,
+        "positions.npz": true,
+        "indexed-positions.npz": true,
+        "edge-exclusions.npz": true,
+        "raw-observations-and-bank.npz": true,
+        "reduced-observations.npz": true
+      },
+      "preliminary-symmetry.json": true,
+      "space-group-evidence.json": true,
+      "known_control": {
+        "frame-validity.npz": true,
+        "positions.npz": true,
+        "indexed-positions.npz": true,
+        "edge-exclusions.npz": true,
+        "raw-observations-and-bank.npz": true,
+        "reduced-observations.npz": true,
+        "candidate/density.npz": true,
+        "candidates": true
+      },
+      "forced_escalation": {
+        "passed": true,
+        "effort": {
+          "accepted": true,
+          "escalation_reason": "no_model",
+          "passes": [
+            {
+              "accepted": false,
+              "mode": "fast",
+              "model_attempts": 0,
+              "phase_cycles": [],
+              "phasing_shape": null,
+              "reason": "no_model",
+              "seconds": 0.014702541,
+              "termination": "max_runtime"
+            },
+            {
+              "accepted": true,
+              "mode": "thorough",
+              "model_attempts": 12,
+              "phase_cycles": [
+                800,
+                800,
+                800,
+                800
+              ],
+              "phasing_shape": [
+                64,
+                32,
+                128
+              ],
+              "reason": "accepted",
+              "seconds": 17.467286916,
+              "termination": "candidate_budget"
+            }
+          ],
+          "requested": "auto",
+          "selected_pass": "thorough"
+        }
+      },
+      "forced_fallback_same_candidate_as_bounded": true
+    },
+    "absolute_deadline_equivalence": {
+      "absolute_fast": {
+        "baseline": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/auto-full-02/native",
+        "candidate": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/absolute-auto-full/native",
+        "passed": true,
+        "gates": {
+          "frame-validity.npz": {
+            "excluded": true,
+            "omega_bounds": true,
+            "detection_scales": true
+          },
+          "positions.npz": {
+            "boxes": true,
+            "frame_ranges": true,
+            "values": true,
+            "flags": true,
+            "original_flags": true,
+            "observations": true,
+            "omega_bounds": true
+          },
+          "indexed-positions.npz": {
+            "track_ids": true,
+            "hkl": true,
+            "observed": true,
+            "predicted": true,
+            "eligible": true,
+            "training": true
+          },
+          "edge-exclusions.npz": {
+            "hkl": true,
+            "predicted": true,
+            "aperture": true,
+            "flags": true
+          },
+          "raw-observations-and-bank.npz": {
+            "table_hkl": true,
+            "table_predicted": true,
+            "table_grain_ids": true,
+            "table_values": true,
+            "table_flags": true,
+            "table_observation_ids": true,
+            "table_frame_indices": true,
+            "table_boxes": true,
+            "table_frame_values": true,
+            "table_frame_flags": true,
+            "table_omega_bounds": true,
+            "table_background_models": true,
+            "table_angular_half_widths": true,
+            "obs_samples": true,
+            "obs_valid": true,
+            "obs_offsets": true,
+            "obs_covariance": true,
+            "obs_centres": true,
+            "obs_scales": true,
+            "obs_planar_transforms": true,
+            "bank_profiles": true,
+            "bank_counts": true,
+            "bank_shifts": true,
+            "bank_reference_ids": true,
+            "bank_reference_centres": true
+          },
+          "reduced-observations.npz": {
+            "hkl": true,
+            "intensity": true,
+            "sigma": true,
+            "statistical_sigma": true,
+            "aperture": true,
+            "dac_entry_degrees": true,
+            "dac_exit_degrees": true,
+            "flags": true,
+            "use": true,
+            "visible": true,
+            "raw_profiles": true,
+            "parameters": true,
+            "choices": true
+          },
+          "space-group-phase-map.npz": {
+            "density": true
+          },
+          "candidate/density.npz": {
+            "density": true,
+            "hkl": true,
+            "amplitudes": true
+          },
+          "candidate/result.json": true,
+          "space-group-search.json": true
+        }
+      },
+      "absolute_fallback": {
+        "baseline": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/forced-escalation-full/native",
+        "candidate": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/absolute-forced-escalation-full/native",
+        "passed": true,
+        "gates": {
+          "frame-validity.npz": {
+            "excluded": true,
+            "omega_bounds": true,
+            "detection_scales": true
+          },
+          "positions.npz": {
+            "boxes": true,
+            "frame_ranges": true,
+            "values": true,
+            "flags": true,
+            "original_flags": true,
+            "observations": true,
+            "omega_bounds": true
+          },
+          "indexed-positions.npz": {
+            "track_ids": true,
+            "hkl": true,
+            "observed": true,
+            "predicted": true,
+            "eligible": true,
+            "training": true
+          },
+          "edge-exclusions.npz": {
+            "hkl": true,
+            "predicted": true,
+            "aperture": true,
+            "flags": true
+          },
+          "raw-observations-and-bank.npz": {
+            "table_hkl": true,
+            "table_predicted": true,
+            "table_grain_ids": true,
+            "table_values": true,
+            "table_flags": true,
+            "table_observation_ids": true,
+            "table_frame_indices": true,
+            "table_boxes": true,
+            "table_frame_values": true,
+            "table_frame_flags": true,
+            "table_omega_bounds": true,
+            "table_background_models": true,
+            "table_angular_half_widths": true,
+            "obs_samples": true,
+            "obs_valid": true,
+            "obs_offsets": true,
+            "obs_covariance": true,
+            "obs_centres": true,
+            "obs_scales": true,
+            "obs_planar_transforms": true,
+            "bank_profiles": true,
+            "bank_counts": true,
+            "bank_shifts": true,
+            "bank_reference_ids": true,
+            "bank_reference_centres": true
+          },
+          "reduced-observations.npz": {
+            "hkl": true,
+            "intensity": true,
+            "sigma": true,
+            "statistical_sigma": true,
+            "aperture": true,
+            "dac_entry_degrees": true,
+            "dac_exit_degrees": true,
+            "flags": true,
+            "use": true,
+            "visible": true,
+            "raw_profiles": true,
+            "parameters": true,
+            "choices": true
+          },
+          "space-group-phase-map.npz": {
+            "density": true
+          },
+          "candidate/density.npz": {
+            "density": true,
+            "hkl": true,
+            "amplitudes": true
+          },
+          "candidate/result.json": true,
+          "space-group-search.json": true
+        }
+      }
+    },
+    "direct_reference_assessment": {
+      "counts_match": true,
+      "rms_error_angstrom": 0.004263317421385164,
+      "maximum_error_angstrom": 0.006178782769371211,
+      "hand": 1,
+      "shift": [
+        0.33662913283576146,
+        0.5525355683518222,
+        0.223875033734233
+      ],
+      "correct": true,
+      "strict_002_angstrom": true,
+      "source_reference_read_after_worker_stopped": true,
+      "cif": {
+        "asymmetric_sites": 10,
+        "expanded_sites": 80,
+        "composition": {
+          "Mg": 16,
+          "Si": 16,
+          "O": 48
+        },
+        "space_group": "P b c a"
+      }
+    },
+    "original_known_group_python_parity": "Historical strict final R1/coordinate parity failure unchanged; see native-coordinator-0.8-macos.json."
+  },
+  "benchmarks": {
+    "assessment": {
+      "settings": 345,
+      "rows": 4168,
+      "source_peaks": 4,
+      "median_ms": 4.4318
+    },
+    "origin": {
+      "shape": [
+        32,
+        32,
+        32
+      ],
+      "source_peaks": 8,
+      "rows": 2108,
+      "cached_median_ms": 2.0201,
+      "uncached_independent_median_ms": 2.5968
+    },
+    "interpolation": {
+      "source_shape": [
+        32,
+        32,
+        32
+      ],
+      "target_shape": [
+        64,
+        64,
+        64
+      ],
+      "multi_peak_field": true,
+      "median_ms": 2.2874
+    }
+  },
+  "artifacts": [
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/final-audit.py",
+      "bytes": 5273,
+      "sha256": "f4d0cfead1728abd836254407473ce0861988653d73319a26815bae8e7b68793"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/final-audit.log",
+      "bytes": 577,
+      "sha256": "399580a8d282b0968fcf428a8eb9c1c2b3b25a99d798dd64ba55398cdea62838"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/execution-equivalence.json",
+      "bytes": 4637,
+      "sha256": "3b4d26aa19e9c1b09a6a44d29cb14018ac23eefc1b6563a8c5e4ef32ca4bb917"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/absolute-equivalence.json",
+      "bytes": 5048,
+      "sha256": "3558658dca18ed3b7c06d896a3e03218ce9c2055d1ce68006f69c4342c23e807"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/direct-reference-assessment.json",
+      "bytes": 502,
+      "sha256": "5d1599e8a33467d560f8386d02103c849717f6596ce7246e180adc05a3fbbafe"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/search-sample.txt",
+      "bytes": 210007,
+      "sha256": "1ececc4c5d8b032d0d8504255677522cbd1197a83ce6aae094aeac125cabe7f3"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/source-workspace-check.json",
+      "bytes": 2448,
+      "sha256": "c080049a914ad708e977077402935b2c4a540164c98d3ae6783ce83cd3bed2cc"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/documentation-graph.json",
+      "bytes": 41295,
+      "sha256": "d35398bb7b26f0af4c6bf7b080f89f436b07435d0832323b8f8d415c3c11d667"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/cleanup.json",
+      "bytes": 1057,
+      "sha256": "147736dac55786cdfffbb23590376f15d91f4e77c5af535beb5f962f817a6e0e"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/cleanup-verification.json",
+      "bytes": 203,
+      "sha256": "d96eee5b26c53802f2d0f0e8181f8e106883a2b7f309175522daadd0351fc247"
+    }
+  ],
+  "distributions": [
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/distributions/final/phasesmith-0.8.0-cp311-abi3-macosx_11_0_arm64.whl",
+      "bytes": 8187163,
+      "sha256": "0f32788ea6fca0e75c27453af5e5560d064376e1ce154a3ccb0d48e53cad6d05"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/distributions/final/phasesmith-0.8.0.tar.gz",
+      "bytes": 1812287,
+      "sha256": "cff362c712a8b4f962e6d5ef8d02f72cc9c823a0115be4096fcb56d19cf0ddae"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/distributions/from-clean-sdist/phasesmith-0.8.0-cp311-abi3-macosx_11_0_arm64.whl",
+      "bytes": 8187346,
+      "sha256": "4ceb35c4e4d1b202723581c6c21bff8adf761741eefe431d42875fdf97518f77"
+    }
+  ],
+  "verification_logs": [
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-absence-tests.log",
+      "bytes": 7843,
+      "sha256": "fb4a1192b5e279cee13ce37b6f849cdced0a41aef5ff7fed2ab259e816a94d3c"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-absolute-budget-build.log",
+      "bytes": 452,
+      "sha256": "ed2e4932f7b563ecc2966fc82733c4f7724c733bb3733859630d64a3b37629e4"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-absolute-budget-clippy.log",
+      "bytes": 717,
+      "sha256": "47ab0d70da049d0bbfe68a32290b79d442be5d0827ae2b597c67d25098cae912"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-absolute-budget-tests.log",
+      "bytes": 23052,
+      "sha256": "1b795db21716bde7caf7c14e3bb5375d2a378cf57892495ac40b827f304910e9"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-api.log",
+      "bytes": 125,
+      "sha256": "5b558ccfcb753348ea0a899a6c71ced966ad888b6cdc87d1483833fc2c7ad299"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-assessment-bench.log",
+      "bytes": 1868,
+      "sha256": "d06b79948de52094941c7047d8f86be0137c87bfbefb8739707dc9ca07df903e"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-cache-tests.log",
+      "bytes": 3254,
+      "sha256": "d903499c6364641f5a55155c31c3f45671b4a63669662469541507c522fb8330"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-cache-tests2.log",
+      "bytes": 592,
+      "sha256": "a21dcfcd2c4554546e4612319d389fdae84232b61a408d14434ca9df5b7947d5"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-clean-source-build.log",
+      "bytes": 6464,
+      "sha256": "614de7e00e660b4f218f0bab4231cc6afd9798eb3e134fc71a0b58fd3778f3f5"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-clean-source-smoke.log",
+      "bytes": 631,
+      "sha256": "4bc66b159a85c6b5134bc1e8abfd79ff9d6f8bf4e3f903916cc2a5f12fd564f8"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-clippy-clean.log",
+      "bytes": 1297,
+      "sha256": "a847c423905e31014a256261d641005c691958a258d2168975f069d2917e7925"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-clippy-clean2.log",
+      "bytes": 844,
+      "sha256": "f297ec9a786a922e32a8047e742d0d55f28cca18134d1657ecc42ef429df2bc9"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-clippy-clean3.log",
+      "bytes": 710,
+      "sha256": "b993e2f35e16ec8ab10c7d4cc40aac2350f7d15388d411140e87d1abe30e69b5"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-clippy-clean4.log",
+      "bytes": 710,
+      "sha256": "7be4ffb3b2383deb7ff796205aef563e269c924f2d8c8a87c64769872b493e29"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-clippy-clean5.log",
+      "bytes": 189,
+      "sha256": "cf60fec07948676286379bb6e3f2bc2059bc7a6f95830c8efb6a665ed113cde0"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-clippy.log",
+      "bytes": 7116,
+      "sha256": "186136db07eb0b32975669d92f11d3d727a7ab99d1a5788f48611502970789af"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-clippy2.log",
+      "bytes": 2660,
+      "sha256": "b9f173e7032edd81fb2dff55e811410335cf0d75761e7c92b06b4c393cbaef2a"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-clippy3.log",
+      "bytes": 1914,
+      "sha256": "6a602d497ddc9e39f9092c1ec4685023264b7e1999d61a21b298800a9a5756ea"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-coarse-tests.log",
+      "bytes": 1859,
+      "sha256": "88b81ddd8bf5c5f21a6f220148b8ff429069f9911d6e5c932c4d40226486dfc0"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-coarse-tests2.log",
+      "bytes": 3171,
+      "sha256": "cf392d36c5d35260a1a2d481290d69ea81764fb6d44cff481ce2b0bf625fcc38"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-coarse-tests3.log",
+      "bytes": 1979,
+      "sha256": "f55c4d9f6683758b90a4c2d17b49ad4990f64e47cc8a7fdc4627cd790b82e18e"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-cross-reference.log",
+      "bytes": 532,
+      "sha256": "3fec4745ccd1ecbc0593df0d3cb8995dfb294f02b152e63e808d1ff9fc5a1030"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-current-docs.log",
+      "bytes": 3964,
+      "sha256": "d6a44051c5b7cd9563a84987b80e4188841aec2ad023b81d6ab1c478061151bf"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-current-example.log",
+      "bytes": 1102,
+      "sha256": "d6f1dbce0178a5e2f11b934680e43c896117c89c1a580fc0a697b6a4630b7429"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-current-fmt.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-current-install.log",
+      "bytes": 524,
+      "sha256": "0bb8d41a4b80641eca228b70494fecc7136b44314af2d608c504f63203a9b1c7"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-current-minimal.log",
+      "bytes": 144,
+      "sha256": "0e33d5ec60898a11ddd09387ec9d1f7960031238e80c7c86703e46bce9818ef6"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-current-python.log",
+      "bytes": 18221,
+      "sha256": "7d68703ee98f66faa10a95f2003dbc5bf1a06127d5b5a2b722881df69612c0e3"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-current-ruff.log",
+      "bytes": 47,
+      "sha256": "7e23b04f532ae65cad5305d6b43a29999c38036bb0685c6ac0cffb59a324d8b8"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-current-rust.log",
+      "bytes": 68589,
+      "sha256": "9ef5c5a67da7abcb81cad12d5a2ce159f822c6e168cd853e70f595a91220b363"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-current-rustdoc.log",
+      "bytes": 1260,
+      "sha256": "b10e6661518d2db41e6edd196d763b8a9567d1eb173550477ef111d9a62ee881"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-current-sdist.log",
+      "bytes": 363,
+      "sha256": "2715c45356bc16d6a889e53811bfe7be54ae685f5f160bcbffee0b2a9b25fd76"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-current-wheel.log",
+      "bytes": 523,
+      "sha256": "b933c97550f2fc30b559f08c0475601cce2ea86466e28d049d08b96748f969df"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-docs.log",
+      "bytes": 3964,
+      "sha256": "7f145cf2ec13fcbe3fc9d526d2af6a02810f31b0c0158c4ba0ade6cb4c6977ce"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-effort-admission.log",
+      "bytes": 7699,
+      "sha256": "5699868df433d52f7094d2ca0c88acf42454442edda4c6ec6593c8fdbfe8e9ea"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-effort-clippy-clean.log",
+      "bytes": 717,
+      "sha256": "00688312d25077a9ee9978f5ef17281049acf47e6c0f7b06d91b9512ecafd65c"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-effort-clippy.log",
+      "bytes": 982,
+      "sha256": "a8a8f06a851dd9513c1938ca765917278faca78633a54a65dd3fddd2af3dc19c"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-effort-clippy2.log",
+      "bytes": 982,
+      "sha256": "a8a8f06a851dd9513c1938ca765917278faca78633a54a65dd3fddd2af3dc19c"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-effort-tests.log",
+      "bytes": 23068,
+      "sha256": "58237aeee83ce19a836b7453c53635220e18d4ff6c5313e32972ab558453bba1"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-example-tests.log",
+      "bytes": 3159,
+      "sha256": "fd60298f271b1f61176141c4db56ebc3d9be0534b4bd6dd25a7669ab529bec54"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-exit-tests.log",
+      "bytes": 9808,
+      "sha256": "7453c499bbeb270a2dca8c989ecfc5e5489a4a841c7d22702fe75c9dd95e109b"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-exit-tests2.log",
+      "bytes": 7719,
+      "sha256": "a4bb20428f60199a35e444d1ae19b88586204601f03080ee703dc5b863034ff2"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-final-build.log",
+      "bytes": 62,
+      "sha256": "3997fc6790b8063b86c119e91f87ac7395ac6cf26135da637dcb229006bc32dc"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-final-build2.log",
+      "bytes": 179,
+      "sha256": "87e67d2def1a1d8540b792b9e35e9dacda6973eb6228998070f1123a9f17fa2e"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-final-build3.log",
+      "bytes": 179,
+      "sha256": "87e67d2def1a1d8540b792b9e35e9dacda6973eb6228998070f1123a9f17fa2e"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-final-build4.log",
+      "bytes": 179,
+      "sha256": "32093bc74efad976947df583a820ef608653d851cbf335d692d070c41138d9e8"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-final-clippy.log",
+      "bytes": 1037,
+      "sha256": "fdb8341af50a3dbc6e1bd34c658cd556e56a9236009bcc06ea80406b33e0aac3"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-final-clippy2.log",
+      "bytes": 849,
+      "sha256": "2ba251ce8b88f2e23e130151799fb44c7d125265e42136ac516e9841e7f3c1b6"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-final-example.log",
+      "bytes": 2135,
+      "sha256": "9d2ab116423896f759ac93c1517e908cfbeae8a585c5e55a1ab70c9412927da4"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-final-install.log",
+      "bytes": 523,
+      "sha256": "b68455a2512615d28805089d1dce91950ad81102648c590aef830a2744b4ac92"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-final-minimal.log",
+      "bytes": 4065,
+      "sha256": "dc483e91be11ded63f37332f295f2fa70f1d2a40a2bf2ad8516e9c973171850b"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-final-python.log",
+      "bytes": 18221,
+      "sha256": "c21770423c56b50a87e7be50e230bea21694bb09bc75dede75c645e2b19007c9"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-final-ruff.log",
+      "bytes": 47,
+      "sha256": "7e23b04f532ae65cad5305d6b43a29999c38036bb0685c6ac0cffb59a324d8b8"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-final-rust.log",
+      "bytes": 74013,
+      "sha256": "21bb7cb68a68803baa99a6473cd34da4f1e7ac351b68bf1a32b66195ae054393"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-final-rustdoc.log",
+      "bytes": 4466,
+      "sha256": "f79b355b01ed867ea79427004278b27630320927ad69c82cc0dd875a6ac1176a"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-final-sdist.log",
+      "bytes": 357,
+      "sha256": "cfd4420a75e3a57c235d57ddba7e75e2853fb9c4a91807f3e93f3866264a2aec"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-final-wheel.log",
+      "bytes": 5803,
+      "sha256": "bd4210686fc896961a2f5a6cbace1d2f499e962103b4b72c72e245782ad3eae3"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-interpolation-bench.log",
+      "bytes": 767,
+      "sha256": "f4fd776ab67b978ea7c3f409f5dccd95e6c983e6cf0da124837535975afe9dd9"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-math-docs.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-minimal-smoke.log",
+      "bytes": 608,
+      "sha256": "21451720cc8fbf403d5319cdc243a94881f0cd1a19f55dfe76ad3aed1cca6e02"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-origin-bench.log",
+      "bytes": 3667,
+      "sha256": "8111f12ba92ccd7f2569987179505b2c04b6670aab5a7ae16678bdd830a5b791"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-portfolio-tests.log",
+      "bytes": 560,
+      "sha256": "5b793b65abbf571d45ba1628857d76573382cdc76c0905f4a7e84bb36524ea78"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-portfolio-tests2.log",
+      "bytes": 2095,
+      "sha256": "21862abde28d8aadc09d3a36d059d31d39a4e24fd0eca5e4efd99162ed630a9c"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-ruff.log",
+      "bytes": 47,
+      "sha256": "43a466a00936b4dbcac550368d2daf0d0e3339b42f831c7e3dd12caaabe9d2cb"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-sdist-rebuild.log",
+      "bytes": 528,
+      "sha256": "36d03dfb0b71071495bdb3e3fd6df17405a48b36174271186a63b0d9caaf6bbc"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-sdist-smoke.log",
+      "bytes": 616,
+      "sha256": "39518b740b0ac871cb9c28c7fe3265da3918a46914e978c05515840ed178978a"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-skill.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-v34-build.log",
+      "bytes": 4892,
+      "sha256": "f9ca4ced61b2303ab6064abc583ed5d4e2e70612857dc87e2a3f46e2980ce12e"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-v35-build.log",
+      "bytes": 584,
+      "sha256": "cb1ac2eab8e7d60245027d9735e82ae622e4977e29f1009e72e3d83aa836345f"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-v35-build2.log",
+      "bytes": 452,
+      "sha256": "e8a4274eed0a9a0555eeaed7408824ebcb050d70c541eb8af4742bd09d06c3e0"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-v36-build.log",
+      "bytes": 584,
+      "sha256": "1cae363d2ecce75a8c9a8d579484eb78dc90c01fe217c200a2caf7758bebad11"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-v37-build.log",
+      "bytes": 584,
+      "sha256": "b162d3985e734af94c805fdf2bc4c03c40d589b70295eb384e560f6c0409426a"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-v38-build.log",
+      "bytes": 179,
+      "sha256": "71efc750d5eae72b5b14b81b2f879c422887812b4cb88472105c782a9ec0ba57"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-v39-build.log",
+      "bytes": 584,
+      "sha256": "e5fa84fd603a1250e145744d7ea1fd15ff2b1d65a4ed96b7c3270e43b88b89ac"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-v39-build2.log",
+      "bytes": 584,
+      "sha256": "e9b04e25cb1ac2a4c55d103ca990ac31fe55da47dff332f96af62cebdc2c56d3"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-v40-build-final.log",
+      "bytes": 452,
+      "sha256": "0ea2c8c435a0ab4730288867842308af64828087598c389dd73aedc511e0fcc3"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-v40-build-latest.log",
+      "bytes": 179,
+      "sha256": "1f475bc096a918298a9a4a16ad613cd74c612136deb103bb4cf44c5ce0bb98d8"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-v40-build.log",
+      "bytes": 1031,
+      "sha256": "b8820b1e37295c2b33f54062022da9b053728995e3878217e6cc7e356f2938d0"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-v40-build2.log",
+      "bytes": 452,
+      "sha256": "002b191ecd4b85f146bd1713354909404d8bdfd04d7d055745de74938e21318a"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-v40-build3.log",
+      "bytes": 179,
+      "sha256": "509d344e8337d86317fdd7d502ecafba6dd3102277b3e7e9f2b17b396c1d931c"
+    },
+    {
+      "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/verification-logs/phasesmith-fast-search-version.log",
+      "bytes": 6,
+      "sha256": "a66780da23103beaf12432b418508966b31a2a3a787f9468a5b6cdaa8667c1ef"
+    }
+  ],
+  "limitations": [
+    "Exposed MgSiO3 regression example, supplied primitive orthorhombic cell and explicit acquisition/DAC assumptions; not blind validation.",
+    "Fast acceptance is numerical, not correctness/uniqueness proof. Only the inversion diagnostic and Pbca were phase-tested in successful fast runs; bounded omissions are explicit.",
+    "SHELXT and native code differ in architecture, processing, numerical objectives and hypothesis coverage.",
+    "No standalone single-crystal structural refinement or new Python/Dioptas discovery frontend.",
+    "All old protocol/trial data retained; failed audit harness path and development fixture/lint failures preserved externally."
+  ],
+  "cleanup": {
+    "status": "completed",
+    "removed": [
+      {
+        "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/build",
+        "allocated_bytes": 7904415744
+      },
+      {
+        "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/source-build",
+        "allocated_bytes": 609591296
+      },
+      {
+        "path": "/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101/sdist-reconstruction",
+        "allocated_bytes": 9621504
+      },
+      {
+        "path": "/tmp/phasesmith-fast-search-site",
+        "allocated_bytes": 18292736
+      }
+    ],
+    "removed_allocated_bytes": 8541921280,
+    "filesystem_free_bytes_before": 40036327424,
+    "filesystem_free_bytes_after": 48201326592,
+    "filesystem_free_bytes_increase": 8164999168,
+    "policy": "Owned Cargo targets, extracted source rebuild and temporary documentation only. Preserved raw/source files, every trial, standalone binaries, distributions, criterion samples, logs, frozen protocols and historical receipts. Shared caches and other worktrees untouched."
+  }
+}
