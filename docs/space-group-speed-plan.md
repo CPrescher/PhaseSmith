@@ -92,3 +92,18 @@ JSON writes to an unbuffered file. Buffer these writes, explicitly flush and
 propagate I/O failures. Preserve exclusive creation, JSON formatting and exact
 serialized bytes; no numerical or coverage policy changes. Measure before any
 further phasing change.
+
+## v39: deterministic portfolio handoff
+
+The measured four-worker SHELXT control is about 0.9 s and ten-worker control
+about 0.65 s, so the one-worker comparison alone is insufficient. Test a portfolio
+handoff at the existing 256-cycle checkpoint and measured quality target 0.9.
+Run four independent initial starts to at most 256 cycles, retaining their
+existing per-start adaptive stopping. If any reaches the existing quality target,
+select the best completed map in deterministic start order. Otherwise restart
+the four original seeds with the full 800-cycle ceiling and remaining original
+deadline, retaining and comparing all maps. Worst-case work therefore includes
+four short plus four full starts. Save every actual seed, cycle ceiling, history
+and checkpoint; map reuse records the actual selected seed. This is explicit
+quality-controlled work scheduling, not a reduction in final-resolution data or
+a new correctness threshold. Preserve old profiles when this option is absent.
