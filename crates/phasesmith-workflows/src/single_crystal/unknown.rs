@@ -7,6 +7,8 @@ use std::time::{Duration, Instant};
 /// Shared P1 phase-map and bounded origin-screen controls.
 #[derive(Clone, Debug)]
 pub struct PhaseScreenOptions {
+    /// Bounded independent P1 workers, 1..=10.
+    pub workers: usize,
     /// Independent phase starts, 1..=16.
     pub starts: usize,
     /// Maximum cycles per start, 1..=20000.
@@ -45,7 +47,8 @@ pub struct DiscoveryOptions {
 impl DiscoveryOptions {
     pub(super) fn check(&self) -> Result<()> {
         let p = &self.phase;
-        if !(1..=16).contains(&p.starts)
+        if !(1..=10).contains(&p.workers)
+            || !(1..=16).contains(&p.starts)
             || !(1..=20000).contains(&p.cycles)
             || !(1..=530).contains(&p.maximum_settings)
             || !(1..=8).contains(&p.maximum_origins)
@@ -365,12 +368,13 @@ fn screen_phases(
         .group
         .as_ref()
         .ok_or_else(|| Error("provisional processing symmetry missing".into()))?;
-    let (phase_map, phase_diagnostic) = match phasesmith_solution::phase_only(
+    let (phase_map, phase_diagnostic) = match phasesmith_solution::phase_only_with_workers(
         observations,
         original.priors.cell,
         laue,
         &original.priors.elements,
         &phase_options,
+        policy.phase.workers,
     ) {
         Ok(map) => (Some(map), None),
         Err(e) => (None, Some(e.to_string())),

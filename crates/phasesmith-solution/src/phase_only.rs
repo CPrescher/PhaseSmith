@@ -42,6 +42,29 @@ pub fn phase_only(
     elements: &[String],
     options: &SolveOptions,
 ) -> Result<PhaseOnlyResult, SolutionError> {
+    phase_only_with_workers(observations, cell, rotational_group, elements, options, 1)
+}
+/// Run bounded independent P1 starts with private buffers and ordered result selection.
+/// Worker counts lie in 1..=10; no nested solution workers are used. Arithmetic
+/// and start identities match `phase_only` when time/cancellation limits do not intervene.
+/// # Errors
+/// Invalid workers, ordinary phasing errors, thread admission or a worker panic.
+#[allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss
+)]
+pub fn phase_only_with_workers(
+    observations: &[Observation],
+    cell: UnitCell,
+    rotational_group: &SpaceGroup,
+    elements: &[String],
+    options: &SolveOptions,
+    workers: usize,
+) -> Result<PhaseOnlyResult, SolutionError> {
+    if !(1..=10).contains(&workers) {
+        return Err(error("phase-only workers must lie in 1..=10"));
+    }
     crate::solver::validate_options(options)?;
     if elements.is_empty()
         || elements.len() > 8
@@ -78,36 +101,66 @@ pub fn phase_only(
         .zip(&data.amplitudes)
         .map(|(&e, &f)| e.sqrt() * f.sqrt())
         .collect();
-    let mut histories = Vec::new();
-    let mut best = f64::INFINITY;
-    let mut density = None;
-    let mut selected_start = 0;
-    for start in 0..options.trials {
-        if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
-            break;
-        }
-        let seed = options.seed.wrapping_add(start as u64);
-        let result = dual_space_with_execution(
-            shape,
-            cell,
-            &data.hkl,
-            &mixed,
-            &crate::solver::initial_phases(&data.hkl, seed),
-            &support,
+    let input = PhaseInput {
+        cell,
+        shape,
+        hkl: &data.hkl,
+        mixed: &mixed,
+        support: &support,
+        d_min: data.d_min,
+        options,
+        deadline,
+    };
+    let selection = select_starts(&input, workers)?;
+    Ok(PhaseOnlyResult {
+        cell,
+        elements: elements.to_vec(),
+        observations: observations.to_vec(),
+        density: selection
+            .density
+            .ok_or_else(|| error("no phase-only start completed within budget"))?,
+        shape,
+        histories: selection.histories,
+        selected_start: selection.start,
+        seconds: started.elapsed().as_secs_f64(),
+    })
+}
+
+struct PhaseInput<'a> {
+    cell: UnitCell,
+    shape: [usize; 3],
+    hkl: &'a [[i32; 3]],
+    mixed: &'a [f64],
+    support: &'a [u8],
+    d_min: f64,
+    options: &'a SolveOptions,
+    deadline: Instant,
+}
+impl PhaseInput<'_> {
+    #[allow(clippy::cast_precision_loss)]
+    fn trial(&self, start: usize) -> Result<crate::DualSpaceResult, SolutionError> {
+        let seed = self.options.seed.wrapping_add(start as u64);
+        dual_space_with_execution(
+            self.shape,
+            self.cell,
+            self.hkl,
+            self.mixed,
+            &crate::solver::initial_phases(self.hkl, seed),
+            self.support,
             &DualSpaceOptions {
-                cycles: options.cycles,
+                cycles: self.options.cycles,
                 peak_selection: PeakSelection::Adaptive {
                     sigma: 2.,
                     cap: 128,
                 },
-                mask_sigma: 0.35 * data.d_min,
+                mask_sigma: 0.35 * self.d_min,
                 hybrid_m: 3.,
                 omit_fraction: 0.1,
                 seed,
                 patterson_rank: if start % 4 == 3 { None } else { Some(start) },
-                cancellation: options.cancellation.clone(),
+                cancellation: self.options.cancellation.clone(),
             },
-            Some(deadline),
+            Some(self.deadline),
             None,
             PhasingExecution {
                 reusable_fourier_workspaces: true,
@@ -118,30 +171,78 @@ pub fn phase_only(
                 fused_phase_workspace: true,
                 ..PhasingExecution::default()
             },
-        )?;
-        let score = result
-            .trial
-            .history
-            .get(result.trial.best_cycle)
-            .copied()
-            .unwrap_or(f64::INFINITY);
-        if score < best {
-            best = score;
-            selected_start = start;
-            density = Some(result.trial.density);
-        }
-        histories.push(result.trial.history);
+        )
     }
-    Ok(PhaseOnlyResult {
-        cell,
-        elements: elements.to_vec(),
-        observations: observations.to_vec(),
-        density: density.ok_or_else(|| error("no phase-only start completed within budget"))?,
-        shape,
-        histories,
-        selected_start,
-        seconds: started.elapsed().as_secs_f64(),
-    })
+}
+struct PhaseSelection {
+    histories: Vec<Vec<f64>>,
+    density: Option<Vec<f64>>,
+    start: usize,
+}
+fn select_starts(input: &PhaseInput<'_>, workers: usize) -> Result<PhaseSelection, SolutionError> {
+    let mut selected = PhaseSelection {
+        histories: Vec::new(),
+        density: None,
+        start: 0,
+    };
+    let mut best = f64::INFINITY;
+    for first in (0..input.options.trials).step_by(workers) {
+        if crate::stopped(Some(input.deadline), input.options.cancellation.as_ref()) {
+            break;
+        }
+        let last = (first + workers).min(input.options.trials);
+        let results = std::thread::scope(|scope| {
+            let mut handles = Vec::new();
+            let mut failure = None;
+            for start in first..last {
+                match std::thread::Builder::new().spawn_scoped(scope, move || {
+                    crate::with_solution_workers(1, || input.trial(start)).map(|(result, _)| result)
+                }) {
+                    Ok(handle) => handles.push(handle),
+                    Err(e) => {
+                        failure = Some(error(format!("cannot admit phase worker: {e}")));
+                        break;
+                    }
+                }
+            }
+            let mut results = Vec::new();
+            for handle in handles {
+                match handle.join() {
+                    Ok(Ok(value)) => results.push(value),
+                    Ok(Err(e)) => {
+                        if failure.is_none() {
+                            failure = Some(e);
+                        }
+                    }
+                    Err(_) => {
+                        if failure.is_none() {
+                            failure = Some(error("phase worker panicked"));
+                        }
+                    }
+                }
+            }
+            if let Some(e) = failure {
+                Err(e)
+            } else {
+                Ok(results)
+            }
+        })?;
+        for (offset, result) in results.into_iter().enumerate() {
+            let score = result
+                .trial
+                .history
+                .get(result.trial.best_cycle)
+                .copied()
+                .unwrap_or(f64::INFINITY);
+            if score < best {
+                best = score;
+                selected.start = first + offset;
+                selected.density = Some(result.trial.density);
+            }
+            selected.histories.push(result.trial.history);
+        }
+    }
+    Ok(selected)
 }
 
 #[cfg(test)]
@@ -284,6 +385,45 @@ mod tests {
                 &a
             )
             .is_err()
+        );
+    }
+    #[test]
+    fn ordered_parallel_starts_preserve_every_phase_value() {
+        let (cell, group, rows, mut options) = fixture();
+        options.trials = 4;
+        let serial = phase_only(&rows, cell, &group, &["Si".into()], &options).unwrap();
+        let parallel =
+            phase_only_with_workers(&rows, cell, &group, &["Si".into()], &options, 4).unwrap();
+        assert_eq!(serial.selected_start, parallel.selected_start);
+        assert_eq!(
+            serial
+                .histories
+                .iter()
+                .flatten()
+                .map(|x| x.to_bits())
+                .collect::<Vec<_>>(),
+            parallel
+                .histories
+                .iter()
+                .flatten()
+                .map(|x| x.to_bits())
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            serial
+                .density
+                .iter()
+                .map(|x| x.to_bits())
+                .collect::<Vec<_>>(),
+            parallel
+                .density
+                .iter()
+                .map(|x| x.to_bits())
+                .collect::<Vec<_>>()
+        );
+        assert!(phase_only_with_workers(&rows, cell, &group, &["Si".into()], &options, 0).is_err());
+        assert!(
+            phase_only_with_workers(&rows, cell, &group, &["Si".into()], &options, 11).is_err()
         );
     }
 }

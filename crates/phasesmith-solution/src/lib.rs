@@ -32,7 +32,7 @@ mod phase_checkpoint;
 mod phase_only;
 mod phase_origin;
 pub use phase_checkpoint::{PhaseCheckpoint, PhaseCheckpointSelector, checkpoint_map_cosine};
-pub use phase_only::{PhaseOnlyResult, phase_only};
+pub use phase_only::{PhaseOnlyResult, phase_only, phase_only_with_workers};
 mod phase_quality;
 mod phase_schedule;
 pub use phase_schedule::{late_phase_plateau_ready, phase_plateau_ready};
