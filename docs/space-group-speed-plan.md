@@ -47,5 +47,23 @@ broader checks. Existing exact-group tests and numerical tolerances stay fixed.
 Run all-feature Rust tests, strict Clippy, formatting and installed-wheel pytest.
 The powder GSAS-II oracle does not cover these discrete search policies.
 
+## Coarse-map representation
+
+The initial cutoff is inclusive in reciprocal metric: keep measured row h when
+`|B* h|² <= 1/d_cut²`. Original rows, uncertainties and their order remain the
+map's exact identity. Neither filtering nor interpolation changes any measurement
+used for final model fitting, common-set scoring or absence assessment.
+
+For source grid N, compute `C(k) = DFT_positive(rho)(k) / product(N)`.
+Copy each represented signed frequency onto the finer grid M; on every upsampled
+even-grid Nyquist axis split its coefficient equally across +N/2 and -N/2.
+With r such axes each of the 2^r images receives C/2^r. The unnormalized negative
+DFT gives the finer real map. This preserves the periodic interpolant, DC/mean,
+Hermitian symmetry and source samples on integral refinements, including mixed
+Nyquist planes. It adds no observations. Equal-grid input returns an exact copy.
+Independent NumPy FFT and analytic periodic-polynomial tests check this linear
+representation; existing phase-quality derivatives and Fourier kernels retain
+their independent reference/finite-difference coverage.
+
 Large arrays, source files, binaries and trials stay outside Git under
 `/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101`.

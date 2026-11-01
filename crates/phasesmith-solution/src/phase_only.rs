@@ -1,10 +1,18 @@
 //! Reusable P1 phasing from a supplied rotational intensity hypothesis, without an atomic model.
 use crate::{
     DualSpaceOptions, Observation, PeakSelection, PhasingExecution, SolutionError, SolveOptions,
-    dual_space_with_execution, error, normalize_wilson, prepare_data,
+    error, normalize_wilson, prepare_data,
 };
 use phasesmith_crystallography::{SpaceGroup, UnitCell};
 use std::time::{Duration, Instant};
+/// Explicit optional coarse/adaptive P1 policy. Default preserves the original trajectory.
+#[derive(Clone, Debug, Default)]
+pub struct PhaseOnlyPolicy {
+    /// Inclusive initial phasing cutoff d >= minimum; final observations stay unchanged.
+    pub minimum_d_angstrom: Option<f64>,
+    /// Use the existing measured correlation/weak-score merit and checkpoint handoff.
+    pub adaptive_quality: bool,
+}
 /// A shared P1 map and actual starts, independent of exact space-group translations.
 #[derive(Clone, Debug)]
 pub struct PhaseOnlyResult {
@@ -18,6 +26,14 @@ pub struct PhaseOnlyResult {
     pub density: Vec<f64>,
     /// Actual FFT dimensions.
     pub shape: [usize; 3],
+    /// Actual initial Fourier grid, before optional interpolation to the final data grid.
+    pub phasing_shape: [usize; 3],
+    /// Actual signed measured input rows used by initial phasing.
+    pub phasing_observations: usize,
+    /// Actual optional per-start measured-quality histories.
+    pub quality: Vec<Option<crate::PhaseQualityTrace>>,
+    /// Actual checkpoint decisions, separate from atomic-model acceptance.
+    pub checkpoints: Vec<Vec<crate::PhaseCheckpoint>>,
     /// Score histories for every attempted start.
     pub histories: Vec<Vec<f64>>,
     /// Selected start, by common mixed-amplitude misfit; no atomic-reference ranking.
@@ -62,6 +78,36 @@ pub fn phase_only_with_workers(
     options: &SolveOptions,
     workers: usize,
 ) -> Result<PhaseOnlyResult, SolutionError> {
+    phase_only_with_policy(
+        observations,
+        cell,
+        rotational_group,
+        elements,
+        options,
+        workers,
+        &PhaseOnlyPolicy::default(),
+    )
+}
+/// Phase on an optional coarse subset and interpolate the selected map for full-data fitting.
+/// The original signed rows remain the exact map identity. Quality uses existing kernels.
+/// # Errors
+/// Invalid controls/cutoff/data, no retained reflections or no completed map.
+#[allow(clippy::too_many_arguments)]
+pub fn phase_only_with_policy(
+    observations: &[Observation],
+    cell: UnitCell,
+    rotational_group: &SpaceGroup,
+    elements: &[String],
+    options: &SolveOptions,
+    workers: usize,
+    policy: &PhaseOnlyPolicy,
+) -> Result<PhaseOnlyResult, SolutionError> {
+    if policy
+        .minimum_d_angstrom
+        .is_some_and(|d| !d.is_finite() || d <= 0.)
+    {
+        return Err(error("phase-only minimum d must be finite and positive"));
+    }
     if !(1..=10).contains(&workers) {
         return Err(error("phase-only workers must lie in 1..=10"));
     }
@@ -79,20 +125,15 @@ pub fn phase_only_with_workers(
     }
     let started = Instant::now();
     let deadline = started + Duration::from_secs_f64(options.max_seconds);
-    let data = prepare_data(observations, cell, rotational_group)?;
-    let mut shape = [0; 3];
-    for (a, length) in [cell.a_angstrom, cell.b_angstrom, cell.c_angstrom]
-        .iter()
-        .enumerate()
-    {
-        let extent = length / data.d_min;
-        if !extent.is_finite() || extent >= 64. {
-            return Err(error(
-                "phase-only resolution sphere exceeds 128-grid support",
-            ));
-        }
-        shape[a] = (2 * extent.ceil() as usize + 2).max(8).next_power_of_two();
-    }
+    let full_data = prepare_data(observations, cell, rotational_group)?;
+    let full_shape = phase_shape(cell, full_data.d_min)?;
+    let rows = phasing_subset(observations, cell, policy.minimum_d_angstrom)?;
+    let data = if policy.minimum_d_angstrom.is_some() {
+        prepare_data(&rows, cell, rotational_group)?
+    } else {
+        full_data
+    };
+    let shape = phase_shape(cell, data.d_min)?;
     let support = crate::solver::reciprocal_support(shape, cell, rotational_group, &data)?;
     let norm = normalize_wilson(cell, rotational_group, &data.hkl, &data.intensity, elements)?;
     let mixed: Vec<_> = norm
@@ -101,6 +142,20 @@ pub fn phase_only_with_workers(
         .zip(&data.amplitudes)
         .map(|(&e, &f)| e.sqrt() * f.sqrt())
         .collect();
+    let quality = if policy.adaptive_quality {
+        Some(crate::PreparedPhaseQuality::new(
+            cell,
+            rotational_group,
+            &data,
+            &rows,
+            elements,
+            &norm,
+            true,
+            true,
+        )?)
+    } else {
+        None
+    };
     let input = PhaseInput {
         cell,
         shape,
@@ -110,20 +165,64 @@ pub fn phase_only_with_workers(
         d_min: data.d_min,
         options,
         deadline,
+        quality: quality.as_ref(),
     };
     let selection = select_starts(&input, workers)?;
     Ok(PhaseOnlyResult {
         cell,
         elements: elements.to_vec(),
         observations: observations.to_vec(),
-        density: selection
-            .density
-            .ok_or_else(|| error("no phase-only start completed within budget"))?,
-        shape,
+        density: crate::interpolate_phase_density(
+            &selection
+                .density
+                .ok_or_else(|| error("no phase-only start completed within budget"))?,
+            shape,
+            full_shape,
+        )?,
+        shape: full_shape,
+        phasing_shape: shape,
+        phasing_observations: rows.len(),
+        quality: selection.quality,
+        checkpoints: selection.checkpoints,
         histories: selection.histories,
         selected_start: selection.start,
         seconds: started.elapsed().as_secs_f64(),
     })
+}
+
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // Finite extent is explicitly bounded below 64.
+fn phase_shape(cell: UnitCell, d_min: f64) -> Result<[usize; 3], SolutionError> {
+    let mut shape = [0; 3];
+    for (a, length) in [cell.a_angstrom, cell.b_angstrom, cell.c_angstrom]
+        .iter()
+        .enumerate()
+    {
+        let extent = length / d_min;
+        if !extent.is_finite() || extent >= 64. {
+            return Err(error(
+                "phase-only resolution sphere exceeds 128-grid support",
+            ));
+        }
+        shape[a] = (2 * extent.ceil() as usize + 2).max(8).next_power_of_two();
+    }
+    Ok(shape)
+}
+fn phasing_subset(
+    rows: &[Observation],
+    cell: UnitCell,
+    cutoff: Option<f64>,
+) -> Result<Vec<Observation>, SolutionError> {
+    let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
+    Ok(rows
+        .iter()
+        .filter(|r| {
+            cutoff.is_none_or(|d| {
+                let q = crate::math3::mv(geometry.reciprocal_basis, r.hkl.map(f64::from));
+                crate::math3::dot(q, q) <= 1. / (d * d)
+            })
+        })
+        .cloned()
+        .collect())
 }
 
 struct PhaseInput<'a> {
@@ -135,12 +234,13 @@ struct PhaseInput<'a> {
     d_min: f64,
     options: &'a SolveOptions,
     deadline: Instant,
+    quality: Option<&'a crate::PreparedPhaseQuality>,
 }
 impl PhaseInput<'_> {
     #[allow(clippy::cast_precision_loss)]
     fn trial(&self, start: usize) -> Result<crate::DualSpaceResult, SolutionError> {
         let seed = self.options.seed.wrapping_add(start as u64);
-        dual_space_with_execution(
+        crate::dual_space::dual_space_guided_prediction(
             self.shape,
             self.cell,
             self.hkl,
@@ -162,7 +262,12 @@ impl PhaseInput<'_> {
             },
             Some(self.deadline),
             None,
+            None,
+            self.quality,
+            None,
+            self.quality.is_some(),
             PhasingExecution {
+                score_only_evaluation: self.quality.is_some(),
                 reusable_fourier_workspaces: true,
                 filtered_peak_search: true,
                 streamed_peak_search: true,
@@ -175,12 +280,16 @@ impl PhaseInput<'_> {
     }
 }
 struct PhaseSelection {
+    quality: Vec<Option<crate::PhaseQualityTrace>>,
+    checkpoints: Vec<Vec<crate::PhaseCheckpoint>>,
     histories: Vec<Vec<f64>>,
     density: Option<Vec<f64>>,
     start: usize,
 }
 fn select_starts(input: &PhaseInput<'_>, workers: usize) -> Result<PhaseSelection, SolutionError> {
     let mut selected = PhaseSelection {
+        quality: Vec::new(),
+        checkpoints: Vec::new(),
         histories: Vec::new(),
         density: None,
         start: 0,
@@ -234,12 +343,19 @@ fn select_starts(input: &PhaseInput<'_>, workers: usize) -> Result<PhaseSelectio
                 .get(result.trial.best_cycle)
                 .copied()
                 .unwrap_or(f64::INFINITY);
+            let score = result.quality.as_ref().map_or(score, |q| {
+                q.cfom
+                    .get(result.trial.best_cycle)
+                    .map_or(f64::INFINITY, |v| -v)
+            });
             if score < best {
                 best = score;
                 selected.start = first + offset;
                 selected.density = Some(result.trial.density);
             }
             selected.histories.push(result.trial.history);
+            selected.quality.push(result.quality);
+            selected.checkpoints.push(result.phase_checkpoints);
         }
     }
     Ok(selected)

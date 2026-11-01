@@ -183,7 +183,7 @@ impl sc::Observer for Save {
             )?;
         }
         self.json("space-group-search.json",json!({"schema":"phasesmith.space-group-search.v1","space_group_supplied":false,"laue_group_supplied":false,"selected":self.selected_group,"alternatives":report.alternatives,"termination":report.termination,"seconds":report.seconds,"unique_space_group_proven":false,
-            "phase_map":report.phase_map.as_ref().map(|p|json!({"shape":p.shape,"histories":p.histories,"selected_start":p.selected_start,"seconds":p.seconds})),"phase_diagnostic":report.phase_diagnostic,
+            "phase_map":report.phase_map.as_ref().map(|p|json!({"shape":p.shape,"phasing_shape":p.phasing_shape,"phasing_observations":p.phasing_observations,"quality":p.quality.iter().map(|q|q.as_ref().map(|q|json!({"correlation":q.correlation,"r_weak":q.r_weak,"cfom":q.cfom}))).collect::<Vec<_>>(),"checkpoints":p.checkpoints.iter().map(|v|v.iter().map(|c|json!({"cycles":c.cycles,"cfom":c.cfom,"best_cfom":c.best_cfom,"score":c.score,"map_cosine":c.map_cosine,"selected":c.selected,"reason":c.reason})).collect::<Vec<_>>()).collect::<Vec<_>>(),"histories":p.histories,"selected_start":p.selected_start,"seconds":p.seconds})),"phase_diagnostic":report.phase_diagnostic,
             "attempts":report.attempts.iter().map(|a|json!({"hypothesis":a.hypothesis,"runs":a.runs.iter().map(|r|json!({"initialization":r.initialization,"seconds":r.seconds,"diagnostic":r.diagnostic,"candidates":r.candidates,"phasing_starts":r.phasing_starts,"target_met":r.target_met})).collect::<Vec<_>>(),"status":a.status,"seconds":a.seconds,"diagnostic":a.diagnostic,"common_r1":a.common_r1,"common_objective":a.common_objective,"parameters":a.parameters,"bic":a.bic,"phase_status":a.phase_status,"phase_seconds":a.phase_seconds,"origins":a.origins.iter().map(|o|json!({"hand":o.hand,"shift":o.shift,"alpha":o.alpha,"chord":o.chord})).collect::<Vec<_>>(),"candidate":a.candidate.as_ref().map(candidate)})).collect::<Vec<_>>() }))
     }
 
@@ -1244,6 +1244,19 @@ fn decode_discovery(
             total_seconds: number(p, "total_search_seconds")?,
             ambiguity_delta: number(p, "ambiguity_delta_bic")?,
             phase: sc::PhaseScreenOptions {
+                phasing: solution::PhaseOnlyPolicy {
+                    minimum_d_angstrom: match ph.get("minimum_d_angstrom") {
+                        None | Some(Value::Null) => None,
+                        Some(v) => Some(
+                            v.as_f64()
+                                .ok_or("minimum_d_angstrom must be numeric or null")?,
+                        ),
+                    },
+                    adaptive_quality: match ph.get("adaptive_quality") {
+                        None => false,
+                        Some(v) => v.as_bool().ok_or("adaptive_quality must be boolean")?,
+                    },
+                },
                 workers,
                 starts: int(ph, "starts")?,
                 cycles: int(ph, "cycles")?,
