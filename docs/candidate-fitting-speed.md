@@ -242,3 +242,72 @@ profiles, reference assessments and logs stay at the external artifact root abov
 Temporary task-owned compilation caches and the extracted baseline source copy
 are removed after preserving the benchmark driver, frozen source archives and
 executables. No source datasets or prior receipts are removed.
+
+## Remaining-case extra-effort diagnostic
+
+After the implementation was committed as `797ecfc`, a separately frozen
+[diagnostic plan](../validation/hard-case-diagnostic-policy-v1.json) tested the
+three remaining labelled-structure failures. The same executable, numerical
+observations, cell, element list and Laue/centring priors were retained. Exact
+space group, element counts and reference coordinates were withheld. Direct
+thorough search used seeds 1 and 2, eight starts capped at 1,600 cycles, eight P1
+workers and 30 seconds per candidate, within the existing 180-second total and
+210-second process caps. The acceptance and grading thresholds stayed unchanged.
+Every planned output was saved before reference grading; all six runs are
+reported, with no reference-based selection between seeds.
+
+| COD | Seed | Process s | Chosen group | Own R1 | Position-only criterion | Labelled criterion | Accepted |
+| --- | ---: | ---: | ---: | ---: | --- | --- | --- |
+| 2010875, Ni/O/N/C | 1 | 37.236 | 4 | 0.09292 | pass | fail | no |
+| 2010875, Ni/O/N/C | 2 | 38.957 | 4 | 0.09328 | pass | fail | no |
+| 2011241, Cr/O/N/C | 1 | 10.111 | 1 | 0.07812 | fail | fail | no |
+| 2011241, Cr/O/N/C | 2 | 9.151 | 1 | 0.07835 | fail | fail | no |
+| 2201295, Li/O/N/C | 1 | 16.802 | 152 | 0.08720 | pass | fail | no |
+| 2201295, Li/O/N/C | 2 | 17.188 | 152 | 0.08720 | pass | fail | no |
+
+The six executions total 129.44 s with no hard timeout. The lithium case improves
+from no retained model to the correct group and complete 66-site atomic framework
+in both runs (RMS 0.01454 Å, maximum 0.02216 Å after common origin/inversion).
+Its assignment is Li6 O30 N12 C18, versus the reference Li6 O30 N6 C24: six C
+sites are labelled N. This is partial recovery, not a fully labelled or accepted
+solution. The nickel framework also passes position-only grading, while C/N/O
+labels fail. Chromium still misses coordinates and labels. All three have the
+correct total non-H atom count in these diagnostic runs; simply raising the atom
+cap is therefore not the indicated next fix. These additional-effort results do
+not replace the frozen 14-case comparison or establish new holdout performance.
+
+The saved diagnostics and owning code identify concrete follow-up work:
+
+1. **Joint element/ADP correction for promising frameworks.** The unknown-group
+   coordinator currently forces isotropic fitting; known-group search already
+   permits anisotropic polishing. Test a bounded final anisotropic polish and
+   repeated coupled light-element assignment before spending more time on
+   rephasing. Recompute the common-data score and actual parameter count, preserve
+   independent-observation/overfitting guards, and keep every acceptance threshold.
+   This is a proposed experiment, not proof that anisotropy alone fixes the labels.
+2. **Centred-lattice phasing compatibility.** `SymmetryPrior::processing_group`
+   includes the supplied centring translations, while `validate_phase_input`
+   rejects every nonzero translation. The saved I/R-centred cases explicitly record
+   that error and use independent per-group searches. This integration mismatch
+   needs a tested centring-aware contract; screw/glide assumptions must remain
+   withheld and missing intensities must never become fabricated zeros.
+3. **Recovery and stopping diagnostics.** Some lithium candidates are still
+   rejected by the second origin/hand recovery during common scoring. Preserve
+   those rejected models and their transformations to distinguish genuinely bad
+   candidates from a recovery-path problem. Separately, model-consensus stopping
+   permits R1 <=0.1 despite the requested own target of 0.06; nickel seed 1 stops
+   after five starts while its target remains unmet. Test target-aware stopping
+   for explicit thorough effort. Chromium also needs better coordinate recovery;
+   relabelling alone is insufficient for its present model.
+
+An optional independently supplied composition/formula could constrain light-element
+counts in real experiments. It would be an explicit additional prior and a
+separate benchmark protocol; these reference counts were never solver inputs.
+Any implementation should replay this exposed regression set and then undergo
+fresh validation after development is frozen.
+
+The compact [diagnostic receipt](../validation/results/hard-case-diagnostic-v1-macos.json)
+retains every run, count comparison, geometric error, failed attempt and source
+identity. Full inputs, executable, predictions, barrier, runner and grader stay
+outside Git at
+`/Users/clemens/ChatGPT/PhaseSmith/hard-case-diagnostics-0.8-20261101/`.
