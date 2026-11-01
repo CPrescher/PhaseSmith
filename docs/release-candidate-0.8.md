@@ -1,5 +1,9 @@
 # 0.8 single-crystal release candidate
 
+The later [unknown-symmetry validation](space-group-search-validation.md) adds
+native space-group assessment, shared-map model search and measured v33 timings.
+Earlier protocols and receipts below remain historical records.
+
 This development candidate promotes the validated single-crystal workflow into
 the main PhaseSmith package. It is not a publication receipt. No tag, upload or
 deployment is performed by the promotion task.

@@ -27,7 +27,7 @@ orchestration remains an independent regression path. See
 budgets and measured numerical differences; strict final-search parity is not
 implied by successful labelled recovery.
 
-Unknown symmetry is the next native workflow mode. It must not use an exact
+Unknown symmetry is a native workflow mode. It must not use an exact
 space group to filter predictions or define scaling families before discovery.
 Retain all measured signed reflections; masks/unmeasured crossings never supply
 absence evidence. Assess intensity symmetry before empirical scaling, enumerate
@@ -35,6 +35,12 @@ metric-compatible conventional Hall settings, and report ranked alternatives,
 origin/model evidence and bounded-search omissions. Exact-symmetry input remains
 an explicit supported mode. Automatic discovery is not proof of uniqueness or a
 complete SHELXT implementation. Freeze data-run controls before frame reads.
+The measured v33 MgSiO3 run withholds exact symmetry and Laue group, assesses
+345 metric-compatible settings, phase-screens 64 and searches 12 models. It
+ranks Pbca first and recovers Mg16 Si16 O48. Shared-map assignment and four
+ordered independent P1 workers reduce observed full time from about 47.7 to
+36.2–36.5 s. Its bounded coverage does not prove uniqueness; the supplied-group
+control remains bitwise unchanged. See [the assessment guide](docs/space-group-search.md).
 
 ## Ownership and dependency direction
 
@@ -46,7 +52,7 @@ complete SHELXT implementation. Freeze data-run controls before frame reads.
 | Structural pattern composition | `phasesmith-engine` |
 | Parser-independent application records | `phasesmith-model` |
 | CIF, powder, space-group and instrument adapters | `phasesmith-io` |
-| Powder solving and refinement workflows | `phasesmith-workflows` |
+| Powder and single-crystal workflows | `phasesmith-workflows` |
 | Versioned projects and lossless numeric archives | `phasesmith-persistence` |
 | Detector, geometry, profile and scaling kernels | `phasesmith-spots` |
 | Independent DAFi-based row grouping | `phasesmith-row-search` |

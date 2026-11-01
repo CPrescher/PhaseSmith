@@ -22,12 +22,11 @@ cargo build --release -p phasesmith --features hdf5 --example single_crystal_wor
 
 target/release/examples/single_crystal_workflow --mgsio3 \
   '/path/to/MgSiO3 Enstatite Calibration Crystal' \
-  validation/enstatite-raw-workflow-v29.json \
+  validation/enstatite-raw-workflow-v33.json \
   /path/outside/the/repository/new-native-run
 ```
 
-For automatic symmetry assessment, use
-`validation/enstatite-raw-workflow-v31.json` instead of v29. That mode removes
+Protocol v33 selects automatic symmetry assessment. It removes
 the exact space group from the input and supplies no Laue group. Predictions
 retain all primitive reflections. The worker assesses measured intensity
 symmetry before empirical scaling, screens conventional settings using a shared
@@ -35,6 +34,11 @@ P1 phase map and retains candidate models, alternatives and all budget omissions
 New products include `preliminary-symmetry.json`, `space-group-evidence.json`,
 `space-group-phase-map.npz` and `space-group-search.json`. Their selected setting
 is a ranked hypothesis; the report does not assert uniqueness.
+The selected conventional setting and asymmetric sites are saved separately as
+`candidate/space-group.cif`; `candidate/best.cif` preserves the full P1 model in
+the density frame. Measured inputs to both symmetry assessments are archived
+for independent replay. To reproduce the supplied-Pbca control, explicitly use
+`validation/enstatite-raw-workflow-v29.json`.
 
 The example checks the registered raw-file and PONI hashes before and after the
 run. It never opens the source HKL, atomic reference CIF or archived reductions.
@@ -57,7 +61,7 @@ saved candidates only after the executable exits:
 ```sh
 python benchmarks/enstatite_native_workflow.py \
   --data-root '/path/to/MgSiO3 Enstatite Calibration Crystal' \
-  --protocol validation/enstatite-raw-workflow-v29.json \
+  --protocol validation/enstatite-raw-workflow-v33.json \
   --executable target/release/examples/single_crystal_workflow \
   --output /path/outside/the/repository/new-observed-run
 ```
@@ -90,7 +94,8 @@ queued after earlier frames; later frames are not loaded after a source failure.
 Observer errors and cancellation stop further loading and join outstanding work.
 A Rust host can use `NoObserver` to retain results entirely in memory.
 The library's search time limit is cooperative. The example host additionally
-enforces the frozen 75-second hard search-process deadline; its waiting guard is
+enforces the frozen hard search-process deadline (75 seconds for v29, 210 seconds
+for v33); its waiting guard is
 cancelled as soon as search/output completes. The optional benchmark parent also
 limits the complete worker process to 1,800 seconds.
 
@@ -148,8 +153,11 @@ JSON uses a distinct versioned schema; it does not pretend to be a complete
 Python `SolutionResult` serialization. Large arrays and all trial outputs remain
 outside the repository.
 
-Labelled structure recovery and numerical parity are separate checks. The initial
-missing angular-flag handoff was corrected and the failed trial retained. The
+Labelled structure recovery and numerical parity are separate checks. The
+supplied-group comparison below uses v29. The current unknown-group v33 replay,
+its alternatives and measured speed improvements are recorded in the
+[space-group search validation](space-group-search-validation.md).
+The initial missing angular-flag handoff was corrected and the failed trial retained. The
 corrected native path exports the same 4,125 observations, including 220 negative
 values, with the same quality flags and teacher membership. Geometry roundoff is
 about 1e-12 pixels and intensity differences are about 1e-6 in relative L2 norm.

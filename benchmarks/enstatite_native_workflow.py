@@ -38,7 +38,7 @@ def main():
     p.add_argument("--output", required=True, type=Path)
     p.add_argument("--executable", required=True, type=Path)
     p.add_argument(
-        "--protocol", type=Path, default=ROOT / "validation/enstatite-raw-workflow-v29.json"
+        "--protocol", type=Path, default=ROOT / "validation/enstatite-raw-workflow-v33.json"
     )
     args = p.parse_args()
     started = time.perf_counter()
@@ -147,6 +147,12 @@ def main():
             alternatives=symmetry["alternatives"],
             unique_space_group_proven=symmetry["unique_space_group_proven"],
             termination=symmetry["termination"],
+            reference_number=manifest["search_inputs"]["space_group_number"],
+            reference_number_matches=(
+                symmetry["selected"] is not None
+                and symmetry["selected"]["number"]
+                == manifest["search_inputs"]["space_group_number"]
+            ),
         )
     report["observed_wall_seconds"] = time.perf_counter() - started
     save(out / "report.json", report)
@@ -154,7 +160,12 @@ def main():
         save(out / "native/report.json", report)
         save(out / "native/provenance.json", json.loads((out / "provenance.json").read_text()))
     print(json.dumps(report, indent=2))
-    return 0 if result.returncode == 0 and report["raw_to_structure_search_passed"] else 2
+    symmetry_passed = report.get("space_group_search", {}).get("reference_number_matches", True)
+    return (
+        0
+        if result.returncode == 0 and report["raw_to_structure_search_passed"] and symmetry_passed
+        else 2
+    )
 
 
 if __name__ == "__main__":
