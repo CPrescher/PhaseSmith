@@ -131,9 +131,23 @@ fn design(
     let penalty = penalty_matrix(width, nf, &rays, n)?;
     let FamilyDesign {
         groups,
-        training,
+        mut training,
         variance,
-    } = family_design(&m.hkl, values, flags, &o.priors.group);
+    } = family_design(
+        &m.hkl,
+        values,
+        flags,
+        o.priors
+            .group
+            .as_ref()
+            .ok_or_else(|| Error("scaling needs an assessed Laue hypothesis".into()))?,
+    );
+    if o.discovery.is_some() {
+        let partition = o.partition_group();
+        for (keep, &h) in training.iter_mut().zip(&m.hkl) {
+            *keep &= grains::fold(grains::family(h.map(i64::from), &partition)) != 0;
+        }
+    }
     let mut lower = vec![-2f64.ln(); width];
     lower.extend(vec![-0.5; 24]);
     lower.extend(vec![-1.; 8]);
@@ -249,28 +263,7 @@ pub(super) fn reduce(
 ) -> Result<Reduced> {
     let n = m.hkl.len();
     let (fitted, choices) = fit_profiles_native(m, o)?;
-    let beam = unit(g.beam);
-    let axis = unit(g.axis);
-    let e = [0., 1., 0.];
-    if dot(e, beam).abs() > 1e-8 {
-        return Err(Error(
-            "polarization vector must be perpendicular to beam".into(),
-        ));
-    }
-    let orth = cross(beam, e);
-    let physical: Vec<_> = m
-        .data
-        .centres
-        .iter()
-        .map(|c| {
-            let ray = profile_geometry([c[0], c[1]], *g).0;
-            let p = 0.98 * (1. - dot(ray, e).powi(2)) + (1. - 0.98) * (1. - dot(ray, orth).powi(2));
-            dot(cross(ray, beam), axis).abs() / p
-        })
-        .collect();
-    if physical.iter().any(|v| !v.is_finite() || *v <= 0.) {
-        return Err(Error("singular physical intensity correction".into()));
-    }
+    let physical = physical_factors(m, g)?;
     let mut values: Vec<_> = fitted
         .values
         .iter()
@@ -346,6 +339,35 @@ pub(super) fn reduce(
         scaling: fit,
         error_floor: beta,
     })
+}
+
+pub(super) fn physical_factors(
+    m: &Measurements,
+    g: &phasesmith_spots::reciprocal::Geometry,
+) -> Result<Vec<f64>> {
+    let beam = unit(g.beam);
+    let axis = unit(g.axis);
+    let e = [0., 1., 0.];
+    if dot(e, beam).abs() > 1e-8 {
+        return Err(Error(
+            "polarization vector must be perpendicular to beam".into(),
+        ));
+    }
+    let orth = cross(beam, e);
+    let physical: Vec<_> = m
+        .data
+        .centres
+        .iter()
+        .map(|c| {
+            let ray = profile_geometry([c[0], c[1]], *g).0;
+            let p = 0.98 * (1. - dot(ray, e).powi(2)) + (1. - 0.98) * (1. - dot(ray, orth).powi(2));
+            dot(cross(ray, beam), axis).abs() / p
+        })
+        .collect();
+    if physical.iter().any(|v| !v.is_finite() || *v <= 0.) {
+        return Err(Error("singular physical intensity correction".into()));
+    }
+    Ok(physical)
 }
 
 fn penalty_matrix(width: usize, nf: usize, rays: &[f64], n: usize) -> Result<Vec<f64>> {

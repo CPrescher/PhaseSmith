@@ -22,7 +22,8 @@ Application hosts own scan configuration, loader callbacks and output locations.
 Geometry fitting refines indexed spot positions. Internal coordinate/ADP
 polishing belongs to structure search. Neither operation supplies a general
 single-crystal refinement workflow. Search currently uses non-resonant X-ray
-intensities, supplied cell/symmetry and non-H element/count priors. A low R1 or
+intensities, supplied cell and non-H element/count priors. Symmetry may be supplied
+or assessed through [native space-group search](space-group-search.md). A low R1 or
 correct atom count alone does not establish a correct or unique structure.
 The measured search has an existing ADP-bound stagnation limitation; report its
 termination and diagnostics rather than claiming every candidate polish converged.

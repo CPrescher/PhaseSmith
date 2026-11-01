@@ -5,6 +5,8 @@ weak measurements. It accepts cell and element priors without an exact space
 group. Conventional Hall settings are enumerated from the pinned native database
 and filtered by metric compatibility, which only permits a hypothesis; the metric
 never establishes intensity symmetry. Alternative settings remain explicit.
+Identical Hall-expression aliases are coalesced only after verifying identical
+exact operation sets. All 530 database entries are considered before that step.
 
 Intensity equivalences use non-resonant Friedel symmetry. Inverse-variance means
 are constructed only from supplied measured rows. For an intensity-symmetry
@@ -33,6 +35,8 @@ contaminating crossings and of extreme Gaussian tails. Report raw counts of
 measured forbidden families and positive >5-sigma violations alongside the score.
 No synthetic zero is added for a missing, masked or excluded reflection.
 This approximate evidence is a prescreen, not a calibrated posterior.
+Shell ordering uses `round_ties_even(1e12 q²/max(q²))`, then canonical HKL, so
+metric roundoff cannot arbitrarily reorder nearly identical resolutions.
 
 Search at most 12 ranked candidates, with independent 15-second per-candidate
 and 180-second total budgets, using the existing native element-only search and

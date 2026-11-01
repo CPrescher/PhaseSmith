@@ -55,11 +55,19 @@ def main():
     verify_dataset(manifest, args.data_root)
     source_seconds = time.perf_counter() - checked
     out.mkdir(parents=True, exist_ok=False)
+    priors = dict(manifest["search_inputs"])
+    if protocol.get("space_group_search", {}).get("mode") == "unknown":
+        priors.pop("space_group_number", None)
+        priors.pop("space_group_symbol", None)
+        priors["provenance"] = (
+            "Supplied cell, wavelength and elements; exact space group and Laue group withheld. "
+            "Exposed MgSiO3 development replay."
+        )
     packet = dict(
         raw_path=str((args.data_root / "eiger_0000.h5").resolve()),
         poni_path=str((args.data_root / "CeO2_20240620_1849_dioptas.poni").resolve()),
         raw_array=manifest["raw_array"],
-        priors=manifest["search_inputs"],
+        priors=priors,
         rotations=[],  # Rust's native space-group adapter owns exact operations.
         protocol=protocol,
         output=str(out / "native"),
@@ -132,6 +140,14 @@ def main():
             report["reference_assessment"] = assessment
             report["raw_to_structure_search_passed"] = assessment["correct"]
         report["reference_assessment_seconds"] = time.perf_counter() - tick
+    if (out / "native/space-group-search.json").exists():
+        symmetry = json.loads((out / "native/space-group-search.json").read_text())
+        report["space_group_search"] = dict(
+            selected=symmetry["selected"],
+            alternatives=symmetry["alternatives"],
+            unique_space_group_proven=symmetry["unique_space_group_proven"],
+            termination=symmetry["termination"],
+        )
     report["observed_wall_seconds"] = time.perf_counter() - started
     save(out / "report.json", report)
     if result.returncode == 0:

@@ -4,7 +4,7 @@
 use phasesmith::{
     crystallography::UnitCell,
     hdf5::{Limits, cache::CachedReader},
-    io::space_group_by_number,
+    io::{space_group_by_number, space_group_settings_for_cell},
     persistence::numeric_archive::{NumericArray, write_numeric_npz},
     solution,
     spots::{frame_input, reciprocal::Geometry},
@@ -109,6 +109,7 @@ struct Save {
     shape: [usize; 2],
     cell: [f64; 6],
     priors: Value,
+    selected_group: Option<Value>,
     angles: Vec<[f64; 2]>,
     aperture: Vec<[f64; 6]>,
     hard_search_seconds: f64,
@@ -123,7 +124,46 @@ impl Save {
         json_file(&self.root.join(name), &v).map_err(|e| sc::Error(e.to_string()))
     }
 }
+fn assessment_json(
+    a: &phasesmith::workflows::space_group_search::Assessment,
+    hypotheses: &[phasesmith::workflows::space_group_search::Hypothesis],
+) -> Value {
+    json!({"schema":"phasesmith.space-group-evidence.v1","measured_rows":a.rows,"friedel_families":a.friedel_families,"processing_laue":a.processing_laue,
+    "laue":a.laue.iter().map(|l|json!({"rotations":l.rotations,"families":l.families,"constraints":l.constraints,"reduced_chi_square":l.reduced_chi_square,"r_int":l.r_int,"status":l.status})).collect::<Vec<_>>(),
+    "ranking":a.ranking,"settings":hypotheses.iter().zip(&a.evidence).enumerate().map(|(i,(h,e))|json!({"index":i,"number":h.number,"symbol":h.symbol,"hall":h.hall,"operations":h.group.operations().iter().map(|op|json!({"rotation":op.rotation(),"translation":op.translation().map(|t|[t.numerator(),t.denominator()])})).collect::<Vec<_>>(),"laue":e.laue,"absent_families":e.absent_families,"strong_violations":e.strong_violations,"absence_log_evidence":e.absence_log_evidence})).collect::<Vec<_>>()})
+}
 impl sc::Observer for Save {
+    fn symmetry(
+        &mut self,
+        name: &str,
+        assessment: &phasesmith::workflows::space_group_search::Assessment,
+        hypotheses: &[phasesmith::workflows::space_group_search::Hypothesis],
+    ) -> sc::Result<()> {
+        self.json(
+            &format!("{name}.json"),
+            assessment_json(assessment, hypotheses),
+        )
+    }
+    fn group_search(&mut self, report: &sc::DiscoveryReport) -> sc::Result<()> {
+        self.selected_group = report.selected.map(|i| {
+            let h = &report.hypotheses[i];
+            json!({"index":i,"number":h.number,"symbol":h.symbol,"hall":h.hall})
+        });
+        if let Some(map) = &report.phase_map {
+            self.archive(
+                "space-group-phase-map.npz",
+                &[f64s(
+                    "density",
+                    map.shape.to_vec(),
+                    map.density.iter().copied(),
+                )],
+            )?;
+        }
+        self.json("space-group-search.json",json!({"schema":"phasesmith.space-group-search.v1","space_group_supplied":false,"laue_group_supplied":false,"selected":self.selected_group,"alternatives":report.alternatives,"termination":report.termination,"seconds":report.seconds,"unique_space_group_proven":false,
+            "phase_map":report.phase_map.as_ref().map(|p|json!({"shape":p.shape,"histories":p.histories,"selected_start":p.selected_start,"seconds":p.seconds})),"phase_diagnostic":report.phase_diagnostic,
+            "attempts":report.attempts.iter().map(|a|json!({"hypothesis":a.hypothesis,"status":a.status,"seconds":a.seconds,"diagnostic":a.diagnostic,"common_r1":a.common_r1,"common_objective":a.common_objective,"parameters":a.parameters,"bic":a.bic,"phase_status":a.phase_status,"phase_seconds":a.phase_seconds,"origins":a.origins.iter().map(|o|json!({"hand":o.hand,"shift":o.shift,"alpha":o.alpha,"chord":o.chord})).collect::<Vec<_>>(),"candidate":a.candidate.as_ref().map(candidate)})).collect::<Vec<_>>() }))
+    }
+
     fn stage(&mut self, name: &str, seconds: f64) -> sc::Result<()> {
         eprintln!("{name}: {seconds:.6} s");
         self.timings.push((name.into(), seconds));
@@ -436,7 +476,7 @@ impl sc::Observer for Save {
         search: &solution::SharedSearchSummary,
     ) -> sc::Result<()> {
         fs::create_dir(self.root.join("candidate")).map_err(|e| sc::Error(e.to_string()))?;
-        self.json("candidate/result.json",json!({"schema":"phasesmith.single-crystal-native-search.v1","experimental":false,"cell":self.cell,"candidates":s.candidates.iter().map(candidate).collect::<Vec<_>>(),"phasing_histories":s.histories,"termination":s.termination,"r1_target_met":s.target_met,"input_elements":search.elements,"grid_shape":s.grid_shape,"family_count":s.data.family_count,"d_min_angstrom":s.data.d_min,"standalone_structure_refinement":false}))?;
+        self.json("candidate/result.json",json!({"schema":"phasesmith.single-crystal-native-search.v1","experimental":false,"cell":self.cell,"candidates":s.candidates.iter().map(candidate).collect::<Vec<_>>(),"phasing_histories":s.histories,"termination":s.termination,"r1_target_met":s.target_met,"input_elements":search.elements,"selected_space_group":self.selected_group,"grid_shape":s.grid_shape,"family_count":s.data.family_count,"d_min_angstrom":s.data.d_min,"standalone_structure_refinement":false}))?;
         self.json("search.json",json!({"termination":s.termination,"target_met":s.target_met,"amplitude_r1":s.candidates.first().map(|c|c.r1),"model_saved_before_reference":true,"timing_record":"timing-structure_search.json"}))?;
         let mut audit = OpenOptions::new()
             .write(true)
@@ -546,11 +586,15 @@ fn poni(path: &Path, pixel1: f64, pixel2: f64, axis: sc::V3) -> Result<Geometry>
 }
 fn main() -> Result<()> {
     let args: Vec<_> = std::env::args().collect();
+    dispatch(&args)
+}
+fn dispatch(args: &[String]) -> Result<()> {
     if args.get(1).is_some_and(|a| a == "--help") {
-        println!(
-            "Rust-only MgSiO3: single_crystal_workflow --mgsio3 DATA_ROOT PROTOCOL.json NEW_EXTERNAL_OUTPUT\nPortable input: single_crystal_workflow INPUT.json NULL_ROTATIONS.json NEW_EXTERNAL_OUTPUT [DIAGNOSTIC_OBSERVATIONS.json]"
-        );
+        print_help();
         return Ok(());
+    }
+    if args.get(1).is_some_and(|a| a == "--assess-symmetry") {
+        return assess_packet(args);
     }
     let Request {
         mut packet,
@@ -558,7 +602,7 @@ fn main() -> Result<()> {
         out,
         diagnostic,
         registered,
-    } = request(&args)?;
+    } = request(args)?;
     verify_registered(&registered)?;
     if out.exists() {
         return Err("output directory must be new".into());
@@ -602,6 +646,7 @@ fn main() -> Result<()> {
         shape: [shape[1], shape[2]],
         cell,
         priors: packet["priors"].clone(),
+        selected_group: None,
         aperture: vec![],
         hard_search_seconds: number(&protocol["search"], "hard_seconds")?,
         search_deadline: None,
@@ -665,7 +710,10 @@ fn decode_options(
     let protocol = &packet["protocol"];
     let acquisition = &protocol["acquisition"];
     let cell: [f64; 6] = serde_json::from_value(packet["priors"]["cell_angstrom_degrees"].clone())?;
+    let unknown = protocol["space_group_search"]["mode"] == "unknown";
+    let discovery = decode_discovery(packet, cell, unknown)?;
     let options = sc::Options {
+        discovery,
         acquisition: sc::Acquisition {
             first: int(acquisition, "first_frame")?,
             last: int(acquisition, "last_frame_inclusive")?,
@@ -687,12 +735,18 @@ fn decode_options(
                 beta_deg: cell[4],
                 gamma_deg: cell[5],
             },
-            group: space_group_by_number(i32::try_from(
-                packet["priors"]["space_group_number"]
-                    .as_i64()
-                    .ok_or("space group missing")?,
-            )?)?
-            .space_group,
+            group: if unknown {
+                None
+            } else {
+                Some(
+                    space_group_by_number(i32::try_from(
+                        packet["priors"]["space_group_number"]
+                            .as_i64()
+                            .ok_or("space group missing")?,
+                    )?)?
+                    .space_group,
+                )
+            },
             elements: serde_json::from_value(packet["priors"]["elements"].clone())?,
             provenance: packet["priors"]["provenance"]
                 .as_str()
@@ -769,6 +823,17 @@ fn validate_adapter(packet: &Value, out: &Path) -> Result<()> {
         || hard < number(&packet["protocol"]["search"], "native_seconds")?
     {
         return Err("hard search deadline must cover the cooperative search budget".into());
+    }
+    if packet["protocol"]["space_group_search"]["mode"] == "unknown"
+        && hard
+            < number(
+                &packet["protocol"]["space_group_search"],
+                "total_search_seconds",
+            )?
+    {
+        return Err(
+            "hard search deadline must cover the complete space-group search budget".into(),
+        );
     }
     let allowed = [
         "raw_path",
@@ -862,7 +927,21 @@ fn request(args: &[String]) -> Result<Request> {
                 ))
             })
             .collect::<Result<Vec<_>>>()?;
-        let packet = json!({"raw_path":root.join("eiger_0000.h5"),"poni_path":root.join("CeO2_20240620_1849_dioptas.poni"),"raw_array":source["raw_array"],"priors":source["priors"],"rotations":[],"protocol":protocol,"output":args[4],"through":"search"});
+        let mut priors = source["priors"].clone();
+        if protocol["space_group_search"]["mode"] == "unknown" {
+            priors
+                .as_object_mut()
+                .ok_or("prior object missing")?
+                .remove("space_group_number");
+            priors
+                .as_object_mut()
+                .ok_or("prior object missing")?
+                .remove("space_group_symbol");
+            priors["provenance"] = json!(
+                "Supplied cell, wavelength and element types; exact space group and Laue group deliberately withheld for native discovery. Exposed MgSiO3 development data."
+            );
+        }
+        let packet = json!({"raw_path":root.join("eiger_0000.h5"),"poni_path":root.join("CeO2_20240620_1849_dioptas.poni"),"raw_array":source["raw_array"],"priors":priors,"rotations":[],"protocol":protocol,"output":args[4],"through":"search"});
         return Ok(Request {
             packet,
             rotations,
@@ -1000,4 +1079,117 @@ mod deadline_tests {
         guard.thread.take().unwrap().join().unwrap();
         assert_eq!(called.load(Ordering::SeqCst), 1);
     }
+}
+
+fn catalogue(cell: UnitCell) -> Result<Vec<phasesmith::workflows::space_group_search::Hypothesis>> {
+    Ok(space_group_settings_for_cell(cell)?
+        .into_iter()
+        .map(|h| phasesmith::workflows::space_group_search::Hypothesis {
+            number: h.number,
+            symbol: h.hm_symbol,
+            hall: h.hall_symbol,
+            group: h.space_group,
+        })
+        .collect())
+}
+#[allow(clippy::cast_possible_truncation)] // Explicit finite/integer/1024 bound checked below.
+fn assess_packet(args: &[String]) -> Result<()> {
+    if args.len() != 4 {
+        return Err("usage: --assess-symmetry INPUT.json NEW_OUTPUT.json".into());
+    }
+    let packet: Value = serde_json::from_slice(&fs::read(&args[2])?)?;
+    let c: [f64; 6] = serde_json::from_value(packet["cell"].clone())?;
+    let cell = UnitCell {
+        a_angstrom: c[0],
+        b_angstrom: c[1],
+        c_angstrom: c[2],
+        alpha_deg: c[3],
+        beta_deg: c[4],
+        gamma_deg: c[5],
+    };
+    let rows: Vec<[f64; 5]> = serde_json::from_value(packet["observations"].clone())?;
+    if rows.iter().any(|r| {
+        r[..3]
+            .iter()
+            .any(|v| !v.is_finite() || v.fract() != 0. || v.abs() > 1024.)
+    }) {
+        return Err("noninteger/out-of-range Miller index".into());
+    }
+    let observations: Vec<_> = rows
+        .iter()
+        .map(|r| solution::Observation {
+            hkl: [r[0] as i32, r[1] as i32, r[2] as i32],
+            intensity: r[3],
+            sigma: r[4],
+        })
+        .collect();
+    let hypotheses = catalogue(cell)?;
+    let assessed = phasesmith::workflows::space_group_search::assess(
+        &observations,
+        cell,
+        &hypotheses,
+        &phasesmith::workflows::space_group_search::AssessmentOptions::default(),
+    )?;
+    json_file(
+        Path::new(&args[3]),
+        &assessment_json(&assessed, &hypotheses),
+    )
+}
+
+fn print_help() {
+    println!(
+        "Rust-only MgSiO3: single_crystal_workflow --mgsio3 DATA_ROOT PROTOCOL.json NEW_EXTERNAL_OUTPUT\nPortable input: single_crystal_workflow INPUT.json NULL_ROTATIONS.json NEW_EXTERNAL_OUTPUT [DIAGNOSTIC_OBSERVATIONS.json]"
+    );
+}
+
+fn decode_discovery(
+    packet: &Value,
+    cell: [f64; 6],
+    unknown: bool,
+) -> Result<Option<sc::DiscoveryOptions>> {
+    let protocol = &packet["protocol"];
+    let discovery = if unknown {
+        let p = &protocol["space_group_search"];
+        let ph = &p["phase_screen"];
+        let cell_value = UnitCell {
+            a_angstrom: cell[0],
+            b_angstrom: cell[1],
+            c_angstrom: cell[2],
+            alpha_deg: cell[3],
+            beta_deg: cell[4],
+            gamma_deg: cell[5],
+        };
+        Some(sc::DiscoveryOptions {
+            hypotheses: catalogue(cell_value)?,
+            assessment: phasesmith::workflows::space_group_search::AssessmentOptions {
+                relative_error: number(p, "relative_intensity_error")?,
+                maximum_chi_square: number(p, "maximum_laue_reduced_chi_square")?,
+                minimum_constraints: int(p, "minimum_laue_constraints")?,
+                shells: int(p, "resolution_shells")?,
+                evidence_clip: serde_json::from_value(p["absence_log_evidence_clip"].clone())?,
+            },
+            maximum_candidates: int(p, "maximum_candidates")?,
+            candidate_seconds: number(p, "candidate_seconds")?,
+            total_seconds: number(p, "total_search_seconds")?,
+            ambiguity_delta: number(p, "ambiguity_delta_bic")?,
+            phase: sc::PhaseScreenOptions {
+                starts: int(ph, "starts")?,
+                cycles: int(ph, "cycles")?,
+                maximum_settings: int(ph, "maximum_settings")?,
+                seconds: number(ph, "maximum_seconds")?,
+                origin_seconds: number(ph, "origin_seconds_per_setting")?,
+                maximum_origins: int(ph, "maximum_origins")?,
+                maximum_alpha: number(ph, "maximum_alpha")?,
+            },
+        })
+    } else {
+        None
+    };
+    if unknown
+        && (!packet["priors"]["space_group_number"].is_null()
+            || !packet["priors"]["space_group_symbol"].is_null())
+    {
+        return Err("unknown-symmetry inputs must withhold exact space-group priors".into());
+    }
+    Ok(discovery)
 }
