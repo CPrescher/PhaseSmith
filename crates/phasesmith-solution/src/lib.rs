@@ -30,6 +30,8 @@ mod refinement_families;
 pub use peak_scan::PreparedAdaptivePeaks;
 mod phase_checkpoint;
 mod phase_origin;
+mod phase_only;
+pub use phase_only::{PhaseOnlyResult, phase_only};
 pub use phase_checkpoint::{PhaseCheckpoint, PhaseCheckpointSelector, checkpoint_map_cosine};
 mod phase_quality;
 mod phase_schedule;
