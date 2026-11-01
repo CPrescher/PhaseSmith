@@ -10,6 +10,11 @@ development versions.
 
 Development release candidate; not yet published.
 
+- Add bounded native unknown-space-group assessment and search, preserving signed
+  measurements, explicit Hall settings and untested alternatives. Reuse one P1
+  map across model candidates and run independent starts in ordered workers.
+  MgSiO3 recovers Pbca and Mg16 Si16 O48 with exact symmetry withheld, in about
+  36.2–36.5 seconds; bounded coverage does not establish uniqueness.
 - Add a typed Rust-only original-frame-to-structure-search coordinator and native
   HDF5/NPZ/CIF example. Preserve independent Python comparisons and explicit
   source, resource, callback and cancellation contracts. The MgSiO3 replay
@@ -44,7 +49,7 @@ Development release candidate; not yet published.
   Large data remain external. The validated v23 workflow takes 18.56–18.65 s
   on the measured Apple M4 Pro and reproduces the v11 numerical results bitwise.
 
-Structure search uses supplied cell/symmetry/element priors and reports bounded
+Structure search uses supplied cell/element priors and optional exact symmetry, and reports bounded
 coverage and termination. Candidate polishing is internal to search and retains
 its documented ADP-bound stagnation limitation. No standalone single-crystal
 structure-refinement workflow or universal structure-recovery claim is added.

@@ -1,5 +1,8 @@
 # Native space-group assessment and search
 
+See the [MgSiO3 validation and SHELXT comparison](space-group-search-validation.md)
+for measured recovery, bounded coverage, timings and binary-review findings.
+
 The unknown-symmetry path retains all predicted reflections, including signed
 weak measurements. It accepts cell and element priors without an exact space
 group. Conventional Hall settings are enumerated from the pinned native database

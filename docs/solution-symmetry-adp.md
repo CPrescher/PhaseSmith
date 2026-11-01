@@ -101,8 +101,10 @@ The default phasing mode implements the published Oszlanyi–Suto charge-flippin
 family, including its weak-reflection phase perturbation. The subsequent
 [dual-space alternative](solution-dual-space.md) adds Patterson-superposition
 starts, hybrid difference-Fourier recycling and Gaussian random-omit atomicity.
-Full SHELXT intrinsic phasing, automatic space-group search and SHELXS/SHELXD
-direct methods are not implemented. See
+Full SHELXT intrinsic phasing and SHELXS/SHELXD direct methods are not implemented.
+The [native unknown-symmetry coordinator](space-group-search.md) now adds bounded
+catalogue assessment and shared-map space-group search; this page describes the
+per-hypothesis supplied-setting refinement kernel. See
 [Oszlanyi & Suto 2008](https://doi.org/10.1107/S0108767307046028) and
 [Sheldrick 2015, SHELXT](https://doi.org/10.1107/S2053273314026370).
 The common sequence of solving in P1, aligning symmetry and polishing atoms does

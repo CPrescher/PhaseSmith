@@ -1,5 +1,10 @@
 # Phase-origin alignment and cached peak completion
 
+The phase-origin kernel is now used by the bounded native
+[unknown-symmetry coordinator](space-group-search.md). This page records the
+earlier supplied-setting experiment and its controls; its opt-in/default remarks
+describe that experiment, rather than the current v33 workflow.
+
 This opt-in experimental path changes the search order: measured phase
 equivalences determine origins before any atom assignment or coordinate fit.
 Supplied-symmetry density recycling then feeds shared, coordinate-fixed count
