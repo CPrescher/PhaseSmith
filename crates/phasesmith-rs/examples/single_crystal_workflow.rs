@@ -184,7 +184,7 @@ impl sc::Observer for Save {
         }
         self.json("space-group-search.json",json!({"schema":"phasesmith.space-group-search.v1","space_group_supplied":false,"laue_group_supplied":false,"selected":self.selected_group,"alternatives":report.alternatives,"termination":report.termination,"seconds":report.seconds,"unique_space_group_proven":false,
             "phase_map":report.phase_map.as_ref().map(|p|json!({"shape":p.shape,"histories":p.histories,"selected_start":p.selected_start,"seconds":p.seconds})),"phase_diagnostic":report.phase_diagnostic,
-            "attempts":report.attempts.iter().map(|a|json!({"hypothesis":a.hypothesis,"status":a.status,"seconds":a.seconds,"diagnostic":a.diagnostic,"common_r1":a.common_r1,"common_objective":a.common_objective,"parameters":a.parameters,"bic":a.bic,"phase_status":a.phase_status,"phase_seconds":a.phase_seconds,"origins":a.origins.iter().map(|o|json!({"hand":o.hand,"shift":o.shift,"alpha":o.alpha,"chord":o.chord})).collect::<Vec<_>>(),"candidate":a.candidate.as_ref().map(candidate)})).collect::<Vec<_>>() }))
+            "attempts":report.attempts.iter().map(|a|json!({"hypothesis":a.hypothesis,"runs":a.runs.iter().map(|r|json!({"initialization":r.initialization,"seconds":r.seconds,"diagnostic":r.diagnostic,"candidates":r.candidates,"phasing_starts":r.phasing_starts,"target_met":r.target_met})).collect::<Vec<_>>(),"status":a.status,"seconds":a.seconds,"diagnostic":a.diagnostic,"common_r1":a.common_r1,"common_objective":a.common_objective,"parameters":a.parameters,"bic":a.bic,"phase_status":a.phase_status,"phase_seconds":a.phase_seconds,"origins":a.origins.iter().map(|o|json!({"hand":o.hand,"shift":o.shift,"alpha":o.alpha,"chord":o.chord})).collect::<Vec<_>>(),"candidate":a.candidate.as_ref().map(candidate)})).collect::<Vec<_>>() }))
     }
 
     fn stage(&mut self, name: &str, seconds: f64) -> sc::Result<()> {
@@ -1192,6 +1192,7 @@ fn decode_discovery(
             gamma_deg: cell[5],
         };
         Some(sc::DiscoveryOptions {
+            reuse_phase_map: p["reuse_phase_map"].as_bool().unwrap_or(false),
             hypotheses: catalogue(cell_value)?,
             assessment: phasesmith::workflows::space_group_search::AssessmentOptions {
                 relative_error: number(p, "relative_intensity_error")?,

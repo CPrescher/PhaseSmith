@@ -99,7 +99,7 @@ pub use rustfft::num_complex::Complex as FourierComplex;
 pub use shared_pool::PreparedElementPool;
 pub use shared_search::{
     DensityCalibration, PhaseOriginAudit, PhaseSettingAudit, RecyclingAudit, SharedMove,
-    SharedSearchOptions, SharedSearchSummary, solve_elements,
+    SharedSearchOptions, SharedSearchSummary, solve_elements, solve_elements_from_phase_map,
 };
 pub use solver::{Candidate, PhasingMethod, PhasingTrial, Solution, SolveOptions, solve};
 pub use staged_refinement::screening_shortlist;

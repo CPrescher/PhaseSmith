@@ -8,6 +8,12 @@ use std::time::{Duration, Instant};
 /// A shared P1 map and actual starts, independent of exact space-group translations.
 #[derive(Clone, Debug)]
 pub struct PhaseOnlyResult {
+    /// Supplied cell identity; exact reuse is checked before candidate assignment.
+    pub cell: UnitCell,
+    /// Supplied element-type identity, without atom counts.
+    pub elements: Vec<String>,
+    /// Original measured rows, retained for exact source-data reuse checks.
+    pub observations: Vec<Observation>,
     /// P1 density in an arbitrary origin and hand.
     pub density: Vec<f64>,
     /// Actual FFT dimensions.
@@ -127,6 +133,9 @@ pub fn phase_only(
         histories.push(result.trial.history);
     }
     Ok(PhaseOnlyResult {
+        cell,
+        elements: elements.to_vec(),
+        observations: observations.to_vec(),
         density: density.ok_or_else(|| error("no phase-only start completed within budget"))?,
         shape,
         histories,
@@ -141,6 +150,40 @@ mod tests {
     use phasesmith_crystallography::{Rational, SymmetryOperation};
     #[test]
     fn phase_map_has_no_atomic_or_exact_translation_prior_and_keeps_stop_contracts() {
+        let (cell, group, rows, options) = fixture();
+        let a = phase_only(&rows, cell, &group, &["Si".into()], &options).unwrap();
+        assert_eq!(a.histories.len(), 1);
+        assert_eq!(a.histories[0].len(), 8);
+        assert_eq!(a.density.len(), a.shape.iter().product());
+        assert!(a.density.iter().all(|x| x.is_finite()));
+        let translation = SymmetryOperation::new(
+            [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+            [
+                Rational::new(1, 2).unwrap(),
+                Rational::zero(),
+                Rational::zero(),
+            ],
+        )
+        .unwrap();
+        let centred = SpaceGroup::new(vec![SymmetryOperation::identity(), translation]).unwrap();
+        assert!(phase_only(&rows, cell, &centred, &["Si".into()], &options).is_err());
+        let token = crate::Cancellation::default();
+        assert!(token.cancel());
+        assert!(
+            phase_only(
+                &rows,
+                cell,
+                &group,
+                &["Si".into()],
+                &SolveOptions {
+                    cancellation: Some(token),
+                    ..options
+                }
+            )
+            .is_err()
+        );
+    }
+    fn fixture() -> (UnitCell, SpaceGroup, Vec<Observation>, SolveOptions) {
         let cell = UnitCell {
             a_angstrom: 5.,
             b_angstrom: 6.,
@@ -170,34 +213,75 @@ mod tests {
             max_seconds: 5.,
             ..SolveOptions::default()
         };
+        (cell, group, rows, options)
+    }
+    #[test]
+    fn shared_map_reuse_skips_phasing_and_rejects_other_source_data() {
+        let (cell, group, rows, options) = fixture();
         let a = phase_only(&rows, cell, &group, &["Si".into()], &options).unwrap();
-        assert_eq!(a.histories.len(), 1);
-        assert_eq!(a.histories[0].len(), 8);
-        assert_eq!(a.density.len(), a.shape.iter().product());
-        assert!(a.density.iter().all(|x| x.is_finite()));
-        let translation = SymmetryOperation::new(
-            [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
-            [
-                Rational::new(1, 2).unwrap(),
-                Rational::zero(),
-                Rational::zero(),
-            ],
+        let seeded_options = SolveOptions {
+            max_seconds: 1.,
+            refinement: Some(crate::AdpMode::Isotropic),
+            symmetry_iterations: 0,
+            ..options.clone()
+        };
+        let search = crate::SharedSearchOptions {
+            maximum_atoms: 4,
+            beam_width: 1,
+            rounds: 1,
+            phase_origin_selection: true,
+            ..crate::SharedSearchOptions::default()
+        };
+        let seeded = crate::solve_elements_from_phase_map(
+            &rows,
+            cell,
+            &group,
+            &["Si".into()],
+            &seeded_options,
+            &search,
+            &a,
         )
         .unwrap();
-        let centred = SpaceGroup::new(vec![SymmetryOperation::identity(), translation]).unwrap();
-        assert!(phase_only(&rows, cell, &centred, &["Si".into()], &options).is_err());
-        let token = crate::Cancellation::default();
-        assert!(token.cancel());
+        assert_eq!(seeded.shared_search.unwrap().phasing_starts, 0);
+        assert_eq!(seeded.grid_shape, a.shape);
+        assert_eq!(seeded.phasing_trials[0].method, "shared_p1");
+        let mut changed = rows.clone();
+        changed[0].sigma = 2.;
         assert!(
-            phase_only(
-                &rows,
+            crate::solve_elements_from_phase_map(
+                &changed,
                 cell,
                 &group,
                 &["Si".into()],
-                &SolveOptions {
-                    cancellation: Some(token),
-                    ..options
-                }
+                &seeded_options,
+                &search,
+                &a
+            )
+            .is_err()
+        );
+        let mut other_cell = cell;
+        other_cell.a_angstrom += 0.001;
+        assert!(
+            crate::solve_elements_from_phase_map(
+                &rows,
+                other_cell,
+                &group,
+                &["Si".into()],
+                &seeded_options,
+                &search,
+                &a
+            )
+            .is_err()
+        );
+        assert!(
+            crate::solve_elements_from_phase_map(
+                &rows,
+                cell,
+                &group,
+                &["Fe".into()],
+                &seeded_options,
+                &search,
+                &a
             )
             .is_err()
         );
