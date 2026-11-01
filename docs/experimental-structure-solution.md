@@ -6,6 +6,10 @@ kernels. The historical filename is retained for existing links. See the
 [supported guide](single-crystal.md) for scope and migration. Numerical equations,
 finite support and the specific limitations below remain unchanged.
 
+The native Rust coordinator additionally supports unknown symmetry and
+[fast/auto/thorough effort](space-group-search-speed.md). The supplied-setting
+Python methods described below keep their explicit space-group contract.
+
 
 This opt-in capability accepts **externally integrated and corrected single-crystal
 X-ray intensities**, independently of PhaseSmith's detector workflow. It is a

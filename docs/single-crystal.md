@@ -22,7 +22,7 @@ Application hosts own scan configuration, loader callbacks and output locations.
 Geometry fitting refines indexed spot positions. Internal coordinate/ADP
 polishing belongs to structure search. Neither operation supplies a general
 single-crystal refinement workflow. Search currently uses non-resonant X-ray
-intensities, supplied cell and non-H element/count priors. Symmetry may be supplied
+intensities, a supplied cell and non-H element types or optional composition priors. Symmetry may be supplied
 or assessed through [native space-group search](space-group-search.md). A low R1 or
 correct atom count alone does not establish a correct or unique structure.
 The measured search has an existing ADP-bound stagnation limitation; report its
@@ -33,6 +33,9 @@ The [Rust-only workflow coordinator](single-crystal-native-workflow.md) runs
 the complete original-frame path without an interpreter. Its first recipe uses
 a supplied primitive-orthorhombic metric, explicit mask assumptions and the
 versioned search profile; other low-level methods retain their existing APIs.
+The current example uses [automatic effort](space-group-search-speed.md): try
+short coarse phasing first, then use finer/broader search only after candidate
+acceptance fails. Explicit `fast` and `thorough` modes remain available.
 
 ## Python API
 

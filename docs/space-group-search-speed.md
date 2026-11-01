@@ -172,6 +172,13 @@ candidate, R1 0.051433695723409355. This negative control takes 34.45–34.92 s 
 reduction; it is not a normal performance result. Separate mode controls verify
 that `fast` does not escalate after failure and `thorough` bypasses the fast pass.
 
+V42 checks rejection of an existing complete candidate, rather than a timeout:
+an intentionally unattainable common-R1 ceiling of 1e-12 rejects the fast model
+and triggers the full-resolution pass. Neither pass silently relaxes the gate.
+The final outcome stays unaccepted, retains the better approximate model, and
+archives the other complete pass and its density. This is an acceptance-negative
+control, not a performance measurement.
+
 The independent NumPy interpolation agrees on deterministic random grids and
 analytic periodic fields, including mixed Nyquist planes and unequal-axis
 upsampling. Prepared integer absence tests agree with the original exact
@@ -180,6 +187,15 @@ nonconventional denominators retain the original detector. Real evidence remains
 identical to the independently checked baseline. Existing fused values/derivatives
 remain unchanged; the powder GSAS-II oracle does not cover these discrete
 assessment and scheduling changes.
+
+Final checks pass: 543 Rust workspace tests with all features on Rust 1.89.0
+(34 ignored), four native-example tests, and 3,297 installed-wheel Python tests
+(11 external-data skips, 34 explicitly deselected). Strict Clippy, formatting,
+minimal Rust features, warnings-denied Rustdoc, API/version/equation/skill
+synchronization and strict documentation builds pass. Deterministic native/NumPy
+comparisons run through the real executable. Normal NumPy-only wheel smoke also
+verifies bundled Bitshuffle/LZ4 HDF5 decoding. Remote CI is configured but was
+not run as part of this local evidence.
 
 The publication basis for the shared P1/phase-origin/light-centric sequence is
 [Sheldrick (2015)](https://doi.org/10.1107/S2053273314026370). The exact stabilizer
@@ -194,3 +210,10 @@ and full verification logs remain external:
 ```text
 /Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101
 ```
+
+The source distribution was rebuilt from its extracted directory with a fresh
+Cargo target; all 14 local crate manifests resolved inside that extraction.
+Its wheel passes the same NumPy-only smoke. After preserving benchmark samples,
+binaries, distributions and logs, removing owned build/extraction/documentation
+products reclaimed 8.16 GB of observed filesystem free space. The preserved
+standalone binary and installed source-built wheel pass smoke checks afterward.
