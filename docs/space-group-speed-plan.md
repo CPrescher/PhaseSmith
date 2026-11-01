@@ -84,3 +84,11 @@ implementation and the independent Python complex-sum reference. This changes no
 reflection decision, measurement, likelihood or accumulation order. Compute the
 common shell contribution once per measured family rather than once per setting;
 retain the existing deferred overflow rejection when an absent family uses it.
+
+## v38: buffer native JSON archives
+
+A retained sampled profile of v37 places substantial wall time in per-token
+JSON writes to an unbuffered file. Buffer these writes, explicitly flush and
+propagate I/O failures. Preserve exclusive creation, JSON formatting and exact
+serialized bytes; no numerical or coverage policy changes. Measure before any
+further phasing change.
