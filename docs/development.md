@@ -15,6 +15,8 @@ in the repository archive, outside the documentation search index.
 
 ## Architecture and validation evidence
 
+- [Dioptas native workflow: complete original-frame replay and package checks](dioptas-native-validation.md)
+
 - [Crystallography and structure-factor implementation plan](crystallography-plan.md)
 - [MgSiO3 detection scaling and complete workflow timing](detection-execution-optimization.md)
 - [image-by-image integration quality](experimental-integration-quality.md)

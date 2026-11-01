@@ -59,6 +59,7 @@ PUBLIC_MODULES = (
     ("phasesmith.single_crystal.solution", "single-crystal"),
     ("phasesmith.single_crystal.solution_symmetry", "single-crystal"),
     ("phasesmith.single_crystal.spots", "single-crystal"),
+    ("phasesmith.single_crystal.workflow", "single-crystal"),
 )
 
 

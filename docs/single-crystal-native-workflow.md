@@ -64,8 +64,8 @@ Rust/C/CMake toolchain; running the resulting executable needs no Python or
 installed HDF5/filter package. The small controls, source-identity and null-rotation
 assets are bundled with the Cargo example and checked against their frozen
 repository counterparts by packaging tests. Build this example from the Git
-checkout/source archive or the Rust facade's crate source. The Python source
-distribution contains its extension dependencies and omits the Rust facade.
+checkout/source archive or the Rust facade's crate source. The ordinary Python source distribution now includes the facade/file-host
+dependency used by the [Dioptas application boundary](dioptas-native-workflow.md).
 
 An optional benchmark observer verifies all registered source files and grades
 saved candidates only after the executable exits:

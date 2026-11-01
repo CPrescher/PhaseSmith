@@ -33,3 +33,7 @@ pub use phasesmith_hdf5 as hdf5;
 /// Independent equidistant-row grouping for lattice discovery.
 #[cfg(feature = "row-search")]
 pub use phasesmith_row_search as row_search;
+
+/// Native HDF5 file workflow and versioned output adapter for application hosts.
+#[cfg(all(feature = "single-crystal", feature = "hdf5"))]
+pub mod single_crystal_files;

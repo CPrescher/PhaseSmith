@@ -78,6 +78,8 @@ nav:
   - Single-crystal diffraction:
       - Overview and API: single-crystal.md
       - Rust-only original-frame workflow: single-crystal-native-workflow.md
+      - Dioptas application integration: dioptas-native-workflow.md
+      - Dioptas complete-workflow validation: dioptas-native-validation.md
       - Space-group assessment and search: space-group-search.md
       - Cross-structure search validation: unknown-group-corpus-validation.md
       - Matched symmetry priors and acceptance: matched-prior-search-validation.md

@@ -40,6 +40,7 @@ __all__ = [
     "solution",
     "solution_symmetry",
     "spots",
+    "workflow",
 ]
 
 

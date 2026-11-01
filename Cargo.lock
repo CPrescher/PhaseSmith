@@ -922,6 +922,7 @@ name = "phasesmith-py"
 version = "0.8.0"
 dependencies = [
  "numpy",
+ "phasesmith",
  "phasesmith-core",
  "phasesmith-engine",
  "phasesmith-execution",

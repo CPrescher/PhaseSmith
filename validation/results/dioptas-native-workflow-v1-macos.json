@@ -1,0 +1,276 @@
+{
+  "schema": "phasesmith.dioptas-native-workflow-validation.v1",
+  "phasesmith_base_commit": "e5b366c",
+  "dioptas_base_commit": "b5cf72b5",
+  "platform": "macOS arm64 / Apple M4 Pro",
+  "source_state_sha256": {
+    "phasesmith": {
+      "Cargo.toml": "d1ac79aee3ba3dcca2be0f7e0fe1a950c3903e553908df170e0ac1356368c78f",
+      "Cargo.lock": "ed0e1846db38370fa6dc0e33c3312e321ea827f51e68d84e7b1a60dc657f9117",
+      "crates/phasesmith-rs/Cargo.toml": "1c1b4a28bc82373d50627102cf60587d1fd4ecfb43b12fd2532448c44dfab3ac",
+      "crates/phasesmith-rs/src/lib.rs": "8f37890ee1096a08e2f58d5d4c9392865edf87b18f19fe5714fc42f62105b8a1",
+      "crates/phasesmith-rs/src/single_crystal_files.rs": "c8dd603551b55d5e9079b92aa0f2af28db022d87b4e4677fc2f2b6990d06c8b5",
+      "crates/phasesmith-rs/examples/single_crystal_workflow.rs": "589c42bf7c9d0b764e3717f1f48f3b60e7123da83bfdb0402a92bba453006128",
+      "crates/phasesmith-rs/examples/data/native-workflow-protocol-v1.json": "f2d7ae99d433d92c9e1270af3ebdeb334a3c3ea100952f4403c5a6a16567da06",
+      "crates/phasesmith-py/Cargo.toml": "306247427e12bf76d73742350ed20b48dd76df3893a283c996827dfe78aee409",
+      "crates/phasesmith-py/src/single_crystal_workflow.rs": "1027490cdbf5c91979fbc0ba848592f3d24594bd1d5a347a5c97e92bfb15236b",
+      "crates/phasesmith-py/src/solution.rs": "94e5ddac1f3e8b29417badc311c343a814d0998064a810c38e94a3c4c833f368",
+      "crates/phasesmith-py/src/lib.rs": "72fbe3a3a5dc6b4cc2d95ff72002079ecd08adcc6acb72b4b0193cdffd5728d1",
+      "python/phasesmith/single_crystal/workflow.py": "8ec728239f78617e1b05f54d9c293aa295fddd574686f730c3251b44910ee4cd",
+      "python/phasesmith/single_crystal/__init__.py": "a0c936a99cb129aa44de819ac8fabce717e39f2998ba4051d99cdff719747a55"
+    },
+    "dioptas": {
+      "dioptas/controller/SingleCrystalStructureController.py": "7956580326d44daa24253b479f615b2a6c0da6a96a34c3d6a57f9510ea6b365c",
+      "dioptas/controller/SingleCrystalController.py": "6b046d54640c86b40a07d18cfed01b2cc4b62a93c38d2fca8ab342f18c620aaf",
+      "dioptas/controller/SingleCrystalWorkflowController.py": "42e895c0bda3c7e8236dce2b6d9bbd796f822a5b4e53b22cf8093abaae35cd51",
+      "dioptas/widgets/SingleCrystalStructureWidget.py": "aed4e32c330d44af1ea421a1ee79f457e215f2725c288677adf6403b5c6c224d",
+      "dioptas/widgets/SingleCrystalWidget.py": "74870887894a4449aeb394ea48dc17910f09c4bb5a1ecf0338b3d27d438f34ea",
+      "dioptas/widgets/ApplicationSettingsDialog.py": "7417b64a70c5e03ad0d5bfe78c4b8e4411fb4f1e92bec7d8cd0b628624faf255"
+    }
+  },
+  "numerical_kernels_coordinator_and_acceptance_unchanged": true,
+  "acceptance_source_sha256": "e8fcd5c542dad771b31cfc0691a416bbd11a8fe057582abf3d595cbecef2093a",
+  "scope": "Complete original-count MgSiO3 v40 recipe through real Dioptas Qt button; no standalone structure refinement. Supplied primitive orthorhombic cell, elements and provisional acquisition/DAC assumptions; exact space group and Laue withheld. Exposed regression data.",
+  "original_files_unchanged": 8,
+  "artifact_root": "/Users/clemens/ChatGPT/PhaseSmith/dioptas-native-integration-20261101",
+  "tested_application_wheel_sha256": "c6fe6e848e089953f4b1eddf7381a49402e37be30bc848a1765773000b173696",
+  "reference_read_after_worker_completion": true,
+  "reference_sha256": "555c035c667b51aa184bae666b48026c6ee9f79f4af5868b91bd497295223ec9",
+  "geometry": {
+    "counts_match": true,
+    "rms_error_angstrom": 0.004263317421385164,
+    "maximum_error_angstrom": 0.006178782769371211,
+    "hand": 1,
+    "shift": [
+      0.33662913283576146,
+      0.5525355683518222,
+      0.223875033734233
+    ],
+    "correct": true,
+    "strict_002_angstrom": true
+  },
+  "numerical_identity": {
+    "all_npz_arrays_bitwise_identical": true,
+    "npz_files": 10,
+    "arrays": 68,
+    "full_candidate_record_identical": true,
+    "phasing_histories_identical": true,
+    "full_p1_cif_identical": true,
+    "setting_cif_identical": true
+  },
+  "runs": {
+    "standalone": {
+      "coordinator_seconds": 15.109258167,
+      "native_only": true,
+      "seconds": 15.289682416,
+      "stages": [
+        [
+          "shadow_masks",
+          2.827706875
+        ],
+        [
+          "detection_linking",
+          3.063965917
+        ],
+        [
+          "indexing_geometry",
+          0.1308265
+        ],
+        [
+          "integration_profile_learning",
+          5.66442
+        ],
+        [
+          "profile_fitting_scaling",
+          2.945817792
+        ],
+        [
+          "structure_search",
+          0.469661167
+        ]
+      ]
+    },
+    "dioptas_initial": {
+      "blocked_python_calls": [
+        "h5py.File",
+        "scipy.optimize.least_squares"
+      ],
+      "gui_worker_seconds": 15.732850625005085,
+      "heartbeat_count": 629,
+      "heartbeat_max_gap_seconds": 0.028576207987498492,
+      "stages": [
+        {
+          "stage": "shadow_masks",
+          "seconds": 2.87948825
+        },
+        {
+          "stage": "detection_linking",
+          "seconds": 3.073636458
+        },
+        {
+          "stage": "indexing_geometry",
+          "seconds": 0.128313625
+        },
+        {
+          "stage": "integration_profile_learning",
+          "seconds": 5.631415375
+        },
+        {
+          "stage": "profile_fitting_scaling",
+          "seconds": 2.954787334
+        },
+        {
+          "stage": "structure_search",
+          "seconds": 0.472011
+        }
+      ],
+      "reference_read_during_worker": false,
+      "report": {
+        "accepted": true,
+        "counts": {
+          "Mg": 16,
+          "O": 48,
+          "Si": 16
+        },
+        "observations": 4844,
+        "output": "/Users/clemens/ChatGPT/PhaseSmith/dioptas-native-integration-20261101/dioptas-native",
+        "r1": 0.0514043045582282,
+        "schema": "phasesmith.single-crystal-workflow-run.v1",
+        "seconds": 15.14356475,
+        "selected_group": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "standalone_structure_refinement": false,
+        "termination": "r1_target"
+      },
+      "status": "Accepted search candidate",
+      "assessment": "P b c a (61) \u00b7 Mg16 Si16 O48\nR1 0.05140 \u00b7 4,844 observations \u00b7 15.14 s\nStructure search with limited candidate polishing; full structure refinement has not been performed.",
+      "result_cif": "/Users/clemens/ChatGPT/PhaseSmith/dioptas-native-integration-20261101/dioptas-native/candidate/space-group.cif",
+      "exports_match_native_products": true,
+      "working_tree_settings_saved": false
+    },
+    "dioptas_with_preview": {
+      "blocked_python_calls": [
+        "h5py.File",
+        "scipy.optimize.least_squares"
+      ],
+      "gui_worker_seconds": 15.742670417006593,
+      "heartbeat_count": 631,
+      "heartbeat_max_gap_seconds": 0.08370316703803837,
+      "stages": [
+        {
+          "stage": "shadow_masks",
+          "seconds": 2.88831725
+        },
+        {
+          "stage": "detection_linking",
+          "seconds": 3.079051708
+        },
+        {
+          "stage": "indexing_geometry",
+          "seconds": 0.133715208
+        },
+        {
+          "stage": "integration_profile_learning",
+          "seconds": 5.602259583
+        },
+        {
+          "stage": "profile_fitting_scaling",
+          "seconds": 2.963829209
+        },
+        {
+          "stage": "structure_search",
+          "seconds": 0.467843583
+        }
+      ],
+      "reference_read_during_worker": false,
+      "report": {
+        "accepted": true,
+        "counts": {
+          "Mg": 16,
+          "O": 48,
+          "Si": 16
+        },
+        "observations": 4844,
+        "output": "/Users/clemens/ChatGPT/PhaseSmith/dioptas-native-integration-20261101/dioptas-preview-native",
+        "r1": 0.0514043045582282,
+        "schema": "phasesmith.single-crystal-workflow-run.v1",
+        "seconds": 15.137727666,
+        "selected_group": {
+          "hall": "-P 2ac 2ab",
+          "index": 289,
+          "number": 61,
+          "symbol": "P b c a"
+        },
+        "standalone_structure_refinement": false,
+        "termination": "r1_target"
+      },
+      "status": "Accepted search candidate",
+      "assessment": "P b c a (61) \u00b7 Mg16 Si16 O48\nR1 0.05140 \u00b7 4,844 observations \u00b7 15.14 s\nStructure search with limited candidate polishing; full structure refinement has not been performed.",
+      "result_cif": "/Users/clemens/ChatGPT/PhaseSmith/dioptas-native-integration-20261101/dioptas-preview-native/candidate/space-group.cif",
+      "exports_match_native_products": true,
+      "native_frame_preview_verified": true,
+      "displayed_frame": 2,
+      "preview_label": "Original frame 2 \u00b7 \u03c9 -35 \u2192 -34.5\u00b0 \u00b7 20 native spot observations \u00b7 2068 \u00d7 2162 pixels",
+      "gui_through_preview_seconds": 15.854026167013217,
+      "working_tree_settings_saved": false
+    }
+  },
+  "reduction": {
+    "used": 4844,
+    "negative_used": 594
+  },
+  "exports_match_native_products": true,
+  "source_reconstruction": {
+    "sdist_sha256": "56441a063b9f8a262f06e0345c3611852c0d74d8ea4749d01b626ea8e32142f3",
+    "reconstructed_wheel_sha256": "63a7aedc0f8e10d111392c76223e2d59136a0599bb748488826d3bc617a939ed",
+    "facade_and_protocol_assets_preserved": true,
+    "numpy_only_smoke": "passed",
+    "native_hdf5_filter_fixture": "passed",
+    "normal_workflow_available": "passed",
+    "logs": {
+      "smoke.log": "d376efcfcebcf383cb66b5bc9672ce6b73af4f9115a66d0342af4b9833f3adc4",
+      "sdist.log": "770eaddc7e381013025acc104b1c79e1b5a943e9cc4505108404134677e4523f",
+      "venv.log": "5c6c82b9820ee0903f0c483e03b88c3a99bdc8ae522098a714c87e6b840178d1",
+      "install.log": "288592acb12a420976ef684222cdf0c0d5460825edeffcf93cc30f64529ff895",
+      "workflow-smoke.log": "4367d1d7409f1740c368c911347fcf1144a8226e60d78e76264fa13a6870094b",
+      "build.log": "22e67dc75d1ce78207fef211c1c651c44eb9b2239860c0bf668ef720e68d9764"
+    }
+  },
+  "checks": {
+    "rust_workspace": {
+      "passed": 567,
+      "failed": 0,
+      "ignored": 34
+    },
+    "python": {
+      "passed": 3335,
+      "external_data_skipped": 11,
+      "default_marker_deselected": 34
+    },
+    "dioptas_single_crystal_and_settings": 178,
+    "minimum_rust": "1.89.0 all-feature and minimal facade checks passed",
+    "clippy": "workspace/all-targets/all-features -D warnings passed; final file-host tests passed"
+  },
+  "publication": "No tag, upload, registry lock fabrication or release; tested local wheels first.",
+  "evidence_sha256": {
+    "preview-prediction-barrier.json": "5f8dd7e9bdd3c4e4fb6de747cca8e9158c2f164f769bdf4ccb0c043380c530c2",
+    "prediction-barrier.json": "53f6cc93aa670cbf3095202af48d496955dfa964d7fb1ef7117e95ead919e010",
+    "gui-preview-execution.json": "0585333e43b4678fdcbab6c14f035a89a9116b65ce857e9f5599f367392df5fc",
+    "preview-validation.json": "d6bff9c0665a1900bd7d4c52e144d1fad9d17b7cfb613aeb8a7a2185405febe6",
+    "gui_replay.py": "9cd5584bf56fdd5c86230f0fc42f2e38d10225f25a8092ea78c2b9142d3f462b",
+    "gui_preview_replay.py": "b397f66da780c7d172660599f21f0abcffa3345d52816080711eabe8f15f0039",
+    "grade_preview.py": "01d07855c25766ca524c6c9192130d3f65878bc3e6cb997116790e4144122aeb",
+    "dioptas-preview-complete.png": "77bcc7ed74094f8be77671dfac14b7e0519a31bf12dc3b33338cf0c92093e06b"
+  },
+  "cleanup": {
+    "removed_path": "/Users/clemens/ChatGPT/PhaseSmith/dioptas-native-integration-20261101/build",
+    "kind": "rebuildable private Cargo target cache",
+    "allocated_bytes_before": 7456407552,
+    "preserved_binary_sha256": "69806ee596fa471fd137859bc17bd11371419c97d25a3b3b9ae54da50674c85f",
+    "preserved": "original data, numerical outputs, wheels, source distribution, reconstruction evidence, test logs, screenshots, recipes and standalone binary"
+  }
+}
