@@ -85,7 +85,8 @@ pub use peak_completion::{
 };
 pub use peak_density::{IntegratedPeakDensity, PeakIntegral, ball_transform, density_label_mask};
 pub use phase_origin::{
-    PhaseOriginCandidate, PhaseOriginEvaluation, PhaseOriginMap, PreparedPhaseOrigin,
+    PhaseOriginCandidate, PhaseOriginDensity, PhaseOriginEvaluation, PhaseOriginMap,
+    PreparedPhaseOrigin,
 };
 pub use phase_quality::{
     PhaseQualityScore, PhaseQualityTrace, PreparedPhaseQuality, WilsonAudit, WilsonNormalization,

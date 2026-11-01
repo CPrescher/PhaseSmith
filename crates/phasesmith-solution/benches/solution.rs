@@ -419,6 +419,15 @@ fn benchmark(c: &mut Criterion) {
                 .unwrap()
         });
     });
+    let cached_density =
+        phasesmith_solution::PhaseOriginDensity::new(&origin_density, shape).unwrap();
+    c.bench_function("phase_origin_cached_32cubed_8_peaks_2108_rows", |b| {
+        b.iter(|| {
+            origin_plan
+                .search_cached(&cached_density, 4, None, None, true)
+                .unwrap()
+        });
+    });
     c.bench_function("phase_checkpoint_32cubed_8_peaks", |b| {
         let mut selector = phasesmith_solution::PhaseCheckpointSelector::default();
         selector
