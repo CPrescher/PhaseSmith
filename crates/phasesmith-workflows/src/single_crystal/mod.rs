@@ -28,8 +28,9 @@ pub use scaling::Reduced;
 use std::{fmt, time::Instant};
 pub use symmetry_prior::SymmetryPrior;
 pub use unknown::{
-    DeferredAmbiguity, DiscoveryOptions, DiscoveryReport, EffortOptions, EffortPass, EffortTrace,
-    FastSearchLimits, GroupAttempt, GroupRun, PhaseScreenOptions, SearchEffort, SearchRun,
+    CommonFrameAudit, DeferredAmbiguity, DiscoveryOptions, DiscoveryReport, EffortOptions,
+    EffortPass, EffortTrace, FastSearchLimits, GroupAttempt, GroupRun, PhaseScreenOptions,
+    SearchEffort, SearchRun,
 };
 /// Workflow validation, numerical, I/O-adapter, cancellation or observer failure.
 #[derive(Debug)]
@@ -842,7 +843,24 @@ fn search_observations_impl(
         symmetry_iterations: 80,
     };
     let shared = shared_search_options(memory.maximum_atoms);
-    let solution = if let Some(map) = map {
+    let solution = if o.discovery.is_some() {
+        phasesmith_solution::solve_elements_with_policy(
+            observations,
+            o.priors.cell,
+            group,
+            &o.priors.elements,
+            &options,
+            &shared,
+            map,
+            phasesmith_solution::ElementSearchPolicy {
+                candidate_polishing: o
+                    .discovery
+                    .as_ref()
+                    .is_some_and(|d| !d.plausible_centrosymmetric_exit),
+                target_aware_consensus: true,
+            },
+        )?
+    } else if let Some(map) = map {
         phasesmith_solution::solve_elements_from_phase_map(
             observations,
             o.priors.cell,

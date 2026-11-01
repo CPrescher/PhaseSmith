@@ -103,13 +103,15 @@ pub use reflection_prediction::{
 pub use rustfft::num_complex::Complex as FourierComplex;
 pub use shared_pool::PreparedElementPool;
 pub use shared_search::{
-    DensityCalibration, PhaseOriginAudit, PhaseSettingAudit, RecyclingAudit, SharedMove,
-    SharedSearchOptions, SharedSearchSummary, solve_elements, solve_elements_from_phase_map,
+    CandidatePolishingTrial, DensityCalibration, ElementSearchPolicy, PhaseOriginAudit,
+    PhaseSettingAudit, RecyclingAudit, SharedMove, SharedSearchOptions, SharedSearchSummary,
+    solve_elements, solve_elements_from_phase_map, solve_elements_with_policy,
 };
 pub use solver::{Candidate, PhasingMethod, PhasingTrial, Solution, SolveOptions, solve};
 pub use staged_refinement::screening_shortlist;
 pub use symmetry_model::{
     AsymmetricSite, SymmetryImage, SymmetryModel, recover_symmetry, recover_symmetry_hypotheses,
+    recover_symmetry_in_frame,
 };
 pub use symmetry_recycling::{RecycledDensity, recycle_density, recycle_density_guided};
 pub use tangent::{

@@ -246,35 +246,7 @@ fn recover_models(
     cancellation: Option<&Cancellation>,
     maximum_models: usize,
 ) -> Result<Vec<SymmetryModel>, SolutionError> {
-    if points.is_empty()
-        || points.len() > 128
-        || points.len() != elements.len()
-        || points.iter().flatten().any(|v| !v.is_finite())
-        || !tolerance.is_finite()
-        || !(1e-5..=0.5).contains(&tolerance)
-    {
-        return Err(error(
-            "invalid full-cell model or symmetry matching tolerance",
-        ));
-    }
-    let g = cell.geometry().map_err(|e| error(e.to_string()))?;
-    if group.operations().len() > 192 {
-        return Err(error("symmetry operation count exceeds 192"));
-    }
-    for &op in group.operations() {
-        let q = cart_rotation(&g, op);
-        let metric_check = multiply(transpose(q), q);
-        if metric_check
-            .iter()
-            .flatten()
-            .zip(IDENTITY.iter().flatten())
-            .any(|(a, b)| (a - b).abs() > 1e-8)
-        {
-            return Err(error(
-                "cell metric is incompatible with the supplied symmetry",
-            ));
-        }
-    }
+    let g = validate_full_model(cell, group, elements, points, tolerance)?;
     let ops = origin_operators(group);
     let mut anchors: Vec<_> = (0..points.len()).collect();
     anchors.sort_by_key(|&i| {
@@ -547,6 +519,90 @@ pub(crate) fn model_in_setting(
     )
 }
 
+/// Validate a proposed source-to-supplied-setting frame, then build exact orbits.
+/// The frame is checked by the same same-element bijection, tolerance and site
+/// projection as arbitrary-origin recovery. It never waives a matching failure.
+/// # Errors
+/// Invalid frame/model/metric, failed group bijection/projection, cancellation or deadline.
+#[allow(clippy::too_many_arguments)]
+pub fn recover_symmetry_in_frame(
+    cell: UnitCell,
+    group: &SpaceGroup,
+    elements: &[String],
+    points: &[[f64; 3]],
+    tolerance: f64,
+    frame: (i32, [f64; 3]),
+    deadline: Option<Instant>,
+    cancellation: Option<&Cancellation>,
+) -> Result<SymmetryModel, SolutionError> {
+    if ![1, -1].contains(&frame.0) || frame.1.iter().any(|v| !v.is_finite()) {
+        return Err(error("invalid proposed symmetry frame"));
+    }
+    let g = validate_full_model(cell, group, elements, points, tolerance)?;
+    if crate::stopped(deadline, cancellation) {
+        return Err(error(
+            "symmetry recovery interrupted by cancellation or runtime limit",
+        ));
+    }
+    let shift = frame.1.map(|v| v.rem_euclid(1.));
+    let aligned: Vec<_> = points
+        .iter()
+        .map(|p| std::array::from_fn(|i| (f64::from(frame.0) * p[i] + shift[i]).rem_euclid(1.)))
+        .collect();
+    let (permutations, maximum, score) =
+        match_operations(&g, group, &aligned, elements, tolerance)?;
+    if crate::stopped(deadline, cancellation) {
+        return Err(error(
+            "symmetry recovery interrupted by cancellation or runtime limit",
+        ));
+    }
+    build_model(
+        &g,
+        group,
+        elements,
+        (frame.0, shift, aligned, permutations, maximum, score),
+    )
+}
+
+fn validate_full_model(
+    cell: UnitCell,
+    group: &SpaceGroup,
+    elements: &[String],
+    points: &[[f64; 3]],
+    tolerance: f64,
+) -> Result<CellGeometry, SolutionError> {
+    if points.is_empty()
+        || points.len() > 128
+        || points.len() != elements.len()
+        || points.iter().flatten().any(|v| !v.is_finite())
+        || !tolerance.is_finite()
+        || !(1e-5..=0.5).contains(&tolerance)
+    {
+        return Err(error(
+            "invalid full-cell model or symmetry matching tolerance",
+        ));
+    }
+    let g = cell.geometry().map_err(|e| error(e.to_string()))?;
+    if group.operations().len() > 192 {
+        return Err(error("symmetry operation count exceeds 192"));
+    }
+    for &op in group.operations() {
+        let q = cart_rotation(&g, op);
+        let metric_check = multiply(transpose(q), q);
+        if metric_check
+            .iter()
+            .flatten()
+            .zip(IDENTITY.iter().flatten())
+            .any(|(a, b)| (a - b).abs() > 1e-8)
+        {
+            return Err(error(
+                "cell metric is incompatible with the supplied symmetry",
+            ));
+        }
+    }
+    Ok(g)
+}
+
 /// Retain distinct partial-framework settings; origin shifts normalizing the full
 /// supplied group are deduplicated, while inequivalent heavy-site settings survive.
 ///
@@ -707,6 +763,150 @@ mod inversion_seed_tests {
         assert_eq!(
             inversion_origin_seeds(&group, &[[0.1; 3]], &["Si".into()], 0),
             [] as [[f64; 3]; 0]
+        );
+    }
+}
+
+#[cfg(test)]
+mod frame_tests {
+    use super::*;
+    use phasesmith_crystallography::Rational;
+    fn fixture() -> (UnitCell, SpaceGroup, Vec<String>, Vec<[f64; 3]>) {
+        let cell = UnitCell {
+            a_angstrom: 7.,
+            b_angstrom: 7.,
+            c_angstrom: 9.,
+            alpha_deg: 90.,
+            beta_deg: 90.,
+            gamma_deg: 120.,
+        };
+        let group = SpaceGroup::new(vec![
+            SymmetryOperation::identity(),
+            SymmetryOperation::new(
+                [[0, -1, 0], [1, -1, 0], [0, 0, 1]],
+                [
+                    Rational::zero(),
+                    Rational::zero(),
+                    Rational::new(1, 3).unwrap(),
+                ],
+            )
+            .unwrap(),
+            SymmetryOperation::new(
+                [[-1, 1, 0], [-1, 0, 0], [0, 0, 1]],
+                [
+                    Rational::zero(),
+                    Rational::zero(),
+                    Rational::new(2, 3).unwrap(),
+                ],
+            )
+            .unwrap(),
+        ])
+        .unwrap();
+        let mut labels = Vec::new();
+        let mut points = Vec::new();
+        for (label, point) in [("C", [0.123, 0.247, 0.137]), ("N", [0.323, 0.431, 0.251])] {
+            for p in group.expand_sites(&[point], 1e-8).unwrap().fractional_xyz {
+                labels.push(label.to_owned());
+                points.push(p);
+            }
+        }
+        (cell, group, labels, points)
+    }
+    #[test]
+    fn supplied_origin_and_both_hands_are_independently_checked_for_screw_orbits() {
+        let (cell, group, labels, aligned) = fixture();
+        let shift = [0.213, 0.167, 0.371];
+        for hand in [1, -1] {
+            let points: Vec<_> = aligned
+                .iter()
+                .map(|p| {
+                    std::array::from_fn(|i| (f64::from(hand) * (p[i] - shift[i])).rem_euclid(1.))
+                })
+                .collect();
+            let model = recover_symmetry_in_frame(
+                cell,
+                &group,
+                &labels,
+                &points,
+                1e-5,
+                (hand, shift),
+                None,
+                None,
+            )
+            .unwrap();
+            assert_eq!(model.hand, hand);
+            assert_eq!(model.full_count, 6);
+            assert!(model.maximum_matching_error < 1e-11);
+            assert!(
+                recover_symmetry_in_frame(
+                    cell,
+                    &group,
+                    &labels,
+                    &points,
+                    1e-5,
+                    (hand, [0.; 3]),
+                    None,
+                    None
+                )
+                .is_err()
+            );
+        }
+    }
+    #[test]
+    fn proposed_frame_never_bypasses_boundary_or_stop_validation() {
+        let (cell, group, labels, points) = fixture();
+        for frame in [(0, [0.; 3]), (1, [f64::NAN, 0., 0.])] {
+            assert!(
+                recover_symmetry_in_frame(cell, &group, &labels, &points, 1e-5, frame, None, None)
+                    .is_err()
+            );
+        }
+        assert!(
+            recover_symmetry_in_frame(
+                cell,
+                &group,
+                &labels[..1],
+                &points,
+                1e-5,
+                (1, [0.; 3]),
+                None,
+                None
+            )
+            .is_err()
+        );
+        assert!(
+            recover_symmetry_in_frame(
+                cell,
+                &group,
+                &labels,
+                &points,
+                1e-5,
+                (1, [0.; 3]),
+                Some(Instant::now()),
+                None
+            )
+            .is_err()
+        );
+        let token = Cancellation::default();
+        assert!(token.cancel());
+        assert!(
+            recover_symmetry_in_frame(
+                cell,
+                &group,
+                &labels,
+                &points,
+                1e-5,
+                (1, [0.; 3]),
+                None,
+                Some(&token)
+            )
+            .is_err()
+        );
+        let mut bad = points;
+        bad[0][0] += 0.03;
+        assert!(
+            recover_symmetry_in_frame(cell, &group, &labels, &bad, 1e-5, (1, [0.; 3]), None, None)
+                .is_err()
         );
     }
 }

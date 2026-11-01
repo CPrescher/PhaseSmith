@@ -15,6 +15,47 @@ use std::time::{Duration, Instant};
 mod phase_path;
 pub use phase_path::{PhaseOriginAudit, PhaseSettingAudit};
 
+#[path = "candidate_polishing.rs"]
+mod candidate_polishing;
+
+/// Additional native workflow policy; defaults preserve the named legacy profiles.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct ElementSearchPolicy {
+    /// Bounded anisotropic polish/reassignment of a promising isotropic recovery parent.
+    pub candidate_polishing: bool,
+    /// Require the requested R1 target before consensus can end independent starts.
+    pub target_aware_consensus: bool,
+}
+impl ElementSearchPolicy {
+    fn consensus_limit(self, target: f64) -> f64 {
+        if self.target_aware_consensus {
+            target.min(0.1)
+        } else {
+            0.1
+        }
+    }
+}
+/// One bounded tensor promotion, including proposals not retained by the score.
+#[derive(Clone, Debug)]
+pub struct CandidatePolishingTrial {
+    /// Original own-data R1.
+    pub parent_r1: f64,
+    /// Original penalized model score.
+    pub parent_score: f64,
+    /// Tensor proposal R1 before further categorical repair.
+    pub fitted_r1: f64,
+    /// Tensor proposal penalized score.
+    pub fitted_score: f64,
+    /// Actual fitted coordinate/tensor parameters, excluding scale.
+    pub parameters: usize,
+    /// Accepted nonlinear fitting steps.
+    pub accepted_steps: usize,
+    /// Truthful optimizer stop reason.
+    pub termination: &'static str,
+    /// Asymmetric sites with a tensor eigenvalue at an existing physical bound.
+    pub boundary_sites: usize,
+}
+
 /// Explicit bounds for shared site/element editing, never a composition.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug)]
@@ -296,6 +337,16 @@ pub struct SharedSearchSummary {
     pub joint_assignment_accepted: usize,
     /// Total time spent in repair, including rejected attempts.
     pub joint_assignment_seconds: f64,
+    /// Bounded anisotropic candidate-polishing calls actually attempted.
+    pub candidate_polishing_attempts: usize,
+    /// Calls whose penalized candidate improved the retained isotropic parent.
+    pub candidate_polishing_adopted: usize,
+    /// All candidate-polishing time, including unsuccessful repairs.
+    pub candidate_polishing_seconds: f64,
+    /// Every tensor proposal, including non-adopted proposals.
+    pub candidate_polishing_trials: Vec<CandidatePolishingTrial>,
+    /// Explicit rejection/error from the optional promotion.
+    pub candidate_polishing_diagnostic: Option<String>,
     /// Required element types, without counts.
     pub elements: Vec<String>,
     /// Actual count-independent phase starts.
@@ -1968,7 +2019,16 @@ pub fn solve_elements(
     search: &SharedSearchOptions,
 ) -> Result<Solution, SolutionError> {
     let (mut result, stats) = crate::with_solution_workers(search.workers, || {
-        solve_elements_inner(observations, cell, group, elements, options, search, None)
+        solve_elements_inner(
+            observations,
+            cell,
+            group,
+            elements,
+            options,
+            search,
+            None,
+            ElementSearchPolicy::default(),
+        )
     })?;
     if let Some(a) = &mut result.shared_search {
         a.requested_workers = stats.requested;
@@ -2007,6 +2067,57 @@ pub fn solve_elements_from_phase_map(
             &selected,
             search,
             Some(map),
+            ElementSearchPolicy::default(),
+        )
+    })?;
+    if let Some(a) = &mut result.shared_search {
+        a.requested_workers = stats.requested;
+        a.workers = stats.resolved;
+        a.parallel_maps = stats.maps;
+        a.parallel_tasks = stats.tasks;
+        a.max_active_workers = stats.maximum_active;
+    }
+    Ok(result)
+}
+/// Native shared-map or independent search with explicit recovery policy.
+/// Original entry points retain their historical policy and numerical defaults.
+/// The optional polish shares the original deadline, retains the parent and
+/// uses the actual parameter count for replacement. It never accepts a candidate.
+/// # Errors
+/// Ordinary solver/map validation errors or incompatible recovery policy.
+/// # Panics
+/// The same internal refined-state invariant as `solve_elements`.
+#[allow(clippy::too_many_arguments)]
+pub fn solve_elements_with_policy(
+    observations: &[Observation],
+    cell: UnitCell,
+    group: &SpaceGroup,
+    elements: &[String],
+    options: &SolveOptions,
+    search: &SharedSearchOptions,
+    map: Option<&crate::PhaseOnlyResult>,
+    policy: ElementSearchPolicy,
+) -> Result<Solution, SolutionError> {
+    if policy.candidate_polishing && !search.joint_assignment_refinement {
+        return Err(error(
+            "candidate polishing requires joint assignment refinement",
+        ));
+    }
+    let mut selected = options.clone();
+    if let Some(map) = map {
+        validate_shared_map(observations, cell, elements, options, search, map)?;
+        selected.grid_shape = Some(map.shape);
+    }
+    let (mut result, stats) = crate::with_solution_workers(search.workers, || {
+        solve_elements_inner(
+            observations,
+            cell,
+            group,
+            elements,
+            &selected,
+            search,
+            map,
+            policy,
         )
     })?;
     if let Some(a) = &mut result.shared_search {
@@ -2066,7 +2177,8 @@ fn validate_shared_map(
     clippy::too_many_lines,
     clippy::cast_precision_loss,
     clippy::cast_possible_truncation,
-    clippy::cast_sign_loss
+    clippy::cast_sign_loss,
+    clippy::too_many_arguments
 )]
 fn solve_elements_inner(
     observations: &[Observation],
@@ -2076,6 +2188,7 @@ fn solve_elements_inner(
     options: &SolveOptions,
     search: &SharedSearchOptions,
     shared_map: Option<&crate::PhaseOnlyResult>,
+    policy: ElementSearchPolicy,
 ) -> Result<Solution, SolutionError> {
     crate::solver::validate_options(options)?;
     if search.cached_repair_evaluation && !search.joint_assignment_refinement {
@@ -2837,7 +2950,7 @@ fn solve_elements_inner(
                         && s.recycling_validated
                         && !s.assignment_disfavoured
                         && s.candidate.r1.is_finite()
-                        && s.candidate.r1 <= 0.1
+                        && s.candidate.r1 <= policy.consensus_limit(options.r1_target)
                 })
                 && (a.candidate.r1 - b.candidate.r1).abs() <= 0.001
                 && (a.score - b.score).abs() <= 2.
@@ -2920,6 +3033,23 @@ fn solve_elements_inner(
         }
         audit.joint_assignment_seconds = start.elapsed().as_secs_f64();
     }
+    if policy.candidate_polishing
+        && let Some(context) = phase_context.as_ref()
+    {
+        candidate_polishing::polish(
+            cell,
+            group,
+            &elements,
+            options,
+            search,
+            shape,
+            context,
+            &mut winners,
+            &mut result,
+            &mut audit,
+            deadline,
+        );
+    }
     winners.sort_by(|a, b| ordering(a, b, &elements));
     if let Some(best) = winners.first() {
         audit.initial_prefix = best.initial_prefix;
@@ -2955,6 +3085,22 @@ fn solve_elements_inner(
 mod tests {
     use super::*;
     use crate::model::evaluate_model;
+    #[test]
+    fn native_consensus_requires_the_requested_target_and_keeps_historical_ceiling() {
+        let native = ElementSearchPolicy {
+            target_aware_consensus: true,
+            ..ElementSearchPolicy::default()
+        };
+        assert!(0.09 > native.consensus_limit(0.06));
+        assert!(0.05 <= native.consensus_limit(0.06));
+        assert_eq!(native.consensus_limit(0.2).to_bits(), 0.1_f64.to_bits());
+        assert_eq!(
+            ElementSearchPolicy::default()
+                .consensus_limit(0.06)
+                .to_bits(),
+            0.1_f64.to_bits()
+        );
+    }
 
     #[test]
     fn settings_from_one_phase_start_do_not_create_independent_agreement() {

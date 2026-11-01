@@ -1,4 +1,4 @@
-//! Reusable P1 phasing from a supplied rotational intensity hypothesis, without an atomic model.
+//! Reusable P1 phasing from intensity symmetry and known centring, without an atomic model.
 use crate::{
     DualSpaceOptions, Observation, PeakSelection, PhasingExecution, SolutionError, SolveOptions,
     error, normalize_wilson, prepare_data,
@@ -16,7 +16,7 @@ pub struct PhaseOnlyPolicy {
     /// 0.9 earns a full restart with the original seeds and remaining deadline.
     pub first_pass_cycles: Option<usize>,
 }
-/// A shared P1 map and actual starts, independent of exact space-group translations.
+/// A shared P1 map and actual starts, independent of unknown screw/glide translations.
 #[derive(Clone, Debug)]
 pub struct PhaseOnlyResult {
     /// Supplied cell identity; exact reuse is checked before candidate assignment.
@@ -49,10 +49,11 @@ pub struct PhaseOnlyResult {
     pub seconds: f64,
 }
 /// Create one reusable P1 phase map before testing exact space-group translations.
-/// The rotational group must have zero translations; no systematic absence is imposed.
+/// Known centring is allowed; translated rotations must differ from (R,0) by an
+/// existing pure lattice translation. Unknown screw/glide translations are excluded.
 /// This reuses the existing Wilson, Patterson, atomicity and Fourier kernels unchanged.
 /// # Errors
-/// Invalid cell/data/control, nonzero symmetry translations, oversized grid or no completed map.
+/// Invalid cell/data/control, nonsymmorphic intensity group, oversized grid or no completed map.
 #[allow(
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
@@ -215,18 +216,29 @@ fn validate_phase_input(
         return Err(error("phase-only workers must lie in 1..=10"));
     }
     crate::solver::validate_options(options)?;
-    if elements.is_empty()
-        || elements.len() > 8
-        || rotational_group
-            .operations()
-            .iter()
-            .any(|op| op.translation().iter().any(|t| t.numerator() != 0))
-    {
+    if elements.is_empty() || elements.len() > 8 || !symmorphic_intensity_group(rotational_group) {
         return Err(error(
-            "phase-only input needs element types and a translation-free intensity group",
+            "phase-only input needs element types and a symmorphic intensity group (centring only)",
         ));
     }
     Ok(())
+}
+
+// Known lattice translations are intensity information. Screw/glide components
+// are not: each translated rotation must differ from (R,0) by a pure lattice
+// translation already present in the closed group.
+fn symmorphic_intensity_group(group: &SpaceGroup) -> bool {
+    let identity = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+    let translations: Vec<_> = group
+        .operations()
+        .iter()
+        .filter(|op| op.rotation() == identity)
+        .map(|op| op.translation())
+        .collect();
+    group
+        .operations()
+        .iter()
+        .all(|op| translations.contains(&op.translation()))
 }
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // Finite extent is explicitly bounded below 64.
@@ -428,7 +440,7 @@ mod tests {
     use super::*;
     use phasesmith_crystallography::{Rational, SymmetryOperation};
     #[test]
-    fn phase_map_has_no_atomic_or_exact_translation_prior_and_keeps_stop_contracts() {
+    fn phase_map_keeps_count_unknown_screw_and_stop_contracts() {
         let (cell, group, rows, options) = fixture();
         let a = phase_only(&rows, cell, &group, &["Si".into()], &options).unwrap();
         assert_eq!(a.histories.len(), 1);
@@ -445,7 +457,7 @@ mod tests {
         )
         .unwrap();
         let centred = SpaceGroup::new(vec![SymmetryOperation::identity(), translation]).unwrap();
-        assert!(phase_only(&rows, cell, &centred, &["Si".into()], &options).is_err());
+        assert!(phase_only(&rows, cell, &centred, &["Si".into()], &options).is_ok());
         let token = crate::Cancellation::default();
         assert!(token.cancel());
         assert!(
@@ -461,6 +473,86 @@ mod tests {
             )
             .is_err()
         );
+    }
+    #[test]
+    fn centred_maps_keep_signed_source_identity_and_exact_reciprocal_support() {
+        let (cell, _, mut rows, options) = fixture();
+        rows.iter_mut()
+            .find(|r| r.hkl == [1, 0, 0])
+            .unwrap()
+            .intensity = -2.;
+        for shifts in [
+            vec![[0, 0, 0], [1, 1, 1]],
+            vec![[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0]],
+            vec![[0, 0, 0], [2, 1, 1], [1, 2, 2]],
+        ] {
+            let denominator = if shifts.len() == 3 { 3 } else { 2 };
+            let group = SpaceGroup::new(
+                shifts
+                    .iter()
+                    .map(|t| {
+                        SymmetryOperation::new(
+                            [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+                            t.map(|n| Rational::new(n, denominator).unwrap()),
+                        )
+                        .unwrap()
+                    })
+                    .collect(),
+            )
+            .unwrap();
+            assert!(symmorphic_intensity_group(&group));
+            let map = phase_only(&rows, cell, &group, &["Si".into()], &options).unwrap();
+            assert_eq!(map.observations.len(), rows.len());
+            for (a, b) in map.observations.iter().zip(&rows) {
+                assert_eq!(a.hkl, b.hkl);
+                assert_eq!(a.intensity.to_bits(), b.intensity.to_bits());
+                assert_eq!(a.sigma.to_bits(), b.sigma.to_bits());
+            }
+            let data = prepare_data(&rows, cell, &group).unwrap();
+            assert!(data.absent_observations > 0);
+            assert!(
+                data.hkl
+                    .iter()
+                    .all(|&h| !group.is_systematically_absent(h).unwrap())
+            );
+            let support =
+                crate::solver::reciprocal_support(map.shape, cell, &group, &data).unwrap();
+            assert_eq!(support.len(), map.density.len());
+            assert!(map.density.iter().all(|x| x.is_finite()));
+        }
+    }
+    #[test]
+    fn unknown_screw_and_glide_translations_are_still_rejected() {
+        let (_, _, _, options) = fixture();
+        for rotation in [
+            [[-1, 0, 0], [0, 1, 0], [0, 0, -1]],
+            [[-1, 0, 0], [0, 1, 0], [0, 0, 1]],
+        ] {
+            let group = SpaceGroup::new(vec![
+                SymmetryOperation::identity(),
+                SymmetryOperation::new(
+                    rotation,
+                    [
+                        Rational::zero(),
+                        Rational::new(1, 2).unwrap(),
+                        Rational::zero(),
+                    ],
+                )
+                .unwrap(),
+            ])
+            .unwrap();
+            assert!(!symmorphic_intensity_group(&group));
+            assert!(
+                validate_phase_input(
+                    &group,
+                    &["Si".into()],
+                    &options,
+                    1,
+                    &PhaseOnlyPolicy::default()
+                )
+                .is_err()
+            );
+        }
     }
     fn fixture() -> (UnitCell, SpaceGroup, Vec<Observation>, SolveOptions) {
         let cell = UnitCell {

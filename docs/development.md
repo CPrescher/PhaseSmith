@@ -59,6 +59,7 @@ in the repository archive, outside the documentation search index.
 
 ## Structure-search evidence
 
+- [Staged candidate recovery, symmetry selection and unchanged acceptance](structure-search-recovery.md)
 - [Adaptive phase checkpoints and independent origin sampling](solution-adaptive-sampling.md)
 - [Bounded ambiguity-aware element assignments](solution-ambiguous-assignments.md)
 - [Checked normal caches for isotropic assignment refinement](solution-assignment-cache.md)

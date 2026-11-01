@@ -7,7 +7,7 @@ use super::{
 use crate::math3::{conjugate, eigen, multiply, transpose};
 use phasesmith_crystallography::Matrix3;
 
-fn transport_tensors(
+pub(in crate::shared_search) fn transport_tensors(
     cell: UnitCell,
     group: &SpaceGroup,
     sites: &[(String, [f64; 3])],
@@ -56,6 +56,7 @@ fn repair_round(
     result: &mut Solution,
     audit: &mut SharedSearchSummary,
     deadline: Instant,
+    r1_floor: f64,
 ) -> Result<(), SolutionError> {
     let Some(parent) = winners.first().cloned() else {
         return Ok(());
@@ -65,7 +66,7 @@ fn repair_round(
     };
     if !super::complete(&parent, elements)
         || crate::stopped(Some(deadline), options.cancellation.as_ref())
-        || !(0.04..=0.18).contains(&parent.candidate.r1)
+        || !(r1_floor..=0.18).contains(&parent.candidate.r1)
         || parent.assignment_disfavoured
     {
         return Ok(());
@@ -357,6 +358,37 @@ fn repair_round(
 }
 
 #[allow(clippy::too_many_arguments)]
+fn repair_with_floor(
+    cell: UnitCell,
+    group: &SpaceGroup,
+    elements: &[String],
+    options: &SolveOptions,
+    search: &SharedSearchOptions,
+    shape: [usize; 3],
+    context: &PhaseSearchContext,
+    winners: &mut Vec<State>,
+    result: &mut Solution,
+    audit: &mut SharedSearchSummary,
+    deadline: Instant,
+    r1_floor: f64,
+) -> Result<(), SolutionError> {
+    let local = deadline.min(Instant::now() + std::time::Duration::from_secs(2));
+    for _ in 0..3 {
+        let accepted = audit.joint_assignment_accepted;
+        repair_round(
+            cell, group, elements, options, search, shape, context, winners, result, audit, local,
+            r1_floor,
+        )?;
+        if audit.joint_assignment_accepted == accepted
+            || crate::stopped(Some(local), options.cancellation.as_ref())
+        {
+            break;
+        }
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
 pub(in crate::shared_search) fn repair(
     cell: UnitCell,
     group: &SpaceGroup,
@@ -370,17 +402,28 @@ pub(in crate::shared_search) fn repair(
     audit: &mut SharedSearchSummary,
     deadline: Instant,
 ) -> Result<(), SolutionError> {
-    let local = deadline.min(Instant::now() + std::time::Duration::from_secs(2));
-    for _ in 0..3 {
-        let accepted = audit.joint_assignment_accepted;
-        repair_round(
-            cell, group, elements, options, search, shape, context, winners, result, audit, local,
-        )?;
-        if audit.joint_assignment_accepted == accepted
-            || crate::stopped(Some(local), options.cancellation.as_ref())
-        {
-            break;
-        }
-    }
-    Ok(())
+    repair_with_floor(
+        cell, group, elements, options, search, shape, context, winners, result, audit, deadline,
+        0.04,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(in crate::shared_search) fn repair_polished(
+    cell: UnitCell,
+    group: &SpaceGroup,
+    elements: &[String],
+    options: &SolveOptions,
+    search: &SharedSearchOptions,
+    shape: [usize; 3],
+    context: &PhaseSearchContext,
+    winners: &mut Vec<State>,
+    result: &mut Solution,
+    audit: &mut SharedSearchSummary,
+    deadline: Instant,
+) -> Result<(), SolutionError> {
+    repair_with_floor(
+        cell, group, elements, options, search, shape, context, winners, result, audit, deadline,
+        0.,
+    )
 }
