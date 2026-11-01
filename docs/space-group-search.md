@@ -1,7 +1,9 @@
 # Native space-group assessment and search
 
 See the [MgSiO3 validation and SHELXT comparison](space-group-search-validation.md)
-for measured recovery, bounded coverage, timings and binary-review findings.
+for the original measured recovery, bounded coverage, timings and binary-review findings.
+The subsequent [fast/auto/thorough effort and speed report](space-group-search-speed.md)
+records the current adaptive execution and its forced-escalation validation.
 
 The unknown-symmetry path retains all predicted reflections, including signed
 weak measurements. It accepts cell and element priors without an exact space
@@ -41,7 +43,8 @@ This approximate evidence is a prescreen, not a calibrated posterior.
 Shell ordering uses `round_ties_even(1e12 q²/max(q²))`, then canonical HKL, so
 metric roundoff cannot arbitrarily reorder nearly identical resolutions.
 
-Search at most 12 ranked candidates, with independent 15-second per-candidate
+The original full-resolution profile searches at most 12 ranked candidates, with
+independent 15-second per-candidate
 and 180-second total budgets, using the existing native element-only search and
 isotropic site polishing. Assess candidate models on the same measured
 Friedel-expanded amplitude set, including reflections their hypothesis predicts
@@ -109,3 +112,21 @@ MgSiO3 is exposed development data. Protocols v30/v31 remove Pbca and supply no
 Laue group to the numerical worker. It freezes these controls before the replay;
 source files and large products remain external. Reference grading follows saved
 models and process exit. Earlier known-group results remain unchanged evidence.
+
+## Adaptive effort
+
+Protocol v40 explicitly selects `fast`, `auto` or `thorough`; absent effort controls
+preserve earlier frozen execution. The typed Rust `EffortOptions` and
+`FastSearchLimits` bound the first attempt separately. It uses a 0.8 A initial
+cutoff, four starts of at most 256 cycles, at most four shared-map model attempts
+and no independent restart. `auto` spends finer/broader effort only when a complete
+own-target candidate fails common-data symmetry/R1 or phase acceptance. The
+common R1 ceiling is explicit (0.08 here), with phase alpha <=0.3. These thresholds
+identify plausible numerical candidates rather than truth or uniqueness.
+
+The configured full-resolution profile owns the deeper pass: four starts of at
+most 800 cycles, up to 64 phase-tested settings and 12 model settings. Both passes
+share the original remaining 180-second cooperative search budget. User
+cancellation and exhausted total budget do not start another pass. Both complete
+pass reports, actual cycle counts, failure reason and selected-pass provenance
+survive. See the [adaptive-effort validation](space-group-search-speed.md).

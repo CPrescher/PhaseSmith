@@ -10,11 +10,18 @@ development versions.
 
 Development release candidate; not yet published.
 
+- Add explicit native fast/auto/thorough structure-search effort. Automatic effort
+  tries the short coarse path first and spends full-resolution/broader work only
+  after candidate rejection, preserving both passes and the remaining deadline.
+  Cache phase transforms, prepare exact absence tests and buffer native archives.
+  Measured MgSiO3 search is about 0.5 s with correct labelled recovery; general
+  SHELXT speed/reliability parity is not implied.
+
 - Add bounded native unknown-space-group assessment and search, preserving signed
   measurements, explicit Hall settings and untested alternatives. Reuse one P1
   map across model candidates and run independent starts in ordered workers.
-  MgSiO3 recovers Pbca and Mg16 Si16 O48 with exact symmetry withheld, in about
-  36.2–36.5 seconds; bounded coverage does not establish uniqueness.
+  MgSiO3 recovers Pbca and Mg16 Si16 O48 with exact symmetry withheld;
+  bounded coverage does not establish uniqueness.
 - Add a typed Rust-only original-frame-to-structure-search coordinator and native
   HDF5/NPZ/CIF example. Preserve independent Python comparisons and explicit
   source, resource, callback and cancellation contracts. The MgSiO3 replay
