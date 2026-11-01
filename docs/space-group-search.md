@@ -85,6 +85,12 @@ numerical target, independent phasing can use the remaining per-candidate time;
 the same common-set model score selects the retained result. Both work paths
 remain recorded. Exact-group searches keep their original execution path.
 
+Protocol v33 runs at most four independent P1 starts concurrently, each with
+private numerical buffers and no nested solver workers. Results are consumed in
+start order and compared bitwise against serial v32 when no time/cancellation
+limit intervenes. This changes execution, not Fourier/atomicity arithmetic or
+the selected-map criterion. Worker limits remain independent of detector stages.
+
 MgSiO3 is exposed development data. Protocols v30/v31 remove Pbca and supply no
 Laue group to the numerical worker. It freezes these controls before the replay;
 source files and large products remain external. Reference grading follows saved
