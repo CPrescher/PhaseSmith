@@ -1,0 +1,1587 @@
+{
+  "schema": "phasesmith.hard-case-diagnostic-results.v1",
+  "created_utc": "2026-11-01T09:52:07.119035+00:00",
+  "source_commit": "797ecfc9ad6463f2872168ed3362611ebb65d3fa",
+  "plan": {
+    "schema": "phasesmith.hard-case-diagnostic.v1",
+    "created_utc": "2026-11-01T09:45:27.794907+00:00",
+    "commit": "797ecfc",
+    "native_sha256": "d07bab763257df67097a7774a10807abb4bb993d4dcd7f0d9457535e46a61ba6",
+    "jobs": [
+      {
+        "case": "cod-2010875",
+        "name": "seed-1",
+        "packet_sha256": "4e0e892d0eefe0538f3336a8aef2d932102946b8f8d97355701aead85b6d8e60",
+        "observations_sha256": "bf73bb8d91e6ae81ba8b043ae84d7000d604fb0f86a7f4afcd3d8f5ddf698fb5"
+      },
+      {
+        "case": "cod-2010875",
+        "name": "seed-2",
+        "packet_sha256": "b72a079d9855b41ec3d1316e824de3eeccd720861b60e6e8ef9461e9073c6f4b",
+        "observations_sha256": "bf73bb8d91e6ae81ba8b043ae84d7000d604fb0f86a7f4afcd3d8f5ddf698fb5"
+      },
+      {
+        "case": "cod-2011241",
+        "name": "seed-1",
+        "packet_sha256": "c336ddb37e92f40566d2228d79e1b7134535ec7555bac553fb14fb40b445e73a",
+        "observations_sha256": "8c7760939c60d3b8ee236e8fb7db3292f5e50d5d325681b02fbed788003a9268"
+      },
+      {
+        "case": "cod-2011241",
+        "name": "seed-2",
+        "packet_sha256": "19afffe624ca25a2cd59fbddb286e4e97f40c6ab4117ac487e37b477b10aea56",
+        "observations_sha256": "8c7760939c60d3b8ee236e8fb7db3292f5e50d5d325681b02fbed788003a9268"
+      },
+      {
+        "case": "cod-2201295",
+        "name": "seed-1",
+        "packet_sha256": "c6da72799e190da81eebbace18e806acbc4f5a606447e08fa91173e02be6f30c",
+        "observations_sha256": "565ef402d004d2a7923424d46c0d78857a97037102eedb57a3c3d46009da56ac"
+      },
+      {
+        "case": "cod-2201295",
+        "name": "seed-2",
+        "packet_sha256": "c8d42893e21f1d9ea45f64a3c5cade4ae560ab8722df95c762ff49911c51f847",
+        "observations_sha256": "565ef402d004d2a7923424d46c0d78857a97037102eedb57a3c3d46009da56ac"
+      }
+    ],
+    "scope": "Exposed post-benchmark diagnostic, not a holdout or replacement for frozen 14-case comparison. Same cells, elements, Laue/centring and numeric observations. No exact SG/counts/coordinates supplied. Thresholds unchanged. Full native candidate retained and graded only after all workers exit. No reference-based result selection.",
+    "changed_resources": "Direct thorough effort, seeds 1 and 2, eight 1600-cycle starts, eight P1 workers, 30 s per candidate, 180 s total and 210 s process cap. All six planned jobs execute, including failures."
+  },
+  "plan_sha256": "7ac99f748077896ed2d63d51092286bb7db51547483d26fd9397c0edef66c33d",
+  "prediction_barrier_sha256": "d3e1f05e1a1ec63001b9ac8313fadac8259bb99dac8ad2c40af23d1abf40efe2",
+  "runner_sha256": "326138a6134d18ab80d9d3ffc5d450c07cab096ad41104594f034874b9b26b52",
+  "grader_sha256": "69d666bb71ff97ea634d6f729bfcf0a7faa2351959465f013d635a165e9ecc0c",
+  "runtime_matches_validated_source": true,
+  "artifact_root": "/Users/clemens/ChatGPT/PhaseSmith/hard-case-diagnostics-0.8-20261101",
+  "results": [
+    {
+      "case": "cod-2010875",
+      "name": "seed-1",
+      "packet_sha256": "4e0e892d0eefe0538f3336a8aef2d932102946b8f8d97355701aead85b6d8e60",
+      "observations_sha256": "bf73bb8d91e6ae81ba8b043ae84d7000d604fb0f86a7f4afcd3d8f5ddf698fb5",
+      "wall_seconds_including_startup": 37.235748999984935,
+      "returncode": 0,
+      "hard_timeout": false,
+      "selected": {
+        "hall": "P 2yb",
+        "index": 3,
+        "number": 4,
+        "symbol": "P 21"
+      },
+      "effort": {
+        "accepted": false,
+        "deferred_ambiguity": null,
+        "escalation_reason": null,
+        "passes": [
+          {
+            "accepted": false,
+            "mode": "thorough",
+            "model_attempts": 12,
+            "phase_cycles": [
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600
+            ],
+            "phasing_shape": [
+              32,
+              64,
+              32
+            ],
+            "reason": "own_target_not_met",
+            "seconds": 36.75393875,
+            "termination": "candidate_budget"
+          }
+        ],
+        "requested": "thorough",
+        "selected_pass": "thorough",
+        "selection_reason": "only_available_approximation"
+      },
+      "reference_group": 4,
+      "reference_counts": {
+        "Ni": 2,
+        "O": 12,
+        "N": 8,
+        "C": 48
+      },
+      "reference_sha256": "d199ba1f0c27338ba8fc05e9ce0fa3661f5eb7f238a5815ac36274a162c8a97d",
+      "geometry": {
+        "counts_match": false,
+        "correct": false
+      },
+      "unlabelled_geometry": {
+        "counts_match": true,
+        "rms_error_angstrom": 0.018561918178262297,
+        "maximum_error_angstrom": 0.03588304026481064,
+        "hand": -1,
+        "shift": [
+          0.7581828840087863,
+          0.625904666706734,
+          0.23457030882097363
+        ],
+        "correct": true,
+        "strict_002_angstrom": false
+      },
+      "group_matches": true,
+      "model_counts": {
+        "Ni": 2,
+        "O": 14,
+        "N": 22,
+        "C": 32
+      },
+      "own_r1": 0.09292428044953754,
+      "common_r1": 0.09236619367599841,
+      "attempts": [
+        {
+          "hypothesis": 2,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.061085125,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.325135875,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 3,
+          "status": "candidate",
+          "diagnostic": "independent_model_consensus",
+          "runs": [
+            {
+              "candidates": 3,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 2.1424999160000002,
+              "target_met": false
+            },
+            {
+              "candidates": 4,
+              "diagnostic": "independent_model_consensus",
+              "initialization": "independent_phasing",
+              "phasing_starts": 5,
+              "seconds": 4.958482167,
+              "target_met": false
+            }
+          ],
+          "common_r1": 0.09236619367599841
+        },
+        {
+          "hypothesis": 7,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.058639209,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.399996666,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 9,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.065498083,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.281798667,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 10,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.057586875,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.35892275,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 20,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.074679666,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.567240708,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 21,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.083158334,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.3852307919999998,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 26,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.077901125,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.668576417,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 27,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.08418975,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.517054792,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 28,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.074383042,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.510617625,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 29,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.0799735,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.5768941659999998,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 30,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.075334583,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.568812167,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        }
+      ],
+      "cif_sha256": "9119fbefbc9a3d15b01a98319a34d5224d978dc779e92db0330f47b74889b50c"
+    },
+    {
+      "case": "cod-2010875",
+      "name": "seed-2",
+      "packet_sha256": "b72a079d9855b41ec3d1316e824de3eeccd720861b60e6e8ef9461e9073c6f4b",
+      "observations_sha256": "bf73bb8d91e6ae81ba8b043ae84d7000d604fb0f86a7f4afcd3d8f5ddf698fb5",
+      "wall_seconds_including_startup": 38.956670959014446,
+      "returncode": 0,
+      "hard_timeout": false,
+      "selected": {
+        "hall": "P 2yb",
+        "index": 3,
+        "number": 4,
+        "symbol": "P 21"
+      },
+      "effort": {
+        "accepted": false,
+        "deferred_ambiguity": null,
+        "escalation_reason": null,
+        "passes": [
+          {
+            "accepted": false,
+            "mode": "thorough",
+            "model_attempts": 12,
+            "phase_cycles": [
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600
+            ],
+            "phasing_shape": [
+              32,
+              64,
+              32
+            ],
+            "reason": "own_target_not_met",
+            "seconds": 38.758388459,
+            "termination": "candidate_budget"
+          }
+        ],
+        "requested": "thorough",
+        "selected_pass": "thorough",
+        "selection_reason": "only_available_approximation"
+      },
+      "reference_group": 4,
+      "reference_counts": {
+        "Ni": 2,
+        "O": 12,
+        "N": 8,
+        "C": 48
+      },
+      "reference_sha256": "d199ba1f0c27338ba8fc05e9ce0fa3661f5eb7f238a5815ac36274a162c8a97d",
+      "geometry": {
+        "counts_match": false,
+        "correct": false
+      },
+      "unlabelled_geometry": {
+        "counts_match": true,
+        "rms_error_angstrom": 0.01852788113485968,
+        "maximum_error_angstrom": 0.03951234815880342,
+        "hand": -1,
+        "shift": [
+          0.17315063630327815,
+          0.6387633870782681,
+          0.270499569540915
+        ],
+        "correct": true,
+        "strict_002_angstrom": false
+      },
+      "group_matches": true,
+      "model_counts": {
+        "Ni": 2,
+        "O": 14,
+        "N": 26,
+        "C": 28
+      },
+      "own_r1": 0.09328361002701767,
+      "common_r1": 0.09285303637822903,
+      "attempts": [
+        {
+          "hypothesis": 2,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.061093291,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.305568875,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 3,
+          "status": "candidate",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 2,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 1.261671625,
+              "target_met": false
+            },
+            {
+              "candidates": 4,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 8.727294542,
+              "target_met": false
+            }
+          ],
+          "common_r1": 0.09285303637822903
+        },
+        {
+          "hypothesis": 7,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.05965975,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.311939416,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 9,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.058801333,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.211737542,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 10,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.057159958,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.297536833,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 20,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.072972875,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.6102614170000003,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 21,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.075651416,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.346704542,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 26,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.07772275,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.3485975,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 27,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.072902959,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.483019417,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 28,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.075677667,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.386198584,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 29,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.078075333,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.465956375,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 30,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.069572042,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.543210042,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        }
+      ],
+      "cif_sha256": "993dc915ece5da9ad597d7358d1757d3e43e719e053d6a0568172d6e1e6c91af"
+    },
+    {
+      "case": "cod-2011241",
+      "name": "seed-1",
+      "packet_sha256": "c336ddb37e92f40566d2228d79e1b7134535ec7555bac553fb14fb40b445e73a",
+      "observations_sha256": "8c7760939c60d3b8ee236e8fb7db3292f5e50d5d325681b02fbed788003a9268",
+      "wall_seconds_including_startup": 10.110605209018104,
+      "returncode": 0,
+      "hard_timeout": false,
+      "selected": {
+        "hall": "P 1",
+        "index": 0,
+        "number": 1,
+        "symbol": "P 1"
+      },
+      "effort": {
+        "accepted": false,
+        "deferred_ambiguity": null,
+        "escalation_reason": null,
+        "passes": [
+          {
+            "accepted": false,
+            "mode": "thorough",
+            "model_attempts": 2,
+            "phase_cycles": [
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600
+            ],
+            "phasing_shape": [
+              32,
+              32,
+              32
+            ],
+            "reason": "own_target_not_met",
+            "seconds": 9.915468,
+            "termination": "catalogue_completed"
+          }
+        ],
+        "requested": "thorough",
+        "selected_pass": "thorough",
+        "selection_reason": "only_available_approximation"
+      },
+      "reference_group": 2,
+      "reference_counts": {
+        "Cr": 2,
+        "O": 8,
+        "N": 4,
+        "C": 10
+      },
+      "reference_sha256": "73ce4ba0ff62cdbf097399b61c214e0170a5648c1d392680df724c87536de476",
+      "geometry": {
+        "counts_match": false,
+        "correct": false
+      },
+      "unlabelled_geometry": {
+        "counts_match": true,
+        "rms_error_angstrom": 0.06908750330029984,
+        "maximum_error_angstrom": 0.1355501432886219,
+        "hand": 1,
+        "shift": [
+          0.76009336967823,
+          0.7735639418918453,
+          0.9138131598733633
+        ],
+        "correct": false,
+        "strict_002_angstrom": false
+      },
+      "group_matches": false,
+      "model_counts": {
+        "Cr": 2,
+        "O": 10,
+        "C": 6,
+        "N": 6
+      },
+      "own_r1": 0.07812163341948793,
+      "common_r1": 0.07812163341948768,
+      "attempts": [
+        {
+          "hypothesis": 0,
+          "status": "candidate",
+          "diagnostic": "joint_assignment_repair",
+          "runs": [
+            {
+              "candidates": 3,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 1.407813916,
+              "target_met": false
+            },
+            {
+              "candidates": 4,
+              "diagnostic": "joint_assignment_repair",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 5.527693542,
+              "target_met": false
+            }
+          ],
+          "common_r1": 0.07812163341948768
+        },
+        {
+          "hypothesis": 1,
+          "status": "candidate",
+          "diagnostic": "independent_model_consensus",
+          "runs": [
+            {
+              "candidates": 2,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.231050208,
+              "target_met": false
+            },
+            {
+              "candidates": 4,
+              "diagnostic": "independent_model_consensus",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.16014525,
+              "target_met": false
+            }
+          ],
+          "common_r1": 0.08522440619109777
+        }
+      ],
+      "cif_sha256": "97091bc28d46ceec0ec82a4e3ed490cc372672f8c2ec16179a76b3188b45a218"
+    },
+    {
+      "case": "cod-2011241",
+      "name": "seed-2",
+      "packet_sha256": "19afffe624ca25a2cd59fbddb286e4e97f40c6ab4117ac487e37b477b10aea56",
+      "observations_sha256": "8c7760939c60d3b8ee236e8fb7db3292f5e50d5d325681b02fbed788003a9268",
+      "wall_seconds_including_startup": 9.150710416026413,
+      "returncode": 0,
+      "hard_timeout": false,
+      "selected": {
+        "hall": "P 1",
+        "index": 0,
+        "number": 1,
+        "symbol": "P 1"
+      },
+      "effort": {
+        "accepted": false,
+        "deferred_ambiguity": null,
+        "escalation_reason": null,
+        "passes": [
+          {
+            "accepted": false,
+            "mode": "thorough",
+            "model_attempts": 2,
+            "phase_cycles": [
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600
+            ],
+            "phasing_shape": [
+              32,
+              32,
+              32
+            ],
+            "reason": "own_target_not_met",
+            "seconds": 8.90568075,
+            "termination": "catalogue_completed"
+          }
+        ],
+        "requested": "thorough",
+        "selected_pass": "thorough",
+        "selection_reason": "only_available_approximation"
+      },
+      "reference_group": 2,
+      "reference_counts": {
+        "Cr": 2,
+        "O": 8,
+        "N": 4,
+        "C": 10
+      },
+      "reference_sha256": "73ce4ba0ff62cdbf097399b61c214e0170a5648c1d392680df724c87536de476",
+      "geometry": {
+        "counts_match": false,
+        "correct": false
+      },
+      "unlabelled_geometry": {
+        "counts_match": true,
+        "rms_error_angstrom": 0.06183855403759782,
+        "maximum_error_angstrom": 0.11428646015488955,
+        "hand": 1,
+        "shift": [
+          0.7615398925494066,
+          0.7732053476481009,
+          0.9410187709073513
+        ],
+        "correct": false,
+        "strict_002_angstrom": false
+      },
+      "group_matches": false,
+      "model_counts": {
+        "Cr": 2,
+        "O": 10,
+        "C": 6,
+        "N": 6
+      },
+      "own_r1": 0.0783536268380103,
+      "common_r1": 0.07835362683801056,
+      "attempts": [
+        {
+          "hypothesis": 0,
+          "status": "candidate",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 3,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 1.225498291,
+              "target_met": false
+            },
+            {
+              "candidates": 4,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 5.737127125,
+              "target_met": false
+            }
+          ],
+          "common_r1": 0.07835362683801056
+        },
+        {
+          "hypothesis": 1,
+          "status": "candidate",
+          "diagnostic": "shared_map_exhausted",
+          "runs": [
+            {
+              "candidates": 2,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.231224333,
+              "target_met": false
+            },
+            {
+              "candidates": 4,
+              "diagnostic": "independent_model_consensus",
+              "initialization": "independent_phasing",
+              "phasing_starts": 5,
+              "seconds": 1.130004583,
+              "target_met": false
+            }
+          ],
+          "common_r1": 0.08522440619109763
+        }
+      ],
+      "cif_sha256": "68a297e9b2814cf1277bcb97d81745793d2732fb98eaf5315ce0e3af72417ad5"
+    },
+    {
+      "case": "cod-2201295",
+      "name": "seed-1",
+      "packet_sha256": "c6da72799e190da81eebbace18e806acbc4f5a606447e08fa91173e02be6f30c",
+      "observations_sha256": "565ef402d004d2a7923424d46c0d78857a97037102eedb57a3c3d46009da56ac",
+      "wall_seconds_including_startup": 16.80186887498712,
+      "returncode": 0,
+      "hard_timeout": false,
+      "selected": {
+        "hall": "P 31 2\"",
+        "index": 46,
+        "number": 152,
+        "symbol": "P 31 2 1"
+      },
+      "effort": {
+        "accepted": false,
+        "deferred_ambiguity": null,
+        "escalation_reason": null,
+        "passes": [
+          {
+            "accepted": false,
+            "mode": "thorough",
+            "model_attempts": 7,
+            "phase_cycles": [
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600
+            ],
+            "phasing_shape": [
+              32,
+              32,
+              64
+            ],
+            "reason": "own_target_not_met",
+            "seconds": 16.775818792,
+            "termination": "catalogue_completed"
+          }
+        ],
+        "requested": "thorough",
+        "selected_pass": "thorough",
+        "selection_reason": "only_available_approximation"
+      },
+      "reference_group": 152,
+      "reference_counts": {
+        "Li": 6,
+        "O": 30,
+        "C": 24,
+        "N": 6
+      },
+      "reference_sha256": "f1f062c131d34521503f42ccfd0d925350e9a3812efb4ec599adb44504662847",
+      "geometry": {
+        "counts_match": false,
+        "correct": false
+      },
+      "unlabelled_geometry": {
+        "counts_match": true,
+        "rms_error_angstrom": 0.01454247522552463,
+        "maximum_error_angstrom": 0.0221649850240905,
+        "hand": 1,
+        "shift": [
+          0.8629504281246853,
+          0.8223425618946689,
+          0.24624783496758507
+        ],
+        "correct": true,
+        "strict_002_angstrom": false
+      },
+      "group_matches": true,
+      "model_counts": {
+        "O": 30,
+        "N": 12,
+        "C": 18,
+        "Li": 6
+      },
+      "own_r1": 0.0871950351225854,
+      "common_r1": 0.08765253646668679,
+      "attempts": [
+        {
+          "hypothesis": 44,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.106688625,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 1.628425834,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 46,
+          "status": "candidate",
+          "diagnostic": "shared_map_exhausted",
+          "runs": [
+            {
+              "candidates": 2,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.273604375,
+              "target_met": false
+            },
+            {
+              "candidates": 4,
+              "diagnostic": "common-set model rejection: no origin/hand matches the supplied symmetry within tolerance",
+              "initialization": "independent_phasing",
+              "phasing_starts": 2,
+              "seconds": 0.723132167,
+              "target_met": false
+            }
+          ],
+          "common_r1": 0.08765253646668679
+        },
+        {
+          "hypothesis": 48,
+          "status": "candidate",
+          "diagnostic": "shared_map_exhausted",
+          "runs": [
+            {
+              "candidates": 2,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.267178625,
+              "target_met": false
+            },
+            {
+              "candidates": 4,
+              "diagnostic": "common-set model rejection: no origin/hand matches the supplied symmetry within tolerance",
+              "initialization": "independent_phasing",
+              "phasing_starts": 2,
+              "seconds": 0.718018333,
+              "target_met": false
+            }
+          ],
+          "common_r1": 0.08765253646666948
+        },
+        {
+          "hypothesis": 50,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.076913375,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 1.211682458,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 52,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.086003,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 4.295571292,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 58,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.114004875,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 1.596327625,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 59,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.109368625,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 4.081316458,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        }
+      ],
+      "cif_sha256": "95c6575f205c899fac2a8ff4cf74f0d066bdc135f52226196466c0819b3c46f5"
+    },
+    {
+      "case": "cod-2201295",
+      "name": "seed-2",
+      "packet_sha256": "c8d42893e21f1d9ea45f64a3c5cade4ae560ab8722df95c762ff49911c51f847",
+      "observations_sha256": "565ef402d004d2a7923424d46c0d78857a97037102eedb57a3c3d46009da56ac",
+      "wall_seconds_including_startup": 17.18819324998185,
+      "returncode": 0,
+      "hard_timeout": false,
+      "selected": {
+        "hall": "P 31 2\"",
+        "index": 46,
+        "number": 152,
+        "symbol": "P 31 2 1"
+      },
+      "effort": {
+        "accepted": false,
+        "deferred_ambiguity": null,
+        "escalation_reason": null,
+        "passes": [
+          {
+            "accepted": false,
+            "mode": "thorough",
+            "model_attempts": 7,
+            "phase_cycles": [
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600,
+              1600
+            ],
+            "phasing_shape": [
+              32,
+              32,
+              64
+            ],
+            "reason": "own_target_not_met",
+            "seconds": 17.13478375,
+            "termination": "catalogue_completed"
+          }
+        ],
+        "requested": "thorough",
+        "selected_pass": "thorough",
+        "selection_reason": "only_available_approximation"
+      },
+      "reference_group": 152,
+      "reference_counts": {
+        "Li": 6,
+        "O": 30,
+        "C": 24,
+        "N": 6
+      },
+      "reference_sha256": "f1f062c131d34521503f42ccfd0d925350e9a3812efb4ec599adb44504662847",
+      "geometry": {
+        "counts_match": false,
+        "correct": false
+      },
+      "unlabelled_geometry": {
+        "counts_match": true,
+        "rms_error_angstrom": 0.01454247522552459,
+        "maximum_error_angstrom": 0.022164985024086963,
+        "hand": 1,
+        "shift": [
+          0.8382921156253265,
+          0.8304062922621782,
+          0.24855470847399153
+        ],
+        "correct": true,
+        "strict_002_angstrom": false
+      },
+      "group_matches": true,
+      "model_counts": {
+        "O": 30,
+        "N": 12,
+        "C": 18,
+        "Li": 6
+      },
+      "own_r1": 0.0871950351225858,
+      "common_r1": 0.08765253646668683,
+      "attempts": [
+        {
+          "hypothesis": 44,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.101759833,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 3.511016583,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 46,
+          "status": "candidate",
+          "diagnostic": "independent_model_consensus",
+          "runs": [
+            {
+              "candidates": 2,
+              "diagnostic": "common-set model rejection: no origin/hand matches the supplied symmetry within tolerance",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.26919675,
+              "target_met": false
+            },
+            {
+              "candidates": 4,
+              "diagnostic": "independent_model_consensus",
+              "initialization": "independent_phasing",
+              "phasing_starts": 2,
+              "seconds": 0.638170375,
+              "target_met": false
+            }
+          ],
+          "common_r1": 0.08765253646668683
+        },
+        {
+          "hypothesis": 48,
+          "status": "candidate",
+          "diagnostic": "independent_model_consensus",
+          "runs": [
+            {
+              "candidates": 2,
+              "diagnostic": "common-set model rejection: no origin/hand matches the supplied symmetry within tolerance",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.271862667,
+              "target_met": false
+            },
+            {
+              "candidates": 4,
+              "diagnostic": "independent_model_consensus",
+              "initialization": "independent_phasing",
+              "phasing_starts": 2,
+              "seconds": 0.635888708,
+              "target_met": false
+            }
+          ],
+          "common_r1": 0.08765253646666932
+        },
+        {
+          "hypothesis": 50,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.075821666,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.265580833,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 52,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.079053875,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.395766875,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 58,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.11227875,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.246040334,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        },
+        {
+          "hypothesis": 59,
+          "status": "no_model",
+          "diagnostic": "search_budget",
+          "runs": [
+            {
+              "candidates": 0,
+              "diagnostic": "shared_map_exhausted",
+              "initialization": "shared_p1_map",
+              "phasing_starts": 0,
+              "seconds": 0.097624208,
+              "target_met": false
+            },
+            {
+              "candidates": 0,
+              "diagnostic": "search_budget",
+              "initialization": "independent_phasing",
+              "phasing_starts": 8,
+              "seconds": 2.942047417,
+              "target_met": false
+            }
+          ],
+          "common_r1": null
+        }
+      ],
+      "cif_sha256": "116868848faa62099af476ce3ae7dac5dece3e1843ad33924aa451a83be4f90c"
+    }
+  ],
+  "summary": {
+    "planned_runs": 6,
+    "completed_runs": 6,
+    "hard_timeouts": 0,
+    "labelled_primary_passes": 0,
+    "numeric_acceptances": 0,
+    "unlabelled_framework_passes": 4,
+    "wall_seconds_all_six": 129.44379770901287
+  },
+  "interpretation": "Li case now has a complete position-only framework in the correct group, but six C sites are assigned N. Ni frameworks pass position-only grading but labels fail. Cr still fails position-only and labelled grading. No labelled/accepted recovery claim or change to the frozen 14-case comparison. Diagnosis uses exposed regression cases and additional effort, not independent holdout validation."
+}

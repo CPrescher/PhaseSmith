@@ -99,6 +99,14 @@ and acceptance flag is bitwise unchanged. Overall auto time remains essentially
 unchanged (118.86 to 118.31 s summed). The isolated fitting gain is not a complete
 search speedup or SHELXT speed parity. Positive forced fallback controls still
 recover accepted MgSiO3 and acentric COD structures with identical retained outputs.
+A subsequent six-run, extra-effort diagnostic uses the same element-only chemistry
+and symmetry priors. It recovers the lithium case's framework and group but still
+mislabels C/N; nickel retains a correct framework with wrong labels, while chromium
+also misses coordinates. None passes labelled grading or acceptance. Next work
+should investigate joint element/ADP correction, the centred-prior/translation-free
+phasing contract mismatch, common-score origin recovery and target-aware consensus
+stopping. These diagnostics preserve the frozen 14-case results; see the
+[remaining-case evidence](docs/candidate-fitting-speed.md#remaining-case-extra-effort-diagnostic).
 
 ## Ownership and dependency direction
 
