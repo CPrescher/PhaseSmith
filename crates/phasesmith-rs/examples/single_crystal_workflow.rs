@@ -139,6 +139,29 @@ impl sc::Observer for Save {
         assessment: &phasesmith::workflows::space_group_search::Assessment,
         hypotheses: &[phasesmith::workflows::space_group_search::Hypothesis],
     ) -> sc::Result<()> {
+        self.archive(
+            &format!("{name}-observations.npz"),
+            &[
+                i64s(
+                    "hkl",
+                    vec![assessment.observations.len(), 3],
+                    assessment
+                        .observations
+                        .iter()
+                        .flat_map(|r| r.hkl.map(i64::from)),
+                ),
+                f64s(
+                    "intensity",
+                    vec![assessment.observations.len()],
+                    assessment.observations.iter().map(|r| r.intensity),
+                ),
+                f64s(
+                    "sigma",
+                    vec![assessment.observations.len()],
+                    assessment.observations.iter().map(|r| r.sigma),
+                ),
+            ],
+        )?;
         self.json(
             &format!("{name}.json"),
             assessment_json(assessment, hypotheses),
@@ -478,6 +501,15 @@ impl sc::Observer for Save {
         fs::create_dir(self.root.join("candidate")).map_err(|e| sc::Error(e.to_string()))?;
         self.json("candidate/result.json",json!({"schema":"phasesmith.single-crystal-native-search.v1","experimental":false,"cell":self.cell,"candidates":s.candidates.iter().map(candidate).collect::<Vec<_>>(),"phasing_histories":s.histories,"termination":s.termination,"r1_target_met":s.target_met,"input_elements":search.elements,"selected_space_group":self.selected_group,"grid_shape":s.grid_shape,"family_count":s.data.family_count,"d_min_angstrom":s.data.d_min,"standalone_structure_refinement":false}))?;
         self.json("search.json",json!({"termination":s.termination,"target_met":s.target_met,"amplitude_r1":s.candidates.first().map(|c|c.r1),"model_saved_before_reference":true,"timing_record":"timing-structure_search.json"}))?;
+        if let (Some(group), Some(candidate)) = (&self.selected_group, s.candidates.first()) {
+            write_setting_cif(
+                &self.root.join("candidate/space-group.cif"),
+                self.cell,
+                group,
+                candidate,
+            )
+            .map_err(|e| sc::Error(e.to_string()))?;
+        }
         let mut audit = OpenOptions::new()
             .write(true)
             .create_new(true)
@@ -1192,4 +1224,48 @@ fn decode_discovery(
         return Err("unknown-symmetry inputs must withhold exact space-group priors".into());
     }
     Ok(discovery)
+}
+
+fn write_setting_cif(
+    path: &Path,
+    cell: [f64; 6],
+    group: &Value,
+    candidate: &solution::Candidate,
+) -> Result<()> {
+    let refined = candidate
+        .refinement
+        .as_ref()
+        .ok_or("selected space-group model lacks a constrained setting")?;
+    let mut text = format!(
+        "data_phasesmith_ranked_setting\n# Ranked structure-search hypothesis; uniqueness and converged refinement are not established.\n_cell_length_a {}\n_cell_length_b {}\n_cell_length_c {}\n_cell_angle_alpha {}\n_cell_angle_beta {}\n_cell_angle_gamma {}\n_space_group_IT_number {}\n_space_group_name_H-M_alt '{}'\n_space_group_name_Hall '{}'\nloop_\n_atom_site_label\n_atom_site_type_symbol\n_atom_site_fract_x\n_atom_site_fract_y\n_atom_site_fract_z\n_atom_site_U_iso_or_equiv\n",
+        cell[0],
+        cell[1],
+        cell[2],
+        cell[3],
+        cell[4],
+        cell[5],
+        group["number"],
+        group["symbol"].as_str().ok_or("missing group symbol")?,
+        group["hall"].as_str().ok_or("missing Hall setting")?
+    );
+    for (i, ((symbol, xyz), u)) in refined
+        .species
+        .iter()
+        .zip(&refined.fractional_xyz)
+        .zip(&refined.u_equiv)
+        .enumerate()
+    {
+        writeln!(
+            &mut text,
+            "{symbol}{} {symbol} {:.15} {:.15} {:.15} {:.15}",
+            i + 1,
+            xyz[0],
+            xyz[1],
+            xyz[2],
+            u
+        )?;
+    }
+    let mut file = OpenOptions::new().write(true).create_new(true).open(path)?;
+    file.write_all(text.as_bytes())?;
+    Ok(())
 }
