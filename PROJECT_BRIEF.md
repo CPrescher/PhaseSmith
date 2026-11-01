@@ -55,6 +55,50 @@ is about 0.5 s on the measured M4 Pro, versus about 0.65 s for the measured
 structure through the full-resolution fallback. These timings and candidate
 acceptance thresholds do not establish general speed/reliability or uniqueness.
 See the [adaptive-effort report](docs/space-group-search-speed.md).
+The subsequent fixed 14-case exposed COD comparison verifies nine natural
+fallbacks, but finds premature acceptance and unresolved subgroup/chemistry
+cases. Fast/auto recover eight labelled atomic structures each; both structure
+and published group are recovered in two/four cases, respectively. Median
+times are 1.02/9.58 s versus 0.56 s for ten-worker SHELXT, which receives
+published Laue/centring priors. This is a documented limitation of general
+unknown-group recovery, not a new solver guarantee. See the
+[cross-structure report](docs/unknown-group-corpus-validation.md).
+The follow-up adds explicit `SymmetryPrior` Laue rotations and exact centring
+translations, used for phase-map processing and catalogue eligibility while
+retaining measured contradictions/insufficient evidence. Acceptance also guards
+unresolved higher Laue symmetry, atomic inversion and BIC-close group alternatives.
+An unaccepted fallback cannot replace an existing approximation solely on R1/BIC.
+Both passes and selection provenance survive. The fixed comparison now supplies
+the same symmetry priors to both programs; see the
+[matched-prior specification and validation](docs/matched-prior-search-validation.md).
+On the same exposed 14 cases, matched-prior fast/auto recover 11 labelled
+structures and 10 with the published group. Earlier auto recovered 8 labelled
+structures and 4 with the published group. Four
+accepted cases all pass both checks; seven other correct atomic models remain
+conservatively unaccepted. Median times are 1.10/8.08 s, versus 0.49 s for
+ten-worker SHELXT (8 complete labelled structures with their groups). Ten natural
+escalations retain both passes; separate forced-budget MgSiO3 and acentric COD
+controls verify accepted full-resolution upgrades. This is regression evidence,
+not a general recovery guarantee; phasing/assignment and canonical group handling
+still have documented failures.
+The next performance change reuses the existing initial fitting evaluation,
+identical-bit isotropic reciprocal weights, fixed-site phases and unchanged
+orbit topology. It keeps scalar fallbacks, value/derivative ordering and all
+acceptance/quality gates. A paired fresh baseline, fitting-only stage and final
+matched-prior comparison measure performance and result identity; see the
+[candidate fitting report](docs/candidate-fitting-speed.md).
+Automatic effort may defer deeper work only when space-group ambiguity is its
+sole failure and all close alternatives have numerically equivalent complete
+labelled models and common residuals with the same parameter count. Such a
+candidate stays unaccepted and ambiguous, with explicit equivalence evidence.
+Other failures still escalate; explicit thorough effort always runs directly.
+The measured ten-atom/4,168-point benchmark reduces preparation plus eight iterations
+by 5.5% (value/Jacobian evaluation by 10.1%). On the same 14 exposed cases, one
+redundant ambiguity fallback is deferred; every retained model, R1, density, map
+and acceptance flag is bitwise unchanged. Overall auto time remains essentially
+unchanged (118.86 to 118.31 s summed). The isolated fitting gain is not a complete
+search speedup or SHELXT speed parity. Positive forced fallback controls still
+recover accepted MgSiO3 and acentric COD structures with identical retained outputs.
 
 ## Ownership and dependency direction
 

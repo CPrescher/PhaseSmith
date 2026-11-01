@@ -7,8 +7,71 @@ Exact operations are provided as plain records by a database fixture/adapter.
 from __future__ import annotations
 
 from collections import defaultdict
+from fractions import Fraction
 
 import numpy as np
+
+
+def prior_eligible(settings, prior):
+    """Independent exact Laue/centring eligibility; never imposes screw/glide ops.
+
+    Validate a complete intensity-symmetry group and translation subgroup in the
+    supplied basis. These priors do not change measured equivalence statistics.
+    """
+    rotations = np.asarray(prior["laue_rotations"])
+    if (
+        rotations.ndim != 3
+        or rotations.shape[1:] != (3, 3)
+        or not 1 <= len(rotations) <= 48
+        or not np.isfinite(rotations).all()
+        or not np.array_equal(rotations, np.rint(rotations))
+        or (np.abs(rotations) > 8).any()
+        or not prior["provenance"].strip()
+    ):
+        raise ValueError("invalid Laue prior")
+
+    def key(r):
+        return tuple(map(tuple, r))
+
+    group = {key(r) for r in rotations}
+    identity = np.eye(3, dtype=int)
+    if (
+        len(group) != len(rotations)
+        or key(identity) not in group
+        or key(-identity) not in group
+        or not np.allclose(np.abs(np.linalg.det(rotations)), 1, rtol=0, atol=1e-12)
+        or any(key(left @ right) not in group for left in rotations for right in rotations)
+    ):
+        raise ValueError("nonclosed Laue prior")
+    shifts = [tuple(Fraction(n, d) for n, d in row) for row in prior["centring_translations"]]
+    lattice = set(shifts)
+    if (
+        not 1 <= len(shifts) <= 4
+        or len(lattice) != len(shifts)
+        or (Fraction(0),) * 3 not in lattice
+        or any(len(t) != 3 for t in shifts)
+        or any(not 0 <= v < 1 or 24 % v.denominator for t in shifts for v in t)
+        or any(
+            tuple((a + b) % 1 for a, b in zip(t, u, strict=True)) not in lattice
+            for t in shifts
+            for u in shifts
+        )
+        or any(
+            tuple(sum(int(r[i, j]) * t[j] for j in range(3)) % 1 for i in range(3)) not in lattice
+            for r in rotations
+            for t in shifts
+        )
+    ):
+        raise ValueError("nonclosed or incompatible centring prior")
+    result = []
+    for setting in settings:
+        centring = {
+            tuple(Fraction(n, d) % 1 for n, d in op["translation"])
+            for op in setting["operations"]
+            if op["rotation"] == identity.tolist()
+        }
+        result.append(set(_laue(setting["operations"])) == group and centring == lattice)
+    return result
 
 
 def _laue(operations):

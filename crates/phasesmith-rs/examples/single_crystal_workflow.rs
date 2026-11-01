@@ -139,9 +139,9 @@ fn discovery_json(report: &sc::DiscoveryReport) -> Value {
         let h = &report.hypotheses[i];
         json!({"index":i,"number":h.number,"symbol":h.symbol,"hall":h.hall})
     });
-    json!({"schema":"phasesmith.space-group-search.v1","space_group_supplied":false,"laue_group_supplied":false,"selected":selected_group,"alternatives":report.alternatives,"termination":report.termination,"seconds":report.seconds,"unique_space_group_proven":false,
+    json!({"schema":"phasesmith.space-group-search.v1","space_group_supplied":false,"laue_group_supplied":report.symmetry_prior.is_some(),"centring_prior_supplied":report.symmetry_prior.is_some(),"symmetry_prior":report.symmetry_prior.as_ref().map(symmetry_prior_json),"selected":selected_group,"alternatives":report.alternatives,"termination":report.termination,"seconds":report.seconds,"unique_space_group_proven":false,
             "phase_map":report.phase_map.as_ref().map(|p|json!({"shape":p.shape,"phasing_shape":p.phasing_shape,"phasing_observations":p.phasing_observations,"quality":p.quality.iter().map(|q|q.as_ref().map(|q|json!({"correlation":q.correlation,"r_weak":q.r_weak,"cfom":q.cfom}))).collect::<Vec<_>>(),"checkpoints":p.checkpoints.iter().map(|v|v.iter().map(|c|json!({"cycles":c.cycles,"cfom":c.cfom,"best_cfom":c.best_cfom,"score":c.score,"map_cosine":c.map_cosine,"selected":c.selected,"reason":c.reason})).collect::<Vec<_>>()).collect::<Vec<_>>(),"histories":p.histories,"start_seeds":p.start_seeds,"cycle_limits":p.cycle_limits,"selected_start":p.selected_start,"seconds":p.seconds})),"phase_diagnostic":report.phase_diagnostic,
-            "effort":report.effort.as_ref().map(|e|json!({"requested":e.requested.as_str(),"selected_pass":e.selected_pass.as_str(),"accepted":e.accepted,"escalation_reason":e.escalation_reason,"passes":e.passes.iter().map(|p|json!({"mode":p.mode.as_str(),"accepted":p.accepted,"reason":p.reason,"seconds":p.seconds,"termination":p.termination,"phasing_shape":p.phasing_shape,"phase_cycles":p.phase_cycles,"model_attempts":p.model_attempts})).collect::<Vec<_>>(),"other_pass":e.other_pass.as_deref().map(discovery_json)})),
+            "effort":report.effort.as_ref().map(|e|json!({"requested":e.requested.as_str(),"selected_pass":e.selected_pass.as_str(),"accepted":e.accepted,"escalation_reason":e.escalation_reason,"selection_reason":e.selection_reason,"deferred_ambiguity":e.deferred_ambiguity.as_ref().map(|d|json!({"selected_hypothesis":d.selected_hypothesis,"equivalent_hypotheses":d.equivalent_hypotheses,"maximum_position_difference_angstrom":d.maximum_position_difference_angstrom,"maximum_common_residual_difference":d.maximum_common_residual_difference})),"passes":e.passes.iter().map(|p|json!({"mode":p.mode.as_str(),"accepted":p.accepted,"reason":p.reason,"seconds":p.seconds,"termination":p.termination,"phasing_shape":p.phasing_shape,"phase_cycles":p.phase_cycles,"model_attempts":p.model_attempts})).collect::<Vec<_>>(),"other_pass":e.other_pass.as_deref().map(discovery_json)})),
             "attempts":report.attempts.iter().map(|a|json!({"hypothesis":a.hypothesis,"runs":a.runs.iter().map(|r|json!({"initialization":r.initialization,"seconds":r.seconds,"diagnostic":r.diagnostic,"candidates":r.candidates,"phasing_starts":r.phasing_starts,"target_met":r.target_met})).collect::<Vec<_>>(),"status":a.status,"seconds":a.seconds,"diagnostic":a.diagnostic,"common_r1":a.common_r1,"common_objective":a.common_objective,"parameters":a.parameters,"bic":a.bic,"phase_status":a.phase_status,"phase_seconds":a.phase_seconds,"origins":a.origins.iter().map(|o|json!({"hand":o.hand,"shift":o.shift,"alpha":o.alpha,"chord":o.chord})).collect::<Vec<_>>(),"candidate":a.candidate.as_ref().map(candidate)})).collect::<Vec<_>>() })
 }
 impl sc::Observer for Save {
@@ -208,6 +208,25 @@ impl sc::Observer for Save {
                     map.density.iter().copied(),
                 )],
             )?;
+        }
+        if let Some(deferred) = report
+            .effort
+            .as_ref()
+            .and_then(|e| e.deferred_ambiguity.as_ref())
+        {
+            let mut arrays = Vec::new();
+            for &index in std::iter::once(&deferred.selected_hypothesis)
+                .chain(&deferred.equivalent_hypotheses)
+            {
+                if let Some(residuals) = &report.attempts[index].common_residuals {
+                    arrays.push(f64s(
+                        &format!("hypothesis_{index}"),
+                        vec![residuals.len()],
+                        residuals.iter().copied(),
+                    ));
+                }
+            }
+            self.archive("space-group-equivalence-residuals.npz", &arrays)?;
         }
         self.json("space-group-search.json", discovery_json(report))
     }
@@ -945,6 +964,7 @@ fn validate_adapter(packet: &Value, out: &Path) -> Result<()> {
         "wavelength_angstrom",
         "elements",
         "provenance",
+        "symmetry",
     ];
     if packet["priors"]
         .as_object()
@@ -1226,22 +1246,67 @@ fn assess_packet(args: &[String]) -> Result<()> {
         })
         .collect();
     let hypotheses = catalogue(cell)?;
-    let assessed = phasesmith::workflows::space_group_search::assess(
+    let mut assessed = phasesmith::workflows::space_group_search::assess(
         &observations,
         cell,
         &hypotheses,
         &phasesmith::workflows::space_group_search::AssessmentOptions::default(),
     )?;
-    json_file(
-        Path::new(&args[3]),
-        &assessment_json(&assessed, &hypotheses),
-    )
+    let prior = decode_symmetry_prior(&packet["symmetry_prior"])?;
+    if let Some(prior) = &prior {
+        prior.apply(&mut assessed, &hypotheses)?;
+    }
+    let mut result = assessment_json(&assessed, &hypotheses);
+    result["symmetry_prior"] = prior.as_ref().map_or(Value::Null, symmetry_prior_json);
+    result["prior_eligible"] = json!(
+        hypotheses
+            .iter()
+            .map(|h| prior.as_ref().is_none_or(|p| p.admits(h)))
+            .collect::<Vec<_>>()
+    );
+    json_file(Path::new(&args[3]), &result)
 }
 
 fn print_help() {
     println!(
         "Rust-only MgSiO3: single_crystal_workflow --mgsio3 DATA_ROOT PROTOCOL.json NEW_EXTERNAL_OUTPUT [--effort fast|auto|thorough]\nPortable input: single_crystal_workflow INPUT.json NULL_ROTATIONS.json NEW_EXTERNAL_OUTPUT [DIAGNOSTIC_OBSERVATIONS.json]"
     );
+}
+
+fn symmetry_prior_json(p: &sc::SymmetryPrior) -> Value {
+    json!({"laue_rotations":p.laue_rotations,"centring_translations":p.centring_translations.iter().map(|row| row.map(|t| [t.numerator(),t.denominator()])).collect::<Vec<_>>(),"provenance":p.provenance})
+}
+fn decode_symmetry_prior(v: &Value) -> Result<Option<sc::SymmetryPrior>> {
+    if v.is_null() {
+        return Ok(None);
+    }
+    let record = v.as_object().ok_or("symmetry prior must be an object")?;
+    if record
+        .keys()
+        .any(|k| !["laue_rotations", "centring_translations", "provenance"].contains(&k.as_str()))
+    {
+        return Err("unexpected exact-group/model field in Laue/centring prior".into());
+    }
+    let raw: Vec<[[i64; 2]; 3]> = serde_json::from_value(v["centring_translations"].clone())?;
+    let mut centring_translations = Vec::new();
+    for row in raw {
+        use phasesmith::crystallography::Rational;
+        centring_translations.push([
+            Rational::new(row[0][0], row[0][1])?,
+            Rational::new(row[1][0], row[1][1])?,
+            Rational::new(row[2][0], row[2][1])?,
+        ]);
+    }
+    let prior = sc::SymmetryPrior {
+        laue_rotations: serde_json::from_value(v["laue_rotations"].clone())?,
+        centring_translations,
+        provenance: v["provenance"]
+            .as_str()
+            .ok_or("symmetry prior provenance missing")?
+            .into(),
+    };
+    prior.processing_group()?;
+    Ok(Some(prior))
 }
 
 fn decode_effort(p: &Value) -> Result<Option<sc::EffortOptions>> {
@@ -1306,6 +1371,7 @@ fn decode_discovery(
                 .ok_or("plausible_centrosymmetric_exit must be boolean")?,
         };
         Some(sc::DiscoveryOptions {
+            symmetry_prior: decode_symmetry_prior(&packet["priors"]["symmetry"])?,
             effort: decode_effort(p)?,
             allow_independent_restarts: true,
             plausible_centrosymmetric_exit,

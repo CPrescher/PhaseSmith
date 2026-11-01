@@ -6,7 +6,9 @@ use phasesmith_solution::{Candidate, Observation, SharedSearchSummary, Solution}
 use std::time::{Duration, Instant};
 #[path = "unknown_effort.rs"]
 mod effort;
-pub use effort::{EffortOptions, EffortPass, EffortTrace, FastSearchLimits, SearchEffort};
+pub use effort::{
+    DeferredAmbiguity, EffortOptions, EffortPass, EffortTrace, FastSearchLimits, SearchEffort,
+};
 /// Shared P1 phase-map and bounded origin-screen controls.
 #[derive(Clone, Debug)]
 pub struct PhaseScreenOptions {
@@ -32,6 +34,8 @@ pub struct PhaseScreenOptions {
 /// Explicit catalogue and bounded discovery controls; exact symmetry is withheld.
 #[derive(Clone, Debug)]
 pub struct DiscoveryOptions {
+    /// Optional supplied Laue/centring prior in the original index basis; no exact group.
+    pub symmetry_prior: Option<super::SymmetryPrior>,
     /// Optional explicit fast/auto/thorough policy; absent preserves frozen legacy execution.
     pub effort: Option<EffortOptions>,
     /// Allow independent phasing after unsuccessful shared-map assignment.
@@ -58,6 +62,9 @@ pub struct DiscoveryOptions {
 }
 impl DiscoveryOptions {
     pub(super) fn check(&self) -> Result<()> {
+        if let Some(prior) = &self.symmetry_prior {
+            prior.processing_group()?;
+        }
         if let Some(effort) = &self.effort {
             effort.check(self.total_seconds)?;
         }
@@ -128,7 +135,7 @@ pub struct GroupAttempt {
     pub phase_seconds: f64,
     /// Index in the declared setting catalogue.
     pub hypothesis: usize,
-    /// `not_attempted`, `laue_contradicted`, `candidate`, `no_model`, or `error`.
+    /// `not_attempted`, `prior_excluded`, `laue_contradicted`, `candidate`, `no_model`, or `error`.
     pub status: &'static str,
     /// Wall seconds actually spent in this group's element search and assessment.
     pub seconds: f64,
@@ -138,6 +145,8 @@ pub struct GroupAttempt {
     pub common_r1: Option<f64>,
     /// Comparable normalized amplitude objective on that common set.
     pub common_objective: Option<f64>,
+    /// Common normalized residuals, retained for exact-data model-equivalence diagnostics.
+    pub common_residuals: Option<Vec<f64>>,
     /// Model parameter count including amplitude scale.
     pub parameters: Option<usize>,
     /// BIC-like common-set model score; lower is preferred, not a probability.
@@ -148,6 +157,8 @@ pub struct GroupAttempt {
 /// Rank and bounded coverage, explicitly distinct from a proven space-group determination.
 #[derive(Clone, Debug)]
 pub struct DiscoveryReport {
+    /// Explicit supplied intensity symmetry and translation lattice, if any.
+    pub symmetry_prior: Option<super::SymmetryPrior>,
     /// Optional chronological effort and complete nonselected pass.
     pub effort: Option<EffortTrace>,
     /// Shared exact-group-free P1 map, phases and cycle histories.
@@ -204,7 +215,9 @@ pub(super) fn aperture_assessment(
             })
         })
         .collect();
-    sg::assess(&observations, cell, &policy.hypotheses, &policy.assessment)
+    let mut assessment = sg::assess(&observations, cell, &policy.hypotheses, &policy.assessment)?;
+    super::symmetry_prior::apply(&mut assessment, policy)?;
+    Ok(assessment)
 }
 fn common_score(
     candidate: &Candidate,
@@ -212,7 +225,7 @@ fn common_score(
     cell: UnitCell,
     data: &phasesmith_solution::PreparedData,
     memory: usize,
-) -> Result<(f64, f64, usize, f64)> {
+) -> Result<(f64, f64, usize, f64, Vec<f64>)> {
     use phasesmith_solution::{
         AdpMode, DenseMemoryBudget, PreparedSymmetricModel, recover_symmetry,
     };
@@ -251,7 +264,13 @@ fn common_score(
     let parameters = p.parameter_count + 1;
     let n = data.family_count as f64;
     let bic = n * evaluated.objective.max(1e-300).ln() + parameters as f64 * n.ln();
-    Ok((evaluated.r1, evaluated.objective, parameters, bic))
+    Ok((
+        evaluated.r1,
+        evaluated.objective,
+        parameters,
+        bic,
+        evaluated.residual,
+    ))
 }
 /// Complete bounded discovery outcome, retaining evidence even when no model is found.
 pub type SearchRun = (Option<(Solution, SharedSearchSummary)>, DiscoveryReport);
@@ -286,7 +305,7 @@ pub(super) fn search_pass(
     let deadline = shared_deadline.map_or(own_deadline, |d| d.min(own_deadline));
     let p1 = sg::rotational_group(&[[[1, 0, 0], [0, 1, 0], [0, 0, 1]]])?;
     let common = phasesmith_solution::prepare_data(observations, original.priors.cell, &p1)?;
-    let mut attempts = initial_attempts(&assessment);
+    let mut attempts = initial_attempts(&assessment, policy);
     let (phase_map, phase_diagnostic) = screen_phases(
         observations,
         original,
@@ -294,6 +313,7 @@ pub(super) fn search_pass(
         &assessment,
         &mut attempts,
         deadline,
+        shared_deadline.is_some() || policy.symmetry_prior.is_some(),
     )?;
     let mut ranking = assessment.ranking.clone();
     let priority = |s: &str| match s {
@@ -332,7 +352,10 @@ pub(super) fn search_pass(
             termination = "candidate_budget";
             break;
         }
-        if attempts[index].status == "laue_contradicted" {
+        if matches!(
+            attempts[index].status,
+            "laue_contradicted" | "prior_excluded"
+        ) {
             continue;
         }
         if let Some(coefficients) = &coefficients {
@@ -411,6 +434,7 @@ pub(super) fn search_pass(
     Ok((
         best,
         DiscoveryReport {
+            symmetry_prior: policy.symmetry_prior.clone(),
             effort: None,
             phase_map,
             phase_diagnostic,
@@ -468,6 +492,7 @@ fn screen_phases(
     assessment: &Assessment,
     attempts: &mut [GroupAttempt],
     deadline: Instant,
+    explicit_inversion_test: bool,
 ) -> Result<(Option<phasesmith_solution::PhaseOnlyResult>, Option<String>)> {
     let policy = original
         .discovery
@@ -505,11 +530,44 @@ fn screen_phases(
     };
     if let Some(map) = &phase_map {
         let coefficients = phasesmith_solution::PhaseOriginDensity::new(&map.density, map.shape)?;
+        // Atomic inversion is not supplied by a Laue prior. Test it explicitly,
+        // even when P-1 is ineligible as a model or ranks outside the bounded list.
+        let baseline = if explicit_inversion_test {
+            policy
+                .hypotheses
+                .iter()
+                .position(|h| inversion_only(&h.group))
+        } else {
+            None
+        };
+        if let Some(index) = baseline
+            && !original.cancellation.is_cancelled()
+            && Instant::now() < phase_deadline
+        {
+            screen_setting(
+                observations,
+                original,
+                &mut attempts[index],
+                &policy.hypotheses[index],
+                &coefficients,
+                phase_deadline,
+            );
+        }
         for &index in assessment
             .ranking
             .iter()
-            .filter(|&&i| attempts[i].status != "laue_contradicted")
-            .take(policy.phase.maximum_settings)
+            .filter(|&&i| {
+                Some(i) != baseline
+                    && attempts[i].status != "laue_contradicted"
+                    && (attempts[i].status != "prior_excluded"
+                        || inversion_only(&policy.hypotheses[i].group))
+            })
+            .take(
+                policy
+                    .phase
+                    .maximum_settings
+                    .saturating_sub(usize::from(baseline.is_some())),
+            )
             .collect::<Vec<_>>()
         {
             if original.cancellation.is_cancelled() || Instant::now() >= phase_deadline {
@@ -679,12 +737,13 @@ fn record_run(
                     common,
                     options.dense_memory_bytes,
                 ) {
-                    Ok((r1, objective, parameters, bic)) => {
+                    Ok((r1, objective, parameters, bic, residuals)) => {
                         if a.bic.is_none_or(|old| bic < old) {
                             a.status = "candidate";
                             a.diagnostic = Some(solution.termination.into());
                             a.common_r1 = Some(r1);
                             a.common_objective = Some(objective);
+                            a.common_residuals = Some(residuals);
                             a.parameters = Some(parameters);
                             a.bic = Some(bic);
                             a.candidate = Some(candidate.clone());
@@ -715,7 +774,7 @@ fn record_run(
     a.runs.push(run);
 }
 
-fn initial_attempts(assessment: &Assessment) -> Vec<GroupAttempt> {
+fn initial_attempts(assessment: &Assessment, policy: &DiscoveryOptions) -> Vec<GroupAttempt> {
     let attempts: Vec<_> = assessment
         .evidence
         .iter()
@@ -726,7 +785,13 @@ fn initial_attempts(assessment: &Assessment) -> Vec<GroupAttempt> {
             phase_status: "not_attempted",
             origins: vec![],
             phase_seconds: 0.,
-            status: if assessment.laue[e.laue].status == "contradicted" {
+            status: if policy
+                .symmetry_prior
+                .as_ref()
+                .is_some_and(|p| !p.admits(&policy.hypotheses[i]))
+            {
+                "prior_excluded"
+            } else if assessment.laue[e.laue].status == "contradicted" {
                 "laue_contradicted"
             } else {
                 "not_attempted"
@@ -735,6 +800,7 @@ fn initial_attempts(assessment: &Assessment) -> Vec<GroupAttempt> {
             diagnostic: None,
             common_r1: None,
             common_objective: None,
+            common_residuals: None,
             parameters: None,
             bic: None,
             candidate: None,
@@ -789,6 +855,7 @@ mod fast_exit_tests {
             diagnostic: None,
             common_r1: Some(0.05),
             common_objective: Some(0.002),
+            common_residuals: None,
             parameters: Some(4),
             bic: Some(-100.),
             candidate: None,

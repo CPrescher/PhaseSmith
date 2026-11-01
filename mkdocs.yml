@@ -79,6 +79,9 @@ nav:
       - Overview and API: single-crystal.md
       - Rust-only original-frame workflow: single-crystal-native-workflow.md
       - Space-group assessment and search: space-group-search.md
+      - Cross-structure search validation: unknown-group-corpus-validation.md
+      - Matched symmetry priors and acceptance: matched-prior-search-validation.md
+      - Candidate fitting and fallback performance: candidate-fitting-speed.md
       - MgSiO3 full example: enstatite-raw-workflow.md
       - Original HDF5 frames: native-hdf5.md
       - Frame validity and shadows: single-crystal-frame-validity.md

@@ -1,0 +1,234 @@
+{
+  "schema": "phasesmith.unknown-effort-corpus.v2",
+  "matched_symmetry_priors": true,
+  "selection": "Two per crystal system: SHA256(unknown-effort-v1:<id>) order, second from other light/heavy tier if available. Selection never reads solver outcomes. ",
+  "cases": [
+    {
+      "id": "cod-2200381",
+      "system": "cubic",
+      "chemistry": "heavy",
+      "rows": 358,
+      "files": {
+        "auto.json": "9c7b6afb3cd80cf8d663d22db5ffa359831ca2c3838d775149051bf7ac5134fb",
+        "common.hkl": "30628b926a613191c40168b807adcbce56b355710f72f9eb290af7e1aa9b3d30",
+        "fast.json": "631986a1c3a8d684ad22fa4952b38008b25025ad86bad039e66ba4b20b21c83e",
+        "observations.json": "7e405ec2d1ffe899576d930000a5b5bf1c9a8d4bb3a9b9978eb0b19f5489842d",
+        "reference.cif": "43cf0960d0a94eeec95152ec512b3166c23ed6991fc2bb441a2c5966f0493580",
+        "shelxt.ins": "aa2278e0c915c4a02444e96afeb7098e9d124a3065fe4b39b0af84efa05fe352",
+        "source-inputs.json": "df89a6fc4d7e70b6f4df0d8d8939b8fee456e3a2c8211ee766300f6773aecf2a"
+      }
+    },
+    {
+      "id": "cod-2215687",
+      "system": "cubic",
+      "chemistry": "heavy",
+      "rows": 50,
+      "files": {
+        "auto.json": "10a23e1b7b87eee8fd5e32824a34746efd871c23eee917fb2da9eb558d0c938e",
+        "common.hkl": "98f20b950dbf9d6c621cefb423b3b6fde872bd5f0d1b23f69f9ac74192418ddd",
+        "fast.json": "ed9a08e6e8ef932dcec75115c47c1be14cdadec9040a392146b3bcbc274ebcb7",
+        "observations.json": "ce763da9c92ca72c5fe80a66aba6b170485c24ea701ede8f2e95bc2a8972dd9e",
+        "reference.cif": "41713db9f00c8d9e7c89040753c6acf0a49447855d1f0c8e956823fb9b71052a",
+        "shelxt.ins": "6f89a878c3b2b161ada1ce5431e0cc40d9ce7c6e05e0fe85841729a919bb7a43",
+        "source-inputs.json": "9cd48b1609d797903ec4193ec4258ec52fa102cc3b25525b7d1005aa6bd58201"
+      }
+    },
+    {
+      "id": "cod-2243618",
+      "system": "hexagonal",
+      "chemistry": "heavy",
+      "rows": 489,
+      "files": {
+        "auto.json": "8169180e7a1beba778cb6120ef05818e70fdb7eb51332bf0026a4fae051449a1",
+        "common.hkl": "07120625d6df10d949004fc0aa19affbddaeea499e81edbb49aed537da3f3bdb",
+        "fast.json": "4fe4e9f6eaaa076bfaf00e496fba82e77b4b278ce52d954535c0df50e41bda8b",
+        "observations.json": "07071e830dba16ab2d12ef5ebf78e32f3652428eed1b292b5686f07ebe80e9ef",
+        "reference.cif": "165686004182197deebbde107cf72600e3f311bf16b67e6c6bd47f7887268019",
+        "shelxt.ins": "78944314cd019e4d6fc4fc12407ffdaa571d2f8d9b699d5ce2462af33877e628",
+        "source-inputs.json": "1b56cd450d415c12d1029a8624a8351599cffd80f32975af99ca5e3157f566fe"
+      }
+    },
+    {
+      "id": "cod-2017324",
+      "system": "hexagonal",
+      "chemistry": "heavy",
+      "rows": 189,
+      "files": {
+        "auto.json": "15ac6b485c3048e1ca9071758bf0636354a5bfa94e5dc8ee0b3949e4aa5ab9a2",
+        "common.hkl": "94f2dcc75a4a267fd46932f59a947c741cb1b9f9e1c8913268cb6c1b90c580de",
+        "fast.json": "1cc8b106ac56cdbd238074ee9ca402b051de512257f595243800aef298a5250d",
+        "observations.json": "df63726cce63b27c204b993ce242f47d61151cf1bb8704a143d982476d5d817a",
+        "reference.cif": "9013a2748ba27ce38769ce938dee6e82ba58fd327177d90547f36d829cc31f5e",
+        "shelxt.ins": "473a4fd937920c973cd148070b65756175c22addc7258022c21e353651e34bdd",
+        "source-inputs.json": "3e27afa7ed94e4c67ea397bb29691f74ad75172399afaca4d390b0c778f0e5f6"
+      }
+    },
+    {
+      "id": "cod-1549038",
+      "system": "monoclinic",
+      "chemistry": "light",
+      "rows": 2652,
+      "files": {
+        "auto.json": "bc9a29fe0e6411c083c22c933112d4dc03631dc99e6260780e6385a1e2a3433d",
+        "common.hkl": "a6397b9c7e3def8ade6eeb1cab360d845d4d0d0602e772db6bf2a7de7fd8361c",
+        "fast.json": "98487938a4cec5bd39b18d8cf000a6570d8d0fd99e14f2d5d19f96ff46239ec2",
+        "observations.json": "aa15c5ebbc18d98cfd0029575f0e239e4348d41e82c76e657569392e9af4700c",
+        "reference.cif": "e099dd7a9a4c420c672103679151649951ece8d124b44f6e65a41458b2cae5ba",
+        "shelxt.ins": "268094a4a3eb49cfcce7c949aa3b1367dedbce2041d87a029547a1022d19b70b",
+        "source-inputs.json": "20bdec43b2be63ce92637db2e378efce31ede7b290a725bc82317eb5c3eeb27e"
+      }
+    },
+    {
+      "id": "cod-2010875",
+      "system": "monoclinic",
+      "chemistry": "heavy",
+      "rows": 2445,
+      "files": {
+        "auto.json": "0c9f4da116a83ffc8be638774464da0e18d4c6ec8a066c0eca6910f2fecad180",
+        "common.hkl": "ceff4eac4b3ac41f196c311f82225b742d0da8047fbf040605f3556648727fa4",
+        "fast.json": "26374a29477c56b47f0e11abc6c41fcf42564896a0ff8398c5639885cee18e8f",
+        "observations.json": "bf73bb8d91e6ae81ba8b043ae84d7000d604fb0f86a7f4afcd3d8f5ddf698fb5",
+        "reference.cif": "d199ba1f0c27338ba8fc05e9ce0fa3661f5eb7f238a5815ac36274a162c8a97d",
+        "shelxt.ins": "dd3bf80cc3c52cad0106579ba8b191fb7e0deb039c4430a845d13eb48d32813b",
+        "source-inputs.json": "5be0ecfdeb6558a9fbe0688e6ca550b103460e6ec4a654ba3cb85485367c319c"
+      }
+    },
+    {
+      "id": "cod-2241300",
+      "system": "orthorhombic",
+      "chemistry": "heavy",
+      "rows": 601,
+      "files": {
+        "auto.json": "87836231dc7bf98904194d22e78c816ee0cd5f00d40d67c104bb31f302a7da99",
+        "common.hkl": "7fec710b5733f9de0c05d74fb57c32249ea88c1491de49b00fd94f4c6a459bf9",
+        "fast.json": "1cc65e939923e2f7346420eb073dd45180ea2b679c8d49efbeb6dfe5d7260b98",
+        "observations.json": "38bb48c79747405e469c14cf8386d36e61a39f98a91dd46e1862fa1c8f37874e",
+        "reference.cif": "90f36a3ca5e12e38fe317e32f44693e6b8860d76eb26bd288646a093b494091a",
+        "shelxt.ins": "c4e0cfe87c1af2aeb5ed2f30e32714bc5df56fcd0b5cbf56781a293f8d8a74dc",
+        "source-inputs.json": "6424bd2a8a5aae55d9e30d4a818be7c85fddd019a63c7829239f300ac750ff35"
+      }
+    },
+    {
+      "id": "cod-2021040",
+      "system": "orthorhombic",
+      "chemistry": "light",
+      "rows": 1959,
+      "files": {
+        "auto.json": "38cb1d6ea2566d9fd8c52f0afb6c861364420d47fe13fbaeb8ccd855d83ece5c",
+        "common.hkl": "a23a790b20dc1722e10938aac3c36006a4f201f5478732ebfc2d829e1c0774dc",
+        "fast.json": "8978acd83c6da0b078735b5274060b8c26204a0e659d6909e163e8cad1d5e192",
+        "observations.json": "0adf4438fcacb0a20a1c38e064d2d06bd28e7322f6ba4e3ac724ba34d0050dc8",
+        "reference.cif": "5d74a33a0ca712746a1fada0e657d2a2aad686eb1275e181adbbfdb85e5dfed0",
+        "shelxt.ins": "9466afe45c898ecd7570f300e4db182dd17049ae9ebc6214f639d2e64f2354b6",
+        "source-inputs.json": "659b830f14916ba0f87538728272ba6c51f093ce02a2a43237a1eee55c10af53"
+      }
+    },
+    {
+      "id": "cod-2207083",
+      "system": "tetragonal",
+      "chemistry": "heavy",
+      "rows": 109,
+      "files": {
+        "auto.json": "54f69478e2ef93d447600d0ffaab86119713a37f62547ef8cf0497f18ac6f400",
+        "common.hkl": "e2cc746b03861f630473b5f8f601484bf9279aa6793338b0e65686e8237545a2",
+        "fast.json": "f3645c5a929c59eff6532ef6b3866d429b8736f05468badf16f570b2ceeb33dc",
+        "observations.json": "3c632ce488dbe9d7c61dd90bb834f90aa6fa5ff398c31994f58ccb9e7bc78901",
+        "reference.cif": "02fd7be9a001626bf484e217d1f3d22f519fc5850a910d3a1adb6b9bcd1e5e8c",
+        "shelxt.ins": "66e43e557e3ae28b749401801fc0bffe5d0e7262e11c3d7834f5174e90ec0f21",
+        "source-inputs.json": "fa3bf1a93a4d7049614773b8950159ec9c8867edf82cc083c7feafa8516b8356"
+      }
+    },
+    {
+      "id": "cod-2233659",
+      "system": "tetragonal",
+      "chemistry": "heavy",
+      "rows": 294,
+      "files": {
+        "auto.json": "07a74febb46a50c92f466c8f628b91662b469729495d6cdbe190f2c457d45674",
+        "common.hkl": "a5ef2f8d805a31ae69bfddd314d46fb4b489efabf6e4c2a01ba8379a990b2eeb",
+        "fast.json": "59161bdbf2d92d5e1cad1b8cbb64a3e0b5b83d541a23f44365dbb1a3d204eea5",
+        "observations.json": "99ee5256ffe53a970408337c42222036e6f74fa000f8d7dd47c327e9b38cd2fe",
+        "reference.cif": "90fdd6413a870d8859d99bebf4db13de5299cf7527b1f6820df02cb725699bce",
+        "shelxt.ins": "01666d68d63ca35f369db0e29114fb9565e842019d9f5a0ed2b9cb42a653e7ad",
+        "source-inputs.json": "ae21305ea4c61ebd81bd14ad4c60a97acc2351da8402b0b37f67fca9cc5ab215"
+      }
+    },
+    {
+      "id": "cod-2011241",
+      "system": "triclinic",
+      "chemistry": "heavy",
+      "rows": 1795,
+      "files": {
+        "auto.json": "8d606fa9f547521e4fe7228b8410f517d7dd75b824d26b467ece3ca472e185ef",
+        "common.hkl": "0bea929a97a18813ce5bc471a5be76aa72f203f0d0cfec484d18388c941acf04",
+        "fast.json": "7e420c2e3eedd1d4e3e7dab54f24a2fe45f490894cefa3171a135f15de7c92ee",
+        "observations.json": "8c7760939c60d3b8ee236e8fb7db3292f5e50d5d325681b02fbed788003a9268",
+        "reference.cif": "73ce4ba0ff62cdbf097399b61c214e0170a5648c1d392680df724c87536de476",
+        "shelxt.ins": "972c7710f7efa1e1f00e00554f83916478b5518541ac6b2078e87aec87440574",
+        "source-inputs.json": "b99d1d66b6283df9b8d8864acfee144a5e3d4d0d42931dc3aea213a1b00d32fa"
+      }
+    },
+    {
+      "id": "cod-2010993",
+      "system": "triclinic",
+      "chemistry": "light",
+      "rows": 2003,
+      "files": {
+        "auto.json": "3c3d9dba88c4703d86680eaed8ef9dfdaf1ed5c5750004a37c49663b7bb9d9c7",
+        "common.hkl": "2c3b3339d20a046b38183244f7e8983a241a54793782f5d76ea024099a6ee5a6",
+        "fast.json": "96a91e6d8268490bcd84caa8b922774c0aa81a5f202ce7af1a873def2aaf6351",
+        "observations.json": "59b2f5d08d6c16171bd8ec854b6ccb727efcc8dfa6f167e8fd15e8f30ddef98a",
+        "reference.cif": "7cc49fd573ae7d66b4c31f3e76ea84cb644256b475fd76c5d077ea8722f7fe4b",
+        "shelxt.ins": "be847f3c0aaa0bbf002e4bd121623d31c573fa4937f68709e09110581db90b3f",
+        "source-inputs.json": "2eb5827e6f9844aff7785435ccacab44c00af65bf6b77ce613e1519c39d022ca"
+      }
+    },
+    {
+      "id": "cod-2203173",
+      "system": "trigonal",
+      "chemistry": "heavy",
+      "rows": 440,
+      "files": {
+        "auto.json": "b4d7a8f5b64d893f234cce01b3c95135fa1212f17d012aa87e3392fef139fe9f",
+        "common.hkl": "4b41164cb2f67275df504b142560b3c2488d77f54f4a9401f726764ff0520b06",
+        "fast.json": "c8c3c799f4f7fdd13ff8d2af8bb6e2b555ecc1d1e3ce1b4ff424c61b396093d2",
+        "observations.json": "ecd5975442cb3ffcfcc212348ede50219f45d40a0df87acab334d2773770894b",
+        "reference.cif": "afa3a3fc5eb51518cee85270504c348d804f3601c4676ac5b58750d025782a06",
+        "shelxt.ins": "569d70fc151a37ebb15e5eb3b8d54910591f54352355684420510e7916aa06a6",
+        "source-inputs.json": "9f77c5ff4e96d7db9b90ff4205533a51bd61ef9db7982666b0b11e50131630fc"
+      }
+    },
+    {
+      "id": "cod-2201295",
+      "system": "trigonal",
+      "chemistry": "light",
+      "rows": 1367,
+      "files": {
+        "auto.json": "a2ca6fca65ef5f1ee0e3db0ccb90c1e9d9e38725a4eb992b138a63a93ccb0169",
+        "common.hkl": "c1106b348301aa58dc0d5fd18a6fc5d0606a00d3d98fbffeb0ff159b01657a07",
+        "fast.json": "8cd1e77b5eff65e2d2cfb77b51f54cdee2ba2e1ff1fb3662bdda7768124f205a",
+        "observations.json": "565ef402d004d2a7923424d46c0d78857a97037102eedb57a3c3d46009da56ac",
+        "reference.cif": "f1f062c131d34521503f42ccfd0d925350e9a3812efb4ec599adb44504662847",
+        "shelxt.ins": "39ca9c4bba56aca1ff292b7d6792072861554b8c9d2fa20ef4e8730d6c09b0ce",
+        "source-inputs.json": "778a6d9d3ac7a3f0804e8343d5d8bdd46fad880a35733a75cd30c1fe30d1dfc3"
+      }
+    }
+  ],
+  "source_manifest_sha256": "f815629e42e608c784113ddd7400268f9e897b3db5b2af7d54224886af206f6c",
+  "native_sha256": "a63e4406d3255a3fb969913873e786f339f31890ec4158492601c619ff28a5c9",
+  "shelxt": "/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt",
+  "shelxt_sha256": "4d712cb17f8952e1f59f476af7c61ad4ab5261e594c75441c7f81dcefe7b5560",
+  "harness_sha256": "653eeda5ac860b91e10b29f937191f60796cb12cf885f630791dc250aad5de7c",
+  "repeats": {
+    "fast": 3,
+    "auto": 1,
+    "shelxt4": 1,
+    "shelxt10": 3
+  },
+  "native_controls": "Unchanged v40; four phasing workers, 8 s fast, shared 180 s auto budget, 128 MiB dense model budget; seed 0. ",
+  "comparator_priors": "Both receive identical Laue rotations and centring from the SHELXT INS; exact space group/counts/coordinates withheld. Native retains all metric settings with explicit prior-exclusion status.",
+  "grading": "After all predictions saved: exact non-H species counts, RMS <=0.025 A and max <=0.05 A after shared origin/inversion; strict max <=0.02 A. Group number checked separately. No setting-change failure called wrong without qualification. ",
+  "secondary_grading": "Report unlabelled non-H positions with the same total-count, origin/inversion and distance gates; never select models using this score.",
+  "acceptance_policy": "Explicit prior-compatible group; reject measured Laue contradiction, unresolved higher Laue without a prior, BIC-close different group types, insufficient common observations and acentric models with consistent inversion phases. Existing own/common R1 and phase-alpha gates unchanged. When neither pass is accepted, retain an existing first approximation and archive the other.",
+  "hard_seconds": 210
+}
