@@ -7,6 +7,8 @@ use std::time::{Duration, Instant};
 /// Shared P1 phase-map and bounded origin-screen controls.
 #[derive(Clone, Debug)]
 pub struct PhaseScreenOptions {
+    /// Explicit optional coarse/adaptive initial phasing policy; default is full-data phasing.
+    pub phasing: phasesmith_solution::PhaseOnlyPolicy,
     /// Bounded independent P1 workers, 1..=10.
     pub workers: usize,
     /// Independent phase starts, 1..=16.
@@ -50,7 +52,10 @@ pub struct DiscoveryOptions {
 impl DiscoveryOptions {
     pub(super) fn check(&self) -> Result<()> {
         let p = &self.phase;
-        if !(1..=10).contains(&p.workers)
+        if p.phasing
+            .minimum_d_angstrom
+            .is_some_and(|d| !d.is_finite() || d <= 0.)
+            || !(1..=10).contains(&p.workers)
             || !(1..=16).contains(&p.starts)
             || !(1..=20000).contains(&p.cycles)
             || !(1..=530).contains(&p.maximum_settings)
@@ -454,13 +459,14 @@ fn screen_phases(
         .group
         .as_ref()
         .ok_or_else(|| Error("provisional processing symmetry missing".into()))?;
-    let (phase_map, phase_diagnostic) = match phasesmith_solution::phase_only_with_workers(
+    let (phase_map, phase_diagnostic) = match phasesmith_solution::phase_only_with_policy(
         observations,
         original.priors.cell,
         laue,
         &original.priors.elements,
         &phase_options,
         policy.phase.workers,
+        &policy.phase.phasing,
     ) {
         Ok(map) => (Some(map), None),
         Err(e) => (None, Some(e.to_string())),
