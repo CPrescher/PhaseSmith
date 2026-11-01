@@ -46,6 +46,15 @@ cache reuse, a published optional light-element centrosymmetric exit, and coarse
 quality-controlled P1 phasing separately. See the
 [speed experiment plan](docs/space-group-speed-plan.md); success and generality
 must be measured rather than inferred from the reduced workload.
+The current v40 example uses explicit `fast`/`auto`/`thorough` effort. `auto`
+first attempts the short coarse path and only starts full-resolution phasing and
+broader model search after numerical acceptance fails; both share the original
+remaining deadline and retain complete pass evidence. The exposed MgSiO3 search
+is about 0.5 s on the measured M4 Pro, versus about 0.65 s for the measured
+10-worker SHELXT control. A forced fast-timeout test recovers the correct Pbca
+structure through the full-resolution fallback. These timings and candidate
+acceptance thresholds do not establish general speed/reliability or uniqueness.
+See the [adaptive-effort report](docs/space-group-search-speed.md).
 
 ## Ownership and dependency direction
 
@@ -136,7 +145,7 @@ Document default, minimal and optional-feature builds truthfully.
 ## Evidence and remaining scientific limits
 
 The MgSiO3 example is exposed development/regression data with supplied
-cell/symmetry/elements, provisional spindle angles and explicit aperture
+cell/element priors and optional exact symmetry, provisional spindle angles and explicit aperture
 assumptions. Its eight source files total 470,052,794 bytes and stay external.
 No reference atomic count/coordinate, source HKL or archived observation enters
 the numerical worker. Reference grading follows candidate save and worker exit.

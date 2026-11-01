@@ -265,7 +265,7 @@ pub(super) fn search(
         original.discovery.as_ref().expect("discovery").check()?;
         effort::search(observations, original, processing, assessment, effort)
     } else {
-        search_pass(observations, original, processing, assessment)
+        search_pass(observations, original, processing, assessment, None)
     }
 }
 #[allow(clippy::too_many_lines)] // Ordered bounded state machine; numerical stages have separate owners.
@@ -274,6 +274,7 @@ pub(super) fn search_pass(
     original: &Options,
     processing: &Options,
     assessment: Assessment,
+    shared_deadline: Option<Instant>,
 ) -> Result<SearchRun> {
     let policy = original
         .discovery
@@ -281,7 +282,8 @@ pub(super) fn search_pass(
         .ok_or_else(|| Error("discovery policy missing".into()))?;
     policy.check()?;
     let started = Instant::now();
-    let deadline = started + Duration::from_secs_f64(policy.total_seconds);
+    let own_deadline = started + Duration::from_secs_f64(policy.total_seconds);
+    let deadline = shared_deadline.map_or(own_deadline, |d| d.min(own_deadline));
     let p1 = sg::rotational_group(&[[[1, 0, 0], [0, 1, 0], [0, 0, 1]]])?;
     let common = phasesmith_solution::prepare_data(observations, original.priors.cell, &p1)?;
     let mut attempts = initial_attempts(&assessment);
