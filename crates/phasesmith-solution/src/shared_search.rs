@@ -736,6 +736,8 @@ fn refine(
         _ => prepared.initial_parameters(u.clamp(1e-5, 0.2))?,
     };
     let baseline = prepared.evaluate(&initial)?;
+    let baseline_r1 = baseline.r1;
+    let baseline_objective = baseline.objective;
     audit.refinements += 1;
     audit.specialized_isotropic_fits +=
         usize::from(prepared.uses_specialized_isotropic_evaluation());
@@ -749,8 +751,9 @@ fn refine(
     } else {
         audit.final_refinements += 1;
     }
-    let fit = prepared.refine_with_normal_reuse(
+    let fit = prepared.refine_with_initial_evaluation(
         &initial,
+        baseline,
         iterations,
         Some(deadline),
         options.cancellation.as_ref(),
@@ -775,7 +778,7 @@ fn refine(
         audit.cached_normal_solves += fit.cached_normal_solves;
         audit.normal_cache_fallbacks += fit.normal_cache_fallbacks;
     }
-    let (mut summary, mut full) = fit.summarize(mode, baseline.r1, baseline.objective);
+    let (mut summary, mut full) = fit.summarize(mode, baseline_r1, baseline_objective);
     let aligned: Vec<_> = full
         .iter()
         .map(|p| {

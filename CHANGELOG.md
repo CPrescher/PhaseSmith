@@ -10,6 +10,19 @@ development versions.
 
 Development release candidate; not yet published.
 
+- Reuse initial candidate evaluations, identical reciprocal weights, fixed-site
+  phases and unchanged orbit checks in native fitting. Defer redundant automatic
+  phasing for numerically equivalent group descriptions while preserving the
+  ambiguity and every acceptance gate. Retain direct thorough search and record
+  paired fitting benchmarks and the same matched-prior corpus comparison.
+
+- Add optional native Laue/centring priors for phase-map processing and candidate
+  eligibility, retaining measured evidence and excluded settings. Guard automatic
+  acceptance against unresolved symmetry and BIC-close alternatives. Preserve an
+  existing approximation when a deeper pass remains unaccepted. Compare the fixed
+  14-case corpus with identical symmetry priors for PhaseSmith and SHELXT; keep
+  frozen inputs, outcomes and remaining failures explicit.
+
 - Add explicit native fast/auto/thorough structure-search effort. Automatic effort
   tries the short coarse path first and spends full-resolution/broader work only
   after candidate rejection, preserving both passes and the remaining deadline.

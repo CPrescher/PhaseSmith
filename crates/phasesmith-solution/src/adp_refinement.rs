@@ -38,6 +38,7 @@ pub struct PreparedSymmetricModel {
     mode: AdpMode,
     families: Option<crate::refinement_families::ReflectionFamilies>,
     specialized_isotropic_evaluation: bool,
+    isotropic_weights: Option<isotropic::WeightPlan>,
     blocked_normal_matrices: bool,
     assignment_convergence_stopping: bool,
     dense_memory_budget: crate::DenseMemoryBudget,
@@ -47,26 +48,41 @@ pub struct PreparedSymmetricModel {
 #[derive(Clone, Debug)]
 struct ImageGeometry {
     phase: f64,
+    // Free sites: coordinate phase derivatives. Fixed sites: unused lanes hold
+    // sin(phase), cos(phase), 0. The owning site's unchanged basis guards the tag.
+    // This keeps the existing 80-byte image entry and 32 MiB cache admission.
     coordinate_phase: [f64; 3],
     tensor_weight: [f64; 6],
+}
+impl ImageGeometry {
+    fn sin_cos(&self, phase: f64, coordinate_count: usize) -> (f64, f64) {
+        if coordinate_count == 0 {
+            (self.coordinate_phase[0], self.coordinate_phase[1])
+        } else {
+            phase.sin_cos()
+        }
+    }
 }
 #[derive(Clone, Debug)]
 struct SiteGeometryKey {
     position: [f64; 3],
     tangents: Vec<[f64; 3]>,
     images: Vec<(phasesmith_crystallography::SymmetryOperation, Matrix3)>,
+    orbit_count: Option<usize>,
 }
 #[derive(Clone, Debug)]
 struct GeometryCache {
     entries: Vec<ImageGeometry>,
     sites: Vec<SiteGeometryKey>,
     full_count: usize,
+    operations: Vec<phasesmith_crystallography::SymmetryOperation>,
 }
 impl GeometryCache {
     // Exact identity checks guard caches when public Rust geometry is modified.
     #[allow(clippy::float_cmp)]
     fn matches(&self, symmetry: &SymmetryModel) -> bool {
         self.full_count == symmetry.full_count
+            && self.operations == symmetry.group.operations()
             && self.sites.len() == symmetry.sites.len()
             && self.sites.iter().zip(&symmetry.sites).all(|(key, site)| {
                 key.position == site.fractional_xyz
@@ -80,6 +96,13 @@ impl GeometryCache {
                             *operation == image.operation && *rotation == image.cartesian_rotation
                         })
             })
+    }
+
+    #[allow(clippy::float_cmp)] // Exact reuse only; changed trials run the original topology check.
+    fn orbit_count(&self, site: usize, position: [f64; 3]) -> Option<usize> {
+        (self.sites[site].position == position)
+            .then_some(self.sites[site].orbit_count)
+            .flatten()
     }
 }
 #[allow(clippy::float_cmp)]
@@ -126,9 +149,14 @@ fn prepare_geometry(
                     coordinate_phase[i] =
                         std::f64::consts::TAU * dot(h.map(f64::from), mv(rotation, b));
                 }
+                let phase = std::f64::consts::TAU * dot(h.map(f64::from), position);
+                if site.coordinate_basis.is_empty() {
+                    let (sin, cos) = phase.sin_cos();
+                    coordinate_phase = [sin, cos, 0.];
+                }
                 let v = mv(transpose(image.cartesian_rotation), q);
                 cache.push(ImageGeometry {
-                    phase: std::f64::consts::TAU * dot(h.map(f64::from), position),
+                    phase,
                     coordinate_phase,
                     tensor_weight: [
                         v[0] * v[0],
@@ -146,10 +174,16 @@ fn prepare_geometry(
     Some(GeometryCache {
         entries: cache,
         full_count: symmetry.full_count,
+        operations: symmetry.group.operations().to_vec(),
         sites: symmetry
             .sites
             .iter()
             .map(|site| SiteGeometryKey {
+                orbit_count: symmetry
+                    .group
+                    .expand_sites(&[site.fractional_xyz], 1e-8)
+                    .ok()
+                    .map(|e| e.fractional_xyz.len()),
                 position: site.fractional_xyz,
                 tangents: site.coordinate_basis.clone(),
                 images: site
@@ -527,6 +561,7 @@ impl PreparedSymmetricModel {
             dense_memory_budget,
             families,
             specialized_isotropic_evaluation: false,
+            isotropic_weights: None,
             blocked_normal_matrices: false,
             assignment_convergence_stopping: false,
             mode,
@@ -550,6 +585,7 @@ impl PreparedSymmetricModel {
         tensors: &[Matrix3],
         tensor_derivatives: &[Vec<Matrix3>],
         geometry: Option<&GeometryCache>,
+        isotropic_displacements: Option<&[f64]>,
         start: usize,
         amplitudes: &mut [f64],
         jacobian: &mut [f64],
@@ -564,6 +600,7 @@ impl PreparedSymmetricModel {
                 tensors,
                 tensor_derivatives,
                 block_geometry,
+                isotropic_displacements,
                 amplitudes,
                 jacobian,
             );
@@ -630,7 +667,10 @@ impl PreparedSymmetricModel {
                             .exp();
                             (phase, displacement, vector)
                         };
-                        let (sin, cos) = phase.sin_cos();
+                        let (sin, cos) = cached.map_or_else(
+                            || phase.sin_cos(),
+                            |g| g.sin_cos(phase, site.coordinate_basis.len()),
+                        );
                         let re = factor * displacement * cos;
                         let im = factor * displacement * sin;
                         real += re;
@@ -695,6 +735,12 @@ impl PreparedSymmetricModel {
     #[must_use]
     pub fn with_specialized_isotropic_evaluation(mut self, enabled: bool) -> Self {
         self.specialized_isotropic_evaluation = enabled;
+        self.isotropic_weights =
+            if enabled && self.mode == AdpMode::Isotropic && self.geometry.is_some() {
+                isotropic::WeightPlan::new(&self.reciprocal)
+            } else {
+                None
+            };
         self
     }
     /// Stop short assignment fits after repeated negligible accepted improvements.
@@ -871,12 +917,19 @@ impl PreparedSymmetricModel {
             for (i, &b) in site.coordinate_basis.iter().enumerate() {
                 position = add(position, scaled(b, parameters[self.offsets[index].0 + i]));
             }
-            let expansion = self
-                .symmetry
-                .group
-                .expand_sites(&[position], 1e-8)
-                .map_err(|e| error(e.to_string()))?;
-            if expansion.fractional_xyz.len() != site.images.len() {
+            let orbit_count = geometry
+                .and_then(|g| g.orbit_count(index, position))
+                .map_or_else(
+                    || {
+                        self.symmetry
+                            .group
+                            .expand_sites(&[position], 1e-8)
+                            .map(|e| e.fractional_xyz.len())
+                            .map_err(|e| error(e.to_string()))
+                    },
+                    Ok,
+                )?;
+            if orbit_count != site.images.len() {
                 return Err(error(
                     "coordinate trial changes special-position multiplicity",
                 ));
@@ -894,6 +947,13 @@ impl PreparedSymmetricModel {
             tensor_derivatives.push(derivatives);
         }
         let reflection_count = self.hkl.len();
+        let displacements = if isotropic::eligible(self, geometry) {
+            self.isotropic_weights
+                .as_ref()
+                .map(|p| p.displacements(&tensors))
+        } else {
+            None
+        };
         let mut amplitudes = vec![0.; reflection_count];
         let mut jacobian = vec![0.; self.parameter_count * reflection_count];
         let tasks = crate::execution::current().map(|workers| {
@@ -916,6 +976,7 @@ impl PreparedSymmetricModel {
                     &tensors,
                     &tensor_derivatives,
                     geometry,
+                    displacements.as_deref(),
                     start,
                     &mut a,
                     &mut j,
@@ -937,6 +998,7 @@ impl PreparedSymmetricModel {
                 &tensors,
                 &tensor_derivatives,
                 geometry,
+                displacements.as_deref(),
                 0,
                 &mut amplitudes,
                 &mut jacobian,
@@ -1093,8 +1155,47 @@ impl PreparedSymmetricModel {
         if iterations > 200 {
             return Err(error("symmetric iteration budget must not exceed 200"));
         }
+        let evaluation = self.evaluate(initial)?;
+        self.refine_with_initial_evaluation(
+            initial,
+            evaluation,
+            iterations,
+            deadline,
+            cancellation,
+            iterative,
+            cached_normal,
+            reuse_normal,
+        )
+    }
+
+    // Trusted crate-internal reuse: the caller produced this evaluation from this
+    // exact model/initial vector immediately before calling. Public entry points
+    // always evaluate it themselves. Keeps initial-failure audit semantics intact.
+    #[allow(
+        clippy::too_many_arguments,
+        clippy::too_many_lines,
+        clippy::fn_params_excessive_bools
+    )]
+    pub(crate) fn refine_with_initial_evaluation(
+        self,
+        initial: &[f64],
+        mut evaluation: SymmetricEvaluation,
+        iterations: usize,
+        deadline: Option<Instant>,
+        cancellation: Option<&Cancellation>,
+        iterative: bool,
+        cached_normal: bool,
+        reuse_normal: bool,
+    ) -> Result<SymmetricRefinement, SolutionError> {
+        if iterations > 200 {
+            return Err(error("symmetric iteration budget must not exceed 200"));
+        }
+        debug_assert_eq!(initial.len(), self.parameter_count);
+        debug_assert_eq!(
+            evaluation.jacobian.len(),
+            self.parameter_count * self.hkl.len()
+        );
         let mut parameters = initial.to_vec();
-        let mut evaluation = self.evaluate(&parameters)?;
         let count = self.parameter_count;
         let reflections = self.hkl.len();
         let mut damping = 1e-3_f64;
@@ -1296,6 +1397,157 @@ impl PreparedSymmetricModel {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[allow(clippy::cast_precision_loss)] // Deterministic test indices are below 2,000.
+    fn mixed_fixed_free_model() -> (PreparedSymmetricModel, Vec<f64>) {
+        use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
+        let group = SpaceGroup::new(vec![
+            SymmetryOperation::identity(),
+            SymmetryOperation::new([[-1, 0, 0], [0, -1, 0], [0, 0, -1]], [Rational::zero(); 3])
+                .unwrap(),
+        ])
+        .unwrap();
+        let cell = UnitCell {
+            a_angstrom: 7.,
+            b_angstrom: 8.,
+            c_angstrom: 9.,
+            alpha_deg: 90.,
+            beta_deg: 90.,
+            gamma_deg: 90.,
+        };
+        let points = [
+            [0., 0., 0.],
+            [0.5, 0.5, 0.5],
+            [0.13, 0.26, 0.37],
+            [0.87, 0.74, 0.63],
+        ];
+        let labels = ["C", "Si", "O", "O"].map(str::to_owned);
+        let symmetry =
+            crate::recover_symmetry(cell, &group, &labels, &points, 0.01, None, None).unwrap();
+        let hkl: Vec<_> = (-5i32..=5)
+            .flat_map(|h| {
+                (-5..=5).flat_map(move |k| {
+                    (-5..=5).filter_map(move |l| ([h, k, l] != [0; 3]).then_some([h, k, l]))
+                })
+            })
+            .collect();
+        let observed: Vec<_> = (0..hkl.len())
+            .map(|i| 8. + (i as f64 * 0.17).sin())
+            .collect();
+        let model = PreparedSymmetricModel::new(symmetry, &hkl, &observed, AdpMode::Isotropic)
+            .unwrap()
+            .with_specialized_isotropic_evaluation(true);
+        let start = model.initial_parameters(0.015).unwrap();
+        (model, start)
+    }
+    fn same_evaluation(a: &SymmetricEvaluation, b: &SymmetricEvaluation) {
+        assert_eq!(a.objective.to_bits(), b.objective.to_bits());
+        assert_eq!(a.r1.to_bits(), b.r1.to_bits());
+        assert_eq!(a.amplitude_scale.to_bits(), b.amplitude_scale.to_bits());
+        assert_eq!(
+            a.residual.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+            b.residual.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
+        );
+        assert_eq!(
+            a.jacobian.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+            b.jacobian.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
+        );
+    }
+    #[test]
+    #[allow(clippy::cast_precision_loss)] // Deterministic test indices are below 2,000.
+    fn repeated_weights_fixed_phases_and_topology_reuse_are_bitwise_exact() {
+        let (model, start) = mixed_fixed_free_model();
+        assert!(model.isotropic_weights.is_some());
+        assert_eq!(std::mem::size_of::<ImageGeometry>(), 80);
+        let mut scalar = model.clone();
+        scalar.isotropic_weights = None;
+        for site in &mut scalar.geometry.as_mut().unwrap().sites {
+            site.orbit_count = None;
+        }
+        for i in 0..16 {
+            let mut p = start.clone();
+            for (j, v) in p.iter_mut().enumerate() {
+                *v += 0.005 * ((i * 13 + j) as f64).sin();
+            }
+            same_evaluation(&model.evaluate(&p).unwrap(), &scalar.evaluate(&p).unwrap());
+        }
+        let geometry = model.geometry.as_ref().unwrap();
+        for row in geometry.entries.chunks_exact(model.symmetry.full_count) {
+            let mut offset = 0;
+            for site in &model.symmetry.sites {
+                if site.coordinate_basis.is_empty() {
+                    for image in &row[offset..offset + site.images.len()] {
+                        let actual = image.sin_cos(image.phase, 0);
+                        let expected = image.phase.sin_cos();
+                        assert_eq!(actual.0.to_bits(), expected.0.to_bits());
+                        assert_eq!(actual.1.to_bits(), expected.1.to_bits());
+                    }
+                }
+                offset += site.images.len();
+            }
+        }
+        let baseline = model.evaluate(&start).unwrap();
+        let a = model
+            .clone()
+            .refine_with_normal_reuse(&start, 3, None, None, true, true, true)
+            .unwrap();
+        let b = model
+            .refine_with_initial_evaluation(&start, baseline, 3, None, None, true, true, true)
+            .unwrap();
+        assert_eq!(a.parameters, b.parameters);
+        assert_eq!(a.termination, b.termination);
+        assert_eq!(a.accepted_steps, b.accepted_steps);
+        same_evaluation(&a.evaluation, &b.evaluation);
+    }
+    #[test]
+    fn cached_topology_still_rejects_changed_special_positions_and_groups() {
+        let (mut model, start) = mixed_fixed_free_model();
+        let fixed = model
+            .symmetry
+            .sites
+            .iter()
+            .position(|s| s.coordinate_basis.is_empty())
+            .unwrap();
+        model.symmetry.sites[fixed].fractional_xyz[0] += 0.002;
+        assert!(
+            model
+                .evaluate(&start)
+                .unwrap_err()
+                .to_string()
+                .contains("multiplicity")
+        );
+        let (mut model, start) = mixed_fixed_free_model();
+        model.symmetry.group = phasesmith_crystallography::SpaceGroup::new(vec![
+            phasesmith_crystallography::SymmetryOperation::identity(),
+        ])
+        .unwrap();
+        assert!(
+            model
+                .evaluate(&start)
+                .unwrap_err()
+                .to_string()
+                .contains("multiplicity")
+        );
+        let (model, mut start) = mixed_fixed_free_model();
+        let free = model
+            .symmetry
+            .sites
+            .iter()
+            .position(|s| s.coordinate_basis.len() == 3)
+            .unwrap();
+        let site = &model.symmetry.sites[free];
+        for (i, b) in site.coordinate_basis.iter().enumerate() {
+            let axis = b.iter().position(|v| v.abs() > 1e-8).unwrap();
+            start[model.offsets[free].0 + i] = -site.fractional_xyz[axis] / b[axis];
+        }
+        assert!(
+            model
+                .evaluate(&start)
+                .unwrap_err()
+                .to_string()
+                .contains("multiplicity")
+        );
+    }
 
     #[test]
     fn cif_conversion_preserves_nonorthogonal_anisotropic_exponent() {

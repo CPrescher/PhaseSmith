@@ -23,5 +23,9 @@ criterion = "0.7"
 name = "solution"
 harness = false
 
+[[bench]]
+name = "candidate_fitting"
+harness = false
+
 [lints]
 workspace = true

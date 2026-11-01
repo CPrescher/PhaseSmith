@@ -15,6 +15,16 @@ hypothesis coverage differ. The complete original-frame workflow still takes
 launched native command in the final replay. Raw-frame reduction is additional
 work compared with SHELXT's intensity-file input.
 
+The subsequent [14-case cross-structure comparison](unknown-group-corpus-validation.md)
+finds natural fallback beyond MgSiO3, but also premature subgroup/chemistry
+acceptance and failures. On those archived inputs, median times are 1.02 s fast,
+9.58 s auto and 0.56 s for ten-worker SHELXT, with different symmetry priors.
+The single-case speed advantage above does not establish general performance.
+The [matched-prior follow-up](matched-prior-search-validation.md) improves
+complete structure-plus-group recovery to 10/14 for fast and auto, while ten-worker
+SHELXT recovers 8/14 on that criterion. Current medians are 1.10/8.08 s native and
+0.49 s SHELXT; normal MgSiO3 remains about 0.50 s with the same validated arrays.
+
 ## Choose effort
 
 Use the [native workflow guide](single-crystal-native-workflow.md) for building

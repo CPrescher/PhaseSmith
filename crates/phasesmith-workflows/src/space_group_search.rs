@@ -83,7 +83,8 @@ pub struct Assessment {
     pub friedel_families: usize,
     /// Distinct compatible intensity-symmetry hypotheses.
     pub laue: Vec<LaueEvidence>,
-    /// Largest supported rotational set; Friedel-only when higher symmetry lacks evidence.
+    /// Processing rotational set: largest measured-supported set by default.
+    /// An explicit prior may select it without changing measured evidence statuses.
     pub processing_laue: usize,
     /// Candidate evidence in input catalogue order.
     pub evidence: Vec<Evidence>,

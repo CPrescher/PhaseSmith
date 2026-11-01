@@ -1,0 +1,55 @@
+{
+  "schema": "phasesmith.candidate-fitting-speed-policy.v1",
+  "created_utc": "2026-11-01T09:15:43.517915+00:00",
+  "status": "frozen_before_final_collection",
+  "source_cases": [
+    "cod-2200381",
+    "cod-2215687",
+    "cod-2243618",
+    "cod-2017324",
+    "cod-1549038",
+    "cod-2010875",
+    "cod-2241300",
+    "cod-2021040",
+    "cod-2207083",
+    "cod-2233659",
+    "cod-2011241",
+    "cod-2010993",
+    "cod-2203173",
+    "cod-2201295"
+  ],
+  "paired_baseline_protocol_sha256": "50b1c9a032c1f66a3fc0e010982cf453a6df2589bc81b75767a448a43c45703e",
+  "previous_acceptance_policy_sha256": "69874b3e802256be403b03ce3b4c25a2fb847b04e2b3f7d802605fbddb8c2fa0",
+  "priors_and_data": "Same frozen numerical HKL values, cell, elements, Laue and centring for both solvers. Exact group/counts/coordinates withheld. Same seed, worker, numerical and resource controls. Exposed development/regression set, not a holdout.",
+  "acceptance": "All previous checks and thresholds remain. Every equivalent group candidate remains ambiguous and unaccepted.",
+  "automatic_deferral": {
+    "sole_failure": "ambiguous_space_group",
+    "alternatives": "Every BIC-close alternative, at least one different group number. All must have same parameter count and element-labelled full-cell model.",
+    "maximum_model_separation_angstrom": 1e-08,
+    "maximum_common_normalized_residual_difference": 2.842170943040401e-14,
+    "explicit_thorough": "Unchanged, always runs full effort.",
+    "other_quality_failures": "Still escalate."
+  },
+  "fitting": "Exact reuse: initial evaluation, fixed-site sin/cos, identical-bit reciprocal weights, unchanged orbit counts. Original value/Jacobian reduction order preserved.",
+  "repeats": {
+    "baseline": {
+      "fast": 3,
+      "auto": 1,
+      "shelxt4": 1,
+      "shelxt10": 3
+    },
+    "fitting_only": {
+      "fast": 3,
+      "auto": 1
+    },
+    "final": {
+      "fast": 3,
+      "auto": 1,
+      "shelxt4": 1,
+      "shelxt10": 3
+    }
+  },
+  "grading": "Previous labelled counts, common origin/inversion, RMS <=0.025 A and maximum <=0.05 A. Strict maximum <=0.02 A and unlabelled positions secondary. Models saved before reference grading. No reference used for selection.",
+  "kernel_benchmark": "Same 10-atom/4168-point benchmark compiled against frozen baseline and changed source; 20 samples, 1 s warmup, 2 s measurement, serial runs without competing build/test/profiling work.",
+  "artifacts": "/Users/clemens/ChatGPT/PhaseSmith/candidate-fitting-speed-0.8-20261101"
+}

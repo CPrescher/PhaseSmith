@@ -4,6 +4,14 @@ See the [MgSiO3 validation and SHELXT comparison](space-group-search-validation.
 for the original measured recovery, bounded coverage and timings.
 The subsequent [fast/auto/thorough effort and speed report](space-group-search-speed.md)
 records the current adaptive execution and its forced-escalation validation.
+The [cross-structure validation](unknown-group-corpus-validation.md) tests 14
+measured cases across all seven crystal systems. It verifies natural escalation
+and records current failures of chemistry acceptance and full symmetry recovery.
+Its [matched-prior follow-up](matched-prior-search-validation.md) adds explicit
+Laue/centring inputs and conservative acceptance/upgrade handling, with a new
+fixed comparison and successful accepted-fallback controls beyond MgSiO3.
+The [candidate fitting report](candidate-fitting-speed.md) measures exact fitting
+reuse and conservative deferral of numerically equivalent group descriptions.
 
 The unknown-symmetry path retains all predicted reflections, including signed
 weak measurements. It accepts cell and element priors without an exact space

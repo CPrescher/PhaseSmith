@@ -16,6 +16,7 @@ mod math;
 mod measurement;
 mod positions;
 mod scaling;
+mod symmetry_prior;
 mod unknown;
 pub use grains::{Competitor, Grain, Indexed};
 pub use math::{M3, V3};
@@ -25,9 +26,10 @@ use phasesmith_spots::{frame_input, frame_validity, reciprocal::Geometry};
 pub use positions::Positions;
 pub use scaling::Reduced;
 use std::{fmt, time::Instant};
+pub use symmetry_prior::SymmetryPrior;
 pub use unknown::{
-    DiscoveryOptions, DiscoveryReport, EffortOptions, EffortPass, EffortTrace, FastSearchLimits,
-    GroupAttempt, GroupRun, PhaseScreenOptions, SearchEffort, SearchRun,
+    DeferredAmbiguity, DiscoveryOptions, DiscoveryReport, EffortOptions, EffortPass, EffortTrace,
+    FastSearchLimits, GroupAttempt, GroupRun, PhaseScreenOptions, SearchEffort, SearchRun,
 };
 /// Workflow validation, numerical, I/O-adapter, cancellation or observer failure.
 #[derive(Debug)]
@@ -567,9 +569,7 @@ pub fn run(
             options.priors.cell,
         )?;
         observer.symmetry("preliminary-symmetry", &initial, &discovery.hypotheses)?;
-        processing.priors.group = Some(crate::space_group_search::rotational_group(
-            &initial.laue[initial.processing_laue].rotations,
-        )?);
+        processing.priors.group = Some(symmetry_prior::processing_group(&initial, discovery)?);
     }
     let reduced = scaling::reduce(&measurements, &processing, &indexed.fit.state.geometry)?;
     observer.reduced(&reduced)?;
@@ -967,15 +967,14 @@ pub fn search_unknown_observations(
         .as_ref()
         .ok_or_else(|| Error("discovery policy missing".into()))?;
     d.check()?;
-    let assessment = crate::space_group_search::assess(
+    let mut assessment = crate::space_group_search::assess(
         observations,
         o.priors.cell,
         &d.hypotheses,
         &d.assessment,
     )?;
+    symmetry_prior::apply(&mut assessment, d)?;
     let mut processing = o.clone();
-    processing.priors.group = Some(crate::space_group_search::rotational_group(
-        &assessment.laue[assessment.processing_laue].rotations,
-    )?);
+    processing.priors.group = Some(symmetry_prior::processing_group(&assessment, d)?);
     unknown::search(observations, o, &processing, assessment)
 }

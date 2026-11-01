@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from phasesmith.single_crystal.reference.space_group_search import assess
+from phasesmith.single_crystal.reference.space_group_search import assess, prior_eligible
 
 
 def _settings():
@@ -100,3 +100,46 @@ def test_native_catalogue_and_scores_against_independent_randomized_reference(tm
         assert actual["absence_log_evidence"] == pytest.approx(
             expected["absence_log_evidence"], rel=1e-11, abs=1e-8
         )
+
+
+@pytest.mark.parametrize("number", [2, 4, 56, 139, 167, 194, 221, 225])
+def test_supplied_prior_eligibility_matches_exact_independent_reference(tmp_path, number):
+    import gemmi
+
+    from benchmarks.unknown_group_corpus import (
+        symmetry_instructions,
+        symmetry_prior_from_instructions,
+    )
+
+    executable = os.environ.get("PHASESMITH_NATIVE_WORKFLOW")
+    if not executable:
+        pytest.skip("set PHASESMITH_NATIVE_WORKFLOW for native cross-comparison")
+    group = gemmi.find_spacegroup_by_number(number)
+    system = group.crystal_system_str()
+    cell = {
+        "triclinic": [7, 8, 9, 83, 101, 96],
+        "monoclinic": [7, 8, 9, 90, 103, 90],
+        "orthorhombic": [7, 8, 9, 90, 90, 90],
+        "tetragonal": [7, 7, 9, 90, 90, 90],
+        "trigonal": [7, 7, 9, 90, 90, 120],
+        "hexagonal": [7, 7, 9, 90, 90, 120],
+        "cubic": [7, 7, 7, 90, 90, 90],
+    }[system]
+    prior = symmetry_prior_from_instructions(
+        symmetry_instructions(
+            {"space_group": group.xhm(), "cell": cell, "wavelength": 0.71, "elements": ["C", "O"]}
+        )
+    )
+    # No measured non-Friedel equivalents: the prior must not fabricate support.
+    rows = [[h, 0, 0, 100 - h, 2] for h in range(1, 21)]
+    packet, output = tmp_path / "prior.json", tmp_path / "assessed.json"
+    packet.write_text(json.dumps(dict(cell=cell, observations=rows, symmetry_prior=prior)))
+    subprocess.run([executable, "--assess-symmetry", str(packet), str(output)], check=True)
+    actual = json.loads(output.read_text())
+    assert actual["prior_eligible"] == prior_eligible(actual["settings"], prior)
+    assert any(actual["prior_eligible"])
+    processing = actual["laue"][actual["processing_laue"]]
+    assert processing["rotations"] == json.loads(json.dumps(prior["laue_rotations"]))
+    assert processing["constraints"] == 0
+    assert processing["status"] in {"insufficient_data", "friedel_only"}
+    assert actual["measured_rows"] == 20

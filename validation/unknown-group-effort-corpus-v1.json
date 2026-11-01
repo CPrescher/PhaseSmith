@@ -1,0 +1,231 @@
+{
+  "schema": "phasesmith.unknown-effort-corpus.v1",
+  "selection": "Two per crystal system: SHA256(unknown-effort-v1:<id>) order, second from other light/heavy tier if available. Selection never reads solver outcomes. ",
+  "cases": [
+    {
+      "id": "cod-2200381",
+      "system": "cubic",
+      "chemistry": "heavy",
+      "rows": 358,
+      "files": {
+        "auto.json": "b332c4a4380fd46512c86b7c8afc3c44c06f45bf65ac1f168e87636e45342549",
+        "common.hkl": "30628b926a613191c40168b807adcbce56b355710f72f9eb290af7e1aa9b3d30",
+        "fast.json": "898cafa60dcc25b259ce582f8cb8fc49a87b19f37a84c56fb498ed41788358d5",
+        "observations.json": "7e405ec2d1ffe899576d930000a5b5bf1c9a8d4bb3a9b9978eb0b19f5489842d",
+        "reference.cif": "43cf0960d0a94eeec95152ec512b3166c23ed6991fc2bb441a2c5966f0493580",
+        "shelxt.ins": "aa2278e0c915c4a02444e96afeb7098e9d124a3065fe4b39b0af84efa05fe352",
+        "source-inputs.json": "df89a6fc4d7e70b6f4df0d8d8939b8fee456e3a2c8211ee766300f6773aecf2a"
+      }
+    },
+    {
+      "id": "cod-2215687",
+      "system": "cubic",
+      "chemistry": "heavy",
+      "rows": 50,
+      "files": {
+        "auto.json": "0a2dd3fbf6bfb8064f53c5f0c14c579ba40d76d829b4d437765f9c16d27618de",
+        "common.hkl": "98f20b950dbf9d6c621cefb423b3b6fde872bd5f0d1b23f69f9ac74192418ddd",
+        "fast.json": "770fd81d051afc3b06ed5b8c02996ca8bb3eedfaf50e515ce619c0f0e8262780",
+        "observations.json": "ce763da9c92ca72c5fe80a66aba6b170485c24ea701ede8f2e95bc2a8972dd9e",
+        "reference.cif": "41713db9f00c8d9e7c89040753c6acf0a49447855d1f0c8e956823fb9b71052a",
+        "shelxt.ins": "6f89a878c3b2b161ada1ce5431e0cc40d9ce7c6e05e0fe85841729a919bb7a43",
+        "source-inputs.json": "9cd48b1609d797903ec4193ec4258ec52fa102cc3b25525b7d1005aa6bd58201"
+      }
+    },
+    {
+      "id": "cod-2243618",
+      "system": "hexagonal",
+      "chemistry": "heavy",
+      "rows": 489,
+      "files": {
+        "auto.json": "575d31d8a0b74322fac7bee86fa270c34ec7e467e33bb495beafb26481e1da42",
+        "common.hkl": "07120625d6df10d949004fc0aa19affbddaeea499e81edbb49aed537da3f3bdb",
+        "fast.json": "3910ceb6423272b08ea1e60890675d896fe8a1011a7d9e63ecd500b7d067e588",
+        "observations.json": "07071e830dba16ab2d12ef5ebf78e32f3652428eed1b292b5686f07ebe80e9ef",
+        "reference.cif": "165686004182197deebbde107cf72600e3f311bf16b67e6c6bd47f7887268019",
+        "shelxt.ins": "78944314cd019e4d6fc4fc12407ffdaa571d2f8d9b699d5ce2462af33877e628",
+        "source-inputs.json": "1b56cd450d415c12d1029a8624a8351599cffd80f32975af99ca5e3157f566fe"
+      }
+    },
+    {
+      "id": "cod-2017324",
+      "system": "hexagonal",
+      "chemistry": "heavy",
+      "rows": 189,
+      "files": {
+        "auto.json": "7d7ac83eb1b21d8554982feeedf5d1214baeb3752d69ec1c23c8cf51b23593a2",
+        "common.hkl": "94f2dcc75a4a267fd46932f59a947c741cb1b9f9e1c8913268cb6c1b90c580de",
+        "fast.json": "140231b8302ecb8232b8894590c6d3bebc37008266fd16f1b7129898b8cfb0ce",
+        "observations.json": "df63726cce63b27c204b993ce242f47d61151cf1bb8704a143d982476d5d817a",
+        "reference.cif": "9013a2748ba27ce38769ce938dee6e82ba58fd327177d90547f36d829cc31f5e",
+        "shelxt.ins": "473a4fd937920c973cd148070b65756175c22addc7258022c21e353651e34bdd",
+        "source-inputs.json": "3e27afa7ed94e4c67ea397bb29691f74ad75172399afaca4d390b0c778f0e5f6"
+      }
+    },
+    {
+      "id": "cod-1549038",
+      "system": "monoclinic",
+      "chemistry": "light",
+      "rows": 2652,
+      "files": {
+        "auto.json": "fa82f218abffecd1e63f053242656e683cab16cc390c7ad12045d7196ccb78e7",
+        "common.hkl": "a6397b9c7e3def8ade6eeb1cab360d845d4d0d0602e772db6bf2a7de7fd8361c",
+        "fast.json": "aa5546f6a6130bd7c44a57efb58bb6e96de792d45aad71764ed10d6e7bf9a602",
+        "observations.json": "aa15c5ebbc18d98cfd0029575f0e239e4348d41e82c76e657569392e9af4700c",
+        "reference.cif": "e099dd7a9a4c420c672103679151649951ece8d124b44f6e65a41458b2cae5ba",
+        "shelxt.ins": "268094a4a3eb49cfcce7c949aa3b1367dedbce2041d87a029547a1022d19b70b",
+        "source-inputs.json": "20bdec43b2be63ce92637db2e378efce31ede7b290a725bc82317eb5c3eeb27e"
+      }
+    },
+    {
+      "id": "cod-2010875",
+      "system": "monoclinic",
+      "chemistry": "heavy",
+      "rows": 2445,
+      "files": {
+        "auto.json": "14a3be7ca2873968e727a6f19e09b9af15545e8a6873a73fa94e4654d1e34dc0",
+        "common.hkl": "ceff4eac4b3ac41f196c311f82225b742d0da8047fbf040605f3556648727fa4",
+        "fast.json": "c653fd3ea394329f4e8e2de87790ab6dd9e32dca2c2c4f9e700624b75fb3fdbf",
+        "observations.json": "bf73bb8d91e6ae81ba8b043ae84d7000d604fb0f86a7f4afcd3d8f5ddf698fb5",
+        "reference.cif": "d199ba1f0c27338ba8fc05e9ce0fa3661f5eb7f238a5815ac36274a162c8a97d",
+        "shelxt.ins": "dd3bf80cc3c52cad0106579ba8b191fb7e0deb039c4430a845d13eb48d32813b",
+        "source-inputs.json": "5be0ecfdeb6558a9fbe0688e6ca550b103460e6ec4a654ba3cb85485367c319c"
+      }
+    },
+    {
+      "id": "cod-2241300",
+      "system": "orthorhombic",
+      "chemistry": "heavy",
+      "rows": 601,
+      "files": {
+        "auto.json": "1d57819481405da0eca489de7eb2c3a0e6b61eab689d1717bde4e99204f0d636",
+        "common.hkl": "7fec710b5733f9de0c05d74fb57c32249ea88c1491de49b00fd94f4c6a459bf9",
+        "fast.json": "d0e590f99823ead077e55cca7f0ab9fbbdb7ca51ddfe150c3fc9736fdb3e6323",
+        "observations.json": "38bb48c79747405e469c14cf8386d36e61a39f98a91dd46e1862fa1c8f37874e",
+        "reference.cif": "90f36a3ca5e12e38fe317e32f44693e6b8860d76eb26bd288646a093b494091a",
+        "shelxt.ins": "c4e0cfe87c1af2aeb5ed2f30e32714bc5df56fcd0b5cbf56781a293f8d8a74dc",
+        "source-inputs.json": "6424bd2a8a5aae55d9e30d4a818be7c85fddd019a63c7829239f300ac750ff35"
+      }
+    },
+    {
+      "id": "cod-2021040",
+      "system": "orthorhombic",
+      "chemistry": "light",
+      "rows": 1959,
+      "files": {
+        "auto.json": "963a168c55828f972469a71d5d3e52521c1cf75a46185607249017c9500400b2",
+        "common.hkl": "a23a790b20dc1722e10938aac3c36006a4f201f5478732ebfc2d829e1c0774dc",
+        "fast.json": "68397bb311e82affab77f1edbc3db6b325d7d8911eadb02485700ce940f9a0a4",
+        "observations.json": "0adf4438fcacb0a20a1c38e064d2d06bd28e7322f6ba4e3ac724ba34d0050dc8",
+        "reference.cif": "5d74a33a0ca712746a1fada0e657d2a2aad686eb1275e181adbbfdb85e5dfed0",
+        "shelxt.ins": "9466afe45c898ecd7570f300e4db182dd17049ae9ebc6214f639d2e64f2354b6",
+        "source-inputs.json": "659b830f14916ba0f87538728272ba6c51f093ce02a2a43237a1eee55c10af53"
+      }
+    },
+    {
+      "id": "cod-2207083",
+      "system": "tetragonal",
+      "chemistry": "heavy",
+      "rows": 109,
+      "files": {
+        "auto.json": "cc266320b88cc1b228d52fc52164548bd3560f96cce40666b81064e17080b8e9",
+        "common.hkl": "e2cc746b03861f630473b5f8f601484bf9279aa6793338b0e65686e8237545a2",
+        "fast.json": "e0517de6d1063c22be104eb2e6bb796641b6e3bb38ccdfdb264a00900460dd6b",
+        "observations.json": "3c632ce488dbe9d7c61dd90bb834f90aa6fa5ff398c31994f58ccb9e7bc78901",
+        "reference.cif": "02fd7be9a001626bf484e217d1f3d22f519fc5850a910d3a1adb6b9bcd1e5e8c",
+        "shelxt.ins": "66e43e557e3ae28b749401801fc0bffe5d0e7262e11c3d7834f5174e90ec0f21",
+        "source-inputs.json": "fa3bf1a93a4d7049614773b8950159ec9c8867edf82cc083c7feafa8516b8356"
+      }
+    },
+    {
+      "id": "cod-2233659",
+      "system": "tetragonal",
+      "chemistry": "heavy",
+      "rows": 294,
+      "files": {
+        "auto.json": "769e4cd481a505ea8db631757475a1b007d2c448483fc0d3ddfcc86d6361dce3",
+        "common.hkl": "a5ef2f8d805a31ae69bfddd314d46fb4b489efabf6e4c2a01ba8379a990b2eeb",
+        "fast.json": "17a6ae714a851e7f8d9d1631c6608ff180f7aba0c70d2ac6ac90907d25ce0569",
+        "observations.json": "99ee5256ffe53a970408337c42222036e6f74fa000f8d7dd47c327e9b38cd2fe",
+        "reference.cif": "90fdd6413a870d8859d99bebf4db13de5299cf7527b1f6820df02cb725699bce",
+        "shelxt.ins": "01666d68d63ca35f369db0e29114fb9565e842019d9f5a0ed2b9cb42a653e7ad",
+        "source-inputs.json": "ae21305ea4c61ebd81bd14ad4c60a97acc2351da8402b0b37f67fca9cc5ab215"
+      }
+    },
+    {
+      "id": "cod-2011241",
+      "system": "triclinic",
+      "chemistry": "heavy",
+      "rows": 1795,
+      "files": {
+        "auto.json": "5cdcb86db68950c36a697ca3b9bef8ac8daf727bda816f644a3b540e2c6953a8",
+        "common.hkl": "0bea929a97a18813ce5bc471a5be76aa72f203f0d0cfec484d18388c941acf04",
+        "fast.json": "141c27d8c8b118297a121defadcbe9442fcc20264c4d0f5c37a855ff161540b1",
+        "observations.json": "8c7760939c60d3b8ee236e8fb7db3292f5e50d5d325681b02fbed788003a9268",
+        "reference.cif": "73ce4ba0ff62cdbf097399b61c214e0170a5648c1d392680df724c87536de476",
+        "shelxt.ins": "972c7710f7efa1e1f00e00554f83916478b5518541ac6b2078e87aec87440574",
+        "source-inputs.json": "b99d1d66b6283df9b8d8864acfee144a5e3d4d0d42931dc3aea213a1b00d32fa"
+      }
+    },
+    {
+      "id": "cod-2010993",
+      "system": "triclinic",
+      "chemistry": "light",
+      "rows": 2003,
+      "files": {
+        "auto.json": "2ba221b761a5a7412b2998ff624e05cbd2399cf89ed1800bfefce437b96bc073",
+        "common.hkl": "2c3b3339d20a046b38183244f7e8983a241a54793782f5d76ea024099a6ee5a6",
+        "fast.json": "34c96d83e4357dba3f2afc7cad80c9d582a88a5b5edf4a6bc9b45ab208d401a2",
+        "observations.json": "59b2f5d08d6c16171bd8ec854b6ccb727efcc8dfa6f167e8fd15e8f30ddef98a",
+        "reference.cif": "7cc49fd573ae7d66b4c31f3e76ea84cb644256b475fd76c5d077ea8722f7fe4b",
+        "shelxt.ins": "be847f3c0aaa0bbf002e4bd121623d31c573fa4937f68709e09110581db90b3f",
+        "source-inputs.json": "2eb5827e6f9844aff7785435ccacab44c00af65bf6b77ce613e1519c39d022ca"
+      }
+    },
+    {
+      "id": "cod-2203173",
+      "system": "trigonal",
+      "chemistry": "heavy",
+      "rows": 440,
+      "files": {
+        "auto.json": "9e12a5a17f3c1110e1be8447b0ffeccde2cf30599ba8f552618a91a8f560c0c9",
+        "common.hkl": "4b41164cb2f67275df504b142560b3c2488d77f54f4a9401f726764ff0520b06",
+        "fast.json": "1e0245c9ec973328be5015a5507c7976862fd213c5c3e151c7b1e701d8417fbb",
+        "observations.json": "ecd5975442cb3ffcfcc212348ede50219f45d40a0df87acab334d2773770894b",
+        "reference.cif": "afa3a3fc5eb51518cee85270504c348d804f3601c4676ac5b58750d025782a06",
+        "shelxt.ins": "569d70fc151a37ebb15e5eb3b8d54910591f54352355684420510e7916aa06a6",
+        "source-inputs.json": "9f77c5ff4e96d7db9b90ff4205533a51bd61ef9db7982666b0b11e50131630fc"
+      }
+    },
+    {
+      "id": "cod-2201295",
+      "system": "trigonal",
+      "chemistry": "light",
+      "rows": 1367,
+      "files": {
+        "auto.json": "fd8fdd885b24720d05b57b069bfbaa01cf27ecfe0298d974b7f66a9ade4ec1d7",
+        "common.hkl": "c1106b348301aa58dc0d5fd18a6fc5d0606a00d3d98fbffeb0ff159b01657a07",
+        "fast.json": "86744aa3aeb4bb75f32b142d5fa57dea3bf4d08a1f3e18f0907780684811ad9f",
+        "observations.json": "565ef402d004d2a7923424d46c0d78857a97037102eedb57a3c3d46009da56ac",
+        "reference.cif": "f1f062c131d34521503f42ccfd0d925350e9a3812efb4ec599adb44504662847",
+        "shelxt.ins": "39ca9c4bba56aca1ff292b7d6792072861554b8c9d2fa20ef4e8730d6c09b0ce",
+        "source-inputs.json": "778a6d9d3ac7a3f0804e8343d5d8bdd46fad880a35733a75cd30c1fe30d1dfc3"
+      }
+    }
+  ],
+  "source_manifest_sha256": "f815629e42e608c784113ddd7400268f9e897b3db5b2af7d54224886af206f6c",
+  "native_sha256": "cab27bcc44391ffb86932f33c1d0a4f6d86fa842d347c585d9bf41e92e2ab323",
+  "shelxt": "/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt",
+  "shelxt_sha256": "4d712cb17f8952e1f59f476af7c61ad4ab5261e594c75441c7f81dcefe7b5560",
+  "harness_sha256": "d9990abeeeaf2997d67a9ed4ed1c38ae15c7219a7bf0de97271c8be781e86a27",
+  "repeats": {
+    "fast": 3,
+    "auto": 1,
+    "shelxt4": 1,
+    "shelxt10": 3
+  },
+  "native_controls": "Unchanged v40; four phasing workers, 8 s fast, shared 180 s auto budget, 128 MiB dense model budget; seed 0. ",
+  "comparator_priors": "SHELXT alone receives published Laue rotations and lattice centring; exact SG translations, coordinates and counts withheld. No -s. Native infers symmetry. ",
+  "grading": "After all predictions saved: exact non-H species counts, RMS <=0.025 A and max <=0.05 A after shared origin/inversion; strict max <=0.02 A. Group number checked separately. No setting-change failure called wrong without qualification. ",
+  "hard_seconds": 210
+}
