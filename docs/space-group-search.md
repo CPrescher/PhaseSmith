@@ -77,6 +77,14 @@ remains visible. The 180-second complete search budget includes this work.
 The initial map is selected by its common mixed-amplitude misfit, not atomic
 reference coordinates or a candidate-specific filtered-data residual.
 
+Protocol v32 also feeds that same P1 map directly into the existing origin,
+recycling, element-assignment and isotropic-model search, avoiding another
+phasing run for every setting. Cell, elements and original unmerged measurement
+identity are checked before reuse. If the seeded search does not meet its
+numerical target, independent phasing can use the remaining per-candidate time;
+the same common-set model score selects the retained result. Both work paths
+remain recorded. Exact-group searches keep their original execution path.
+
 MgSiO3 is exposed development data. Protocols v30/v31 remove Pbca and supply no
 Laue group to the numerical worker. It freezes these controls before the replay;
 source files and large products remain external. Reference grading follows saved
