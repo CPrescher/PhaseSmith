@@ -107,3 +107,21 @@ four short plus four full starts. Save every actual seed, cycle ceiling, history
 and checkpoint; map reuse records the actual selected seed. This is explicit
 quality-controlled work scheduling, not a reduction in final-resolution data or
 a new correctness threshold. Preserve old profiles when this option is absent.
+
+## v40: explicit fast, auto and thorough effort
+
+Following user steering, first attempt the bounded coarse fast path, and only
+spend finer/broader effort after it fails acceptance. `fast` stops after that
+attempt; `auto` escalates; `thorough` directly uses the original full-resolution
+bounded profile. The fast pass uses four starts/256 cycles, at most four
+shared-map model attempts, no independent restart, and an eight-second budget.
+Accept a complete own-target model only when its common-set symmetry is valid,
+common R1 <= 0.08 and phase alpha <= 0.3. These are explicit candidate-acceptance
+thresholds, not a proof of correctness or uniqueness. Retain both pass records,
+their actual effort, rejection/escalation reason and the selected pass. Total
+effort, including failures, shares the original 180-second cooperative budget.
+No coarse-only quality failure spends 800 cycles before model testing in this mode.
+
+v41 is a frozen resource-negative control: deliberately exhaust the fast budget
+after one microsecond and verify automatic full-resolution recovery with the
+remaining original deadline. Its timing is not a normal performance claim.
