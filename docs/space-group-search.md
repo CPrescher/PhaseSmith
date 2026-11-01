@@ -85,6 +85,12 @@ numerical target, independent phasing can use the remaining per-candidate time;
 the same common-set model score selects the retained result. Both work paths
 remain recorded. Exact-group searches keep their original execution path.
 
+Protocol v33 runs at most four independent P1 starts concurrently, each with
+private numerical buffers and no nested solver workers. Results are consumed in
+start order and compared bitwise against serial v32 when no time/cancellation
+limit intervenes. This changes execution, not Fourier/atomicity arithmetic or
+the selected-map criterion. Worker limits remain independent of detector stages.
+
 The existing local SHELXT 2018/2 audit has executable SHA-256
 `4d712cb17f8952e1f59f476af7c61ad4ab5261e594c75441c7f81dcefe7b5560`.
 Its README, findings, normalization-dataflow review and direct-call inventory
