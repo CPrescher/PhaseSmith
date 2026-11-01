@@ -16,6 +16,7 @@ mod math;
 mod measurement;
 mod positions;
 mod scaling;
+mod unknown;
 pub use grains::{Competitor, Grain, Indexed};
 pub use math::{M3, V3};
 pub use measurement::{Measurements, ProfileData};
@@ -24,6 +25,7 @@ use phasesmith_spots::{frame_input, frame_validity, reciprocal::Geometry};
 pub use positions::Positions;
 pub use scaling::Reduced;
 use std::{fmt, time::Instant};
+pub use unknown::{DiscoveryOptions, DiscoveryReport, GroupAttempt, PhaseScreenOptions, SearchRun};
 /// Workflow validation, numerical, I/O-adapter, cancellation or observer failure.
 #[derive(Debug)]
 pub struct Error(pub String);
@@ -60,6 +62,7 @@ pub trait FrameSource {
     fn read(&mut self, index: usize) -> Result<Vec<u32>>;
 }
 /// Declared acquisition and independent source identity.
+#[derive(Clone)]
 pub struct Acquisition {
     /// Inclusive first original source frame index.
     pub first: usize,
@@ -77,11 +80,12 @@ pub struct Acquisition {
     pub reserved_minimum: u32,
 }
 /// Supplied scientific priors; no source HKLs, atomic counts or atomic model.
+#[derive(Clone)]
 pub struct Priors {
     /// Explicit supplied unit cell, in angstroms and degrees.
     pub cell: UnitCell,
-    /// Explicit supplied exact symmetry; never inferred from the metric.
-    pub group: SpaceGroup,
+    /// Exact supplied symmetry, or None for measured space-group discovery.
+    pub group: Option<SpaceGroup>,
     /// Declared neutral element symbols; no atom counts.
     pub elements: Vec<String>,
     /// Nonempty description of the source and status of supplied priors.
@@ -100,7 +104,10 @@ pub struct ShadowOptions {
     pub aperture: frame_validity::DacOptions,
 }
 /// Explicit resource limits and algorithm controls for the supported native workflow.
+#[derive(Clone)]
 pub struct Options {
+    /// Required bounded catalogue/search policy when exact symmetry is unknown.
+    pub discovery: Option<DiscoveryOptions>,
     /// Declared source selection, orientation and angular intervals.
     pub acquisition: Acquisition,
     /// Initial affine detector calibration in a single laboratory frame.
@@ -149,6 +156,24 @@ pub struct Options {
 /// Ordered stage observer; errors/cancellation stop before the next stage. Owned products
 /// may be archived here without allowing an observer to alter numerical decisions.
 pub trait Observer {
+    /// Observe measured symmetry evidence before scaling or before candidate searches.
+    /// # Errors
+    /// Return an output failure to stop the workflow.
+    fn symmetry(
+        &mut self,
+        _name: &str,
+        _assessment: &crate::space_group_search::Assessment,
+        _hypotheses: &[crate::space_group_search::Hypothesis],
+    ) -> Result<()> {
+        Ok(())
+    }
+    /// Observe all completed/failed/unattempted space-group searches.
+    /// # Errors
+    /// Return an output failure to stop the workflow.
+    fn group_search(&mut self, _report: &DiscoveryReport) -> Result<()> {
+        Ok(())
+    }
+
     /// Observe a completed stage and its wall seconds, including synchronous output.
     /// # Errors
     /// Return an observer failure to stop before the next stage.
@@ -201,6 +226,8 @@ pub struct NoObserver;
 impl Observer for NoObserver {}
 /// Complete native products and explicit source/mask provenance.
 pub struct Output {
+    /// Explicit unknown-symmetry evidence and alternatives; absent for a supplied group.
+    pub discovery: Option<DiscoveryReport>,
     /// Original linked source positions with full quality flags.
     pub positions: Positions,
     /// Frozen lattice, geometry and withheld-data evidence.
@@ -217,6 +244,28 @@ pub struct Output {
     pub seconds: f64,
 }
 impl Options {
+    pub(super) fn partition_group(&self) -> SpaceGroup {
+        self.priors
+            .group
+            .as_ref()
+            .filter(|_| self.discovery.is_none())
+            .cloned()
+            .unwrap_or_else(|| {
+                let rotations: Vec<_> = [-1, 1]
+                    .into_iter()
+                    .flat_map(|a| {
+                        [-1, 1].into_iter().flat_map(move |b| {
+                            [-1, 1]
+                                .into_iter()
+                                .map(move |c| [[a, 0, 0], [0, b, 0], [0, 0, c]])
+                        })
+                    })
+                    .collect();
+                crate::space_group_search::rotational_group(&rotations)
+                    .expect("orthorhombic metric orbit")
+            })
+    }
+
     fn check(&self, shape: [usize; 3]) -> Result<()> {
         let a = &self.acquisition;
         if shape.contains(&0)
@@ -236,6 +285,19 @@ impl Options {
         }
         self.check_resources(shape)?;
         self.check_priors()?;
+        if self.priors.group.is_none() != self.discovery.is_some() {
+            return Err(Error(
+                "supply either exact symmetry or a discovery catalogue, never both".into(),
+            ));
+        }
+        if let Some(d) = &self.discovery {
+            d.check()?;
+            crate::space_group_search::validate_catalogue(
+                self.priors.cell,
+                &d.hypotheses,
+                &d.assessment,
+            )?;
+        }
         if self.priors.elements.is_empty()
             || self.priors.elements.len() > 8
             || !self.search_seconds.is_finite()
@@ -266,7 +328,7 @@ impl Options {
         let m = geometry.direct_metric;
         let components = [m[0][0], m[1][1], m[2][2], m[1][2], m[0][2], m[0][1]];
         let scale = components.iter().fold(1f64, |s, x| s.max(x.abs()));
-        for equation in &self.priors.group.metric_constraints().equations {
+        for equation in &self.partition_group().metric_constraints().equations {
             let residual = equation
                 .iter()
                 .zip(components)
@@ -492,15 +554,51 @@ pub fn run(
     )?;
     options.checkpoint()?;
     let clock = Instant::now();
-    let reduced = scaling::reduce(&measurements, options, &indexed.fit.state.geometry)?;
+    let mut processing = options.clone();
+    if let Some(discovery) = &options.discovery {
+        let initial = unknown::aperture_assessment(
+            &measurements,
+            &indexed.fit.state.geometry,
+            None,
+            discovery,
+            options.priors.cell,
+        )?;
+        observer.symmetry("preliminary-symmetry", &initial, &discovery.hypotheses)?;
+        processing.priors.group = Some(crate::space_group_search::rotational_group(
+            &initial.laue[initial.processing_laue].rotations,
+        )?);
+    }
+    let reduced = scaling::reduce(&measurements, &processing, &indexed.fit.state.geometry)?;
     observer.reduced(&reduced)?;
     observer.stage("profile_fitting_scaling", clock.elapsed().as_secs_f64())?;
     options.checkpoint()?;
     let clock = Instant::now();
-    let (solution, search) = search(&reduced, options)?;
+    let (solution, search, discovery) = if let Some(discovery) = &options.discovery {
+        let assessment = unknown::aperture_assessment(
+            &measurements,
+            &indexed.fit.state.geometry,
+            Some(&reduced),
+            discovery,
+            options.priors.cell,
+        )?;
+        observer.symmetry("space-group-evidence", &assessment, &discovery.hypotheses)?;
+        let (best, report) = unknown::search(
+            &observations_from_reduction(&reduced),
+            options,
+            &processing,
+            assessment,
+        )?;
+        observer.group_search(&report)?;
+        let (solution,search)=best.ok_or_else(||Error("no space-group candidate found within the declared search budgets; retain evidence and untested alternatives".into()))?;
+        (solution, search, Some(report))
+    } else {
+        let (s, a) = search(&reduced, options)?;
+        (s, a, None)
+    };
     observer.solution(&solution, &search)?;
     observer.stage("structure_search", clock.elapsed().as_secs_f64())?;
     Ok(Output {
+        discovery,
         positions,
         indexed,
         measurements,
@@ -667,20 +765,7 @@ fn search(
     phasesmith_solution::Solution,
     phasesmith_solution::SharedSearchSummary,
 )> {
-    use phasesmith_solution::Observation;
-    let observations: Vec<_> = r
-        .hkl
-        .iter()
-        .zip(&r.values)
-        .zip(&r.use_mask)
-        .filter_map(|((&h, &v), &ok)| {
-            ok.then_some(Observation {
-                hkl: h,
-                intensity: v[0],
-                sigma: v[1],
-            })
-        })
-        .collect();
+    let observations = observations_from_reduction(r);
     search_observations(&observations, o)
 }
 /// Search supplied signed observations using the same literal validated-v1 strategy.
@@ -695,13 +780,18 @@ pub fn search_observations(
     phasesmith_solution::SharedSearchSummary,
 )> {
     use phasesmith_solution::{
-        AdpMode, DenseMemoryBudget, PhasingMethod, SharedSearchOptions, SolveOptions,
-        estimate_solution_memory, solve_elements,
+        AdpMode, DenseMemoryBudget, PhasingMethod, SolveOptions, estimate_solution_memory,
+        solve_elements,
     };
+    let group = o
+        .priors
+        .group
+        .as_ref()
+        .ok_or_else(|| Error("exact group missing; use unknown-symmetry coordinator".into()))?;
     let memory = estimate_solution_memory(
         observations,
         o.priors.cell,
-        &o.priors.group,
+        group,
         DenseMemoryBudget::new(o.dense_memory_bytes)?,
     )?;
     let options = SolveOptions {
@@ -720,12 +810,36 @@ pub fn search_observations(
         polish_iterations: 50,
         assignment_rounds: 4,
         grid_shape: None,
-        refinement: Some(AdpMode::Anisotropic),
+        refinement: Some(if o.discovery.is_some() {
+            AdpMode::Isotropic
+        } else {
+            AdpMode::Anisotropic
+        }),
         symmetry_tolerance_angstrom: 0.15,
         symmetry_iterations: 80,
     };
-    let shared = SharedSearchOptions {
-        maximum_atoms: memory.maximum_atoms,
+    let shared = shared_search_options(memory.maximum_atoms);
+    let solution = solve_elements(
+        observations,
+        o.priors.cell,
+        group,
+        &o.priors.elements,
+        &options,
+        &shared,
+    )?;
+    let search = solution
+        .shared_search
+        .clone()
+        .ok_or_else(|| Error("missing native search diagnostics".into()))?;
+    Ok((solution, search))
+}
+
+#[cfg(test)]
+mod tests;
+
+fn shared_search_options(maximum_atoms: usize) -> phasesmith_solution::SharedSearchOptions {
+    phasesmith_solution::SharedSearchOptions {
+        maximum_atoms,
         workers: 1,
         joint_assignment_refinement: true,
         cached_repair_evaluation: true,
@@ -777,21 +891,56 @@ pub fn search_observations(
         model_consensus_stopping: true,
         missing_reflections: false,
         resolution_extension: 1.0,
-    };
-    let solution = solve_elements(
-        observations,
-        o.priors.cell,
-        &o.priors.group,
-        &o.priors.elements,
-        &options,
-        &shared,
-    )?;
-    let search = solution
-        .shared_search
-        .clone()
-        .ok_or_else(|| Error("missing native search diagnostics".into()))?;
-    Ok((solution, search))
+    }
 }
 
-#[cfg(test)]
-mod tests;
+fn observations_from_reduction(r: &Reduced) -> Vec<phasesmith_solution::Observation> {
+    use phasesmith_solution::Observation;
+    let observations: Vec<_> = r
+        .hkl
+        .iter()
+        .zip(&r.values)
+        .zip(&r.use_mask)
+        .filter_map(|((&h, &v), &ok)| {
+            ok.then_some(Observation {
+                hkl: h,
+                intensity: v[0],
+                sigma: v[1],
+            })
+        })
+        .collect();
+    observations
+}
+
+/// Search corrected, unmerged signed measurements without an exact space-group prior.
+/// Input must retain genuinely measured weak/negative/forbidden rows; absent coverage
+/// is represented by omission, never a synthetic zero. The caller owns correction provenance.
+/// The supplied catalogue/index basis and all bounded omissions remain in the report.
+/// # Errors
+/// Exact group supplied, invalid catalogue/data/resources, or a failed common input preparation.
+pub fn search_unknown_observations(
+    observations: &[phasesmith_solution::Observation],
+    o: &Options,
+) -> Result<SearchRun> {
+    if o.priors.group.is_some() {
+        return Err(Error(
+            "unknown-symmetry search must withhold the exact group".into(),
+        ));
+    }
+    let d = o
+        .discovery
+        .as_ref()
+        .ok_or_else(|| Error("discovery policy missing".into()))?;
+    d.check()?;
+    let assessment = crate::space_group_search::assess(
+        observations,
+        o.priors.cell,
+        &d.hypotheses,
+        &d.assessment,
+    )?;
+    let mut processing = o.clone();
+    processing.priors.group = Some(crate::space_group_search::rotational_group(
+        &assessment.laue[assessment.processing_laue].rotations,
+    )?);
+    unknown::search(observations, o, &processing, assessment)
+}

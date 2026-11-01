@@ -545,10 +545,11 @@ pub(super) fn index(p: &Positions, o: &Options, shape: [usize; 2]) -> Result<Ind
                 && hkl[i] != [0; 3]
         })
         .collect();
+    let partition = o.partition_group();
     let fit_training: Vec<_> = training
         .iter()
         .zip(&hkl)
-        .map(|(&t, &h)| t && fold(family(h, &o.priors.group)) != 0)
+        .map(|(&t, &h)| t && fold(family(h, &partition)) != 0)
         .collect();
     let observed: Vec<_> = ids
         .iter()

@@ -4,6 +4,7 @@ use phasesmith_crystallography::SymmetryOperation;
 fn options() -> Options {
     let identity = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]];
     Options {
+        discovery: None,
         acquisition: Acquisition {
             first: 0,
             last: 7,
@@ -30,7 +31,7 @@ fn options() -> Options {
                 beta_deg: 90.,
                 gamma_deg: 90.,
             },
-            group: SpaceGroup::new(vec![SymmetryOperation::identity()]).unwrap(),
+            group: Some(SpaceGroup::new(vec![SymmetryOperation::identity()]).unwrap()),
             elements: vec!["Si".into()],
             provenance: "synthetic independent coordinator test".into(),
         },

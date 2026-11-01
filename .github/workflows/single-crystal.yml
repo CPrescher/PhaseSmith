@@ -19,6 +19,9 @@ jobs:
           python-version: '3.13'
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test -p phasesmith-spots -p phasesmith-solution -p phasesmith-row-search -p phasesmith-hdf5 --locked
+      - run: cargo test -p phasesmith-workflows --features single-crystal --locked
+      - run: cargo test -p phasesmith --example single_crystal_workflow --features hdf5 --locked
+      - run: cargo build -p phasesmith --example single_crystal_workflow --features hdf5 --locked
       - run: python -m pip install maturin numpy pytest scipy 'cmake>=3.26' gemmi==0.7.5
       - run: maturin build --release --locked --out dist-single-crystal
       - shell: bash
@@ -26,4 +29,7 @@ jobs:
       - run: python scripts/smoke_single_crystal.py --hdf5-fixture crates/phasesmith-hdf5/tests/data/counts-bitshuffle-lz4.h5
       - run: python -m pytest tests/test_single_crystal_public.py tests/test_experimental_solution.py tests/test_solution_shared_search.py tests/test_solution_memory_budget.py tests/test_experimental_intensity_reduction.py tests/test_frame_input.py tests/test_hdf5_cache.py -q
       - run: python -m pytest tests/test_experimental_spots.py tests/test_experimental_rotation.py tests/test_experimental_indexing.py tests/test_experimental_grains.py tests/test_experimental_prediction.py tests/test_experimental_orthorhombic.py tests/test_experimental_cell_comparison.py tests/test_hdf5.py tests/test_frame_validity.py tests/test_experimental_geometry_refinement.py tests/test_experimental_pixel_map.py -q
+      - run: python -m pytest tests/test_space_group_assessment.py -q
+        env:
+          PHASESMITH_NATIVE_WORKFLOW: target/debug/examples/single_crystal_workflow
       - run: python benchmarks/spots.py --size 512 --repetitions 2

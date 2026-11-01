@@ -217,8 +217,11 @@ pub(super) fn measure(
         if !o
             .priors
             .group
-            .is_systematically_absent(h.map(|x| x as i32))
+            .as_ref()
+            .map(|group| group.is_systematically_absent(h.map(|x| x as i32)))
+            .transpose()
             .map_err(|e| Error(e.to_string()))?
+            .unwrap_or(false)
             && profile_geometry([c[0], c[1]], g).2.abs() >= 0.1
         {
             hkl.push(h.map(|x| x as i32));
@@ -449,12 +452,11 @@ fn learn(
     o: &Options,
     angles: &[[f64; 2]],
 ) -> Result<ProfileLearning> {
+    let partition = o.partition_group();
     let refs: Vec<_> = hkl
         .iter()
         .zip(flags.iter())
-        .map(|(&h, &f)| {
-            grains::fold(grains::family(h.map(i64::from), &o.priors.group)) != 0 && f == 0
-        })
+        .map(|(&h, &f)| grains::fold(grains::family(h.map(i64::from), &partition)) != 0 && f == 0)
         .collect();
     let lo = angles[0][0];
     let hi = angles.last().unwrap()[1];

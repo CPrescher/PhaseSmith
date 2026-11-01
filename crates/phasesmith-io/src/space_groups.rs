@@ -210,6 +210,53 @@ pub fn space_group_by_symbol(symbol: &str) -> Result<SpaceGroupInfo, SpaceGroupL
     info_from_hall_number(matched.hall_number)
 }
 
+/// Enumerate every canonical Hall setting compatible with the supplied cell metric.
+/// This tests `R^T G R = G`; it does not infer intensity symmetry, centring or absences.
+/// No basis change is performed. All settings in the pinned database are considered.
+/// # Errors
+/// Invalid cell geometry or an inconsistent database record.
+pub fn space_group_settings_for_cell(
+    cell: phasesmith_crystallography::UnitCell,
+) -> Result<Vec<SpaceGroupInfo>, SpaceGroupLookupError> {
+    let g = cell
+        .geometry()
+        .map_err(|_| SpaceGroupLookupError::InvalidDatabaseEntry)?
+        .direct_metric;
+    let scale = g.iter().flatten().fold(1.0_f64, |a, b| a.max(b.abs()));
+    let mut result = Vec::new();
+    let mut unique = std::collections::BTreeMap::new();
+    for entry in entries() {
+        let operations =
+            operations_from_number(entry.number, Setting::HallNumber(entry.hall_number), false)
+                .map_err(|_| SpaceGroupLookupError::InvalidDatabaseEntry)?;
+        let compatible = operations.iter().all(|op| {
+            let r = op.rotation_as_array();
+            (0..3).all(|i| {
+                (0..3).all(|j| {
+                    let transformed: f64 = (0..3)
+                        .flat_map(|a| {
+                            (0..3).map(move |b| f64::from(r[a][i]) * g[a][b] * f64::from(r[b][j]))
+                        })
+                        .sum();
+                    (transformed - g[i][j]).abs() <= 1e-10 * scale
+                })
+            })
+        });
+        if compatible {
+            let info = info_from_hall_number(entry.hall_number)?;
+            if let Some(previous) = unique.get(&info.hall_symbol) {
+                if previous != &info.space_group {
+                    return Err(SpaceGroupLookupError::InvalidDatabaseEntry);
+                }
+            } else {
+                unique.insert(info.hall_symbol.clone(), info.space_group.clone());
+                result.push(info);
+            }
+        }
+    }
+    Ok(result)
+}
+
 fn entries() -> impl Iterator<Item = HallSymbolEntry> {
     (1..=HALL_ENTRY_COUNT).filter_map(hall_symbol_entry)
 }

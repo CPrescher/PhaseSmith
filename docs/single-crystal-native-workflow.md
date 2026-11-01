@@ -6,8 +6,9 @@ prediction, profile learning/fitting, physical and empirical scaling, uncertaint
 estimation and structure search. The coordinator does not import, embed or start
 Python. HDF5 input and numeric/CIF output also run natively.
 
-The first versioned recipe uses a supplied primitive-orthorhombic metric, exact
-symmetry and element types. Its fixed scientific controls preserve the reviewed
+The first versioned recipe uses a supplied primitive-orthorhombic metric and
+element types. Exact symmetry can be supplied or withheld for
+[space-group assessment and search](space-group-search.md). Its fixed scientific controls preserve the reviewed
 MgSiO3 workflow: original counts, explicit exposure intervals, whole-family
 holdouts, measured competing crossings, scattering-coordinate profiles and the
 literal `validated-v1` search strategy. Other single-crystal kernel APIs remain
@@ -24,6 +25,16 @@ target/release/examples/single_crystal_workflow --mgsio3 \
   validation/enstatite-raw-workflow-v29.json \
   /path/outside/the/repository/new-native-run
 ```
+
+For automatic symmetry assessment, use
+`validation/enstatite-raw-workflow-v31.json` instead of v29. That mode removes
+the exact space group from the input and supplies no Laue group. Predictions
+retain all primitive reflections. The worker assesses measured intensity
+symmetry before empirical scaling, screens conventional settings using a shared
+P1 phase map and retains candidate models, alternatives and all budget omissions.
+New products include `preliminary-symmetry.json`, `space-group-evidence.json`,
+`space-group-phase-map.npz` and `space-group-search.json`. Their selected setting
+is a ranked hypothesis; the report does not assert uniqueness.
 
 The example checks the registered raw-file and PONI hashes before and after the
 run. It never opens the source HKL, atomic reference CIF or archived reductions.
@@ -66,7 +77,8 @@ supply these typed records:
 | --- | --- |
 | `FrameSource` | Original u32 counts and source dimensions; read-only file adapters detect changed sources |
 | `Acquisition` | Inclusive original frame indices, explicit start/step/exposure, orientation and reserved-value mask |
-| `Priors` | Cell, exact symmetry and element types, with nonempty provenance; no atomic counts or coordinates |
+| `Priors` | Cell, optional exact symmetry and element types, with nonempty provenance; no atomic counts or coordinates |
+| `DiscoveryOptions` | Explicit catalogue, evidence model, P1 phase screen and candidate/time/ambiguity budgets; required when exact symmetry is absent |
 | `ShadowOptions` | Original-count illumination controls and an explicitly supplied full-exposure DAC cone |
 | `Options` | Scientific input records, cancellation and independent worker/payload/cache/search budgets |
 | `Observer` | Synchronous immutable stage products; errors stop before the next stage and join bounded work |

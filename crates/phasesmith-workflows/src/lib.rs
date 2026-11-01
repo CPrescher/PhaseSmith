@@ -265,3 +265,7 @@ pub use tof_pawley::{
 /// Typed original-frame to single-crystal search coordination.
 #[cfg(feature = "single-crystal")]
 pub mod single_crystal;
+
+/// Measured-intensity symmetry evidence and explicit space-group hypotheses.
+#[cfg(feature = "single-crystal")]
+pub mod space_group_search;
