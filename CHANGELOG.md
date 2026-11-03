@@ -17,6 +17,11 @@ Development release candidate; not yet published.
 - Complete the NumPy-only single-crystal tutorial, native workflow configuration,
   result/error contracts, 0.8 migration guide and shared Rust/Python mathematical
   reference. Preserve historical validation and stated scientific limitations.
+- Make legacy metric-coordinate scaling independent of BLAS buffer alignment.
+  Use explicit matrix-axis Frobenius reductions in both the derivative chain and
+  retraction, retaining the equation and exact training/held-out independence.
+  Validate the Intel Accelerate trace, finite differences and a multi-reflection
+  fit benchmark without widening tolerances.
 - Make benchmark timeout cleanup and host-load metadata portable to Windows.
   Preserve frozen corpus/protocol JSON bytes across platform checkout line endings.
 - Correct NumPy 1.26 serial/spawned positional-test startup: set numerical thread

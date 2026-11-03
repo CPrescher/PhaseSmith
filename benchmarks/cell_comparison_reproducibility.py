@@ -82,6 +82,8 @@ def main():
     parser.add_argument("--trace", action="store_true", help="capture intermediate arrays")
     parser.add_argument("--check", action="store_true", help="require exact held-out independence")
     args = parser.parse_args()
+    if args.repetitions < 1:
+        parser.error("repetitions must be positive")
     args.output.mkdir(parents=True, exist_ok=False)
     if args.trace:
         np.linalg.solve = trace
@@ -103,6 +105,8 @@ def main():
         elapsed = time.perf_counter() - started
         second_records = list(RECORDS)
         differences = []
+        if len(first_records) != len(second_records):
+            differences.append(dict(trace_lengths=[len(first_records), len(second_records)]))
         for index, (left, right) in enumerate(zip(first_records, second_records, strict=False)):
             if left[:2] != right[:2]:
                 differences.append(
@@ -121,6 +125,10 @@ def main():
                 break
         exact = all(
             a.reciprocal_basis.tobytes() == b.reciprocal_basis.tobytes()
+            and a.history.tobytes() == b.history.tobytes()
+            and a.training_metrics == b.training_metrics
+            and a.training_score == b.training_score
+            and a.status == b.status
             for a, b in zip(first.settings, second.settings, strict=True)
         )
         report.append(
