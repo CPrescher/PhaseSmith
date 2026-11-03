@@ -139,6 +139,28 @@ v40 control. The final native coordinator takes 15.14 s; the GUI job takes
 15.74 s and 15.85 s through its verified raw-frame/spot preview. See the
 [application validation](docs/dioptas-native-validation.md).
 
+## Reconciled detector work and retained research
+
+The 3 November 2026 reconciliation brings the unfinished annular-threshold
+optimization and its clipping/adjacent-float tests into the consolidated
+single-crystal implementation. Interior columns use row-sized statistics and
+independent threshold lanes; clipped columns retain scalar execution. Equations,
+strict thresholds, two-pass exclusions, extraction and ordered reductions remain
+unchanged. The independent direct-sum Python reference remains unchanged.
+See the [reconciliation record](docs/integration/unfinished-work-reconciliation.md)
+for fresh checks, exact-record comparisons and local benchmark results.
+
+The recovered Fe7C3/DIALS scripts, figures and portable reports are research
+evidence. In particular, the recorded Fe7C3 intensity comparison fails its
+agreement gate; successful synthetic controls and later MgSiO3 validation do not
+remove that qualification. Reproduction helpers use `phasesmith.single_crystal`;
+old binary baselines use an explicit benchmark-only namespace selector. Original
+JSON receipts and their hashes are preserved, not regenerated.
+
+The [single-frame multigrain plan](docs/single-frame-multigrain-plan.md) retains
+the unfinished roadmap proposal. It is deferred work, including weak-grain
+recovery and signed prediction-led extraction, not a current capability claim.
+
 ## Ownership and dependency direction
 
 | Layer | Owner |

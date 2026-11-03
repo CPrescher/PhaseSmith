@@ -1,6 +1,6 @@
 # Integration methods and the next PhaseSmith milestone
 
-The profile-bias follow-up (`fe7c3-profile-bias-investigation.md`, local research report) records the
+The [profile-bias follow-up](fe7c3-profile-bias-investigation.md) records the
 implemented scattering-plane/frozen-shape method, known-count controls,
 CCD/background audit, timings and limited structure check. Summation and profile
 fitting remain distinct programmable choices. Strong-only shape learning avoids
@@ -108,4 +108,4 @@ foreground overlaps; joint domain fitting remains open. The frozen-geometry
 Fe7C3 comparison fails the intensity-agreement gate, so this is not yet a
 validated replacement for established integration software. See
 [implementation equations and API](experimental-3d-profiles.md) and
-measured comparison (`fe7c3-3d-profile-comparison.md`, local research report).
+[measured comparison](fe7c3-3d-profile-comparison.md).

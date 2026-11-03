@@ -1,0 +1,826 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "native_python": "3.13.7 (main, Sep 18 2025, 22:52:34) [Clang 20.1.4 ]",
+  "numpy": "2.5.4",
+  "baseline_native_sha256": "0699602de37476dc5e2e8cfae1737cd1e0835a61f1ed08019d0c6383e2d4d3d8",
+  "candidate_native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740",
+  "native_source_sha256": "07804f094452fb1457489b795d50e05eabb95292a80d7962f14a94ecb36bf05b",
+  "helpers_sha256": {
+    "rotation_speed_probe.py": "a34d743cf5fc9c3d744249b939ce8f2a616eb573f70ee86de192e710d5e031df",
+    "dials_position_probe.py": "0f18035204e13f8ea5abd31a7f93032408295e7d25ad3bb076f1fce342a7cc3c",
+    "benchmark_threshold_loops.py": "945c958e7a6053f8b3361cef5030580362e3ce2b8a3700c3c77b9d5cb619697f"
+  },
+  "timing": "Sequential; 1 full warmup + 3 measured repeats; cached common images",
+  "rows": [
+    {
+      "case": "Fe7C3_P1_C3_D1s",
+      "configurations": {
+        "baseline-w1": {
+          "workers": 1,
+          "seconds": 7.173506584018469,
+          "times_s": [
+            7.1838877919944935,
+            7.173506584018469,
+            7.144881832995452
+          ],
+          "positions": 2125,
+          "exact_baseline": true,
+          "exact_repeats": true,
+          "warmups": 1,
+          "gain": 1.0,
+          "read_noise": 0.0,
+          "frames": 76,
+          "native_sha256": "0699602de37476dc5e2e8cfae1737cd1e0835a61f1ed08019d0c6383e2d4d3d8"
+        },
+        "candidate-w1": {
+          "workers": 1,
+          "seconds": 3.7113820830127224,
+          "times_s": [
+            3.7029132500174455,
+            3.7113820830127224,
+            3.7121872089919634
+          ],
+          "positions": 2125,
+          "exact_baseline": true,
+          "exact_repeats": true,
+          "warmups": 1,
+          "gain": 1.0,
+          "read_noise": 0.0,
+          "frames": 76,
+          "native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740"
+        },
+        "dials-w1": {
+          "version": "DIALS 3.30",
+          "seconds": 3.967189375020098,
+          "positions": 1699,
+          "threshold_sigma": null,
+          "min_spot_size": 3,
+          "workers": 1,
+          "times_s": [
+            3.943762958049774,
+            3.967189375020098,
+            3.9790987920132466
+          ],
+          "cpu_parent_s": [
+            3.9429060000000007,
+            3.96326,
+            3.9741339999999994
+          ],
+          "warmups": 1,
+          "repeats_exact": true,
+          "algorithm": "dispersion_extended",
+          "convention": "pixel centres minus0.5; omega degrees",
+          "exact_frozen_records": true
+        },
+        "dials-w4": {
+          "version": "DIALS 3.30",
+          "seconds": 2.3010782499914058,
+          "positions": 1699,
+          "threshold_sigma": null,
+          "min_spot_size": 3,
+          "workers": 4,
+          "times_s": [
+            2.3010782499914058,
+            2.2959321250091307,
+            2.3036188749829307
+          ],
+          "cpu_parent_s": [
+            0.492221,
+            0.496343,
+            0.4963540000000002
+          ],
+          "warmups": 1,
+          "repeats_exact": true,
+          "algorithm": "dispersion_extended",
+          "convention": "pixel centres minus0.5; omega degrees",
+          "exact_frozen_records": true
+        },
+        "candidate-w4": {
+          "workers": 4,
+          "seconds": 1.0193630830035545,
+          "times_s": [
+            1.0193630830035545,
+            1.023455707996618,
+            1.0168469580239616
+          ],
+          "positions": 2125,
+          "exact_baseline": true,
+          "exact_repeats": true,
+          "warmups": 1,
+          "gain": 1.0,
+          "read_noise": 0.0,
+          "frames": 76,
+          "native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740"
+        },
+        "baseline-w4": {
+          "workers": 4,
+          "seconds": 1.914806624990888,
+          "times_s": [
+            1.9158526660175994,
+            1.9137607499724254,
+            1.914806624990888
+          ],
+          "positions": 2125,
+          "exact_baseline": true,
+          "exact_repeats": true,
+          "warmups": 1,
+          "gain": 1.0,
+          "read_noise": 0.0,
+          "frames": 76,
+          "native_sha256": "0699602de37476dc5e2e8cfae1737cd1e0835a61f1ed08019d0c6383e2d4d3d8"
+        }
+      }
+    },
+    {
+      "case": "Fe7C3_P2_C2_D1s",
+      "configurations": {
+        "baseline-w1": {
+          "workers": 1,
+          "seconds": 7.215974124963395,
+          "times_s": [
+            7.21567274996778,
+            7.224386041983962,
+            7.215974124963395
+          ],
+          "positions": 2421,
+          "exact_baseline": true,
+          "exact_repeats": true,
+          "warmups": 1,
+          "gain": 1.0,
+          "read_noise": 0.0,
+          "frames": 76,
+          "native_sha256": "0699602de37476dc5e2e8cfae1737cd1e0835a61f1ed08019d0c6383e2d4d3d8"
+        },
+        "candidate-w1": {
+          "workers": 1,
+          "seconds": 3.725143083021976,
+          "times_s": [
+            3.725143083021976,
+            3.710302583000157,
+            3.725487749965396
+          ],
+          "positions": 2421,
+          "exact_baseline": true,
+          "exact_repeats": true,
+          "warmups": 1,
+          "gain": 1.0,
+          "read_noise": 0.0,
+          "frames": 76,
+          "native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740"
+        },
+        "dials-w1": {
+          "version": "DIALS 3.30",
+          "seconds": 4.055500500020571,
+          "positions": 1846,
+          "threshold_sigma": null,
+          "min_spot_size": 3,
+          "workers": 1,
+          "times_s": [
+            4.062824749969877,
+            4.055500500020571,
+            4.012485499959439
+          ],
+          "cpu_parent_s": [
+            4.055604,
+            4.049958999999999,
+            4.011354000000001
+          ],
+          "warmups": 1,
+          "repeats_exact": true,
+          "algorithm": "dispersion_extended",
+          "convention": "pixel centres minus0.5; omega degrees",
+          "exact_frozen_records": true
+        },
+        "dials-w4": {
+          "version": "DIALS 3.30",
+          "seconds": 2.3827570420107804,
+          "positions": 1846,
+          "threshold_sigma": null,
+          "min_spot_size": 3,
+          "workers": 4,
+          "times_s": [
+            2.3637300839764066,
+            2.3827570420107804,
+            2.397350749990437
+          ],
+          "cpu_parent_s": [
+            0.548959,
+            0.567021,
+            0.5641449999999999
+          ],
+          "warmups": 1,
+          "repeats_exact": true,
+          "algorithm": "dispersion_extended",
+          "convention": "pixel centres minus0.5; omega degrees",
+          "exact_frozen_records": true
+        },
+        "candidate-w4": {
+          "workers": 4,
+          "seconds": 1.0225532919866964,
+          "times_s": [
+            1.0224687090376392,
+            1.0225532919866964,
+            1.0233928749803454
+          ],
+          "positions": 2421,
+          "exact_baseline": true,
+          "exact_repeats": true,
+          "warmups": 1,
+          "gain": 1.0,
+          "read_noise": 0.0,
+          "frames": 76,
+          "native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740"
+        },
+        "baseline-w4": {
+          "workers": 4,
+          "seconds": 1.9101489160093479,
+          "times_s": [
+            1.9084650409640744,
+            1.9133421669830568,
+            1.9101489160093479
+          ],
+          "positions": 2421,
+          "exact_baseline": true,
+          "exact_repeats": true,
+          "warmups": 1,
+          "gain": 1.0,
+          "read_noise": 0.0,
+          "frames": 76,
+          "native_sha256": "0699602de37476dc5e2e8cfae1737cd1e0835a61f1ed08019d0c6383e2d4d3d8"
+        }
+      }
+    },
+    {
+      "case": "Fe7C3_P7_C2_D1s",
+      "configurations": {
+        "baseline-w1": {
+          "workers": 1,
+          "seconds": 7.249185124994256,
+          "times_s": [
+            7.251052375009749,
+            7.241046583978459,
+            7.249185124994256
+          ],
+          "positions": 6436,
+          "exact_baseline": true,
+          "exact_repeats": true,
+          "warmups": 1,
+          "gain": 1.0,
+          "read_noise": 0.0,
+          "frames": 76,
+          "native_sha256": "0699602de37476dc5e2e8cfae1737cd1e0835a61f1ed08019d0c6383e2d4d3d8"
+        },
+        "candidate-w1": {
+          "workers": 1,
+          "seconds": 3.8466802919865586,
+          "times_s": [
+            3.799947208026424,
+            3.8466802919865586,
+            3.8942430000170134
+          ],
+          "positions": 6436,
+          "exact_baseline": true,
+          "exact_repeats": true,
+          "warmups": 1,
+          "gain": 1.0,
+          "read_noise": 0.0,
+          "frames": 76,
+          "native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740"
+        },
+        "dials-w1": {
+          "version": "DIALS 3.30",
+          "seconds": 4.178637042001355,
+          "positions": 5834,
+          "threshold_sigma": null,
+          "min_spot_size": 3,
+          "workers": 1,
+          "times_s": [
+            4.185717375017703,
+            4.157275583012961,
+            4.178637042001355
+          ],
+          "cpu_parent_s": [
+            4.183576,
+            4.15199,
+            4.1735310000000005
+          ],
+          "warmups": 1,
+          "repeats_exact": true,
+          "algorithm": "dispersion_extended",
+          "convention": "pixel centres minus0.5; omega degrees",
+          "exact_frozen_records": true
+        },
+        "dials-w4": {
+          "version": "DIALS 3.30",
+          "seconds": 2.403318250027951,
+          "positions": 5834,
+          "threshold_sigma": null,
+          "min_spot_size": 3,
+          "workers": 4,
+          "times_s": [
+            2.411751458013896,
+            2.403318250027951,
+            2.391580374969635
+          ],
+          "cpu_parent_s": [
+            0.577264,
+            0.5767909999999996,
+            0.5856509999999999
+          ],
+          "warmups": 1,
+          "repeats_exact": true,
+          "algorithm": "dispersion_extended",
+          "convention": "pixel centres minus0.5; omega degrees",
+          "exact_frozen_records": true
+        },
+        "candidate-w4": {
+          "workers": 4,
+          "seconds": 1.0862709159846418,
+          "times_s": [
+            1.112135625036899,
+            1.0862709159846418,
+            1.0792874580365606
+          ],
+          "positions": 6436,
+          "exact_baseline": true,
+          "exact_repeats": true,
+          "warmups": 1,
+          "gain": 1.0,
+          "read_noise": 0.0,
+          "frames": 76,
+          "native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740"
+        },
+        "baseline-w4": {
+          "workers": 4,
+          "seconds": 1.9590257499949075,
+          "times_s": [
+            1.9590257499949075,
+            1.9533669999800622,
+            1.9678127079969272
+          ],
+          "positions": 6436,
+          "exact_baseline": true,
+          "exact_repeats": true,
+          "warmups": 1,
+          "gain": 1.0,
+          "read_noise": 0.0,
+          "frames": 76,
+          "native_sha256": "0699602de37476dc5e2e8cfae1737cd1e0835a61f1ed08019d0c6383e2d4d3d8"
+        }
+      }
+    }
+  ],
+  "date": "2026-10-25",
+  "hardware": "Apple M4 Pro, 14 CPU cores, 48 GiB RAM",
+  "validation": {
+    "python_log_sha256": "4556310deda0daca915c272a4395178eebf5d7c31d1b878370475204ca3cf2c0",
+    "rust_log_sha256": "4fa1cb9610a6514fd9e56d3e9287a3690632b4318b969c5de5eccb076b3599dc",
+    "python_tests": 1248,
+    "rust_tests_and_doctests": 380,
+    "full_record_workloads": [
+      {
+        "case": "synthetic-32x512",
+        "workers": 1,
+        "frames": 32,
+        "tracks": 100,
+        "observations": 3200,
+        "exact": true
+      },
+      {
+        "case": "synthetic-32x512",
+        "workers": 4,
+        "frames": 32,
+        "tracks": 100,
+        "observations": 3200,
+        "exact": true
+      },
+      {
+        "case": "synthetic-16x2048",
+        "workers": 1,
+        "frames": 16,
+        "tracks": 1764,
+        "observations": 28224,
+        "exact": true
+      },
+      {
+        "case": "synthetic-16x2048",
+        "workers": 4,
+        "frames": 16,
+        "tracks": 1764,
+        "observations": 28224,
+        "exact": true
+      },
+      {
+        "case": "Fe7C3_P1_C3_D1s",
+        "workers": 1,
+        "frames": 76,
+        "tracks": 2125,
+        "observations": 4703,
+        "exact": true
+      },
+      {
+        "case": "Fe7C3_P1_C3_D1s",
+        "workers": 4,
+        "frames": 76,
+        "tracks": 2125,
+        "observations": 4703,
+        "exact": true
+      },
+      {
+        "case": "Fe7C3_P2_C2_D1s",
+        "workers": 1,
+        "frames": 76,
+        "tracks": 2421,
+        "observations": 4882,
+        "exact": true
+      },
+      {
+        "case": "Fe7C3_P2_C2_D1s",
+        "workers": 4,
+        "frames": 76,
+        "tracks": 2421,
+        "observations": 4882,
+        "exact": true
+      },
+      {
+        "case": "Fe7C3_P7_C2_D1s",
+        "workers": 1,
+        "frames": 76,
+        "tracks": 6436,
+        "observations": 11787,
+        "exact": true
+      },
+      {
+        "case": "Fe7C3_P7_C2_D1s",
+        "workers": 4,
+        "frames": 76,
+        "tracks": 6436,
+        "observations": 11787,
+        "exact": true
+      }
+    ],
+    "nondefault": {
+      "cases": 60,
+      "frames_per_case": 3,
+      "workers": [
+        1,
+        4
+      ],
+      "arrays": 1320,
+      "exact_baseline": true,
+      "native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740"
+    },
+    "native_reference": "Independent direct-sum Python reference unchanged; same equations and per-pixel arithmetic order",
+    "oracle": "GSAS-II powder oracle does not cover detector thresholding",
+    "compiler": "Generated arm64 classifier contains two-lane f64 vector division and square root instructions; no fast-math flags or unsafe code",
+    "full_record_log_sha256": "7e900ba3120907d8e2a6aee7d09c2f4d382bb78613f5484b5903537a2b61ef21"
+  },
+  "source_hashes": {
+    "crates/phasesmith-spots/src/lib.rs": "07804f094452fb1457489b795d50e05eabb95292a80d7962f14a94ecb36bf05b",
+    "tests/test_experimental_spots.py": "1c346387e36cc46be2fdb714044ea8566b12202694428b42974774f8f2cba136",
+    "benchmarks/benchmark_threshold_loops.py": "945c958e7a6053f8b3361cef5030580362e3ce2b8a3700c3c77b9d5cb619697f",
+    "benchmarks/rotation_speed_probe.py": "a34d743cf5fc9c3d744249b939ce8f2a616eb573f70ee86de192e710d5e031df",
+    "benchmarks/dials_position_probe.py": "0f18035204e13f8ea5abd31a7f93032408295e7d25ad3bb076f1fce342a7cc3c"
+  },
+  "timing_scope": "Common cached 76 x 2048\u00b2 NumPy image arrays; includes loading, native image/mask fingerprinting, detection and linked positions; excludes import, initial models, export and indexing. DIALS does not compute native-style source hashes. Different algorithms; no equal-output comparison between packages.",
+  "vectorization": [
+    {
+      "assembly_file": "phasesmith_spots-32787112e8b67ef3.s",
+      "classifier_symbol": "__ZN16phasesmith_spots8Integral8classify17h804c22e54212d078E:",
+      "vector_sqrt_instructions": 8,
+      "vector_divide_instructions": 20,
+      "fused_multiply_add_instructions": 0,
+      "sha256": "8435485ee4e2f4285ed28aee951eabeac1fecd6f696bd897432e5237e9479be7"
+    }
+  ],
+  "wheel": {
+    "wheel": "runs/threshold-loops-20261025/wheels/phasesmith-0.7.0-cp311-abi3-macosx_11_0_arm64.whl",
+    "sha256": "493da71017200da7e06093ccff6d3599ef491136bbc729652b20a96e29d3df63",
+    "native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740",
+    "matches_benchmarked_binary": true,
+    "installed_into_running_app": false
+  },
+  "eight_worker_followup": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "native_python": "3.13.7 (main, Sep 18 2025, 22:52:34) [Clang 20.1.4 ]",
+    "numpy": "2.5.4",
+    "baseline_native_sha256": "0699602de37476dc5e2e8cfae1737cd1e0835a61f1ed08019d0c6383e2d4d3d8",
+    "candidate_native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740",
+    "native_source_sha256": "07804f094452fb1457489b795d50e05eabb95292a80d7962f14a94ecb36bf05b",
+    "helpers_sha256": {
+      "rotation_speed_probe.py": "a34d743cf5fc9c3d744249b939ce8f2a616eb573f70ee86de192e710d5e031df",
+      "dials_position_probe.py": "0f18035204e13f8ea5abd31a7f93032408295e7d25ad3bb076f1fce342a7cc3c",
+      "benchmark_threshold_loops.py": "91f0f4c1b266ba6e61e61e336dca82b093c1b19ba4bf09880912cc85c4795aec"
+    },
+    "timing": "Sequential; 1 full warmup + 3 measured repeats; cached common images",
+    "workers": [
+      4,
+      8
+    ],
+    "methods": [
+      "candidate",
+      "dials"
+    ],
+    "rows": [
+      {
+        "case": "Fe7C3_P1_C3_D1s",
+        "configurations": {
+          "candidate-w4": {
+            "workers": 4,
+            "seconds": 1.0150389170157723,
+            "times_s": [
+              1.0143473749631085,
+              1.0169734170194715,
+              1.0150389170157723
+            ],
+            "positions": 2125,
+            "exact_baseline": true,
+            "exact_repeats": true,
+            "warmups": 1,
+            "gain": 1.0,
+            "read_noise": 0.0,
+            "frames": 76,
+            "native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740"
+          },
+          "dials-w4": {
+            "version": "DIALS 3.30",
+            "seconds": 2.329105166019872,
+            "positions": 1699,
+            "threshold_sigma": null,
+            "min_spot_size": 3,
+            "workers": 4,
+            "times_s": [
+              2.2882331250002608,
+              2.3482110829791054,
+              2.329105166019872
+            ],
+            "cpu_parent_s": [
+              0.4900899999999999,
+              0.5154670000000001,
+              0.508086
+            ],
+            "warmups": 1,
+            "repeats_exact": true,
+            "algorithm": "dispersion_extended",
+            "convention": "pixel centres minus0.5; omega degrees",
+            "exact_frozen_records": true
+          },
+          "dials-w8": {
+            "version": "DIALS 3.30",
+            "seconds": 1.7927850830019452,
+            "positions": 1699,
+            "threshold_sigma": null,
+            "min_spot_size": 3,
+            "workers": 8,
+            "times_s": [
+              1.8950281660072505,
+              1.7779927500523627,
+              1.7927850830019452
+            ],
+            "cpu_parent_s": [
+              0.4899990000000001,
+              0.49854200000000004,
+              0.501522
+            ],
+            "warmups": 1,
+            "repeats_exact": true,
+            "algorithm": "dispersion_extended",
+            "convention": "pixel centres minus0.5; omega degrees",
+            "exact_frozen_records": true
+          },
+          "candidate-w8": {
+            "workers": 8,
+            "seconds": 0.6261547080357559,
+            "times_s": [
+              0.6261547080357559,
+              0.6491576670086943,
+              0.6127452080254443
+            ],
+            "positions": 2125,
+            "exact_baseline": true,
+            "exact_repeats": true,
+            "warmups": 1,
+            "gain": 1.0,
+            "read_noise": 0.0,
+            "frames": 76,
+            "native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740"
+          }
+        }
+      },
+      {
+        "case": "Fe7C3_P2_C2_D1s",
+        "configurations": {
+          "candidate-w4": {
+            "workers": 4,
+            "seconds": 1.0179117080406286,
+            "times_s": [
+              1.0228282089810818,
+              1.0179117080406286,
+              1.0166189590236172
+            ],
+            "positions": 2421,
+            "exact_baseline": true,
+            "exact_repeats": true,
+            "warmups": 1,
+            "gain": 1.0,
+            "read_noise": 0.0,
+            "frames": 76,
+            "native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740"
+          },
+          "dials-w4": {
+            "version": "DIALS 3.30",
+            "seconds": 2.4378171659773216,
+            "positions": 1846,
+            "threshold_sigma": null,
+            "min_spot_size": 3,
+            "workers": 4,
+            "times_s": [
+              2.4636689170147292,
+              2.4378171659773216,
+              2.423374000005424
+            ],
+            "cpu_parent_s": [
+              0.6139610000000002,
+              0.5819010000000002,
+              0.578973
+            ],
+            "warmups": 1,
+            "repeats_exact": true,
+            "algorithm": "dispersion_extended",
+            "convention": "pixel centres minus0.5; omega degrees",
+            "exact_frozen_records": true
+          },
+          "dials-w8": {
+            "version": "DIALS 3.30",
+            "seconds": 1.8432717500254512,
+            "positions": 1846,
+            "threshold_sigma": null,
+            "min_spot_size": 3,
+            "workers": 8,
+            "times_s": [
+              1.889458832971286,
+              1.8378998749540187,
+              1.8432717500254512
+            ],
+            "cpu_parent_s": [
+              0.5797050000000001,
+              0.5632959999999998,
+              0.5605790000000002
+            ],
+            "warmups": 1,
+            "repeats_exact": true,
+            "algorithm": "dispersion_extended",
+            "convention": "pixel centres minus0.5; omega degrees",
+            "exact_frozen_records": true
+          },
+          "candidate-w8": {
+            "workers": 8,
+            "seconds": 0.631167541956529,
+            "times_s": [
+              0.6335199170280248,
+              0.6137704160064459,
+              0.631167541956529
+            ],
+            "positions": 2421,
+            "exact_baseline": true,
+            "exact_repeats": true,
+            "warmups": 1,
+            "gain": 1.0,
+            "read_noise": 0.0,
+            "frames": 76,
+            "native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740"
+          }
+        }
+      },
+      {
+        "case": "Fe7C3_P7_C2_D1s",
+        "configurations": {
+          "candidate-w4": {
+            "workers": 4,
+            "seconds": 1.0726411250070669,
+            "times_s": [
+              1.0726411250070669,
+              1.0724897499894723,
+              1.076911625044886
+            ],
+            "positions": 6436,
+            "exact_baseline": true,
+            "exact_repeats": true,
+            "warmups": 1,
+            "gain": 1.0,
+            "read_noise": 0.0,
+            "frames": 76,
+            "native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740"
+          },
+          "dials-w4": {
+            "version": "DIALS 3.30",
+            "seconds": 2.4019138750154525,
+            "positions": 5834,
+            "threshold_sigma": null,
+            "min_spot_size": 3,
+            "workers": 4,
+            "times_s": [
+              2.4019138750154525,
+              2.3916967919794843,
+              2.4245608749915846
+            ],
+            "cpu_parent_s": [
+              0.5798510000000001,
+              0.5895640000000002,
+              0.5823420000000001
+            ],
+            "warmups": 1,
+            "repeats_exact": true,
+            "algorithm": "dispersion_extended",
+            "convention": "pixel centres minus0.5; omega degrees",
+            "exact_frozen_records": true
+          },
+          "dials-w8": {
+            "version": "DIALS 3.30",
+            "seconds": 1.8921442920109257,
+            "positions": 5834,
+            "threshold_sigma": null,
+            "min_spot_size": 3,
+            "workers": 8,
+            "times_s": [
+              1.8884840829996392,
+              1.9284831670229323,
+              1.8921442920109257
+            ],
+            "cpu_parent_s": [
+              0.5986790000000002,
+              0.609982,
+              0.5963820000000002
+            ],
+            "warmups": 1,
+            "repeats_exact": true,
+            "algorithm": "dispersion_extended",
+            "convention": "pixel centres minus0.5; omega degrees",
+            "exact_frozen_records": true
+          },
+          "candidate-w8": {
+            "workers": 8,
+            "seconds": 0.6897762920125388,
+            "times_s": [
+              0.6897762920125388,
+              0.681899290997535,
+              0.7013445420307107
+            ],
+            "positions": 6436,
+            "exact_baseline": true,
+            "exact_repeats": true,
+            "warmups": 1,
+            "gain": 1.0,
+            "read_noise": 0.0,
+            "frames": 76,
+            "native_sha256": "b49a17e9aa48996f5e3bbc134cb65970042789f15c44a76fe75d3061339b8740"
+          }
+        }
+      }
+    ],
+    "full_record_equality": [
+      {
+        "case": "synthetic-32x512",
+        "workers": 8,
+        "frames": 32,
+        "tracks": 100,
+        "observations": 3200,
+        "exact": true
+      },
+      {
+        "case": "synthetic-16x2048",
+        "workers": 8,
+        "frames": 16,
+        "tracks": 1764,
+        "observations": 28224,
+        "exact": true
+      },
+      {
+        "case": "Fe7C3_P1_C3_D1s",
+        "workers": 8,
+        "frames": 76,
+        "tracks": 2125,
+        "observations": 4703,
+        "exact": true
+      },
+      {
+        "case": "Fe7C3_P2_C2_D1s",
+        "workers": 8,
+        "frames": 76,
+        "tracks": 2421,
+        "observations": 4882,
+        "exact": true
+      },
+      {
+        "case": "Fe7C3_P7_C2_D1s",
+        "workers": 8,
+        "frames": 76,
+        "tracks": 6436,
+        "observations": 11787,
+        "exact": true
+      }
+    ],
+    "full_record_log_sha256": "f58f46c99ae02f1ed7029aa1ab9ba8844e9624aefe1df3d2a82a6fc4c9651834",
+    "scope": "Fresh sequential four/eight-worker comparison on the same three cached 76-frame scans; unchanged optimized binary and DIALS environment/configuration. One full warmup, three measured runs per configuration."
+  }
+}

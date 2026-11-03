@@ -235,9 +235,9 @@ snapshots. Repeated training/fitting is deterministic.
 The implemented estimator passes independent synthetic equations and known-count
 checks. The measured TIFF comparison **fails the declared intensity-agreement
 gate**. It must remain experimental; low profile residuals or clear flags alone
-do not establish intensity accuracy. See measured comparison (`fe7c3-3d-profile-comparison.md`, local research report).
+do not establish intensity accuracy. See [measured comparison](fe7c3-3d-profile-comparison.md).
 
-The bias investigation (`fe7c3-profile-bias-investigation.md`, local research report) implements and tests
+The [bias investigation](fe7c3-profile-bias-investigation.md) implements and tests
 scattering-plane geometry and strong-only frozen width transfer. P2 passes the
 new family-holdout comparison gate; P1 does not. These changed populations do not
 replace the historical 40-pair result. Both estimates remain experimental.

@@ -1,0 +1,108 @@
+{
+  "schema": "phasesmith.threshold-predicate-comparison.v1",
+  "qualification": "Sequential isolated builds, one warmup and eight measured calls per noise path. Counterbalanced path order, complete record equality, multi-spot 768x1024 images. Local observations, not a general speed guarantee.",
+  "rows": [
+    {
+      "baseline": {
+        "native_sha256": "7b4e763a58a11b470974dcbd81b03c7eac0dd109354ab3e39e7cdcf640a4de85",
+        "supplied_variance": false,
+        "dimensions": [
+          768,
+          1024
+        ],
+        "spots": 300,
+        "complete_record_sha256": "107a650b19015fb3a247386a8616f778743a62c6303f91a8d3c9306eea662233",
+        "samples_seconds": [
+          0.03137320799578447,
+          0.031251167005393654,
+          0.031181374986772425,
+          0.0310672500054352,
+          0.03113600000506267,
+          0.03109579200099688,
+          0.03162341700226534,
+          0.031115290999878198
+        ],
+        "median_seconds": 0.031158687495917547
+      },
+      "candidate": {
+        "native_sha256": "acb19b7c1868c16c33ab1d31b5d644e20bc6ac9fd60417b16e2702bb031a54f8",
+        "supplied_variance": false,
+        "dimensions": [
+          768,
+          1024
+        ],
+        "spots": 300,
+        "complete_record_sha256": "107a650b19015fb3a247386a8616f778743a62c6303f91a8d3c9306eea662233",
+        "samples_seconds": [
+          0.00854300000355579,
+          0.00864820800779853,
+          0.008623458998044953,
+          0.0086192500020843,
+          0.008590915997046977,
+          0.008597041000030003,
+          0.00861770799383521,
+          0.008618834006483667
+        ],
+        "median_seconds": 0.008618271000159439
+      },
+      "candidate_over_baseline": 0.27659287642615293
+    },
+    {
+      "candidate": {
+        "native_sha256": "acb19b7c1868c16c33ab1d31b5d644e20bc6ac9fd60417b16e2702bb031a54f8",
+        "supplied_variance": true,
+        "dimensions": [
+          768,
+          1024
+        ],
+        "spots": 300,
+        "complete_record_sha256": "0f051ec707b23a62ccf59c7265386ffcb45f6ee32559b831c2d254b78bd562b0",
+        "samples_seconds": [
+          0.009150540994596668,
+          0.009100625000428408,
+          0.009044999998877756,
+          0.00953329099866096,
+          0.009075458001461811,
+          0.009004332998301834,
+          0.009004499996080995,
+          0.008982833998743445
+        ],
+        "median_seconds": 0.009060229000169784
+      },
+      "baseline": {
+        "native_sha256": "7b4e763a58a11b470974dcbd81b03c7eac0dd109354ab3e39e7cdcf640a4de85",
+        "supplied_variance": true,
+        "dimensions": [
+          768,
+          1024
+        ],
+        "spots": 300,
+        "complete_record_sha256": "0f051ec707b23a62ccf59c7265386ffcb45f6ee32559b831c2d254b78bd562b0",
+        "samples_seconds": [
+          0.032458625006256625,
+          0.032515416998649016,
+          0.03225141699658707,
+          0.03229370899498463,
+          0.03234770799463149,
+          0.03235458400740754,
+          0.03294750000350177,
+          0.03230016599991359
+        ],
+        "median_seconds": 0.032351146001019515
+      },
+      "candidate_over_baseline": 0.2800589815236919
+    }
+  ],
+  "reconciliation": {
+    "baseline_commit": "521aaa21043e613acb676cbda5b267478350a703",
+    "baseline_build": "maturin build --release --locked from the clean promotion worktree; wheel extracted to a new isolated site",
+    "candidate_build": "maturin develop --release --locked from the reconciliation worktree",
+    "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+    "candidate_source_sha256": {
+      "crates/phasesmith-spots/src/lib.rs": "431e0c592bd1594d2df43cc6f700565642a04249ec976b922a871539085e989f",
+      "benchmarks/threshold_predicate_clippy.py": "bbe2398f67d9f8227671c840ecc03db38e364d0281b8c8548fa74a73daba6505"
+    },
+    "noise_paths": "estimated Poisson/read noise and supplied variance; all complete record digests exact",
+    "qualification": "Sequential timing after test processes finished. The separately preserved installed-baseline trial is excluded; this report uses the fresh release baseline."
+  }
+}

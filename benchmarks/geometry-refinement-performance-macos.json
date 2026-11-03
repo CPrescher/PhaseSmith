@@ -1,0 +1,20 @@
+{
+  "basis_only": {
+    "median_seconds": 0.0014222294994397089,
+    "value_basis_sha256": "6b50da8e6459f52c0cfa0443882218df15de510f762b5b02ef9ed71add694af8",
+    "deterministic_repeats": true
+  },
+  "with_detector": {
+    "median_seconds": 0.0017587085167178884,
+    "value_basis_sha256": "6b50da8e6459f52c0cfa0443882218df15de510f762b5b02ef9ed71add694af8",
+    "deterministic_repeats": true
+  },
+  "earlier_core": {
+    "median_seconds": 0.001541645498946309,
+    "value_basis_sha256": "6b50da8e6459f52c0cfa0443882218df15de510f762b5b02ef9ed71add694af8"
+  },
+  "basis_only_ratio_to_earlier": 0.9225399097339698,
+  "earlier_core_sha256": "e8fbe23204eb6f6c505d4b28760e51e4045e07d7bc7f12651705054510e11a78",
+  "reflections": 10888,
+  "core_sha256": "5945c92adbe242ee6e874eda67b05a53ca5f8d239d7ba7b9758eea4e2b1bd8c3"
+}
