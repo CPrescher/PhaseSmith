@@ -7,7 +7,9 @@ The optional saved arrays identify the earliest differing stage on the host BLAS
 import argparse
 import inspect
 import json
+import statistics
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -77,10 +79,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--repetitions", type=int, default=20)
+    parser.add_argument("--trace", action="store_true", help="capture intermediate arrays")
+    parser.add_argument("--check", action="store_true", help="require exact held-out independence")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
-    np.linalg.solve = trace
-    sys.setprofile(profile)
+    if args.trace:
+        np.linalg.solve = trace
+        sys.setprofile(profile)
     report = []
     for repetition in range(args.repetitions):
         points, basis, training, observed, geometry = fixture()
@@ -88,12 +93,14 @@ def main():
             training=training, geometry=geometry, options=CellComparisonOptions(max_subcell_index=1)
         )
         RECORDS.clear()
+        started = time.perf_counter()
         first = compare_cells(points, basis, observed=observed, **kwargs)
         first_records = list(RECORDS)
         changed = observed.copy()
         changed[~training, :2] += 5
         RECORDS.clear()
         second = compare_cells(points, basis, observed=changed, **kwargs)
+        elapsed = time.perf_counter() - started
         second_records = list(RECORDS)
         differences = []
         for index, (left, right) in enumerate(zip(first_records, second_records, strict=False)):
@@ -116,8 +123,10 @@ def main():
             a.reciprocal_basis.tobytes() == b.reciprocal_basis.tobytes()
             for a, b in zip(first.settings, second.settings, strict=True)
         )
-        report.append(dict(repetition=repetition, exact=exact, differences=differences))
-        if differences or not exact:
+        report.append(
+            dict(repetition=repetition, exact=exact, differences=differences, seconds=elapsed)
+        )
+        if args.trace and (differences or not exact):
             break
     sys.setprofile(None)
     try:
@@ -131,9 +140,13 @@ def main():
         build_config=np.show_config(mode="dicts"),
         numerical_libraries=runtime,
         comparisons=report,
+        median_pair_seconds=statistics.median(row["seconds"] for row in report),
+        tracing=args.trace,
     )
     (args.output / "comparison.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))
+    if args.check and any(not row["exact"] or row["differences"] for row in report):
+        raise SystemExit("cell comparison lost exact training independence")
 
 
 if __name__ == "__main__":
