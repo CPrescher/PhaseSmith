@@ -48,6 +48,12 @@ GitHub/PyPI/crates.io process is documented in
 
 ## Development
 
+Use `develop` as the complete development baseline. It combines the recent
+single-crystal worktrees and reconciled detector changes; `main` retains the
+0.7 release baseline. The [branch audit](docs/integration/development-baseline-20261103.md)
+explains which work is included and which historical experiments remain separate.
+Create new task branches from an up-to-date `develop`.
+
 Requires Rust 1.89.0 or newer, Python 3.11 or newer, `uv`, and `maturin`.
 
 ```shell
