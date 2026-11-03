@@ -121,6 +121,12 @@ The lower-level `prediction.refine_crystal` convenience API retains its separate
 `NumPy` optimization coordinator around native predictions; its residual scales
 are loss weights, not measured centroid uncertainties. Parallel proposal sessions
 require their documented single-thread numerical environment before Python starts.
+For `NumPy` metric-coordinate fits, the dimensionless Gram scale is
+`s_j = sqrt(sum_ab G_ab^2) / sqrt(sum_ab D_j,ab^2)` for each constraint direction.
+Both the analytical chain and retraction use explicit matrix-axis Frobenius
+reductions. This avoids alignment-dependent last bits from the axis-free BLAS
+vector-dot fast path on Intel Accelerate without changing the mathematical model
+or relaxing exact training/held-out independence.
 
 First-principles geometry and independently implemented published Fourier-indexing
 methods govern these models. Method sources include Waterman et al. (2016),

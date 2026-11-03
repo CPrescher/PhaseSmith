@@ -29,7 +29,7 @@ jobs:
           run-id: 41699952961
           github-token: ${{ github.token }}
           path: diagnostic-wheel
-      - run: python -m pip install numpy pytest threadpoolctl
+      - run: python -m pip install numpy pytest threadpoolctl 'gemmi>=0.7.5,<0.8'
       - name: Reuse unchanged native kernels with current Python coordinator sources
         run: |
           python - <<'PY'
@@ -39,7 +39,10 @@ jobs:
               name = next(n for n in wheel.namelist() if n.startswith("phasesmith/_core.") and n.endswith(".so"))
               (Path("python") / name).write_bytes(wheel.read(name))
           PY
-      - run: python benchmarks/cell_comparison_reproducibility.py --output cell-repro
+      - run: python benchmarks/cell_comparison_reproducibility.py --trace --check --repetitions 100 --output cell-repro
+        env:
+          PYTHONPATH: ${{ github.workspace }}/python
+      - run: python -m pytest -q tests/test_experimental_cell_comparison.py
         env:
           PYTHONPATH: ${{ github.workspace }}/python
       - uses: actions/upload-artifact@v7.0.0

@@ -100,7 +100,9 @@ def metric_chain(b, symbol):
     c = np.linalg.cholesky(g)
     ci = np.linalg.inv(c)
     d = metric_directions(symbol)
-    scale = np.linalg.norm(g) / np.linalg.norm(d, axis=(1, 2))
+    # Explicit matrix axes keep the Frobenius reduction out of the axis-free
+    # BLAS dot fast path, whose last bit can depend on buffer alignment.
+    scale = np.linalg.norm(g, axis=(0, 1)) / np.linalg.norm(d, axis=(1, 2))
     chain = []
     for direction, s in zip(d, scale, strict=True):
         m = ci @ (s * direction) @ ci.T
@@ -115,7 +117,9 @@ def metric_step(b, step, symbol):
     a = np.linalg.inv(b).T
     g = a @ a.T
     d = metric_directions(symbol)
-    scale = np.linalg.norm(g) / np.linalg.norm(d, axis=(1, 2))
+    # Explicit matrix axes keep the Frobenius reduction out of the axis-free
+    # BLAS dot fast path, whose last bit can depend on buffer alignment.
+    scale = np.linalg.norm(g, axis=(0, 1)) / np.linalg.norm(d, axis=(1, 2))
     newg = g + np.einsum("k,kij->ij", step[:-3] * scale, d)
     c = np.linalg.cholesky(g)
     q = c.T @ b

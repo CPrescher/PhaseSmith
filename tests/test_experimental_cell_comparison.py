@@ -450,3 +450,26 @@ def test_ranking_ties_deterministic_and_centering_adds_no_point_symmetry():
     for window in [-1.0, np.inf, np.nan]:
         with pytest.raises(ValueError, match="ranking_score_window"):
             CellComparisonOptions(ranking_score_window=window)
+
+
+def test_metric_coordinates_are_exact_under_backend_norm_roundoff(monkeypatch):
+    # The Intel Accelerate trace had identical Gram matrices but an alternating
+    # last bit from the axis-free BLAS vector-norm fast path. Model that backend
+    # behavior explicitly so this regression also runs on other architectures.
+    original = np.linalg.norm
+    calls = 0
+
+    def backend_norm(value, *args, **kwargs):
+        nonlocal calls
+        result = original(value, *args, **kwargs)
+        if np.shape(value) == (3, 3) and not args and kwargs.get("axis") is None:
+            calls += 1
+            if calls % 2:
+                result = np.nextafter(result, np.inf)
+        return result
+
+    monkeypatch.setattr(np.linalg, "norm", backend_norm)
+    basis = np.array([[0.2, 2e-5, -3e-6], [0, 1 / 7, 4e-6], [5e-7, 0, 0.1]])
+    step = np.array([1e-4, -2e-4, 3e-4, 4e-5, -5e-5, 6e-5, 1e-4, -2e-4, 3e-4])
+    np.testing.assert_array_equal(metric_chain(basis, "aP"), metric_chain(basis, "aP"))
+    np.testing.assert_array_equal(metric_step(basis, step, "aP"), metric_step(basis, step, "aP"))

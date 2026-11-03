@@ -12,6 +12,14 @@ complete coordinator stays in `phasesmith-workflows` to avoid a dependency cycle
 This is a module/package move, with no intentional numerical or protocol changes.
 The public release now contains eleven crates, including two new registry names.
 
+Legacy NumPy cell-metric coordinates use explicit matrix-axis Frobenius
+reductions in both their derivative chain and metric retraction. Intel macOS
+Accelerate produced alignment-dependent last bits through the axis-free BLAS
+vector-norm fast path even with one thread. The equation is unchanged; exact
+training/held-out independence remains required, and floating-point changes from
+the former reduction are checked locally, with finite differences and a full
+multi-reflection fit benchmark. Native Rust kernels/coordinator are unchanged.
+
 The 0.8 release-preparation pass completes the first-use/native-workflow input
 guides and shared Rust/Python single-crystal mathematical reference. Runnable
 synthetic examples are installation/API controls, separate from measured

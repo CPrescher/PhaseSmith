@@ -294,3 +294,15 @@ There is no meaningful observed regression against the earlier 0.184-0.189 s
 measurement; this is a small timing sample, not a speedup claim. Ranking adds
 bounded population grouping and O(J log J) sorting of J fit proposals, without
 another pass over the detector images or a new fit.
+
+
+### Reproducible metric scaling
+
+The dimensionless Gram-coordinate scale uses the Frobenius norm of the direct
+Gram matrix divided by that of its metric direction. Both the derivative chain
+and retraction explicitly reduce matrix axes. The axis-free NumPy norm uses a
+BLAS vector-dot fast path; on Intel macOS Accelerate, identical Gram matrices
+produced a one-bit scale difference depending on allocation alignment. The
+explicit matrix reduction preserves the equation and exact training/held-out
+independence. It may change last bits relative to the former reduction; no
+acceptance threshold or comparison tolerance is widened.
