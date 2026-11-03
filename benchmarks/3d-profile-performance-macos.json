@@ -1,0 +1,22 @@
+{
+  "schema": "phasesmith.3d-profile-performance.v1",
+  "case": "/Users/clemens/Programming/PhaseSmith/runs/learned-3d-profiles-20261025-final",
+  "native_sha256": "5e7a11e71aca2b3f9a619a6ae3d7ad0a32f83400c69eec2b6075a2b4b619ef3a",
+  "reflections": 3274,
+  "samples": 11424238,
+  "references": 200,
+  "repetitions": 3,
+  "learning_seconds": [
+    0.5603117500431836,
+    0.5642099999822676,
+    0.5615021660341881
+  ],
+  "fitting_seconds": [
+    1.765490707999561,
+    1.7487600410240702,
+    1.7448884170153178
+  ],
+  "bitwise_identical": true,
+  "baseline": "first serial production implementation; no speedup claim",
+  "fingerprint": "bdda9ed6c491482d345b7198463e0114d747c251b10e342e2089689243629c72"
+}
