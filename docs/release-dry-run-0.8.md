@@ -63,7 +63,10 @@ archive upload pointed above Cargo's `tmp-crate` directory, and external-working
 directory pytest could not import repository benchmark helpers. The corrected
 workflow retains the verified archives and adds only the repository root to the
 test helper search path; `python/` is not added, preserving installed-package
-coverage. Final remote results follow after the corrected run completes.
+coverage. The installed wheel also passes all 3,381 tests from outside the
+checkout, and all 21 explicit native/Python cross-comparison tests pass.
+Package-content review adds the canonical PhaseSmith MIT license to each public
+crate alongside its third-party notices; release metadata checks enforce parity. Final remote results follow after the corrected run completes.
 
 ## Publication boundary
 
