@@ -38,9 +38,32 @@ make changing environment strings a supported way to reconfigure loaded BLAS.
 
 ## Execution receipt
 
-Final commit, local checks and remote workflow results are recorded here after
-completion. Until that receipt is filled, this page is a preparation record, not
-an assertion that all release gates have passed.
+The first consolidated source commit is `22f7369b62a5ae9e213c0ced801ccf64a79da96c`.
+Its local checks passed: 567 Rust tests (34 explicitly ignored), 3,381 Python tests
+(27 skipped and 34 external-data/oracle tests deselected), strict Clippy/rustdoc,
+minimal and individual-feature builds, Ruff, strict MkDocs and API/version/skill/
+mathematics checks. All 70 relocated numerical source files match their originals
+after namespace substitution and Rust formatting.
+
+A fresh installed macOS arm64 wheel with only NumPy passes native-capability and
+HDF5-filter smoke, the synthetic tutorial and offline advisor-cycle example.
+The wheel links system libraries only. Its source archive contains all three
+consolidated modules and optimizer notices, without retired crate source paths.
+
+A fresh original-count MgSiO3 run from that installed wheel accepts Pbca with
+Mg16 Si16 O48. All 68 arrays in ten NPZ files, the complete candidate/result
+record (including phasing histories), P1 CIF and selected-setting CIF are bitwise
+identical to the earlier validated native control. The recorded elapsed time is
+15.49 s; this is a regression control, not a new performance comparison or
+independent scientific validation.
+
+The first [remote dry run](https://github.com/CPrescher/PhaseSmith/actions/runs/41698688678)
+verified Rust package compilation but exposed two harness defects: the Rust
+archive upload pointed above Cargo's `tmp-crate` directory, and external-working-
+directory pytest could not import repository benchmark helpers. The corrected
+workflow retains the verified archives and adds only the repository root to the
+test helper search path; `python/` is not added, preserving installed-package
+coverage. Final remote results follow after the corrected run completes.
 
 ## Publication boundary
 

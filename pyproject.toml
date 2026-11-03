@@ -53,6 +53,10 @@ include = [{ path = "skills/phasesmith-ai-workflows/**/*", format = "sdist" }]
 [tool.pytest.ini_options]
 addopts = "-ra -m 'not external_oracle and not real_data'"
 testpaths = ["tests"]
+# Repository-only benchmark helpers are imported by tests, including when the
+# installed distribution is tested from an unrelated working directory. The
+# package itself lives under python/ and is not added to this search path.
+pythonpath = ["."]
 markers = [
   "external_oracle: requires the exact pinned GSAS-II checkout and compatible binaries",
   "real_data: runs checksum-pinned external real-pattern workflows",

@@ -21,8 +21,8 @@ The sample spans its full angular exposure, not a point at the exposure midpoint
 Coordinate intervals transform by declared signed scales and are sorted after
 mapping. Away from coincident edges, the shifted interval derivative is
 `1[h+s<b]-1[l+s>a]` for positive overlap and zero otherwise. Contact-only
-intersection has zero mass; the declared strict-edge derivative is zero at
-coincident boundaries. Value and position partials share the same sample/voxel
+intersection has zero mass; each coincident edge contributes zero to this
+strict-inequality derivative. Value and position partials share the same sample/voxel
 pass. Smooth derivative tests avoid these boundaries.
 
 For outgoing direction S, incident direction S0, and sample axis a, the local

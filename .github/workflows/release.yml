@@ -56,7 +56,7 @@ jobs:
       - uses: actions/upload-artifact@v7.0.0
         with:
           name: rust-crate-archives
-          path: target/package/*.crate
+          path: target/package/tmp-crate/*.crate
           if-no-files-found: error
 
   documentation:
