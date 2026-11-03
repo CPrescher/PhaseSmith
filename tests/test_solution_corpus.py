@@ -366,3 +366,21 @@ HKLF 4
 END
 """)
     assert len(shelxt_candidate(path)["species"]) == 6
+
+
+def test_windows_timeout_terminates_the_owned_process_tree(monkeypatch):
+    from types import SimpleNamespace
+
+    calls = []
+    monkeypatch.setattr(run_module, "os", SimpleNamespace(name="nt"))
+    monkeypatch.setattr(run_module.subprocess, "run", lambda *a, **k: calls.append((a, k)))
+    run_module._stop_process_tree(SimpleNamespace(pid=12345))
+    assert calls[0][0][0] == ["taskkill", "/PID", "12345", "/T", "/F"]
+    assert calls[0][1]["check"] is False
+
+
+def test_missing_host_load_average_is_explicitly_unavailable(monkeypatch):
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(run_module, "os", SimpleNamespace())
+    assert run_module.host_load_average() is None

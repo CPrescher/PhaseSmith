@@ -67,7 +67,8 @@ are added later, repeat their ownership/publisher review before tagging.
 ## Release checklist
 
 1. Review the [package audit](package-review-0.8.md) and scientific limitations.
-   Update `CHANGELOG.md` and synchronize Cargo/Python versions.
+   Update `CHANGELOG.md`, replace candidate-only installation/status text in the
+   reviewed release commit, and synchronize Cargo/Python versions.
 2. Review the versioned public API snapshot; run
    `python scripts/public_api_snapshot.py --check` and
    `python scripts/release_version.py --tag v<version>`.

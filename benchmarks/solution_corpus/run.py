@@ -192,6 +192,31 @@ def instructions(packet):
     )
 
 
+def host_load_average():
+    """Host metadata only; unavailable platforms retain an explicit JSON null."""
+    if not hasattr(os, "getloadavg"):
+        return None
+    try:
+        return list(os.getloadavg())
+    except OSError:
+        return None
+
+
+def _stop_process_tree(process, *, force=False):
+    if os.name == "nt":
+        # Windows has no killpg/SIGTERM session contract. Terminate the owned
+        # benchmark process and its descendants; no extra Python dependency.
+        subprocess.run(
+            ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    else:
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(process.pid, signal.SIGKILL if force else signal.SIGTERM)
+
+
 def launch(command, directory, seconds, threads=1):
     started = time.perf_counter()
     environment = {
@@ -216,20 +241,21 @@ def launch(command, directory, seconds, threads=1):
             stdin=subprocess.DEVNULL,
             stdout=output,
             stderr=subprocess.STDOUT,
-            start_new_session=True,
+            start_new_session=os.name != "nt",
         )
         expired = False
         try:
             code = process.wait(timeout=seconds)
         except subprocess.TimeoutExpired:
             expired = True
-            with contextlib.suppress(ProcessLookupError):
-                os.killpg(process.pid, signal.SIGTERM)
+            _stop_process_tree(process)
             try:
                 code = process.wait(timeout=2)
             except subprocess.TimeoutExpired:
-                with contextlib.suppress(ProcessLookupError):
-                    os.killpg(process.pid, signal.SIGKILL)
+                if os.name == "nt":
+                    process.kill()
+                else:
+                    _stop_process_tree(process, force=True)
                 code = process.wait()
     return {
         "wall_seconds_including_startup": time.perf_counter() - started,
@@ -629,7 +655,7 @@ def collect_jobs(args):
                 "input_only_resource_atom_cap": atom_cap,
                 "expanded_measured_rows_for_resource_cap": expanded_rows,
                 "adapter_preparation_seconds_outside_timing": prep_seconds,
-                "host_load_average_before_job": list(os.getloadavg()),
+                "host_load_average_before_job": host_load_average(),
                 **launch(
                     command,
                     work,
