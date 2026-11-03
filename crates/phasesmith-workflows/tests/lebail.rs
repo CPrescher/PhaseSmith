@@ -953,6 +953,7 @@ fn run_python_lattice_oracle(python: &str) -> String {
 from dataclasses import replace
 import numpy as np
 import phasesmith
+from phasesmith.io.space_groups import space_group_by_number
 from phasesmith.refinement import (
     CwLatticeReflectionDomain,
     FixedConstraint,
@@ -962,7 +963,7 @@ from phasesmith.refinement import (
 )
 
 instrument = phasesmith.ConstantWavelengthInstrument(1.5406, 2e-4, -1e-4, 2e-4, 1.5e-3, 3e-3)
-group = phasesmith.space_group_by_number(123).space_group
+group = space_group_by_number(123).space_group
 cell = phasesmith.UnitCell(3.995, 3.995, 6.0, 90.0, 90.0, 90.0)
 structure = phasesmith.CrystalStructure("lattice-test", "Lattice test", cell, group)
 parameterization = LatticeParameterization(group, cell)

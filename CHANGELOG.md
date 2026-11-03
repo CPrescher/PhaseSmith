@@ -12,7 +12,8 @@ Development release candidate; not yet published.
 
 - Remove the internal legacy Python facades: 67 top-level aliases, 85
   method-specific refinement aliases and 16 dataset-converter aliases. Use
-  their owning modules; update internal benchmark/tool callers. This deliberate
+  their owning modules; update internal benchmarks, tools and embedded Python
+  in Rust differential tests. This deliberate
   0.8 cleanup supersedes the earlier 1.0 removal schedule, preserving current
   `__all__` exports, numerical behavior and portable data readers.
 

@@ -725,11 +725,12 @@ fn complete_solver_matches_python_affine_history_when_configured() {
     let script = r#"
 import numpy as np
 import phasesmith
+from phasesmith.io.space_groups import space_group_by_number
 from phasesmith.refinement import AffineConstraint, PolynomialBackground
 from phasesmith.refinement import rietveld
 
 cell = phasesmith.UnitCell(4.7, 4.7, 4.7, 90.0, 90.0, 90.0)
-group = phasesmith.space_group_by_number(221).space_group
+group = space_group_by_number(221).space_group
 structure = phasesmith.CrystalStructure(
     "alpha", "P m -3 m", cell, group,
     (phasesmith.AtomSite("Si1", "Si1", "Si", "Si", (0.0, 0.0, 0.0), 1.0, 0.01),),

@@ -194,11 +194,13 @@ fn intelligent_planner_is_cumulative_advice_and_matches_python_when_configured()
 from dataclasses import replace
 import numpy as np
 import phasesmith
-from phasesmith.refinement import intelligent_rietveld_recipe, rietveld
+from phasesmith.io.space_groups import space_group_by_number
+from phasesmith.refinement import rietveld
+from phasesmith.refinement.workflow import intelligent_rietveld_recipe
 
 cell = phasesmith.UnitCell(4.7, 4.7, 4.7, 90.0, 90.0, 90.0)
 structure = phasesmith.CrystalStructure(
-    "alpha", "P m -3 m", cell, phasesmith.space_group_by_number(221).space_group,
+    "alpha", "P m -3 m", cell, space_group_by_number(221).space_group,
     (phasesmith.AtomSite("Si1", "Si1", "Si", "Si", (0, 0, 0), 1.0, 0.01),),
 )
 reflections = phasesmith.StructuralReflectionBatch(

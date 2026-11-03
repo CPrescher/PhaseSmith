@@ -271,7 +271,7 @@ phasesmith.results.AccumulationResult
 phasesmith.refinement.ParameterKey
 phasesmith.refinement.ParameterSpec
 phasesmith.refinement.ParameterSet
-phasesmith.refinement.ParameterChange
+phasesmith.refinement.lebail.ParameterChange
 phasesmith.refinement.ConstraintTransform
 phasesmith.refinement.evaluate_residuals
 phasesmith.refinement.jacobian_vector_product
