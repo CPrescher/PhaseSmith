@@ -2,7 +2,7 @@
 use std::sync::atomic::AtomicBool;
 
 use npy::PyReadonlyArray2;
-use phasesmith_row_search::{Options, Point, run};
+use phasesmith_single_crystal::row_search::{Options, Point, run};
 use pyo3::{exceptions::PyValueError, prelude::*};
 
 #[pyfunction]

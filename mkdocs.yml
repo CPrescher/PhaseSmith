@@ -77,6 +77,8 @@ nav:
       - Native persistence: native-persistence.md
   - Single-crystal diffraction:
       - Overview and API: single-crystal.md
+      - First calculation (no private data): single-crystal-quickstart.md
+      - Original-frame configuration and results: single-crystal-workflow-api.md
       - Rust-only original-frame workflow: single-crystal-native-workflow.md
       - Dioptas application integration: dioptas-native-workflow.md
       - Dioptas complete-workflow validation: dioptas-native-validation.md
@@ -110,6 +112,9 @@ nav:
           - Pattern composition: mathematics/pattern-composition.md
           - Backgrounds: mathematics/backgrounds.md
           - Refinement and QPA: mathematics/refinement.md
+          - Single-crystal geometry: mathematics/single-crystal-geometry.md
+          - Single-crystal intensities: mathematics/single-crystal-intensities.md
+          - Structure search and assessment: mathematics/structure-search.md
       - Equations and units: equations.md
       - TCH profile: tch-profile.md
       - Constant-wavelength broadening: cw-profile.md
@@ -135,12 +140,14 @@ nav:
       - Python API map: api-reference.md
       - Python architecture: public-api.md
       - Pre-1.0 API decisions: api-stability.md
+      - Migrating to 0.8: migration-0.8.md
       - Migrating to 0.6: migration-0.6.md
       - Rust API: rust-api.md
       - Dioptas integration: dioptas-integration.md
   - Validation and development:
       - Evidence and development index: development.md
       - Package review 0.8: package-review-0.8.md
+      - Final release dry run 0.8: release-dry-run-0.8.md
       - Release review 0.8: release-candidate-0.8.md
       - Single-crystal promotion audit: single-crystal-promotion.md
       - Single-crystal API proposal: single-crystal-api-proposal.md

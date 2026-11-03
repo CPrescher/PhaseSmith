@@ -831,9 +831,7 @@ dependencies = [
  "phasesmith-io",
  "phasesmith-model",
  "phasesmith-persistence",
- "phasesmith-row-search",
- "phasesmith-solution",
- "phasesmith-spots",
+ "phasesmith-single-crystal",
  "phasesmith-workflows",
  "serde_json",
  "sha2",
@@ -930,9 +928,7 @@ dependencies = [
  "phasesmith-io",
  "phasesmith-model",
  "phasesmith-persistence",
- "phasesmith-row-search",
- "phasesmith-solution",
- "phasesmith-spots",
+ "phasesmith-single-crystal",
  "phasesmith-validation",
  "phasesmith-workflows",
  "pyo3",
@@ -940,30 +936,17 @@ dependencies = [
 ]
 
 [[package]]
-name = "phasesmith-row-search"
-version = "0.8.0"
-dependencies = [
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "phasesmith-solution"
+name = "phasesmith-single-crystal"
 version = "0.8.0"
 dependencies = [
  "criterion",
  "ndarray",
  "phasesmith-crystallography",
  "phasesmith-execution",
- "rustfft",
-]
-
-[[package]]
-name = "phasesmith-spots"
-version = "0.8.0"
-dependencies = [
  "rayon",
  "rustfft",
+ "serde",
+ "serde_json",
  "sha2",
 ]
 
@@ -998,8 +981,7 @@ dependencies = [
  "phasesmith-execution",
  "phasesmith-io",
  "phasesmith-model",
- "phasesmith-solution",
- "phasesmith-spots",
+ "phasesmith-single-crystal",
  "sha2",
 ]
 

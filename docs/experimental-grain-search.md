@@ -28,7 +28,7 @@ The native `spots` capability is included in ordinary 0.8 builds.
 ## Ownership and provenance
 
 The FFT deposition/transform, maxima and nearest-lattice ownership kernels are
-in `phasesmith-spots`, exposed through private native bindings. The array-only
+in `phasesmith-single-crystal::spots`, exposed through private native bindings. The array-only
 Python API coordinates the search; Dioptas owns files, instrument translation,
 controls, candidate tables and overlays. No runtime dependency on another
 checkout, SciPy, spglib, Qt, GSAS-II or a process-global thread configuration is
@@ -1338,7 +1338,11 @@ budgets, not CPU affinity pinning or a promise of full CPU utilization.
 
 Start Python with `OPENBLAS_NUM_THREADS=1`, `OMP_NUM_THREADS=1`, and
 `VECLIB_MAXIMUM_THREADS=1`. Parallel startup validates these inherited settings
-instead of changing the parent environment. Use a normal multiprocessing main
+instead of changing the parent environment. Changing these variables after NumPy
+has loaded does not change its active BLAS thread pool; parent/worker reductions
+can then differ in their last bits (including on NumPy 1.26). See the
+[0.8 reproducibility guidance](migration-0.8.md#exact-positional-search-reproducibility).
+Use a normal multiprocessing main
 guard. `spawn` starts fresh interpreters without forking existing Rayon/native
 worker pools. The standard library is the only scheduling dependency.
 

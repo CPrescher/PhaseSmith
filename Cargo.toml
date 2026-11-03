@@ -1,10 +1,8 @@
 [workspace]
 members = [
   "crates/phasesmith-hdf5",
-  "crates/phasesmith-solution",
+  "crates/phasesmith-single-crystal",
   "crates/phasesmith-rs",
-  "crates/phasesmith-spots",
-  "crates/phasesmith-row-search",
   "crates/phasesmith-core",
   "crates/phasesmith-crystallography",
   "crates/phasesmith-execution",

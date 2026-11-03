@@ -2,7 +2,7 @@
 use super::{Error, Measurements, Options, Reduced, Result, scaling};
 use crate::space_group_search::{self as sg, Assessment, AssessmentOptions, Hypothesis};
 use phasesmith_crystallography::UnitCell;
-use phasesmith_solution::{Candidate, Observation, SharedSearchSummary, Solution};
+use phasesmith_single_crystal::solution::{Candidate, Observation, SharedSearchSummary, Solution};
 use std::time::{Duration, Instant};
 #[path = "unknown_effort.rs"]
 mod effort;
@@ -13,7 +13,7 @@ pub use effort::{
 #[derive(Clone, Debug)]
 pub struct PhaseScreenOptions {
     /// Explicit optional coarse/adaptive initial phasing policy; default is full-data phasing.
-    pub phasing: phasesmith_solution::PhaseOnlyPolicy,
+    pub phasing: phasesmith_single_crystal::solution::PhaseOnlyPolicy,
     /// Bounded independent P1 workers, 1..=10.
     pub workers: usize,
     /// Independent phase starts, 1..=16.
@@ -140,7 +140,7 @@ pub struct GroupRun {
     /// Number of promotions retained by the penalized internal score.
     pub polishing_adopted: usize,
     /// Tensor proposal diagnostics, including unsuccessful promotions.
-    pub polishing_trials: Vec<phasesmith_solution::CandidatePolishingTrial>,
+    pub polishing_trials: Vec<phasesmith_single_crystal::solution::CandidatePolishingTrial>,
     /// Numerical rejection from polishing, if any.
     pub polishing_diagnostic: Option<String>,
     /// Source-frame validation details on common data.
@@ -156,7 +156,7 @@ pub struct GroupAttempt {
     /// Shared-map phase screening status, distinct from model-search success.
     pub phase_status: &'static str,
     /// Retained origin/hand alternatives and alpha/chord values.
-    pub origins: Vec<phasesmith_solution::PhaseOriginCandidate>,
+    pub origins: Vec<phasesmith_single_crystal::solution::PhaseOriginCandidate>,
     /// Actual origin-screen wall seconds, including failures.
     pub phase_seconds: f64,
     /// Index in the declared setting catalogue.
@@ -188,7 +188,7 @@ pub struct DiscoveryReport {
     /// Optional chronological effort and complete nonselected pass.
     pub effort: Option<EffortTrace>,
     /// Shared exact-group-free P1 map, phases and cycle histories.
-    pub phase_map: Option<phasesmith_solution::PhaseOnlyResult>,
+    pub phase_map: Option<phasesmith_single_crystal::solution::PhaseOnlyResult>,
     /// Phase-map failure/limit diagnostic, retained independently of candidate searches.
     pub phase_diagnostic: Option<String>,
     /// Full setting metadata and exact operations, in stable input order.
@@ -210,7 +210,7 @@ pub struct DiscoveryReport {
 #[allow(clippy::cast_precision_loss)]
 pub(super) fn aperture_assessment(
     m: &Measurements,
-    geometry: &phasesmith_spots::reciprocal::Geometry,
+    geometry: &phasesmith_single_crystal::spots::reciprocal::Geometry,
     reduced: Option<&Reduced>,
     policy: &DiscoveryOptions,
     cell: UnitCell,
@@ -251,13 +251,13 @@ fn common_score(
     candidate: &Candidate,
     group: &phasesmith_crystallography::SpaceGroup,
     cell: UnitCell,
-    data: &phasesmith_solution::PreparedData,
+    data: &phasesmith_single_crystal::solution::PreparedData,
     memory: usize,
     frame: &mut CommonFrameAudit,
     deadline: Instant,
-    cancellation: &phasesmith_solution::Cancellation,
+    cancellation: &phasesmith_single_crystal::solution::Cancellation,
 ) -> Result<(f64, f64, usize, f64, Vec<f64>)> {
-    use phasesmith_solution::{AdpMode, DenseMemoryBudget, PreparedSymmetricModel};
+    use phasesmith_single_crystal::solution::{AdpMode, DenseMemoryBudget, PreparedSymmetricModel};
     let model = common_model(candidate, group, cell, frame, deadline, cancellation)?;
     let anisotropic = candidate
         .refinement
@@ -316,11 +316,11 @@ fn common_model(
     cell: UnitCell,
     audit: &mut CommonFrameAudit,
     deadline: Instant,
-    cancellation: &phasesmith_solution::Cancellation,
-) -> Result<phasesmith_solution::SymmetryModel> {
+    cancellation: &phasesmith_single_crystal::solution::Cancellation,
+) -> Result<phasesmith_single_crystal::solution::SymmetryModel> {
     if let Some(r) = &candidate.refinement {
         audit.stored_frame_available = true;
-        match phasesmith_solution::recover_symmetry_in_frame(
+        match phasesmith_single_crystal::solution::recover_symmetry_in_frame(
             cell,
             group,
             &candidate.species,
@@ -338,7 +338,7 @@ fn common_model(
         }
     }
     audit.blind_recovery_attempted = true;
-    Ok(phasesmith_solution::recover_symmetry(
+    Ok(phasesmith_single_crystal::solution::recover_symmetry(
         cell,
         group,
         &candidate.species,
@@ -352,7 +352,7 @@ fn common_model(
 // not rotate U. Pull each image tensor back with Q^T U Q and average its orbit.
 #[allow(clippy::cast_precision_loss)] // Physical orbit multiplicity <=192.
 fn common_site_tensors(
-    model: &phasesmith_solution::SymmetryModel,
+    model: &phasesmith_single_crystal::solution::SymmetryModel,
     full: &[super::M3],
 ) -> Result<Vec<super::M3>> {
     if full.len() != model.full_count || full.iter().flatten().flatten().any(|v| !v.is_finite()) {
@@ -410,7 +410,8 @@ pub(super) fn search_pass(
     let own_deadline = started + Duration::from_secs_f64(policy.total_seconds);
     let deadline = shared_deadline.map_or(own_deadline, |d| d.min(own_deadline));
     let p1 = sg::rotational_group(&[[[1, 0, 0], [0, 1, 0], [0, 0, 1]]])?;
-    let common = phasesmith_solution::prepare_data(observations, original.priors.cell, &p1)?;
+    let common =
+        phasesmith_single_crystal::solution::prepare_data(observations, original.priors.cell, &p1)?;
     let mut attempts = initial_attempts(&assessment, policy);
     let (phase_map, phase_diagnostic) = screen_phases(
         observations,
@@ -434,7 +435,9 @@ pub(super) fn search_pass(
     let coefficients = if policy.plausible_centrosymmetric_exit {
         phase_map
             .as_ref()
-            .map(|m| phasesmith_solution::PhaseOriginDensity::new(&m.density, m.shape))
+            .map(|m| {
+                phasesmith_single_crystal::solution::PhaseOriginDensity::new(&m.density, m.shape)
+            })
             .transpose()?
     } else {
         None
@@ -627,14 +630,17 @@ fn screen_phases(
     attempts: &mut [GroupAttempt],
     deadline: Instant,
     explicit_inversion_test: bool,
-) -> Result<(Option<phasesmith_solution::PhaseOnlyResult>, Option<String>)> {
+) -> Result<(
+    Option<phasesmith_single_crystal::solution::PhaseOnlyResult>,
+    Option<String>,
+)> {
     let policy = original
         .discovery
         .as_ref()
         .ok_or_else(|| Error("discovery policy missing".into()))?;
     let phase_deadline =
         (Instant::now() + Duration::from_secs_f64(policy.phase.seconds)).min(deadline);
-    let phase_options = phasesmith_solution::SolveOptions {
+    let phase_options = phasesmith_single_crystal::solution::SolveOptions {
         seed: original.seed,
         trials: policy.phase.starts,
         cycles: policy.phase.cycles,
@@ -643,27 +649,29 @@ fn screen_phases(
             .saturating_duration_since(Instant::now())
             .as_secs_f64()
             .max(1e-6),
-        ..phasesmith_solution::SolveOptions::default()
+        ..phasesmith_single_crystal::solution::SolveOptions::default()
     };
     let laue = processing
         .priors
         .group
         .as_ref()
         .ok_or_else(|| Error("provisional processing symmetry missing".into()))?;
-    let (phase_map, phase_diagnostic) = match phasesmith_solution::phase_only_with_policy(
-        observations,
-        original.priors.cell,
-        laue,
-        &original.priors.elements,
-        &phase_options,
-        policy.phase.workers,
-        &policy.phase.phasing,
-    ) {
-        Ok(map) => (Some(map), None),
-        Err(e) => (None, Some(e.to_string())),
-    };
+    let (phase_map, phase_diagnostic) =
+        match phasesmith_single_crystal::solution::phase_only_with_policy(
+            observations,
+            original.priors.cell,
+            laue,
+            &original.priors.elements,
+            &phase_options,
+            policy.phase.workers,
+            &policy.phase.phasing,
+        ) {
+            Ok(map) => (Some(map), None),
+            Err(e) => (None, Some(e.to_string())),
+        };
     if let Some(map) = &phase_map {
-        let coefficients = phasesmith_solution::PhaseOriginDensity::new(&map.density, map.shape)?;
+        let coefficients =
+            phasesmith_single_crystal::solution::PhaseOriginDensity::new(&map.density, map.shape)?;
         // Atomic inversion is not supplied by a Laue prior. Test it explicitly,
         // even when P-1 is ineligible as a model or ranks outside the bounded list.
         let baseline = if explicit_inversion_test {
@@ -738,7 +746,7 @@ fn screen_setting(
     original: &Options,
     a: &mut GroupAttempt,
     h: &Hypothesis,
-    coefficients: &phasesmith_solution::PhaseOriginDensity,
+    coefficients: &phasesmith_single_crystal::solution::PhaseOriginDensity,
     deadline: Instant,
 ) {
     let clock = Instant::now();
@@ -747,10 +755,17 @@ fn screen_setting(
         .as_ref()
         .expect("checked discovery")
         .phase;
-    let result = (|| -> Result<Vec<phasesmith_solution::PhaseOriginCandidate>> {
-        let data = phasesmith_solution::prepare_data(observations, original.priors.cell, &h.group)?;
-        let plan =
-            phasesmith_solution::PreparedPhaseOrigin::new(&h.group, &data.hkl, &data.amplitudes)?;
+    let result = (|| -> Result<Vec<phasesmith_single_crystal::solution::PhaseOriginCandidate>> {
+        let data = phasesmith_single_crystal::solution::prepare_data(
+            observations,
+            original.priors.cell,
+            &h.group,
+        )?;
+        let plan = phasesmith_single_crystal::solution::PreparedPhaseOrigin::new(
+            &h.group,
+            &data.hkl,
+            &data.amplitudes,
+        )?;
         Ok(plan.search_cached(
             coefficients,
             policy.maximum_origins,
@@ -784,12 +799,12 @@ fn screen_setting(
 fn attempt_model(
     observations: &[Observation],
     options: &Options,
-    common: &phasesmith_solution::PreparedData,
+    common: &phasesmith_single_crystal::solution::PreparedData,
     hypothesis: &Hypothesis,
     prior: &GroupAttempt,
     clock: Instant,
     scoring_deadline: Instant,
-    map: Option<&phasesmith_solution::PhaseOnlyResult>,
+    map: Option<&phasesmith_single_crystal::solution::PhaseOnlyResult>,
 ) -> (GroupAttempt, Option<(Solution, SharedSearchSummary)>) {
     let mut a = prior.clone();
     let mut best = None;
@@ -848,7 +863,11 @@ fn record_run(
     initialization: &'static str,
     seconds: f64,
     hypothesis: &Hypothesis,
-    context: (&Options, &phasesmith_solution::PreparedData, Instant),
+    context: (
+        &Options,
+        &phasesmith_single_crystal::solution::PreparedData,
+        Instant,
+    ),
 ) {
     let (options, common, deadline) = context;
     let mut run = GroupRun {
@@ -1002,7 +1021,7 @@ mod fast_exit_tests {
                 .unwrap(),
         ])
         .unwrap();
-        let model = phasesmith_solution::recover_symmetry(
+        let model = phasesmith_single_crystal::solution::recover_symmetry(
             cell,
             &group,
             &["O".into(), "O".into()],
@@ -1069,7 +1088,7 @@ mod fast_exit_tests {
         GroupAttempt {
             runs: Vec::new(),
             phase_status: "consistent",
-            origins: vec![phasesmith_solution::PhaseOriginCandidate {
+            origins: vec![phasesmith_single_crystal::solution::PhaseOriginCandidate {
                 hand: 1,
                 shift: [0.; 3],
                 alpha: 0.1,

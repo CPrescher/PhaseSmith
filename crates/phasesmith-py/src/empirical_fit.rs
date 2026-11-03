@@ -1,6 +1,6 @@
 //! Validated array boundary for the native empirical-scaling optimizer.
 use npy::{IntoPyArray, PyReadonlyArray1, PyReadonlyArray2, ndarray::Array2};
-use phasesmith_spots::{empirical_fit as kernel, intensity_model::Design};
+use phasesmith_single_crystal::spots::{empirical_fit as kernel, intensity_model::Design};
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyDict};
 fn error(e: impl std::fmt::Display) -> PyErr {
     PyValueError::new_err(e.to_string())

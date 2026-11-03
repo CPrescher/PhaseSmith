@@ -136,7 +136,7 @@ search work are printed in the raw log. Comparisons use modes within one
 executable, not Criterion's historical build-to-build deltas.
 
 ```sh
-cargo bench -p phasesmith-solution --bench solution -- peak_statistics_ --sample-size 20 --warm-up-time 1 --measurement-time 2
+cargo bench -p phasesmith-single-crystal --features solution --bench solution -- peak_statistics_ --sample-size 20 --warm-up-time 1 --measurement-time 2
 .venv/bin/python benchmarks/solution_peak_statistics_interleaved.py --output runs/peak-statistics-new --seconds 15
 ```
 

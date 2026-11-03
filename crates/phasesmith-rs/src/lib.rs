@@ -19,10 +19,10 @@ pub use phasesmith_model as model;
 pub use phasesmith_persistence as persistence;
 /// Structure search from corrected single-crystal intensities.
 #[cfg(feature = "solution")]
-pub use phasesmith_solution as solution;
+pub use phasesmith_single_crystal::solution;
 /// Single-crystal detector measurements, masks, geometry and profile kernels.
 #[cfg(feature = "spots")]
-pub use phasesmith_spots as spots;
+pub use phasesmith_single_crystal::spots;
 /// Le Bail, Rietveld, quantitative, residual, and validation workflows.
 pub use phasesmith_workflows as workflows;
 
@@ -32,7 +32,7 @@ pub use phasesmith_hdf5 as hdf5;
 
 /// Independent equidistant-row grouping for lattice discovery.
 #[cfg(feature = "row-search")]
-pub use phasesmith_row_search as row_search;
+pub use phasesmith_single_crystal::row_search;
 
 /// Native HDF5 file workflow and versioned output adapter for application hosts.
 #[cfg(all(feature = "single-crystal", feature = "hdf5"))]

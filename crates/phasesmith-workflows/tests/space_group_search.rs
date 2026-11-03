@@ -3,7 +3,7 @@
 #![allow(clippy::float_cmp)] // Exact zero evidence and discrete identity are tested deliberately.
 use phasesmith_crystallography::UnitCell;
 use phasesmith_io::{space_group_by_number, space_group_settings_for_cell};
-use phasesmith_solution::Observation;
+use phasesmith_single_crystal::solution::Observation;
 use phasesmith_workflows::space_group_search::{AssessmentOptions, Hypothesis, assess};
 fn cell() -> UnitCell {
     UnitCell {

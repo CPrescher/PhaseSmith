@@ -1,7 +1,7 @@
 //! Opt-in omega arPLS array boundary. Owned inputs allow GIL-free fitting.
 use npy::ndarray::Array2;
 use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray2};
-use phasesmith_spots::omega_background::{Engine, Parameters, Solver};
+use phasesmith_single_crystal::spots::omega_background::{Engine, Parameters, Solver};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 

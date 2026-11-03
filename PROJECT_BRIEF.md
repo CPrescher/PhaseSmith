@@ -2,6 +2,24 @@
 
 ## Purpose and current release
 
+The 0.8 public Rust package boundary groups detector/integration, structure-search
+and row-grouping kernels into `phasesmith-single-crystal`, with independently
+selectable `spots`, `solution` and `row-search` features. These were three
+unpublished development crates, not separate product APIs. Existing facade paths
+(`phasesmith::spots`, `phasesmith::solution`, `phasesmith::row_search`) and Python
+imports remain unchanged. HDF5 stays an independent file-adapter crate; the
+complete coordinator stays in `phasesmith-workflows` to avoid a dependency cycle.
+This is a module/package move, with no intentional numerical or protocol changes.
+The public release now contains eleven crates, including two new registry names.
+
+The 0.8 release-preparation pass completes the first-use/native-workflow input
+guides and shared Rust/Python single-crystal mathematical reference. Runnable
+synthetic examples are installation/API controls, separate from measured
+validation. Release validation includes the declared NumPy minimum and an
+unpublished full platform/source-distribution workflow. Publication and the
+release tag remain separate from this preparation; retain exact reproducibility
+gates and historical scientific receipts.
+
 `develop` is the consolidated starting point for continuing development. It
 includes the 0.7 mainline, the recent HKL/single-crystal/native-workflow work and
 the reviewed unfinished detector/research changes. `main` retains the 0.7 release
@@ -180,9 +198,9 @@ recovery and signed prediction-led extraction, not a current capability claim.
 | CIF, powder, space-group and instrument adapters | `phasesmith-io` |
 | Powder and single-crystal workflows | `phasesmith-workflows` |
 | Versioned projects and lossless numeric archives | `phasesmith-persistence` |
-| Detector, geometry, profile and scaling kernels | `phasesmith-spots` |
-| Independent DAFi-based row grouping | `phasesmith-row-search` |
-| Structure-search kernels | `phasesmith-solution` |
+| Detector, geometry, profile and scaling kernels | `phasesmith-single-crystal::spots` |
+| Independent DAFi-based row grouping | `phasesmith-single-crystal::row_search` |
+| Structure-search kernels | `phasesmith-single-crystal::solution` |
 | Optional bundled detector-file input | `phasesmith-hdf5` |
 | External comparisons and validation orchestration | `phasesmith-validation` |
 | Native application facade | `phasesmith` (`crates/phasesmith-rs`) |

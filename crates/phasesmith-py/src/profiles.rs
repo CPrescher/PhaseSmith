@@ -1,8 +1,8 @@
 //! Typed `NumPy` snapshots for experimental empirical profiles; no Python in kernels.
 use npy::ndarray::Array2;
 use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2};
-use phasesmith_spots::profile_refinement as refinement;
-use phasesmith_spots::{Bounds, Detection, Image, profiles as kernel};
+use phasesmith_single_crystal::spots::profile_refinement as refinement;
+use phasesmith_single_crystal::spots::{Bounds, Detection, Image, profiles as kernel};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -102,7 +102,7 @@ impl Owned {
         }
     }
 }
-fn error(e: phasesmith_spots::SpotError) -> PyErr {
+fn error(e: phasesmith_single_crystal::spots::SpotError) -> PyErr {
     PyValueError::new_err(e.to_string())
 }
 fn matrix<const N: usize>(py: Python<'_>, a: Vec<[f64; N]>) -> Bound<'_, PyArray2<f64>> {
@@ -429,7 +429,7 @@ fn experimental_profile_fit_variations<'py>(
     let fixed: Vec<[f64; 4]> = rows(fixed)?;
     let result = py
         .detach(move || {
-            phasesmith_spots::profiles_variation::fit(
+            phasesmith_single_crystal::spots::profiles_variation::fit(
                 &owned.borrowed(),
                 &profiles,
                 kernel::Grid { shape, step },
@@ -680,7 +680,7 @@ fn experimental_profile_refine<'py>(
                     && let Err(e) = Python::attach(|py| cb.call1(py, (done, total)))
                 {
                     callback_error = Some(e);
-                    return Err(phasesmith_spots::SpotError(
+                    return Err(phasesmith_single_crystal::spots::SpotError(
                         "profile refinement cancelled".into(),
                     ));
                 }

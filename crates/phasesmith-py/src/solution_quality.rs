@@ -2,7 +2,7 @@
 use super::{array2, cell, invalid};
 use crate::{NativePreparedReflectionGenerator, hkl_rows};
 use npy::{IntoPyArray, PyReadonlyArray1};
-use phasesmith_solution::{PreparedPhaseQuality, WilsonAudit, WilsonNormalization};
+use phasesmith_single_crystal::solution::{PreparedPhaseQuality, WilsonAudit, WilsonNormalization};
 use pyo3::{
     prelude::*,
     types::{PyDict, PyList},
@@ -32,7 +32,7 @@ pub(super) fn normalization_record<'py>(
 }
 pub(super) fn trace_records<'py>(
     py: Python<'py>,
-    traces: &[phasesmith_solution::PhaseQualityTrace],
+    traces: &[phasesmith_single_crystal::solution::PhaseQualityTrace],
 ) -> PyResult<Bound<'py, PyList>> {
     let out = PyList::empty(py);
     for a in traces {
@@ -86,7 +86,7 @@ impl NativeQuality {
             .zip(intensity)
             .zip(sigma)
             .map(
-                |((hkl, intensity), sigma)| phasesmith_solution::Observation {
+                |((hkl, intensity), sigma)| phasesmith_single_crystal::solution::Observation {
                     hkl,
                     intensity,
                     sigma,
@@ -94,8 +94,8 @@ impl NativeQuality {
             )
             .collect();
         py.detach(move || {
-            let data = phasesmith_solution::prepare_data(&raw, cell, &group)?;
-            let norm = phasesmith_solution::normalize_wilson(
+            let data = phasesmith_single_crystal::solution::prepare_data(&raw, cell, &group)?;
+            let norm = phasesmith_single_crystal::solution::normalize_wilson(
                 cell,
                 &group,
                 &data.hkl,
@@ -118,7 +118,7 @@ impl NativeQuality {
                 hkl: data.hkl,
             })
         })
-        .map_err(|e: phasesmith_solution::SolutionError| invalid(e))
+        .map_err(|e: phasesmith_single_crystal::solution::SolutionError| invalid(e))
     }
     fn metadata<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
         let d = PyDict::new(py);
@@ -152,7 +152,8 @@ impl NativeQuality {
         }
         let result = py
             .detach(|| {
-                let mut scorer = phasesmith_solution::PreparedPhaseScore::new(&self.plan)?;
+                let mut scorer =
+                    phasesmith_single_crystal::solution::PreparedPhaseScore::new(&self.plan)?;
                 values
                     .chunks_exact(self.plan.hkl.len())
                     .map(|v| scorer.evaluate(v))

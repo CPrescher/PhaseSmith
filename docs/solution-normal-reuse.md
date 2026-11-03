@@ -121,7 +121,7 @@ preparations, reuses, phase starts and cycles are printed in the raw log. All
 comparisons use modes within one executable, not historical build-to-build deltas.
 
 ```sh
-cargo bench -p phasesmith-solution --bench solution -- normal_reuse_ --sample-size 20 --warm-up-time 1 --measurement-time 2
+cargo bench -p phasesmith-single-crystal --features solution --bench solution -- normal_reuse_ --sample-size 20 --warm-up-time 1 --measurement-time 2
 .venv/bin/python benchmarks/solution_normal_reuse_interleaved.py --output runs/normal-reuse-new --seconds 15
 ```
 

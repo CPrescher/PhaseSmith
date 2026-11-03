@@ -1,6 +1,8 @@
 //! Owned array snapshots for bounded native original-count frame preparation.
 use npy::{IntoPyArray, PyArray2, PyReadonlyArray2, PyReadonlyArray3, ndarray::Array2};
-use phasesmith_spots::{frame_input as kernel, frame_validity::DacOptions, reciprocal::Geometry};
+use phasesmith_single_crystal::spots::{
+    frame_input as kernel, frame_validity::DacOptions, reciprocal::Geometry,
+};
 use pyo3::{exceptions::PyValueError, prelude::*};
 
 type BlockInput<'a> = (

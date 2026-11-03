@@ -3,7 +3,7 @@ use super::{
     Error, Measurements, Options, Result, bounds, grains,
     math::{V3, cross, dot, median, unit},
 };
-use phasesmith_spots::{
+use phasesmith_single_crystal::spots::{
     empirical_fit, intensity_model, profile_refinement as refinement, profiles,
 };
 use std::collections::BTreeMap;
@@ -72,7 +72,7 @@ fn design(
     m: &Measurements,
     values: &[[f64; 2]],
     flags: &[u32],
-    g: phasesmith_spots::reciprocal::Geometry,
+    g: phasesmith_single_crystal::spots::reciprocal::Geometry,
     o: &Options,
 ) -> Result<Design> {
     let n = m.hkl.len();
@@ -259,7 +259,7 @@ fn error_floor(
 pub(super) fn reduce(
     m: &Measurements,
     o: &Options,
-    g: &phasesmith_spots::reciprocal::Geometry,
+    g: &phasesmith_single_crystal::spots::reciprocal::Geometry,
 ) -> Result<Reduced> {
     let n = m.hkl.len();
     let (fitted, choices) = fit_profiles_native(m, o)?;
@@ -343,7 +343,7 @@ pub(super) fn reduce(
 
 pub(super) fn physical_factors(
     m: &Measurements,
-    g: &phasesmith_spots::reciprocal::Geometry,
+    g: &phasesmith_single_crystal::spots::reciprocal::Geometry,
 ) -> Result<Vec<f64>> {
     let beam = unit(g.beam);
     let axis = unit(g.axis);
@@ -471,7 +471,10 @@ fn fit_profiles_native(m: &Measurements, o: &Options) -> Result<(refinement::Fit
             weak_design_counts: 1000.,
             weak_spatial_width: 0.95,
         },
-        |_, _| o.checkpoint().map_err(|e| phasesmith_spots::SpotError(e.0)),
+        |_, _| {
+            o.checkpoint()
+                .map_err(|e| phasesmith_single_crystal::spots::SpotError(e.0))
+        },
     )?;
     Ok((fitted, choices))
 }

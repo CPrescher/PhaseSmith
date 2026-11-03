@@ -1,7 +1,7 @@
 //! Array copies isolate detached Rust calculations from Python buffer mutations.
 
 use npy::{IntoPyArray, PyReadonlyArray1, ndarray::Array2};
-use phasesmith_solution::{FlipOptions, Observation, SolveOptions};
+use phasesmith_single_crystal::solution::{FlipOptions, Observation, SolveOptions};
 use pyo3::{
     exceptions::PyValueError,
     prelude::*,
@@ -152,19 +152,21 @@ fn solve_structure<'py>(
     let group = group.space_group().clone();
     let refinement = match refinement.as_str() {
         "none" => None,
-        "isotropic" => Some(phasesmith_solution::AdpMode::Isotropic),
-        "anisotropic" => Some(phasesmith_solution::AdpMode::Anisotropic),
+        "isotropic" => Some(phasesmith_single_crystal::solution::AdpMode::Isotropic),
+        "anisotropic" => Some(phasesmith_single_crystal::solution::AdpMode::Anisotropic),
         _ => return Err(invalid("unknown symmetry refinement mode")),
     };
     let phasing = match phasing.as_str() {
-        "charge_flip" => phasesmith_solution::PhasingMethod::ChargeFlip,
-        "dual_space" => phasesmith_solution::PhasingMethod::DualSpace,
-        "portfolio" => phasesmith_solution::PhasingMethod::Portfolio,
+        "charge_flip" => phasesmith_single_crystal::solution::PhasingMethod::ChargeFlip,
+        "dual_space" => phasesmith_single_crystal::solution::PhasingMethod::DualSpace,
+        "portfolio" => phasesmith_single_crystal::solution::PhasingMethod::Portfolio,
         _ => return Err(invalid("unknown phasing method")),
     };
     let options = SolveOptions {
-        dense_memory_budget: phasesmith_solution::DenseMemoryBudget::new(dense_memory_budget_bytes)
-            .map_err(invalid)?,
+        dense_memory_budget: phasesmith_single_crystal::solution::DenseMemoryBudget::new(
+            dense_memory_budget_bytes,
+        )
+        .map_err(invalid)?,
         seed,
         trials,
         cycles,
@@ -250,17 +252,17 @@ fn solve_structure<'py>(
             )) = shared_search
             {
                 if !composition.is_empty() {
-                    return Err(phasesmith_solution::SolutionError(
+                    return Err(phasesmith_single_crystal::solution::SolutionError(
                         "shared search does not accept composition".into(),
                     ));
                 }
-                phasesmith_solution::solve_elements(
+                phasesmith_single_crystal::solution::solve_elements(
                     &observations,
                     cell,
                     &group,
                     &elements,
                     &options,
-                    &phasesmith_solution::SharedSearchOptions {
+                    &phasesmith_single_crystal::solution::SharedSearchOptions {
                         maximum_atoms,
                         workers,
                         joint_assignment_refinement,
@@ -316,7 +318,13 @@ fn solve_structure<'py>(
                     },
                 )
             } else {
-                phasesmith_solution::solve(&observations, cell, &group, &composition, &options)
+                phasesmith_single_crystal::solution::solve(
+                    &observations,
+                    cell,
+                    &group,
+                    &composition,
+                    &options,
+                )
             }
         })
         .map_err(invalid)?;
@@ -399,7 +407,7 @@ fn flip<'py>(
     let support = support.as_slice()?.to_vec();
     let result = py
         .detach(move || {
-            phasesmith_solution::charge_flip(
+            phasesmith_single_crystal::solution::charge_flip(
                 shape,
                 &hkl,
                 &amplitudes,
@@ -448,7 +456,9 @@ fn model<'py>(
         .collect();
     let result = py
         .detach(move || {
-            phasesmith_solution::evaluate_model(cell, &hkl, &observed, &species, &xyz, u)
+            phasesmith_single_crystal::solution::evaluate_model(
+                cell, &hkl, &observed, &species, &xyz, u,
+            )
         })
         .map_err(invalid)?;
     let out = PyDict::new(py);
@@ -462,14 +472,14 @@ fn model<'py>(
 
 #[pyclass(name = "_SolutionCancellation", frozen)]
 pub(crate) struct NativeCancellation {
-    pub(crate) inner: phasesmith_solution::Cancellation,
+    pub(crate) inner: phasesmith_single_crystal::solution::Cancellation,
 }
 #[pymethods]
 impl NativeCancellation {
     #[new]
     fn new() -> Self {
         Self {
-            inner: phasesmith_solution::Cancellation::default(),
+            inner: phasesmith_single_crystal::solution::Cancellation::default(),
         }
     }
     fn cancel(&self) -> bool {
@@ -510,10 +520,16 @@ fn memory_estimate<'py>(
     let cell = cell(&cell_parameters)?;
     let group = group.space_group().clone();
     let memory =
-        phasesmith_solution::DenseMemoryBudget::new(dense_memory_budget_bytes).map_err(invalid)?;
+        phasesmith_single_crystal::solution::DenseMemoryBudget::new(dense_memory_budget_bytes)
+            .map_err(invalid)?;
     let result = py
         .detach(move || {
-            phasesmith_solution::estimate_solution_memory(&observations, cell, &group, memory)
+            phasesmith_single_crystal::solution::estimate_solution_memory(
+                &observations,
+                cell,
+                &group,
+                memory,
+            )
         })
         .map_err(invalid)?;
     let out = PyDict::new(py);

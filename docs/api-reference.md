@@ -39,6 +39,24 @@ could diverge from the native implementation.
 The [pre-1.0 API decisions](api-stability.md) distinguish stable-direction
 domain APIs, public mathematical primitives, and named compatibility adapters.
 
+## Single-crystal workflows
+
+| Module | Entry points / contract | Guide |
+| --- | --- | --- |
+| `phasesmith.single_crystal.workflow` | `WorkflowConfig`, `WorkflowResult`, `run_workflow`, `available`; native original-frame recipe | [Fields, units, results and errors](single-crystal-workflow-api.md) |
+| `phasesmith.io.hdf5` | `Hdf5Frames`; explicit dataset, owned unsigned count frames | [Reader and filter limits](native-hdf5.md) |
+| `phasesmith.io.hkl` | `HklData`, `read_hkl`; signed I and positive sigma(I), source provenance | [First search](single-crystal-quickstart.md) |
+| `phasesmith.single_crystal.solution` | `SolutionOptions`, `solve_structure`, `solve_structure_elements`, `write_solution`, `SolutionCancellation`; bounded candidate search | [HKL search](experimental-structure-solution.md) |
+| `phasesmith.single_crystal.search` | Named versioned search configurations | [Reproducible controls](single-crystal.md#reproducible-search-configuration) |
+| `phasesmith.single_crystal` submodules | Detection, reciprocal geometry, grains, integration, profiles and scaling | [Module catalogue](single-crystal.md#python-api) |
+
+The shared mathematical reference covers [geometry](mathematics/single-crystal-geometry.md),
+[profiles/intensities/scaling](mathematics/single-crystal-intensities.md) and
+[structure search](mathematics/structure-search.md). These methods distinguish
+position fitting, internal candidate polishing and full workflow acceptance.
+See [migration to 0.8](migration-0.8.md) for removed experimental paths and the
+process-startup reproducibility contract.
+
 ## Data import and domain models
 
 | Module | Main public entry points | Purpose |

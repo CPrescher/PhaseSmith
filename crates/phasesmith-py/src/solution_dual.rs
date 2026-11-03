@@ -2,7 +2,7 @@
 use super::{cell, invalid};
 use crate::hkl_rows;
 use npy::{IntoPyArray, PyReadonlyArray1};
-use phasesmith_solution::DualSpaceOptions;
+use phasesmith_single_crystal::solution::DualSpaceOptions;
 use pyo3::{
     prelude::*,
     types::{PyDict, PyList},
@@ -35,7 +35,7 @@ fn run<'py>(
     let support = support.as_slice()?.to_vec();
     let options = DualSpaceOptions {
         cycles,
-        peak_selection: phasesmith_solution::PeakSelection::Fixed(atom_count),
+        peak_selection: phasesmith_single_crystal::solution::PeakSelection::Fixed(atom_count),
         mask_sigma,
         hybrid_m,
         omit_fraction,
@@ -45,7 +45,7 @@ fn run<'py>(
     };
     let state = py
         .detach(move || {
-            phasesmith_solution::dual_space_with_execution(
+            phasesmith_single_crystal::solution::dual_space_with_execution(
                 shape,
                 cell,
                 &hkl,
@@ -55,7 +55,7 @@ fn run<'py>(
                 &options,
                 None,
                 None,
-                phasesmith_solution::PhasingExecution {
+                phasesmith_single_crystal::solution::PhasingExecution {
                     score_only_evaluation: false,
                     reusable_fourier_workspaces: reusable_workspaces,
                     filtered_peak_search: false,
@@ -97,7 +97,7 @@ fn projection<'py>(
     let cell = cell(&cell_parameters)?;
     let options = DualSpaceOptions {
         cycles: 1,
-        peak_selection: phasesmith_solution::PeakSelection::Fixed(atom_count),
+        peak_selection: phasesmith_single_crystal::solution::PeakSelection::Fixed(atom_count),
         mask_sigma,
         hybrid_m: 3.,
         omit_fraction,
@@ -108,11 +108,13 @@ fn projection<'py>(
     let out = py
         .detach(move || {
             if cached {
-                phasesmith_solution::atomic_projection_cached(
+                phasesmith_single_crystal::solution::atomic_projection_cached(
                     &density, shape, cell, &options, cycle,
                 )
             } else {
-                phasesmith_solution::atomic_projection(&density, shape, cell, &options, cycle)
+                phasesmith_single_crystal::solution::atomic_projection(
+                    &density, shape, cell, &options, cycle,
+                )
             }
         })
         .map_err(invalid)?;
@@ -121,7 +123,7 @@ fn projection<'py>(
 
 pub(super) fn adaptive_record<'py>(
     py: Python<'py>,
-    h: &phasesmith_solution::AdaptivePeakHistory,
+    h: &phasesmith_single_crystal::solution::AdaptivePeakHistory,
 ) -> PyResult<Bound<'py, PyDict>> {
     let d = PyDict::new(py);
     d.set_item("sigma", h.sigma)?;
@@ -165,7 +167,7 @@ fn count_free<'py>(
     let support = support.as_slice()?.to_vec();
     let options = DualSpaceOptions {
         cycles,
-        peak_selection: phasesmith_solution::PeakSelection::Adaptive {
+        peak_selection: phasesmith_single_crystal::solution::PeakSelection::Adaptive {
             sigma: peak_sigma,
             cap: peak_cap,
         },
@@ -179,7 +181,7 @@ fn count_free<'py>(
     let state = py
         .detach(move || {
             if checkpoint_accept_cycle.is_none() {
-                return phasesmith_solution::dual_space_with_execution(
+                return phasesmith_single_crystal::solution::dual_space_with_execution(
                     shape,
                     cell,
                     &hkl,
@@ -189,7 +191,7 @@ fn count_free<'py>(
                     &options,
                     None,
                     None,
-                    phasesmith_solution::PhasingExecution {
+                    phasesmith_single_crystal::solution::PhasingExecution {
                         score_only_evaluation: false,
                         reusable_fourier_workspaces: reusable_workspaces,
                         filtered_peak_search,
@@ -209,14 +211,14 @@ fn count_free<'py>(
                 || fused_phase_workspace
                 || streamed_peak_search
             {
-                return Err(phasesmith_solution::SolutionError(
+                return Err(phasesmith_single_crystal::solution::SolutionError(
                     "diagnostic checkpoint and execution modes must be tested separately".into(),
                 ));
             }
             let mut handoff = |_: &[f64], done: usize, _: usize| {
                 Ok(checkpoint_accept_cycle.is_some_and(|n| n > 0 && done >= n))
             };
-            phasesmith_solution::dual_space_monitored(
+            phasesmith_single_crystal::solution::dual_space_monitored(
                 shape,
                 cell,
                 &hkl,
@@ -267,12 +269,13 @@ fn filtered_peaks<'py>(
     let (peaks, effective, fallbacks) = py
         .detach(|| {
             if filtered {
-                let mut plan = phasesmith_solution::PreparedAdaptivePeaks::new(shape)?
-                    .with_streamed_scan(streamed);
+                let mut plan =
+                    phasesmith_single_crystal::solution::PreparedAdaptivePeaks::new(shape)?
+                        .with_streamed_scan(streamed);
                 let (peaks, sigma) = plan.select(&density, sigma, cap)?;
                 Ok((peaks, sigma, plan.exact_rms_fallbacks()))
             } else {
-                phasesmith_solution::adaptive_peaks(&density, shape, sigma, cap)
+                phasesmith_single_crystal::solution::adaptive_peaks(&density, shape, sigma, cap)
                     .map(|(p, s)| (p, s, 0))
             }
         })
@@ -301,7 +304,7 @@ fn adaptive_projection<'py>(
     let cell = cell(&cell_parameters)?;
     let options = DualSpaceOptions {
         cycles: 1,
-        peak_selection: phasesmith_solution::PeakSelection::Adaptive { sigma, cap },
+        peak_selection: phasesmith_single_crystal::solution::PeakSelection::Adaptive { sigma, cap },
         mask_sigma,
         hybrid_m: 3.,
         omit_fraction,
@@ -310,9 +313,14 @@ fn adaptive_projection<'py>(
         cancellation: None,
     };
     let (peaks, effective) =
-        phasesmith_solution::adaptive_peaks(&rho, shape, sigma, cap).map_err(invalid)?;
+        phasesmith_single_crystal::solution::adaptive_peaks(&rho, shape, sigma, cap)
+            .map_err(invalid)?;
     let projected = py
-        .detach(move || phasesmith_solution::atomic_projection(&rho, shape, cell, &options, cycle))
+        .detach(move || {
+            phasesmith_single_crystal::solution::atomic_projection(
+                &rho, shape, cell, &options, cycle,
+            )
+        })
         .map_err(invalid)?;
     let d = PyDict::new(py);
     d.set_item("density", projected.into_pyarray(py))?;
@@ -322,7 +330,7 @@ fn adaptive_projection<'py>(
 }
 fn checkpoint_records<'py>(
     py: Python<'py>,
-    records: &[phasesmith_solution::DualSpaceCheckpoint],
+    records: &[phasesmith_single_crystal::solution::DualSpaceCheckpoint],
 ) -> PyResult<Bound<'py, PyList>> {
     let items = PyList::empty(py);
     for c in records {
@@ -338,7 +346,7 @@ fn checkpoint_records<'py>(
 
 pub(super) fn trial_records(
     py: Python<'_>,
-    records: Vec<phasesmith_solution::PhasingTrial>,
+    records: Vec<phasesmith_single_crystal::solution::PhasingTrial>,
 ) -> PyResult<Bound<'_, PyList>> {
     let trials = PyList::empty(py);
     for t in records {
@@ -390,7 +398,7 @@ fn fft_transform<'py>(
     inverse: bool,
     batched: bool,
 ) -> PyResult<Bound<'py, PyDict>> {
-    use phasesmith_solution::FourierComplex as Complex;
+    use phasesmith_single_crystal::solution::FourierComplex as Complex;
     let real = real.as_slice()?;
     let imaginary = imaginary.as_slice()?;
     if real.len() != imaginary.len() {
@@ -402,7 +410,9 @@ fn fft_transform<'py>(
         .map(|(&re, &im)| Complex::new(re, im))
         .collect();
     let output = py
-        .detach(|| phasesmith_solution::transform_3d(shape, &values, inverse, batched))
+        .detach(|| {
+            phasesmith_single_crystal::solution::transform_3d(shape, &values, inverse, batched)
+        })
         .map_err(invalid)?;
     let out = PyDict::new(py);
     out.set_item(
@@ -440,10 +450,12 @@ fn real_fft_transform<'py>(
     let input: Vec<_> = a
         .iter()
         .zip(b)
-        .map(|(&r, &i)| phasesmith_solution::FourierComplex::new(r, i))
+        .map(|(&r, &i)| phasesmith_single_crystal::solution::FourierComplex::new(r, i))
         .collect();
     let out = py
-        .detach(|| phasesmith_solution::real_density_transform(shape, &input, to_density))
+        .detach(|| {
+            phasesmith_single_crystal::solution::real_density_transform(shape, &input, to_density)
+        })
         .map_err(invalid)?;
     let result = PyDict::new(py);
     result.set_item(

@@ -2,7 +2,7 @@
 use super::invalid;
 use crate::{NativePreparedReflectionGenerator, hkl_rows};
 use npy::{IntoPyArray, PyReadonlyArray1};
-use phasesmith_solution::{PhaseOriginMap, PreparedPhaseOrigin};
+use phasesmith_single_crystal::solution::{PhaseOriginMap, PreparedPhaseOrigin};
 use pyo3::{
     prelude::*,
     types::{PyDict, PyList},
@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 
 pub(super) fn origin_records<'py>(
     py: Python<'py>,
-    records: &[phasesmith_solution::PhaseOriginAudit],
+    records: &[phasesmith_single_crystal::solution::PhaseOriginAudit],
 ) -> PyResult<Bound<'py, PyList>> {
     let out = PyList::empty(py);
     for a in records {
@@ -77,7 +77,7 @@ pub(super) fn origin_records<'py>(
 
 #[pyclass(name = "_PeakCompletionPlan", frozen)]
 pub(super) struct NativeCompletion {
-    pub(super) inner: phasesmith_solution::PreparedPeakCompletion,
+    pub(super) inner: phasesmith_single_crystal::solution::PreparedPeakCompletion,
 }
 #[pymethods]
 impl NativeCompletion {
@@ -109,7 +109,7 @@ impl NativeCompletion {
         let hkl = hkl_rows(&hkl)?;
         let observed = observed.as_slice()?.to_vec();
         py.detach(move || {
-            phasesmith_solution::PreparedPeakCompletion::new(
+            phasesmith_single_crystal::solution::PreparedPeakCompletion::new(
                 cell,
                 &group,
                 &points,
@@ -344,7 +344,7 @@ impl NativeCompletion {
 }
 fn completion_result(
     py: Python<'_>,
-    result: phasesmith_solution::PeakCompletionResult,
+    result: phasesmith_single_crystal::solution::PeakCompletionResult,
 ) -> PyResult<Bound<'_, PyDict>> {
     let d = PyDict::new(py);
     let candidates = PyList::empty(py);
@@ -514,7 +514,8 @@ fn checkpoint_select(
     }
     let result = py
         .detach(|| {
-            let mut selector = phasesmith_solution::PhaseCheckpointSelector::default();
+            let mut selector =
+                phasesmith_single_crystal::solution::PhaseCheckpointSelector::default();
             (0..n)
                 .map(|i| {
                     selector.consider(
@@ -558,22 +559,27 @@ fn normal_step<'py>(
     let value = py
         .detach(|| {
             if blocked {
-                phasesmith_solution::blocked_normal_step(&j, &r, damping, None, None)
+                phasesmith_single_crystal::solution::blocked_normal_step(
+                    &j, &r, damping, None, None,
+                )
             } else if cached {
-                phasesmith_solution::cached_normal_step(&j, &r, damping, None, None)
+                phasesmith_single_crystal::solution::cached_normal_step(&j, &r, damping, None, None)
             } else {
-                phasesmith_solution::iterative_normal_step(&j, &r, damping, None, None).map(
-                    |(step, iterations)| phasesmith_solution::CachedNormalStep {
+                phasesmith_single_crystal::solution::iterative_normal_step(
+                    &j, &r, damping, None, None,
+                )
+                .map(|(step, iterations)| {
+                    phasesmith_single_crystal::solution::CachedNormalStep {
                         step,
                         iterations,
                         used_cache: false,
                         fell_back: false,
-                    },
-                )
+                    }
+                })
             }
         })
         .map_err(invalid)?;
-    let phasesmith_solution::CachedNormalStep {
+    let phasesmith_single_crystal::solution::CachedNormalStep {
         step,
         iterations,
         used_cache,
@@ -610,7 +616,9 @@ fn chemical_scales<'py>(
     let masses = masses.as_slice()?.to_vec();
     let proposals = py
         .detach(|| {
-            phasesmith_solution::chemical_density_scales(cell, &group, &points, &masses, &elements)
+            phasesmith_single_crystal::solution::chemical_density_scales(
+                cell, &group, &points, &masses, &elements,
+            )
         })
         .map_err(invalid)?;
     let out = PyList::empty(py);
@@ -626,8 +634,10 @@ fn chemical_scales<'py>(
 #[pyfunction(name = "_phase_cycle_quota")]
 #[pyo3(signature=(cycles,trials,trial,short=false))]
 fn phase_quota(cycles: usize, trials: usize, trial: usize, short: bool) -> PyResult<usize> {
-    phasesmith_solution::phase_cycle_quota_with_short_starts(cycles, trials, trial, short)
-        .map_err(invalid)
+    phasesmith_single_crystal::solution::phase_cycle_quota_with_short_starts(
+        cycles, trials, trial, short,
+    )
+    .map_err(invalid)
 }
 #[pyfunction(name = "_phase_plateau_ready")]
 #[pyo3(signature=(scores,omit_every_third=true,late=false))]
@@ -637,9 +647,15 @@ fn phase_plateau(
     late: bool,
 ) -> PyResult<bool> {
     Ok(if late {
-        phasesmith_solution::late_phase_plateau_ready(scores.as_slice()?, omit_every_third)
+        phasesmith_single_crystal::solution::late_phase_plateau_ready(
+            scores.as_slice()?,
+            omit_every_third,
+        )
     } else {
-        phasesmith_solution::phase_plateau_ready(scores.as_slice()?, omit_every_third)
+        phasesmith_single_crystal::solution::phase_plateau_ready(
+            scores.as_slice()?,
+            omit_every_third,
+        )
     })
 }
 #[pyfunction(name = "_solution_model_agreement")]
@@ -661,7 +677,7 @@ fn model_agreement(
             .map(|x| [x[0], x[1], x[2]])
             .collect())
     };
-    phasesmith_solution::model_agreement_distance(
+    phasesmith_single_crystal::solution::model_agreement_distance(
         super::cell(&cell_parameters)?,
         &a_species,
         &rows(a.as_slice()?)?,

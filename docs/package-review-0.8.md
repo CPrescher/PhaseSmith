@@ -1,5 +1,10 @@
 # Package review for 0.8
 
+The counts and receipts below describe earlier 0.8 preparation stages. The
+[final release dry-run record](release-dry-run-0.8.md) records the consolidated
+release candidate, current platform gates and remaining publication steps.
+
+
 Review baseline: `fbfc0d0`, followed by the independently committed Ruff cleanup
 `0291c41`. This review covers package ownership, imports/features, build/runtime
 dependencies, public configuration, documentation navigation/links, distribution

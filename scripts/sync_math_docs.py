@@ -99,6 +99,39 @@ PAGES = (
             ("Quantitative phase analysis and source", "../quantitative-phase-analysis.md"),
         ),
     ),
+    Page(
+        "single_crystal_geometry.md",
+        "single-crystal-geometry.md",
+        ("phasesmith.single_crystal.spots", "phasesmith.single_crystal.prediction"),
+        "single_crystal_geometry",
+        (
+            ("Detector contracts", "../experimental-spots.md"),
+            ("Reciprocal/indexing conventions", "../experimental-reciprocal-indexing.md"),
+            ("Prediction and derivatives", "../experimental-spot-prediction.md"),
+        ),
+    ),
+    Page(
+        "single_crystal_intensities.md",
+        "single-crystal-intensities.md",
+        ("phasesmith.single_crystal.profiles", "phasesmith.single_crystal.reduction"),
+        "single_crystal_intensities",
+        (
+            ("Profiles and finite support", "../experimental-3d-profiles.md"),
+            ("Intensity corrections", "../experimental-intensity-reduction.md"),
+            ("Relative scaling", "../experimental-scan-scaling.md"),
+        ),
+    ),
+    Page(
+        "structure_search.md",
+        "structure-search.md",
+        ("phasesmith.single_crystal.solution", "phasesmith.single_crystal.workflow"),
+        "structure_search",
+        (
+            ("Supplied-symmetry search", "../experimental-structure-solution.md"),
+            ("Space-group assessment", "../space-group-search.md"),
+            ("Recovery and common-data scoring", "../structure-search-recovery.md"),
+        ),
+    ),
 )
 
 
@@ -131,14 +164,19 @@ def _render_index(source: str) -> str:
         context="mathematical-reference introduction",
     )
     source, link_definition_count = re.subn(r"\n\[`[^`]+`\]: crate::[^\n]+", "", source)
-    if link_definition_count != 5:
-        raise ValueError("expected five rustdoc mathematical-page link definitions")
+    if link_definition_count != len(PAGES) - 1:
+        raise ValueError("expected one rustdoc link definition per mathematical page")
     replacements = {
         "[`peak_profiles`]": "[Peak profiles](peak-profiles.md)",
         "[`crystallography`]": "[Crystallography](crystallography.md)",
         "[`pattern_composition`]": "[Pattern composition](pattern-composition.md)",
         "[`backgrounds`]": "[Backgrounds](backgrounds.md)",
         "[`refinement`]": "[Refinement](refinement.md)",
+        "[`single_crystal_geometry`]": "[Single-crystal geometry](single-crystal-geometry.md)",
+        "[`single_crystal_intensities`]": (
+            "[Single-crystal intensities](single-crystal-intensities.md)"
+        ),
+        "[`structure_search`]": "[Structure search](structure-search.md)",
     }
     for rust_link, mkdocs_link in replacements.items():
         source = _replace_required(

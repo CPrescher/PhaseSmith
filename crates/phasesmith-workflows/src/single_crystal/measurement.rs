@@ -3,7 +3,7 @@ use super::{
     Error, FrameSource, Indexed, Options, Result, bounds, grains, image,
     math::{M3, V3, cross, dot, inv_t, norm, row, unit},
 };
-use phasesmith_spots::{self as spots, Bounds, frame_input, prediction, profiles};
+use phasesmith_single_crystal::spots::{self as spots, Bounds, frame_input, prediction, profiles};
 /// Owned contiguous profile samples and their exact finite group supports.
 pub struct ProfileData {
     /// Signed signal, independent variance and fitted background per pixel.

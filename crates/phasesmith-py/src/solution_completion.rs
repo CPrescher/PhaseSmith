@@ -2,6 +2,7 @@
 use super::{cell, invalid};
 use crate::{NativePreparedReflectionGenerator, hkl_rows};
 use npy::{IntoPyArray, PyReadonlyArray1};
+use phasesmith_single_crystal::solution as phasesmith_solution;
 use phasesmith_solution::{CompletionSummary, PreparedOrbitSearch, project_fixed_sets};
 use pyo3::{prelude::*, types::PyDict};
 

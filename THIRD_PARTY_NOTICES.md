@@ -119,7 +119,7 @@ SOFTWARE.
 
 ## RustFFT 6.4.1 (experimental structure solution)
 
-The opt-in `phasesmith-solution` crate uses RustFFT 6.4.1, licensed under
+The `phasesmith-single-crystal::solution` module uses RustFFT 6.4.1, licensed under
 `MIT OR Apache-2.0`; PhaseSmith uses the MIT option. Its FFT implementation
 is a dependency, separate from the independently implemented crystallographic
 phasing equations. Upstream: https://github.com/ejmahler/RustFFT
@@ -198,7 +198,7 @@ for LZF. These notices apply only when those components are distributed.
 
 ## Native bounded-profile line-search interpolation
 
-`phasesmith-spots` vendors only `dcstep` from `lbfgsb-rs-pure` 0.1.2 (BSD-3-Clause;
+`phasesmith-single-crystal::spots` vendors only `dcstep` from `lbfgsb-rs-pure` 0.1.2 (BSD-3-Clause;
 https://github.com/nholle/lbfgsb-rs). Only its safeguarded cubic/quadratic interpolation helper is included. PhaseSmith owns the dense
 limited-memory quadratic, generalized Cauchy/free-subspace steps, More–Thuente
 controller, fit objectives and all policy/diagnostics. The included helper is pure Rust with no dependencies, external BLAS or

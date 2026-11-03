@@ -1,0 +1,50 @@
+[package]
+name = "phasesmith-single-crystal"
+description = "Native single-crystal diffraction measurements, lattice discovery and structure search"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+readme.workspace = true
+
+[features]
+default = ["spots", "solution", "row-search"]
+spots = ["dep:rayon", "dep:sha2", "dep:rustfft"]
+solution = ["dep:phasesmith-execution", "dep:phasesmith-crystallography", "dep:rustfft", "dep:ndarray"]
+row-search = ["dep:serde", "dep:serde_json"]
+
+[dependencies]
+rayon = { version = "1.11", optional = true }
+sha2 = { version = "=0.10.9", optional = true }
+rustfft = { version = "=6.4.1", optional = true }
+phasesmith-execution = { version = "0.8.0", path = "../phasesmith-execution", optional = true }
+phasesmith-crystallography = { version = "0.8.0", path = "../phasesmith-crystallography", optional = true }
+ndarray = { version = "=0.17.2", default-features = false, features = ["std"], optional = true }
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
+
+[target.'cfg(target_arch = "aarch64")'.dependencies]
+sha2 = { version = "=0.10.9", features = ["asm-aarch64"], optional = true }
+
+[dev-dependencies]
+criterion = "0.7"
+
+[[bench]]
+name = "solution"
+harness = false
+required-features = ["solution"]
+
+[[bench]]
+name = "candidate_fitting"
+harness = false
+required-features = ["solution"]
+
+[[example]]
+name = "frame_validity"
+required-features = ["spots"]
+
+[lints]
+workspace = true

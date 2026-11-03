@@ -4,7 +4,7 @@ use npy::ndarray::{Array2, Array3};
 use npy::{
     IntoPyArray, PyArray1, PyArray2, PyArray3, PyReadonlyArray1, PyReadonlyArray2, PyReadonlyArray3,
 };
-use phasesmith_spots::{frame_validity as kernel, reciprocal::Geometry};
+use phasesmith_single_crystal::spots::{frame_validity as kernel, reciprocal::Geometry};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 

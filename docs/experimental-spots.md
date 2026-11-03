@@ -134,10 +134,11 @@ parameters, seed, spot count, flags and repeated timings. Cross-platform CI
 builds/tests the experimental feature on Linux, macOS and Windows. CI configuration
 alone does not establish a passing run on those platforms.
 
-Later milestones can add learned profiles, frame linking, unknown-cell
-indexing and multi-grain scaling separately after this observable contract is
-validated. The supported 0.8 detector is included in ordinary PhaseSmith builds. Application
-UI enablement remains a separate host decision.
+The supported 0.8 detector is included in ordinary PhaseSmith builds.
+Subsequent supported stages are documented under [frame linking](experimental-rotation-positions.md),
+[lattice discovery](experimental-grain-search.md), [learned profiles](experimental-3d-profiles.md)
+and [relative scaling](experimental-scan-scaling.md). Each retains its own input,
+support and validation contract. Application UI enablement is a separate host decision.
 
 ## Initial checks and measured-data scope
 

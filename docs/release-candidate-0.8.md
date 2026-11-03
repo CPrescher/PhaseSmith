@@ -1,5 +1,10 @@
 # 0.8 single-crystal release candidate
 
+The counts and receipts below describe earlier 0.8 preparation stages. The
+[final release dry-run record](release-dry-run-0.8.md) records the consolidated
+release candidate, current platform gates and remaining publication steps.
+
+
 The later [unknown-symmetry validation](space-group-search-validation.md) adds
 native space-group assessment, shared-map model search and measured v33 timings.
 The later [adaptive-effort report](space-group-search-speed.md) adds explicit

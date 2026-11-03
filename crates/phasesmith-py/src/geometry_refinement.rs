@@ -1,6 +1,6 @@
 //! Typed `NumPy` boundary for the native indexed-spot geometry fitter.
 use npy::{IntoPyArray, PyReadonlyArray1, PyReadonlyArray2, ndarray::Array2};
-use phasesmith_spots::{
+use phasesmith_single_crystal::spots::{
     SpotError, geometry_refinement as kernel, prediction::Prediction, reciprocal::Geometry,
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyDict};

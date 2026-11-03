@@ -3,7 +3,7 @@
 #![allow(clippy::cast_precision_loss)]
 use crate::single_crystal::{Error, Result};
 use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
-use phasesmith_solution::Observation;
+use phasesmith_single_crystal::solution::Observation;
 use std::collections::{BTreeMap, BTreeSet};
 /// Integer direct-space rotation.
 pub type Rotation = [[i32; 3]; 3];

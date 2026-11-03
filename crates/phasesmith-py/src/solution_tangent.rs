@@ -2,7 +2,7 @@
 use super::{array2, cell, invalid};
 use crate::{NativePreparedReflectionGenerator, hkl_rows};
 use npy::{IntoPyArray, PyReadonlyArray1};
-use phasesmith_solution::{PreparedTangent, TangentAudit};
+use phasesmith_single_crystal::solution::{PreparedTangent, TangentAudit};
 use pyo3::{prelude::*, types::PyDict};
 
 pub(super) fn audit<'py>(py: Python<'py>, a: &TangentAudit) -> PyResult<Bound<'py, PyDict>> {

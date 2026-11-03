@@ -10,6 +10,23 @@ development versions.
 
 Development release candidate; not yet published.
 
+- Consolidate the three unpublished single-crystal implementation crates into
+  `phasesmith-single-crystal`, with feature-selectable `spots`, `solution` and
+  `row_search` modules. Preserve Rust facade paths and the Python API; HDF5 stays
+  a separate adapter crate.
+- Complete the NumPy-only single-crystal tutorial, native workflow configuration,
+  result/error contracts, 0.8 migration guide and shared Rust/Python mathematical
+  reference. Preserve historical validation and stated scientific limitations.
+- Correct NumPy 1.26 serial/spawned positional-test startup: set numerical thread
+  limits before NumPy loads in both parent and workers. Retain bitwise model and
+  audit comparisons; no tolerance or numerical kernel changes.
+- Verify public Rust package builds and strict documentation in the unpublished
+  release workflow, and gate registry publishing on all distribution checks.
+  Document first-publication requirements for the two new crate names.
+- Reconcile the detector research changes into the consolidated development
+  baseline, retaining source identities, finite-support conventions and research
+  qualifications in the integration audit.
+
 - Expose the complete native HDF5-to-structure workflow to application hosts and
   the ordinary Python wheel. Share file protocols/output with the standalone
   example, release the GIL, report completed stages and use cooperative GUI

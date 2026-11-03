@@ -140,7 +140,7 @@ Run the campaigns with:
 ```sh
 .venv/bin/python benchmarks/solution_tangent_comparison.py --output runs/tangent-check --repeats 3
 .venv/bin/python benchmarks/solution_tangent_comparison.py --output runs/tangent-recycling-check --repeats 3 --symmetry-recycling
-cargo bench -p phasesmith-solution --bench solution -- tangent_
+cargo bench -p phasesmith-single-crystal --features solution --bench solution -- tangent_
 ```
 
 ## Measured outcome (macOS arm64, 29 October 2026)

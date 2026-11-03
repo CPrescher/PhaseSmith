@@ -1,0 +1,121 @@
+# Single-crystal detector and reciprocal geometry
+
+The native owner is `phasesmith-single-crystal::spots` (detector/rotation/reciprocal/prediction
+and geometry-refinement modules), exposed through `phasesmith::spots`. The
+original-frame coordinator is `phasesmith-workflows::single_crystal`. File input
+belongs to the optional HDF5/file adapters, not these equations.
+
+## Coordinates and observations
+
+An image is `D[y,x]`: x is column and y is row, with zero-based pixel centres.
+An extraction box is half-open `[x0,x1) × [y0,y1)`. A source pixel occupies
+`[x-0.5,x+0.5) × [y-0.5,y+0.5)` for profile integration. Array orientation is
+declared by the caller; a display flip does not silently change calibration.
+
+Let o be the laboratory position of pixel (0,0), f/d the fast/slow pixel steps
+in metres, b the unit incident beam, a the unit sample rotation axis, and λ the
+wavelength in Å. All vectors use one right-handed laboratory frame. Omega is
+a right-handed rotation about a, returned in degrees. Reciprocal vectors omit 2π:
+
+```text
+p = o + x f + y d
+q_lab = (p/|p| - b) / λ
+q_sample = R(a,-omega) q_lab
+|q| = 1/d_hkl.
+```
+
+The detector/indexing API uses **row bases**: A contains direct vectors in Å,
+`B = inverse(A).T` contains reciprocal vectors in Å^-1, and row h predicts
+`g = h B`, `h ≈ q_sample A.T`. This convention must be translated explicitly
+when importing a matrix whose vectors are columns. The PONI adapter's plane
+rotations and half-pixel offset are part of its contract, not inferred settings.
+
+## Local detection and conditional extraction
+
+For pixel i, the background support is the clipped inclusive outer square of
+radius R minus the inclusive inner square of radius r (defaults 8 and 2).
+Masked/saturated background samples are excluded. For n usable samples:
+
+```text
+B_i = sum_background D_j / n
+V_B = sum_background V_j / n^2
+strong_i = valid_i and n >= minimum_background
+           and D_i-B_i > absolute_threshold
+           and D_i-B_i > sigma_threshold sqrt(V_i + V_B).
+```
+
+There are exactly two passes; the second excludes first-pass strong pixels
+from background estimation only. Both thresholds are strict. Components use
+8-connectivity in source order. Clipping, flags and component budgets remain
+observable. The row-staged implementation preserves rectangle subtraction and
+per-pixel arithmetic, rather than introducing another detector statistic.
+
+For fixed disjoint signal/background supports with m/n valid pixels:
+
+```text
+I = sum_signal D_i - (m/n) sum_background D_j
+Var(I) = sum_signal V_i + (m/n)^2 sum_background V_j.
+```
+
+The default independent variance is `max(max(D,0)/gain + read_noise^2, 1)`;
+supplied positive variances are an explicit alternative. Data derivatives are
+1 on signal, -m/n on background, and zero elsewhere for fixed supports.
+Intensity remains signed. These errors condition on supports/background/noise
+assumptions; they exclude detection selection, correlated pixels and extrapolation.
+
+Adjacent-frame detections link at distance <= the declared radius, without
+same-frame edges or bridging missing segments. Track centroids use positive
+detected sums as internal weights; they are not rocking-curve intensities.
+Per-observation reciprocal conversion precedes the equal-observation mean q.
+Finite-exposure midpoints and threshold selection can bias these positions.
+
+## Ewald crossings and analytical derivatives
+
+With g = h B at omega zero, elastic scattering requires:
+
+```text
+F(g,theta) = b · R(a,theta)g + λ |g|^2/2 = 0
+c = (b·a)(a·g)
+u = b·g-c; v = b·(a × g); t = -λ |g|^2/2-c
+theta_plus/minus = atan2(v,u) +/- acos(t/hypot(u,v)).
+```
+
+Both roots are available. A supplied omega hint unwraps turns and chooses a
+crossing; exact turn ties use `floor(turns+0.5)`, root-distance ties choose the
+plus-acos root. No crossing, tangent roots and invalid panel intersections retain
+flags/NaNs. They are not smooth fitting observations or fabricated measurements.
+
+Let s = b + λ Rg, n = f × d. A forward panel hit is
+`p = s (n·o)/(n·s)`; x/y follow from the dual pixel basis. Away from singularities:
+
+```text
+dtheta/dg = -(R.T b + λg) / [b·(a × Rg)]       # radians
+ds/dg = λ [R + (a × Rg) outer (dtheta/dg)]
+dp/dg = [(n·o)/(n·s)] [I - s outer n/(n·s)] ds/dg
+dg_j/dB_ij = h_i.
+```
+
+Values and all basis/geometry derivatives are evaluated together in the native
+reflection pass. Angular derivatives convert to degrees at the API boundary.
+Centered finite differences exclude tangencies, root switches and support edges.
+
+## Geometry fitting and domain limits
+
+One linked track supplies one measured x/y/omega centre. Its frame observations
+are not repeated independent Bragg crossings. With declared residual scales,
+Huber loss is `rho(t)=t^2/2` for `t<=delta` and
+`delta*(t-delta/2)` otherwise, where t is the norm of a scaled three-vector.
+Training-only positional fits use fixed assignments/initial eligibility and
+retain held-out diagnostics. A positional fit does not solve atomic chemistry.
+
+The complete native workflow performs its numerical geometry fitting in Rust.
+The lower-level `prediction.refine_crystal` convenience API retains its separate
+`NumPy` optimization coordinator around native predictions; its residual scales
+are loss weights, not measured centroid uncertainties. Parallel proposal sessions
+require their documented single-thread numerical environment before Python starts.
+
+First-principles geometry and independently implemented published Fourier-indexing
+methods govern these models. Method sources include Waterman et al. (2016),
+DOI [10.1107/S2059798316002187](https://doi.org/10.1107/S2059798316002187).
+The detailed guides retain the exact numerical
+budgets, singularity thresholds, aliases and independent reference tests.

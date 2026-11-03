@@ -1,5 +1,6 @@
 //! Explicit bounded fast-first effort; escalation depends only on saved numerical candidates.
 use super::{Assessment, DiscoveryReport, Error, Observation, Options, Result, SearchRun};
+use phasesmith_single_crystal::solution as phasesmith_solution;
 use std::time::{Duration, Instant};
 /// Requested search effort; automatic effort shares one total deadline.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
