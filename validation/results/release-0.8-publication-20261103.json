@@ -1,0 +1,308 @@
+{
+  "documentation": {
+    "build_id": 35626730,
+    "source_commit": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+    "stable_url": "https://phasesmith.readthedocs.io/en/stable/",
+    "success": true
+  },
+  "final_ci": {
+    "conclusion": "success",
+    "url": "https://github.com/CPrescher/PhaseSmith/actions/runs/41724729262"
+  },
+  "final_native_python_cross_checks": {
+    "conclusion": "success",
+    "url": "https://github.com/CPrescher/PhaseSmith/actions/runs/41724729397"
+  },
+  "installed_pypi_smoke": {
+    "architecture": "arm64",
+    "installed_packages": {
+      "numpy": "1.26.4",
+      "phasesmith": "0.8.0"
+    },
+    "mandatory_packages_only": true,
+    "native_capability_and_hdf5_filter_smoke": "passed",
+    "original_frame_workflow": "passed",
+    "platform": "Darwin",
+    "python": "3.12.13",
+    "source": "PyPI",
+    "synthetic_tutorial": "passed"
+  },
+  "kind": "phasesmith-release-publication",
+  "measured_regression_control": {
+    "accepted": true,
+    "arrays_bitwise_identical": 68,
+    "candidate_record_and_cifs_identical": true,
+    "counts": {
+      "Mg": 16,
+      "O": 48,
+      "Si": 16
+    },
+    "exposed_regression_control": true,
+    "independent_validation": false,
+    "npz_files": 10,
+    "observations": 4844,
+    "r1": 0.0514043045582282,
+    "schema": "phasesmith.single-crystal-workflow-run.v1",
+    "seconds": 15.020794416,
+    "selected_group": {
+      "hall": "-P 2ac 2ab",
+      "index": 289,
+      "number": 61,
+      "symbol": "P b c a"
+    },
+    "standalone_structure_refinement": false,
+    "termination": "r1_target"
+  },
+  "note": "The release is tagged at the reviewed source commit. Subsequent backlog and publication-receipt commits change documentation only.",
+  "python_attestations": [
+    {
+      "file": "phasesmith-0.8.0-cp311-abi3-macosx_10_12_x86_64.whl",
+      "sha256": "8cc971971a29e4912682c5c50d65fc3eebc38136cc28149cfbd02b25dc4b5906",
+      "signer_digest": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "signer_identity": "https://github.com/CPrescher/PhaseSmith/.github/workflows/release.yml@refs/tags/v0.8.0",
+      "verified": true
+    },
+    {
+      "file": "phasesmith-0.8.0-cp311-abi3-macosx_11_0_arm64.whl",
+      "sha256": "0068b29e771e6f28d18f6d3cffa9d3d9d660ecb9d3f74ec516821ef9a32ce0f6",
+      "signer_digest": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "signer_identity": "https://github.com/CPrescher/PhaseSmith/.github/workflows/release.yml@refs/tags/v0.8.0",
+      "verified": true
+    },
+    {
+      "file": "phasesmith-0.8.0-cp311-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+      "sha256": "c3744119efd7dbb823ca522c7b38e7a7e224d5bac464ed718171839e22ece94c",
+      "signer_digest": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "signer_identity": "https://github.com/CPrescher/PhaseSmith/.github/workflows/release.yml@refs/tags/v0.8.0",
+      "verified": true
+    },
+    {
+      "file": "phasesmith-0.8.0-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "5ef3138137d7f1a028d682e53334ea3ff3298dd94dbc7ac6e7c63b7b72999f44",
+      "signer_digest": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "signer_identity": "https://github.com/CPrescher/PhaseSmith/.github/workflows/release.yml@refs/tags/v0.8.0",
+      "verified": true
+    },
+    {
+      "file": "phasesmith-0.8.0-cp311-abi3-win_amd64.whl",
+      "sha256": "c8988af1fa54d06ae4511d9d69fdd87ddd3db418f6b1367c3f3f6830272f24ba",
+      "signer_digest": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "signer_identity": "https://github.com/CPrescher/PhaseSmith/.github/workflows/release.yml@refs/tags/v0.8.0",
+      "verified": true
+    },
+    {
+      "file": "phasesmith-0.8.0.tar.gz",
+      "sha256": "6865c8822ac2dc7ad139b157e607f348f026d2866e634cd640e5c8ea73392a74",
+      "signer_digest": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "signer_identity": "https://github.com/CPrescher/PhaseSmith/.github/workflows/release.yml@refs/tags/v0.8.0",
+      "verified": true
+    }
+  ],
+  "python_distributions": [
+    {
+      "bytes": 9321267,
+      "file": "phasesmith-0.8.0-cp311-abi3-macosx_10_12_x86_64.whl",
+      "package_type": "bdist_wheel",
+      "sha256": "8cc971971a29e4912682c5c50d65fc3eebc38136cc28149cfbd02b25dc4b5906",
+      "url": "https://files.pythonhosted.org/packages/be/79/5c5436091f6bfbdc46ecaa4513226ede77294e0e96899f9548231d4a39ee/phasesmith-0.8.0-cp311-abi3-macosx_10_12_x86_64.whl"
+    },
+    {
+      "bytes": 8501907,
+      "file": "phasesmith-0.8.0-cp311-abi3-macosx_11_0_arm64.whl",
+      "package_type": "bdist_wheel",
+      "sha256": "0068b29e771e6f28d18f6d3cffa9d3d9d660ecb9d3f74ec516821ef9a32ce0f6",
+      "url": "https://files.pythonhosted.org/packages/da/5a/6ca96c3a3652abfcd9a825f93c75b7c97c57cf6559db73a86b0ea8513517/phasesmith-0.8.0-cp311-abi3-macosx_11_0_arm64.whl"
+    },
+    {
+      "bytes": 9472711,
+      "file": "phasesmith-0.8.0-cp311-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl",
+      "package_type": "bdist_wheel",
+      "sha256": "c3744119efd7dbb823ca522c7b38e7a7e224d5bac464ed718171839e22ece94c",
+      "url": "https://files.pythonhosted.org/packages/d5/e5/4393130bef003053c944f4adb8d312d6061c29dde0a30ea6af6668e810b6/phasesmith-0.8.0-cp311-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl"
+    },
+    {
+      "bytes": 9902698,
+      "file": "phasesmith-0.8.0-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "package_type": "bdist_wheel",
+      "sha256": "5ef3138137d7f1a028d682e53334ea3ff3298dd94dbc7ac6e7c63b7b72999f44",
+      "url": "https://files.pythonhosted.org/packages/19/22/3e716387fafa9414dbfa28e4cdeb7f1ae85f93bd029c8138a03fdfa96ff7/phasesmith-0.8.0-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
+    },
+    {
+      "bytes": 10935426,
+      "file": "phasesmith-0.8.0-cp311-abi3-win_amd64.whl",
+      "package_type": "bdist_wheel",
+      "sha256": "c8988af1fa54d06ae4511d9d69fdd87ddd3db418f6b1367c3f3f6830272f24ba",
+      "url": "https://files.pythonhosted.org/packages/d8/cd/23eed2909cc3750ae64f07fae2d6aa2bbc2bf2ae2d88f7470bb87a316090/phasesmith-0.8.0-cp311-abi3-win_amd64.whl"
+    },
+    {
+      "bytes": 1907686,
+      "file": "phasesmith-0.8.0.tar.gz",
+      "package_type": "sdist",
+      "sha256": "6865c8822ac2dc7ad139b157e607f348f026d2866e634cd640e5c8ea73392a74",
+      "url": "https://files.pythonhosted.org/packages/2f/1c/56120f661342cc19ceca3c0154f8e0fee4e961d873454e6a8118db3c10ea/phasesmith-0.8.0.tar.gz"
+    }
+  ],
+  "python_release_url": "https://pypi.org/project/phasesmith/0.8.0/",
+  "registry_consumer_smoke": {
+    "features": [
+      "single-crystal-files"
+    ],
+    "passed": true,
+    "public_packages": 11,
+    "workspace_path_dependencies": false
+  },
+  "release_url": "https://github.com/CPrescher/PhaseSmith/releases/tag/v0.8.0",
+  "rust_packages": [
+    {
+      "checksum": "b8055bb567546998f8a61c20b8ef41df5dc359ae627c91ca2fe12060588d3e24",
+      "crate": "phasesmith",
+      "source_commit": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "version": "0.8.0",
+      "yanked": false
+    },
+    {
+      "checksum": "800fe624160265ae1b6b9e15c9c4cb601e34d92691fbc1ebd1d756a52d2ab832",
+      "crate": "phasesmith-core",
+      "source_commit": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "version": "0.8.0",
+      "yanked": false
+    },
+    {
+      "checksum": "19f7c4f1e69ff05cb8f276bd8d17dfc7d46603afc74ec9c9f4ebf240ae442f34",
+      "crate": "phasesmith-crystallography",
+      "source_commit": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "version": "0.8.0",
+      "yanked": false
+    },
+    {
+      "checksum": "788b860916daa0877c4eef6c567c1a65df5d824b281acb105c4dbd185d575f90",
+      "crate": "phasesmith-engine",
+      "source_commit": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "version": "0.8.0",
+      "yanked": false
+    },
+    {
+      "checksum": "dcf0a88035b5973423722b8f4b9ce05a4cc0053cb14aa61cf12b95914fecb81d",
+      "crate": "phasesmith-execution",
+      "source_commit": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "version": "0.8.0",
+      "yanked": false
+    },
+    {
+      "checksum": "9029e3298ac80828fa0c30cda0b4c7619ddc83affd8f92c6a67d40b5d270a459",
+      "crate": "phasesmith-hdf5",
+      "source_commit": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "version": "0.8.0",
+      "yanked": false
+    },
+    {
+      "checksum": "2e60e01dfaaa44daf82e6b55736e63739cc552951722e6b90bce3d17bc9fc18d",
+      "crate": "phasesmith-io",
+      "source_commit": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "version": "0.8.0",
+      "yanked": false
+    },
+    {
+      "checksum": "0d6e7f16219824fd444fcb33dfaf172333613da4e0d13743a0e4b5fd4be7c0a7",
+      "crate": "phasesmith-model",
+      "source_commit": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "version": "0.8.0",
+      "yanked": false
+    },
+    {
+      "checksum": "d31f2ef9a2b73fcbb7a328ab220188bc878b46c34f28df8b2534383b883d67c6",
+      "crate": "phasesmith-persistence",
+      "source_commit": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "version": "0.8.0",
+      "yanked": false
+    },
+    {
+      "checksum": "82103a69cfad27167607285a5b67fdb08474aef8cf23089396eaf48495309c8d",
+      "crate": "phasesmith-single-crystal",
+      "source_commit": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "version": "0.8.0",
+      "yanked": false
+    },
+    {
+      "checksum": "9b1be38b88cc2b4c98413aed319a0d43d5940a64ce45e09cd92efc0161202fdc",
+      "crate": "phasesmith-workflows",
+      "source_commit": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+      "version": "0.8.0",
+      "yanked": false
+    }
+  ],
+  "schema_version": 1,
+  "source_commit": "82faaa49df2e160bf4be510ed691fa81f9a37649",
+  "tag": "v0.8.0",
+  "tagged_release_workflow": {
+    "conclusion": "success",
+    "jobs": [
+      {
+        "conclusion": "success",
+        "name": "Validate release metadata"
+      },
+      {
+        "conclusion": "success",
+        "name": "Verify public Rust packages"
+      },
+      {
+        "conclusion": "success",
+        "name": "Windows wheel (x86-64)"
+      },
+      {
+        "conclusion": "success",
+        "name": "macOS wheel (aarch64)"
+      },
+      {
+        "conclusion": "success",
+        "name": "Verify release documentation"
+      },
+      {
+        "conclusion": "success",
+        "name": "Linux wheel (aarch64)"
+      },
+      {
+        "conclusion": "success",
+        "name": "macOS wheel (x86_64)"
+      },
+      {
+        "conclusion": "success",
+        "name": "Python source distribution"
+      },
+      {
+        "conclusion": "success",
+        "name": "Linux wheel (x86_64)"
+      },
+      {
+        "conclusion": "success",
+        "name": "Publish Python distributions to PyPI"
+      },
+      {
+        "conclusion": "success",
+        "name": "Attest release distributions"
+      },
+      {
+        "conclusion": "skipped",
+        "name": "Publish Rust crates to crates.io"
+      },
+      {
+        "conclusion": "success",
+        "name": "Publish GitHub Release"
+      }
+    ],
+    "url": "https://github.com/CPrescher/PhaseSmith/actions/runs/41727612950"
+  },
+  "trusted_publishing": {
+    "all_public_crates_configured": 11,
+    "bootstrap": "Owner-authenticated dependency-ordered Rust workspace publication; tagged Rust publication skipped to avoid duplicate immutable versions.",
+    "environment": "crates-io",
+    "new_names_configured": [
+      "phasesmith-hdf5",
+      "phasesmith-single-crystal"
+    ],
+    "repository": "CPrescher/PhaseSmith",
+    "repository_variable_restored": "true",
+    "workflow": "release.yml"
+  },
+  "version": "0.8.0"
+}

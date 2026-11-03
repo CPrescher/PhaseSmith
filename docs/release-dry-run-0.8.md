@@ -2,8 +2,12 @@
 
 This records the consolidated 0.8 preparation, separate from the earlier
 [promotion receipt](release-candidate-0.8.md) and [package audit](package-review-0.8.md).
-Version 0.8.0 remains unpublished until the reviewed release commit is tagged and
-registry publication is explicitly performed.
+Publication is now complete: [PhaseSmith 0.8.0](https://github.com/CPrescher/PhaseSmith/releases/tag/v0.8.0)
+is available on PyPI and crates.io, with verified artifact checksums and Python
+attestations. The [publication receipt](https://github.com/CPrescher/PhaseSmith/blob/main/validation/results/release-0.8-publication-20261103.json)
+records the exact tag, source, registry files, trusted publishers, installed-package
+controls and successful stable documentation build. The preparation receipts
+below retain their original pre-publication scope.
 
 ## Completed facade-cleanup dry run
 
