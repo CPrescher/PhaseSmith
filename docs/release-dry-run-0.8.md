@@ -82,6 +82,26 @@ JSON copy. The final policy fixes LF for all tracked JSON, after checking all
 compilation. No fixture or frozen JSON content is regenerated. A full-platform
 run verifies the final policy.
 
+The [following run](https://github.com/CPrescher/PhaseSmith/actions/runs/41705768773)
+clears Windows and every other target except one Intel macOS exact training/
+held-out fit check (maximum basis difference about 1e-22). A focused trace finds
+identical starting bases, native Jacobians, residuals and Gram matrices, with the
+first differing value in the Gram scale. NumPy's axis-free norm uses a BLAS
+vector-dot fast path; Accelerate changes its last bit with buffer alignment.
+Explicit matrix-axis Frobenius reductions in both metric-chain and retraction
+preserve the equation and exactness gate. The regression fails before this fix
+and passes afterward. All 73 cell-comparison tests pass locally; selected NumPy
+1.26 tests pass. A [focused Intel run](https://github.com/CPrescher/PhaseSmith/actions/runs/41712658106)
+passes 100 paired fits, including every captured intermediate, plus the full
+cell-comparison module. The temporary wheel-reuse diagnostic workflow is then
+removed; its reusable benchmark and captured evidence remain.
+
+A 1,000-index benchmark (ten paired-fit repetitions, Apple Silicon) records median
+0.2345 s before and 0.2314 s after, within timing noise. The maximum fitted-basis
+change is 1.85e-22, with unchanged recommended oP setting and history lengths.
+No tolerance, acceptance criterion, native kernel or frozen observation is changed.
+Final full-platform results are recorded below after this correction is verified.
+
 ## Publication boundary
 
 The new names `phasesmith-single-crystal` and `phasesmith-hdf5` need first uploads
