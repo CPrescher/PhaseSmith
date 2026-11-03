@@ -8,7 +8,7 @@ development versions.
 
 ## 0.8.0
 
-Development release candidate; not yet published.
+Release date: 2026-11-03.
 
 - Remove the internal legacy Python facades: 67 top-level aliases, 85
   method-specific refinement aliases and 16 dataset-converter aliases. Use

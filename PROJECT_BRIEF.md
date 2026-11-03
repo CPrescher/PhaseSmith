@@ -30,15 +30,16 @@ gates and historical scientific receipts.
 
 `develop` is the consolidated starting point for continuing development. It
 includes the 0.7 mainline, the recent HKL/single-crystal/native-workflow work and
-the reviewed unfinished detector/research changes. `main` retains the 0.7 release
-baseline until release review. Start new task branches from `develop`; see the
+the reviewed unfinished detector/research changes. The reviewed 0.8 baseline is
+also integrated into `main` for release. Start new task branches from `develop`; see the
 [3 November branch audit](docs/integration/development-baseline-20261103.md) for
 inclusion, superseded work and intentionally separate historical experiments.
 
 PhaseSmith is a powder and single-crystal diffraction library with native Rust
 numerical kernels and an optional typed Python/NumPy frontend. GUI applications
 own presentation, acquisition configuration and application state. The current
-source version is the **0.8 development candidate**, not a publication receipt.
+source version is **0.8.0**. Registry records and the tagged release, rather than
+source-version text, establish publication status.
 
 Powder workflows include profile/background evaluation, crystallography,
 CW/TOF structural calculation, Le Bail, Pawley, Rietveld and quantitative analysis.

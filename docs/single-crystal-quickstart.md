@@ -18,18 +18,17 @@ python -m pip install 'phasesmith>=0.8,<0.9'
 python -c "import phasesmith; print(phasesmith.__version__, phasesmith.__file__)"
 ```
 
-While 0.8 is an unpublished candidate, PyPI still supplies 0.7. Use a source
-checkout instead: follow the [development installation](https://github.com/CPrescher/PhaseSmith#development)
-in the repository README, then use its Python environment below. Source builds
-need Rust 1.89+, a C compiler, CMake 3.26+ and Git; installed wheels do not.
+For a source checkout, follow the [development installation](https://github.com/CPrescher/PhaseSmith#development)
+in the repository README. Source builds need Rust 1.89+, a C compiler, CMake
+3.26+ and Git; installed wheels do not.
 
 ## Run the self-contained example
 
 For a published 0.8 installation, use the
 [versioned script](https://github.com/CPrescher/PhaseSmith/blob/v0.8.0/examples/single_crystal/first_search.py)
-from the matching release tag. That link becomes available when 0.8 is tagged.
-For the unpublished candidate, use `examples/single_crystal/first_search.py` from
-your matching source checkout ([current development copy](https://github.com/CPrescher/PhaseSmith/blob/develop/examples/single_crystal/first_search.py)).
+from the matching release tag. Save it as
+`examples/single_crystal/first_search.py`, or use that path from a source checkout
+of the same tag.
 Select a new output directory:
 
 ```sh

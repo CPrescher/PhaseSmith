@@ -34,7 +34,7 @@ Start with the [NumPy-only single-crystal tutorial](docs/single-crystal-quicksta
 or the [complete original-frame API guide](docs/single-crystal-workflow-api.md).
 The [shared mathematical reference](docs/mathematics/index.md) covers detector
 geometry, signed profile intensities, scaling and structure search as well as
-the powder models. Version 0.8 is an unpublished candidate until its release tag;
+the powder models. Version 0.8 adds the supported single-crystal APIs;
 PyPI/crates.io installations must match the documentation version.
 
 Install the Python interface from PyPI or the native Rust facade from
