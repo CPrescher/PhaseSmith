@@ -341,8 +341,8 @@ Top-level imports are convenience aliases for domain models, calculations, and
 mathematical primitives; the module-qualified paths above are the ownership
 boundary. Automation, file adapters, readiness review, reporting, and
 method-specific refinement APIs are not flattened into the 0.6 top-level or
-aggregate export sets. Their 0.5 spellings remain warning-backed compatibility
-aliases until 1.0; see [Migrating to 0.6](migration-0.6.md). FCJ geometry does
+aggregate export sets. Their retired 0.5 spellings are removed in 0.8; use the owning modules
+listed in [Migrating to 0.8](migration-0.8.md#retired-python-facades). FCJ geometry does
 not contain CW coefficients. A `ConstantWavelengthExperiment` may own optional
 `axial_geometry`, allowing structural calculation, wavelength components, and
 sample-physics providers to compose through one native batch call.

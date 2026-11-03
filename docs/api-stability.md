@@ -123,15 +123,15 @@ The 0.6 cleanup makes module ownership explicit. The top level no longer
 exports automation, I/O-adapter, readiness, or reporting serialization members individually;
 `phasesmith.refinement` exports shared infrastructure and named method modules;
 and `phasesmith.io` exports general adapters rather than dataset-specific
-validation converters. Explicit 0.5 spellings resolve with
-`DeprecationWarning` during 0.6 and 0.7 and are scheduled for removal in 1.0. This
-pre-1.0 compatibility window is documented in [Migrating to
-0.6](migration-0.6.md); it does not restore those aliases to `__all__` or the
-new public snapshot.
+validation converters. Explicit 0.5 spellings resolved with
+`DeprecationWarning` in 0.6 and 0.7. By maintainer decision, 0.8 removes these
+internal legacy aliases now, superseding the earlier 1.0 removal schedule.
+Use their module-qualified owners; see [Migrating to 0.8](migration-0.8.md).
+The current convenience exports in `__all__` remain supported, and the snapshot
+is unchanged because the retired aliases were already excluded.
 
 The pre-release single-crystal experimental import paths and Cargo feature names
-are removed in 0.8 after updating their Dioptas consumer. This deliberate pre-1.0
-decision does not remove the published powder compatibility aliases described
-above. Independent numerical references now live under
+are also removed in 0.8 after updating their Dioptas consumer. Independent
+numerical references now live under
 `phasesmith.single_crystal.reference`; they are validation support. Legacy
 saved-data schemas keep explicit readers/migrations.

@@ -171,8 +171,8 @@ reported as a unified diff.
 
 Version 0.6 removes method-owned refinement names, dataset-specific converters,
 and adapter/orchestration aliases from aggregate `__all__` lists. Explicit 0.5
-imports remain warning-backed aliases until 1.0. See [Migrating to
-0.6](migration-0.6.md) for exact replacements.
+imports warned during 0.6/0.7 and are removed in 0.8. See [Migrating to
+0.8](migration-0.8.md#retired-python-facades) for module-qualified replacements.
 
 ## Pawley workflows
 

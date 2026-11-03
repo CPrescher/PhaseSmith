@@ -5,10 +5,20 @@ This records the consolidated 0.8 preparation, separate from the earlier
 Version 0.8.0 remains unpublished until the reviewed release commit is tagged and
 registry publication is explicitly performed.
 
-## Completed final dry run
+## Post-dry-run facade cleanup
+
+The maintainer subsequently requested removal of the internal legacy Python
+facades before publication. Version 0.8 now removes all 168 retired aggregate
+aliases, updates the three remaining benchmark/tool callers, and uses the
+owning modules directly. Current `__all__` exports and numerical code are
+unchanged. The historical dry run below remains evidence for its exact commit;
+replacement validation of the cleanup is pending.
+
+## Completed pre-cleanup dry run
 
 The tested source commit is `f41f6cae2e6c07cc181a5e3ec12ce23fcd9d6495`.
-The final receipt is a documentation-only follow-up to that tested source.
+Its receipt was a documentation-only follow-up to that tested source; the later
+facade cleanup requires its own validation.
 
 | Gate | Result |
 | --- | --- |

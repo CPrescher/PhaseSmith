@@ -9,7 +9,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "public_api_snapshot.py"
 SNAPSHOT = ROOT / "api" / "python-public-api-v0.8.0.json"
-PREVIOUS_SNAPSHOT = ROOT / "api" / "python-public-api-v0.5.0.json"
 
 
 def _snapshot_module() -> object:
@@ -111,40 +110,45 @@ def test_pawley_supplemental_snapshot_matches_live_exports() -> None:
     assert actual == expected
 
 
-def test_moved_exports_are_warning_backed_compatibility_aliases() -> None:
+def test_retired_0_5_exports_are_absent_from_0_8_namespaces() -> None:
+    # Use immutable release records rather than a second hand-maintained list.
+    # A fresh interpreter catches eager imports that accidentally restore aliases.
     script = """
-import warnings
-import phasesmith
-from phasesmith.automation import WorkflowSpec
-from phasesmith.io.topas import convert_rowles_topas_bundle
-from phasesmith.refinement.lebail import LeBailInput
+import importlib
+import json
+from pathlib import Path
 
-with warnings.catch_warnings(record=True) as caught:
-    warnings.simplefilter("always")
-    assert phasesmith.WorkflowSpec is WorkflowSpec
-    assert phasesmith.io.convert_rowles_topas_bundle is convert_rowles_topas_bundle
-    assert phasesmith.refinement.LeBailInput is LeBailInput
-
-assert len(caught) == 3
-assert all(item.category is DeprecationWarning for item in caught)
-assert all("will be removed in 1.0" in str(item.message) for item in caught)
+previous = json.loads(Path("api/python-public-api-v0.5.0.json").read_text())
+current = json.loads(Path("api/python-public-api-v0.8.0.json").read_text())
+for old_module, new_module in zip(previous["modules"][:3], current["modules"][:3], strict=True):
+    assert old_module["module"] == new_module["module"]
+    namespace = importlib.import_module(new_module["module"])
+    old_names = {item["name"] for item in old_module["exports"]}
+    new_names = {item["name"] for item in new_module["exports"]}
+    for name in old_names - new_names:
+        retired = f"{namespace.__name__}.{name}"
+        assert not hasattr(namespace, name), f"retired alias still present: {retired}"
+    assert not hasattr(namespace, "_DEPRECATED_EXPORTS")
+    assert not hasattr(namespace, "_DEPRECATED_EXPORT_MODULES")
+    assert not hasattr(namespace, "__getattr__")
 """
     subprocess.run([sys.executable, "-c", script], cwd=ROOT, check=True)
 
 
-def test_every_removed_0_5_export_has_a_0_6_compatibility_alias() -> None:
-    import phasesmith
+def test_module_owned_imports_work_without_deprecation_warnings() -> None:
+    script = """
+import warnings
 
-    previous = json.loads(PREVIOUS_SNAPSHOT.read_text(encoding="utf-8"))
-    current = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
-    compatibility_names = (
-        set(phasesmith._DEPRECATED_EXPORTS),
-        set(phasesmith.io._DEPRECATED_EXPORTS),
-        set(phasesmith.refinement._DEPRECATED_EXPORT_MODULES),
-    )
-    for old_module, new_module, aliases in zip(
-        previous["modules"][:3], current["modules"][:3], compatibility_names, strict=True
-    ):
-        old_names = {item["name"] for item in old_module["exports"]}
-        new_names = {item["name"] for item in new_module["exports"]}
-        assert old_names - new_names == aliases
+with warnings.catch_warnings():
+    warnings.simplefilter("error", DeprecationWarning)
+    from phasesmith.automation import WorkflowSpec
+    from phasesmith.io.topas import convert_rowles_topas_bundle
+    from phasesmith.refinement.lebail import LeBailInput
+    from phasesmith.refinement.rietveld import RietveldInput
+
+assert WorkflowSpec.__name__ == "WorkflowSpec"
+assert callable(convert_rowles_topas_bundle)
+assert LeBailInput.__name__ == "LeBailInput"
+assert RietveldInput.__name__ == "RietveldInput"
+"""
+    subprocess.run([sys.executable, "-c", script], cwd=ROOT, check=True)

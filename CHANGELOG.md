@@ -10,6 +10,12 @@ development versions.
 
 Development release candidate; not yet published.
 
+- Remove the internal legacy Python facades: 67 top-level aliases, 85
+  method-specific refinement aliases and 16 dataset-converter aliases. Use
+  their owning modules; update internal benchmark/tool callers. This deliberate
+  0.8 cleanup supersedes the earlier 1.0 removal schedule, preserving current
+  `__all__` exports, numerical behavior and portable data readers.
+
 - Consolidate the three unpublished single-crystal implementation crates into
   `phasesmith-single-crystal`, with feature-selectable `spots`, `solution` and
   `row_search` modules. Preserve Rust facade paths and the Python API; HDF5 stays

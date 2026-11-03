@@ -102,6 +102,7 @@ def rowles_record(case, bundle):
 
 def worker():
     import phasesmith as ps
+    from phasesmith.io.topas import convert_rowles_topas_bundle
     from phasesmith.validation import (
         VALIDATION_CASES,
         run_validation_case,
@@ -132,7 +133,7 @@ def worker():
                 if case["id"].startswith("rowles-"):
                     bundle = Path(temporary) / "rowles"
                     if not converted:
-                        ps.io.convert_rowles_topas_bundle(directory, bundle)
+                        convert_rowles_topas_bundle(directory, bundle)
                         converted = True
                     scientific, elapsed = rowles_record(case, bundle)
                 else:

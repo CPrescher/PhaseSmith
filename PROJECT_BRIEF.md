@@ -249,8 +249,14 @@ validation support, outside the supported production exports.
 The Rust facade defaults to `single-crystal` (`spots`, `solution`, `row-search`).
 `--no-default-features` keeps a smaller facade; `hdf5` remains optional for Rust.
 Experimental Cargo feature aliases are removed. Normal Python builds include
-the native capabilities and bundled HDF5. Published powder compatibility aliases
-from the 0.5 namespace transition remain scheduled for removal at 1.0.
+the native capabilities and bundled HDF5. By maintainer decision, 0.8 removes
+the internal legacy Python facades from the 0.5 namespace transition: top-level
+adapter/orchestration aliases, aggregate method-owned refinement names and
+aggregate dataset-converter names. Their owning modules remain the supported
+imports. This supersedes the earlier plan to retain these aliases until 1.0.
+Retain the current Python convenience exports and Rust application facade; these
+are supported entry points, not retired compatibility layers. No numerical or
+persisted-data behavior changes.
 
 `ElementSearchConfig.validated_v1` contains a literal, complete, typed expansion
 of the reviewed controls. Changing a low-level default must not change that
