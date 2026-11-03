@@ -7,6 +7,33 @@ revision; the [package review](package-review-0.8.md) and [0.8 release review](r
 describe the current release state. The former long project brief is preserved
 in the repository archive, outside the documentation search index.
 
+## Future work backlog
+
+### Reusable Rust detector-image I/O library
+
+**Deferred; recorded 3 November 2026.** Keep the current separate
+`phasesmith-hdf5` adapter. Evaluate a reusable Rust library for the broad image
+reading that [FabIO provides for scientific detectors](https://github.com/silx-kit/fabio#supported-file-formats).
+No library selection, new decoder or packaging migration is part of 0.8.
+
+Requirements for the future investigation:
+
+- Use a permissive license such as MIT, Apache-2.0 or BSD; review decoder,
+  compression and bundled native dependency licenses for redistribution.
+- Provide a Rust API usable independently of PhaseSmith and by Dioptas, without
+  a Python/FabIO runtime dependency. Evaluate existing Rust libraries before
+  deciding whether to build a new library.
+- Prioritize formats from actual datasets, initially considering HDF5/EIGER/NeXus,
+  TIFF/BigTIFF, EDF and CBF; assess other detector/vendor formats against demand.
+  FabIO is a format/behavior reference, not an implementation to port wholesale.
+- Preserve pixel dtype, counts, signed/floating values, stored orientation and
+  source headers/metadata. Support bounded frame/stack reads and explicit
+  compression/filter capabilities, with optional format dependencies.
+- Validate licensed fixtures against independent readers, including FabIO where
+  applicable; cover compressed, multiframe, malformed and truncated files.
+  Decide the relationship to `phasesmith-hdf5` after the requirements and license
+  review, rather than changing its current ownership now.
+
 ## Historical integration and archive records
 
 - [Complete development baseline and supersession audit, 3 November 2026](integration/development-baseline-20261103.md)

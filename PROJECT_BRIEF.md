@@ -195,6 +195,11 @@ The [single-frame multigrain plan](docs/single-frame-multigrain-plan.md) retains
 the unfinished roadmap proposal. It is deferred work, including weak-grain
 recovery and signed prediction-led extraction, not a current capability claim.
 
+A reusable Rust detector-image I/O library with FabIO-like format coverage and
+permissive licensing is deferred backlog work. Evaluate reuse before a new
+implementation, preserve scientific pixel/header semantics, and retain the
+current separate HDF5 adapter. See the [future-work backlog](docs/development.md#future-work-backlog).
+
 ## Ownership and dependency direction
 
 | Layer | Owner |
