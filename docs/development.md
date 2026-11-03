@@ -13,6 +13,17 @@ in the repository archive, outside the documentation search index.
 - [Structure-search commit and integration audit](integration/structure-search-commit-audit.md)
 - [Validated structure-search integration and threshold Clippy fix](integration/structure-search-merge.md)
 
+## Recovered detector work and research
+
+- [Unfinished-work reconciliation, 3 November 2026](integration/unfinished-work-reconciliation.md)
+- [Exact threshold-loop optimization](threshold-loop-optimization.md)
+- [Rotation-processing performance](rotation-processing-performance.md)
+- [Fe7C3/DIALS position comparison](fe7c3-dials-position-comparison.md)
+- [Fe7C3 learned-profile comparison](fe7c3-3d-profile-comparison.md)
+- [Fe7C3 intensity-bias investigation and failed agreement gates](fe7c3-profile-bias-investigation.md)
+- [Public single-crystal benchmark research](public-single-crystal-benchmarks.md)
+- [Deferred single-frame multigrain plan](single-frame-multigrain-plan.md)
+
 ## Architecture and validation evidence
 
 - [Dioptas native workflow: complete original-frame replay and package checks](dioptas-native-validation.md)

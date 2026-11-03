@@ -1,0 +1,146 @@
+{
+  "schema": "phasesmith.rotation-reconciliation.v1",
+  "date": "2026-11-03",
+  "baseline_commit": "521aaa21043e613acb676cbda5b267478350a703",
+  "qualification": "Fresh release baseline and candidate run sequentially; one excluded warmup and three repeats per size/worker configuration. Complete arrays, source/mask hashes and per-frame spot digests match exactly. Synthetic performance/regression evidence, not measured-data intensity validation.",
+  "baseline": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "processor": "arm",
+    "native_sha256": "7b4e763a58a11b470974dcbd81b03c7eac0dd109354ab3e39e7cdcf640a4de85",
+    "seed": 20261025,
+    "repeats": 3,
+    "warmup": "one full excluded run per configuration",
+    "equality": "dtype, shape and bytes, including NaNs; all final arrays, hashes and frame spots",
+    "measured_mask": "zero padding and nonfinite",
+    "synthetic_mask": "fixed zero-valued pixels of the base synthetic image",
+    "noise": "gain=1, read_noise=0, saturation=65535",
+    "rows": [
+      {
+        "case": "synthetic-32x512",
+        "workers": 1,
+        "frames": 32,
+        "tracks": 100,
+        "observations": 3200,
+        "seconds": [
+          0.3481450419931207,
+          0.34947379199729767,
+          0.3452728330012178
+        ],
+        "median_s": 0.3481450419931207,
+        "exact": true
+      },
+      {
+        "case": "synthetic-32x512",
+        "workers": 4,
+        "frames": 32,
+        "tracks": 100,
+        "observations": 3200,
+        "seconds": [
+          0.09383066699956544,
+          0.09379691698995885,
+          0.09349208300409373
+        ],
+        "median_s": 0.09379691698995885,
+        "exact": true
+      },
+      {
+        "case": "synthetic-16x2048",
+        "workers": 1,
+        "frames": 16,
+        "tracks": 1764,
+        "observations": 28224,
+        "seconds": [
+          2.884542332991259,
+          2.918373000007705,
+          2.896137458999874
+        ],
+        "median_s": 2.896137458999874,
+        "exact": true
+      },
+      {
+        "case": "synthetic-16x2048",
+        "workers": 4,
+        "frames": 16,
+        "tracks": 1764,
+        "observations": 28224,
+        "seconds": [
+          0.7828247080033179,
+          0.7805572910001501,
+          0.7776670829916839
+        ],
+        "median_s": 0.7805572910001501,
+        "exact": true
+      }
+    ]
+  },
+  "candidate": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "processor": "arm",
+    "native_sha256": "acb19b7c1868c16c33ab1d31b5d644e20bc6ac9fd60417b16e2702bb031a54f8",
+    "seed": 20261025,
+    "repeats": 3,
+    "warmup": "one full excluded run per configuration",
+    "equality": "dtype, shape and bytes, including NaNs; all final arrays, hashes and frame spots",
+    "measured_mask": "zero padding and nonfinite",
+    "synthetic_mask": "fixed zero-valued pixels of the base synthetic image",
+    "noise": "gain=1, read_noise=0, saturation=65535",
+    "rows": [
+      {
+        "case": "synthetic-32x512",
+        "workers": 1,
+        "frames": 32,
+        "tracks": 100,
+        "observations": 3200,
+        "seconds": [
+          0.10718991700559855,
+          0.10894308300339617,
+          0.10594937500718515
+        ],
+        "median_s": 0.10718991700559855,
+        "exact": true
+      },
+      {
+        "case": "synthetic-32x512",
+        "workers": 4,
+        "frames": 32,
+        "tracks": 100,
+        "observations": 3200,
+        "seconds": [
+          0.03227295901160687,
+          0.032361207995563745,
+          0.0323794169962639
+        ],
+        "median_s": 0.032361207995563745,
+        "exact": true
+      },
+      {
+        "case": "synthetic-16x2048",
+        "workers": 1,
+        "frames": 16,
+        "tracks": 1764,
+        "observations": 28224,
+        "seconds": [
+          0.8892861250060378,
+          0.8872803749982268,
+          0.8850955410016468
+        ],
+        "median_s": 0.8872803749982268,
+        "exact": true
+      },
+      {
+        "case": "synthetic-16x2048",
+        "workers": 4,
+        "frames": 16,
+        "tracks": 1764,
+        "observations": 28224,
+        "seconds": [
+          0.29248474999621976,
+          0.26350979099515826,
+          0.26564187499752734
+        ],
+        "median_s": 0.26564187499752734,
+        "exact": true
+      }
+    ]
+  }
+}

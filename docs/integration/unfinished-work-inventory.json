@@ -1,0 +1,320 @@
+{
+  "schema": "phasesmith.unfinished-work-inventory.v1",
+  "date": "2026-11-03",
+  "original_branch": "codex/experimental-spots",
+  "original_head": "297d157c159635e81ea38b90349ffc9e5a10cf52",
+  "consolidated_baseline": "521aaa21043e613acb676cbda5b267478350a703",
+  "original_modified_tracked_files": 7,
+  "original_untracked_files": 44,
+  "qualification": "Original byte hashes identify the preserved unfinished state. Current helpers are namespace-adapted; historical JSON receipts and figure bytes are unchanged. Full ignored run artifacts remain in their original worktrees.",
+  "files": {
+    "PROJECT_BRIEF.md": {
+      "sha256": "df8cdf77339fb3190c476885853f2b4304a8d96716da5712cd7ac7172ba72ef3",
+      "bytes": 158095,
+      "reconciled_sha256": "516804728efd0cfd747ed8ef6010106964c851e715722cbbb05dfb32fa637382",
+      "resolution": "Retain modern brief, document reviewed detector work and extract deferred roadmap to docs/single-frame-multigrain-plan.md."
+    },
+    "crates/phasesmith-spots/src/lib.rs": {
+      "sha256": "a086627d992024c362b3a39b22a832f707c10b5809e89fb607aac986f5d2d7be",
+      "bytes": 27779,
+      "reconciled_sha256": "431e0c592bd1594d2df43cc6f700565642a04249ec976b922a871539085e989f",
+      "resolution": "Integrated patch, test or qualified research documentation."
+    },
+    "docs/experimental-3d-profiles.md": {
+      "sha256": "687c96231e8f1a39cd49ed0179f235075b9d7ca2bf1c56de186560860d3835c3",
+      "bytes": 12921,
+      "reconciled_sha256": "9ee271a1fec0c799b167498301266c2718ad15bd57baad8329e576977364d29e",
+      "resolution": "Integrated patch, test or qualified research documentation."
+    },
+    "docs/experimental-spots.md": {
+      "sha256": "cd568e198c698c0e8505037bc8b14b3f9a493593e4c3dd718e543fda96250782",
+      "bytes": 9235,
+      "reconciled_sha256": "d8670c14fb4883e328b4907a06dc2ec696b52056788b20f256f152161807524a",
+      "resolution": "Integrated patch, test or qualified research documentation."
+    },
+    "docs/single-crystal-integration-methods.md": {
+      "sha256": "b3c5c9bd5ebe95ecc2f04893cb1b429eca9d803899cd9487609679b7b19e2320",
+      "bytes": 9082,
+      "reconciled_sha256": "39276714848bb505d77c1160734153324c8922642295b183ed03e7b58ee6172a",
+      "resolution": "Integrated patch, test or qualified research documentation."
+    },
+    "python/phasesmith/experimental/prediction.py": {
+      "sha256": "23007d3ef57f292eec811f7f3e446afe4d6a6e259def0a3834237705ed17b6f8",
+      "bytes": 17885,
+      "reconciled_sha256": "c40d81e216579988463c7d047ea9884e97a1c95b3274f21a16e52aed37988de1",
+      "resolution": "Formatting change already present at modern namespace path."
+    },
+    "tests/test_experimental_spots.py": {
+      "sha256": "1c346387e36cc46be2fdb714044ea8566b12202694428b42974774f8f2cba136",
+      "bytes": 13516,
+      "reconciled_sha256": "715c7f216cec62a39861fe425260b817832b4c90f282ffad7f209495043f4d93",
+      "resolution": "Integrated patch, test or qualified research documentation."
+    },
+    "benchmarks/3d-profile-performance-macos.json": {
+      "sha256": "d36f25abadabcd933dcbe8d5dc7337ccd73052c962bf5a45d55a6e56121340b8",
+      "bytes": 706,
+      "reconciled_sha256": "d36f25abadabcd933dcbe8d5dc7337ccd73052c962bf5a45d55a6e56121340b8",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "benchmarks/benchmark_threshold_loops.py": {
+      "sha256": "91f0f4c1b266ba6e61e61e336dca82b093c1b19ba4bf09880912cc85c4795aec",
+      "bytes": 5756,
+      "reconciled_sha256": "e69cfdf85ecec6abfe51ee8d04ce03e6ffbbbc17ab82b51957e98d19402d11dc",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/compare_dials_positions.py": {
+      "sha256": "dc3b2da32cbf316380c3868a5a49903001bc2c938b293c2c1c99513483f2f19f",
+      "bytes": 12179,
+      "reconciled_sha256": "3778849682d86360d0bcaf1147f91fb02fdee255cd4c85e6cec23e52146cd58d",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/crysalis_calibration_audit.py": {
+      "sha256": "e07386bcf5f29f9089ef3ff74e3c26b8428914b8e3ae6a25c2ebbbf73f02786d",
+      "bytes": 3881,
+      "reconciled_sha256": "e07386bcf5f29f9089ef3ff74e3c26b8428914b8e3ae6a25c2ebbbf73f02786d",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/dials_integration_probe.py": {
+      "sha256": "c56cd9bc5ea1278ca6b871fc0f773c35193e7cf26eb98c09b850dc61b17aa534",
+      "bytes": 8328,
+      "reconciled_sha256": "c56cd9bc5ea1278ca6b871fc0f773c35193e7cf26eb98c09b850dc61b17aa534",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/dials_known_intensity_probe.py": {
+      "sha256": "c5b98d69efe8e329f31f60f1a1d239ed956a00856b41833c7402845c9aaf621e",
+      "bytes": 1426,
+      "reconciled_sha256": "c5b98d69efe8e329f31f60f1a1d239ed956a00856b41833c7402845c9aaf621e",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/dials_position_probe.py": {
+      "sha256": "0f18035204e13f8ea5abd31a7f93032408295e7d25ad3bb076f1fce342a7cc3c",
+      "bytes": 11341,
+      "reconciled_sha256": "0f18035204e13f8ea5abd31a7f93032408295e7d25ad3bb076f1fce342a7cc3c",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/experimental-rotation-performance-macos.json": {
+      "sha256": "84cbf02ebb553fe6fbce6cd15e57ca730f94ba161f769cb1a33dfea0e0c3704b",
+      "bytes": 10599,
+      "reconciled_sha256": "84cbf02ebb553fe6fbce6cd15e57ca730f94ba161f769cb1a33dfea0e0c3704b",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "benchmarks/fe7c3-dials-position-comparison-macos.json": {
+      "sha256": "474886dd79a297b7fc045da26cdccc36b168c1efd49f9d7e10453ce035a61d8d",
+      "bytes": 264560,
+      "reconciled_sha256": "474886dd79a297b7fc045da26cdccc36b168c1efd49f9d7e10453ce035a61d8d",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "benchmarks/frozen_profile_validation.py": {
+      "sha256": "718410bd101cd9f821d8101be9033188da344eebb70c7bded1307fa6b935ec4e",
+      "bytes": 6096,
+      "reconciled_sha256": "50e81b9f7974899a6bf54c81cb8a7acc56c4b6323ffa53544e75540d495bd8c1",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/geometry-refinement-performance-macos.json": {
+      "sha256": "2d110703168b5c5d30efad170befc40d8c52768874374bf71db3e2d5b83a5c52",
+      "bytes": 815,
+      "reconciled_sha256": "2d110703168b5c5d30efad170befc40d8c52768874374bf71db3e2d5b83a5c52",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "benchmarks/investigate_profile_bias.py": {
+      "sha256": "ea4cfbdefef3d44dc7cfbaf63db01fee21da239deb7b3dc60f4af307b95eebbb",
+      "bytes": 2859,
+      "reconciled_sha256": "411c7a1d22ca86f9a0de8d1242e868bd02127f4bd3255fc93c4003abc67396a2",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/known_intensity_control.py": {
+      "sha256": "75b2ff765cea0ea2bf08dc3554a53730adccddefea46772dc4ecd2dab4367ee6",
+      "bytes": 5738,
+      "reconciled_sha256": "181b414c1e52824c7c89499a8d5e6bee1fe93ad31d44bac9cc5dd3fef94e3088",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/older_fe7c3_geometry_control.py": {
+      "sha256": "4d4b092b9289917b6a830abca39695965570af49d1aa24fe5e69228076b52140",
+      "bytes": 4889,
+      "reconciled_sha256": "4703d9da52c3ee364f0379f289d1371dfcd53ba7684ff9561b31325ff5543a6d",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/older_fe7c3_orientation.py": {
+      "sha256": "2fb993e5008e7b5aa2aa3102cdf2997382f06b34dc30336801257234d3392f13",
+      "bytes": 8846,
+      "reconciled_sha256": "5727d11bc4d51aea5cfe6e11233533373058df37e44add02076448d8dafb34d7",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/omega-background-ldlt-macos.json": {
+      "sha256": "f314464dd5dd6df88bfe5fcd0ed66cf7265810462fdf48114f129b28bf9f550d",
+      "bytes": 164730,
+      "reconciled_sha256": "f314464dd5dd6df88bfe5fcd0ed66cf7265810462fdf48114f129b28bf9f550d",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "benchmarks/omega-background-performance-macos.json": {
+      "sha256": "46f6890cfe08360742a521cf60871ee965f6c49b3cd0139d29d1d86e1228a4cf",
+      "bytes": 8213,
+      "reconciled_sha256": "46f6890cfe08360742a521cf60871ee965f6c49b3cd0139d29d1d86e1228a4cf",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "benchmarks/omega-background-worker-budget-macos.json": {
+      "sha256": "d3968d462cf432f7769dc17a830fd945071e7b0d25f0fdb6ca40a1293077fd36",
+      "bytes": 14581,
+      "reconciled_sha256": "d3968d462cf432f7769dc17a830fd945071e7b0d25f0fdb6ca40a1293077fd36",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "benchmarks/profile_investigation_figures.py": {
+      "sha256": "465326eda2a660d3dc9d0c8920b70c4a8bd333c6f671934029dc09fec0541647",
+      "bytes": 3098,
+      "reconciled_sha256": "465326eda2a660d3dc9d0c8920b70c4a8bd333c6f671934029dc09fec0541647",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/ring_background_control.py": {
+      "sha256": "de2c21df7664d64b0a92849a2f2da49ea3f398ff3515b95c89aefb9b357df2a4",
+      "bytes": 4579,
+      "reconciled_sha256": "12e0c1636ee1e411f634772fc237925201d96b4a9d2680937d86e8ddc1ba82b1",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/rotation_performance.py": {
+      "sha256": "ad6176c03a134d89dc27b2ce7fd152cbb7bbc6338d35db7a48bc65dec98600e7",
+      "bytes": 7642,
+      "reconciled_sha256": "cbb8fa7a9a00db15adb5313d95d5f6dd3269e3700647772cb4dc2bf3522f44ad",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/rotation_speed_probe.py": {
+      "sha256": "a34d743cf5fc9c3d744249b939ce8f2a616eb573f70ee86de192e710d5e031df",
+      "bytes": 2812,
+      "reconciled_sha256": "de24de1d02fb272e646660c0dfedf096ec3d4f689ff77050be9e839f6b43473a",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/scan-scaling-performance-macos.json": {
+      "sha256": "e1e8f69fc1b1748e43e6d8ec6266840e1ca7a9964af7f0520f30fe3f28d2fbc0",
+      "bytes": 564,
+      "reconciled_sha256": "e1e8f69fc1b1748e43e6d8ec6266840e1ca7a9964af7f0520f30fe3f28d2fbc0",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "benchmarks/structure_intensity_audit.py": {
+      "sha256": "ac606efa60a23f067180b8337429acd1d3cc3ba5f4b384a93aea17c804dc3e73",
+      "bytes": 7123,
+      "reconciled_sha256": "ac606efa60a23f067180b8337429acd1d3cc3ba5f4b384a93aea17c804dc3e73",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/structure_validation_checkpoint.py": {
+      "sha256": "ab7f34182ae500cf5d41acda3472fecd349fe650ebd035490de177d2df55dd7d",
+      "bytes": 5812,
+      "reconciled_sha256": "ab7f34182ae500cf5d41acda3472fecd349fe650ebd035490de177d2df55dd7d",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/threshold-loop-performance-macos.json": {
+      "sha256": "293bd2b7159c34450d75ea81e0f7651ee0d33599b0d11204dbcb5e8f1172997d",
+      "bytes": 26232,
+      "reconciled_sha256": "293bd2b7159c34450d75ea81e0f7651ee0d33599b0d11204dbcb5e8f1172997d",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "benchmarks/tiff_integration_windows.py": {
+      "sha256": "379c2335b0957c857abb01d05caf4b6c6081ef808a6468b7e4cea266cc8b7908",
+      "bytes": 13813,
+      "reconciled_sha256": "6d528002c428c48603c925b144db10cc71a6bfa4665281fe4833d9406411d2e5",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "benchmarks/tiff_local_background.py": {
+      "sha256": "52ebf2a38db981e270efe81de79444d1054021ccc726e81fd89a40b1d2f4a99c",
+      "bytes": 14782,
+      "reconciled_sha256": "f453d3f7042b4f907e7c28d2af0913a72cae3259fc02e20f9bc39cdc8de281b1",
+      "resolution": "Retained research helper, API/format/output-safety adaptation as needed."
+    },
+    "docs/fe7c3-3d-profile-comparison.md": {
+      "sha256": "b66c32b9786b83fccb4f10c6319d0c670735199ab7d8fbbc7f595b81e7db36d0",
+      "bytes": 10099,
+      "reconciled_sha256": "14915057dc83b7a72d50086ffdd1f88c44c4d1463062e4fa4e3bd2a31233c0c6",
+      "resolution": "Integrated patch, test or qualified research documentation."
+    },
+    "docs/fe7c3-dials-position-comparison.md": {
+      "sha256": "9ab9d58744dd386b9dde93ea8decb83e539df546f49de8d6048757f42721b5b7",
+      "bytes": 13134,
+      "reconciled_sha256": "2f89badfe5054360ed650143b8f94c12d2a5c5aea2dd6fde454c1264d00a390d",
+      "resolution": "Integrated patch, test or qualified research documentation."
+    },
+    "docs/fe7c3-profile-bias-investigation.md": {
+      "sha256": "f7c63ae88d59e3e53bc2cf275e2ecf22e207ea8efec12fae82e33874fa29f9a4",
+      "bytes": 14091,
+      "reconciled_sha256": "abd8561d4c1ab41294b37ebf7a97b0b4482075433106e243c42d6e4446107fb1",
+      "resolution": "Integrated patch, test or qualified research documentation."
+    },
+    "docs/figures/fe7c3-dials-speed.png": {
+      "sha256": "cdbd1978365d3c284576d88f064d94ab20660069afb32a9e0e77c3e9aa6414b5",
+      "bytes": 71583,
+      "reconciled_sha256": "cdbd1978365d3c284576d88f064d94ab20660069afb32a9e0e77c3e9aa6414b5",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "docs/figures/fe7c3-frozen-profile-P1.png": {
+      "sha256": "94803a237e4dab46295efd34e84779d516b713eded5254e4a19e0008c0c568bc",
+      "bytes": 90986,
+      "reconciled_sha256": "94803a237e4dab46295efd34e84779d516b713eded5254e4a19e0008c0c568bc",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "docs/figures/fe7c3-frozen-profile-P2.png": {
+      "sha256": "be519555131daa2a181b7a6557dc1ae044ba9a015d486aeba6e12f511561b1fe",
+      "bytes": 81403,
+      "reconciled_sha256": "be519555131daa2a181b7a6557dc1ae044ba9a015d486aeba6e12f511561b1fe",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "docs/figures/fe7c3-learned-profile-comparison.png": {
+      "sha256": "da236b6123bea03cd4b00dd49dc8c34c0cae430d54568bf25c89d3d6cf3d6842",
+      "bytes": 80456,
+      "reconciled_sha256": "da236b6123bea03cd4b00dd49dc8c34c0cae430d54568bf25c89d3d6cf3d6842",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "docs/figures/fe7c3-profile-known-counts.png": {
+      "sha256": "a6be7b693d1e83e9c44ab3943f7311f8771e9f98a17d49a4eef180f62610c647",
+      "bytes": 177044,
+      "reconciled_sha256": "a6be7b693d1e83e9c44ab3943f7311f8771e9f98a17d49a4eef180f62610c647",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "docs/figures/fe7c3-profile-ring-control.png": {
+      "sha256": "7ad8446d74cd6d2a631ae081bdef6f697bd172388a04521f053177f214a9ff29",
+      "bytes": 53538,
+      "reconciled_sha256": "7ad8446d74cd6d2a631ae081bdef6f697bd172388a04521f053177f214a9ff29",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "docs/figures/threshold-eight-workers.png": {
+      "sha256": "24e94148461e020b2b0e2e2ebc70db4d79cb990d347306acfb3e223dc1f9fb9c",
+      "bytes": 45237,
+      "reconciled_sha256": "24e94148461e020b2b0e2e2ebc70db4d79cb990d347306acfb3e223dc1f9fb9c",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "docs/figures/threshold-loop-speed.png": {
+      "sha256": "e266e84515b1e17f947b4c3cc937c2351dd9d8ec2cedb2775aef8f01b7a9c980",
+      "bytes": 37813,
+      "reconciled_sha256": "e266e84515b1e17f947b4c3cc937c2351dd9d8ec2cedb2775aef8f01b7a9c980",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "docs/public-single-crystal-benchmarks.md": {
+      "sha256": "59c75e53b5918b7dd554028133a5f30078caf65238d64cf42e12e98ab2813277",
+      "bytes": 23459,
+      "reconciled_sha256": "d243cfdf5f6476728e8e568f31e7ba2a7873e1d8e280175a757d48436d164a60",
+      "resolution": "Integrated patch, test or qualified research documentation."
+    },
+    "docs/research/public-single-crystal-benchmarks-20261027/availability.json": {
+      "sha256": "92631d1cd08f5f1ecb2f26734a55c45d7dc7f305d485fc3e9a956776350a8411",
+      "bytes": 25827,
+      "reconciled_sha256": "92631d1cd08f5f1ecb2f26734a55c45d7dc7f305d485fc3e9a956776350a8411",
+      "resolution": "Historical receipt or figure, preserved byte for byte."
+    },
+    "docs/rotation-processing-performance.md": {
+      "sha256": "2b16fe0c6d5bdb9f785f0d5ee614886b7e5d7d9ac088c1b66e81e784c0a0d91f",
+      "bytes": 7359,
+      "reconciled_sha256": "1fa9ff15eb35493f87ada8694de98f891253f9eddde1e9c4ea2c6b0ae14ae7a5",
+      "resolution": "Integrated patch, test or qualified research documentation."
+    },
+    "docs/threshold-loop-optimization.md": {
+      "sha256": "197ff731e756d90952963030ab0eaf36820f179a9eb60504b3b4d5c9fa9ecd2e",
+      "bytes": 10431,
+      "reconciled_sha256": "6d34af135f00df52617dfe0a9273ae40a9a9aea72757241a42e6d1f205e7cdb8",
+      "resolution": "Integrated patch, test or qualified research documentation."
+    },
+    "tests/test_dials_position_comparison.py": {
+      "sha256": "da4808420a66f3860eb422960d8470d0b8bb395b5e4e67f60bf132fc7e635ed4",
+      "bytes": 1886,
+      "reconciled_sha256": "da4808420a66f3860eb422960d8470d0b8bb395b5e4e67f60bf132fc7e635ed4",
+      "resolution": "Integrated patch, test or qualified research documentation."
+    }
+  },
+  "preservation_branch": "codex/preserved-unfinished-20261103",
+  "preservation_commit": "c0ac7014f9cd3e6a598d22c9abeaef70863d7023"
+}

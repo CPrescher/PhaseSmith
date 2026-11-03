@@ -105,6 +105,10 @@ corrections, merging, partiality, grain-volume estimate or |F|^2 is inferred.
 
 ## Validation and performance
 
+The [threshold-loop performance report](threshold-loop-optimization.md) documents
+the row-staged, compiler-vectorized execution of the same equations, exact
+baseline comparisons and fresh one/four-worker DIALS timings.
+
 The NumPy reference uses direct local slices and independent connectivity;
 it never calls native kernels or summed-area helpers. Tests cover native/reference
 parity, deterministic records, known areas/centroids, signed extraction, finite
@@ -120,6 +124,11 @@ strong mask and an O(P) worst-case component queue. Extraction takes O(P+A),
 where A is the total area of signal boxes and background rings, including
 overlaps. It is not automatically O(P) for arbitrary overlapping caller boxes.
 One native thread is used; no hidden fitting-worker pool is created.
+The threshold pass precomputes clipped column supports and per-row offsets;
+variance-table reads are deferred until the absolute threshold passes. Integral
+construction, rectangle subtraction order, inequalities and all extraction sums
+remain unchanged. Rotation-series callers may schedule independent single-thread
+detectors concurrently as documented in `experimental-rotation-positions.md`.
 `benchmarks/spots.py` measures realistic multi-spot images and records complete
 parameters, seed, spot count, flags and repeated timings. Cross-platform CI
 builds/tests the experimental feature on Linux, macOS and Windows. CI configuration

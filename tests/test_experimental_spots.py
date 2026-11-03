@@ -66,6 +66,36 @@ def test_full_native_reference_records_randomized(supplied_variance):
 
 
 @native
+@pytest.mark.parametrize("radii", [(0, 1), (1, 4), (2, 8), (7, 128)])
+@pytest.mark.parametrize("shape", [(5, 7), (24, 31)])
+def test_threshold_support_clipping_and_nondefault_noise_against_direct_reference(radii, shape):
+    rng = np.random.default_rng(72831)
+    image = rng.normal(3, 2, shape)
+    image[:3, :3] += 50
+    image[-3:, -3:] += 80
+    mask = rng.random(shape) < 0.05
+    image[mask] = np.nan
+    options = SpotOptions(
+        inner_radius=radii[0],
+        outer_radius=radii[1],
+        min_background=3,
+        min_pixels=1,
+        threshold_sigma=2.5,
+        threshold_absolute=1.0,
+    )
+    for variance in (None, rng.uniform(0.5, 4, shape)):
+        kw = dict(
+            mask=mask, variance=variance, options=options, gain=1.7, read_noise=0.8, saturation=65
+        )
+        actual = detect_spots(image, **kw)
+        expected = spots_reference.detect_spots(image, **kw)
+        np.testing.assert_array_equal(actual.boxes, expected.boxes)
+        np.testing.assert_array_equal(actual.flags, expected.flags)
+        np.testing.assert_allclose(actual.values, expected.values, rtol=0, atol=2e-10)
+        assert actual.rejected_small_components == expected.rejected_small_components
+
+
+@native
 def test_complete_records_repeat_exactly_and_inputs_are_preserved():
     image, mask = scene(), np.zeros((64, 80), dtype=bool)
     before = image.copy()
@@ -75,6 +105,70 @@ def test_complete_records_repeat_exactly_and_inputs_are_preserved():
     np.testing.assert_array_equal(a.values, b.values)
     np.testing.assert_array_equal(image, before)
     assert not mask.any()
+
+
+@native
+@pytest.mark.parametrize("width", [1, 2, 15, 16, 17, 18, 33])
+@pytest.mark.parametrize("height", [1, 13])
+def test_threshold_rows_at_clipped_and_unclipped_width_transition(width, height):
+    rng = np.random.default_rng(91725)
+    image = rng.normal(3, 2, (height, width))
+    image[:2, :2] += 60
+    image[-2:, -2:] += 40
+    mask = rng.random(image.shape) < 0.05
+    image[mask] = np.nan
+    options = SpotOptions(min_pixels=1, min_background=3, threshold_sigma=2.5)
+    for variance in (None, rng.uniform(0.5, 4, image.shape)):
+        kw = dict(
+            mask=mask, variance=variance, options=options, gain=1.7, read_noise=0.8, saturation=65
+        )
+        actual = detect_spots(image, **kw)
+        expected = spots_reference.detect_spots(image, **kw)
+        np.testing.assert_array_equal(actual.boxes, expected.boxes)
+        np.testing.assert_array_equal(actual.flags, expected.flags)
+        np.testing.assert_allclose(actual.values, expected.values, rtol=0, atol=2e-10)
+        assert actual.rejected_small_components == expected.rejected_small_components
+
+
+@native
+@pytest.mark.parametrize("width", [17, 33])
+@pytest.mark.parametrize("x", [7, 8, 9])
+@pytest.mark.parametrize("direction", [-1, 0, 1])
+def test_strict_threshold_at_row_interior_boundary(width, x, direction):
+    image = np.zeros((17, width))
+    image[8, x] = 10
+    threshold = 10.0 if direction == 0 else np.nextafter(10.0, direction * np.inf)
+    result = detect_spots(
+        image,
+        variance=np.ones_like(image),
+        options=SpotOptions(
+            threshold_absolute=threshold, threshold_sigma=0.1, min_pixels=1, padding=0
+        ),
+    )
+    assert len(result) == (1 if direction < 0 else 0)
+    if len(result):
+        np.testing.assert_array_equal(result.boxes, [[x, 8, x + 1, 9]])
+
+
+@native
+@pytest.mark.parametrize("width", [17, 33])
+@pytest.mark.parametrize("x", [7, 8, 9])
+@pytest.mark.parametrize("direction", [-1, 0, 1])
+def test_noise_threshold_adjacent_floats_in_scalar_and_vector_lanes(width, x, direction):
+    image = np.zeros((33, width))
+    # All background variances are exactly one, with the signal inside the
+    # excluded inner square. This fixes the same threshold on both passes.
+    n = (min(width, x + 9) - max(0, x - 8)) * 17 - 25
+    threshold = 5.0 * np.sqrt(1.0 + 1.0 / n)
+    image[16, x] = threshold if direction == 0 else np.nextafter(threshold, direction * np.inf)
+    result = detect_spots(
+        image,
+        variance=np.ones_like(image),
+        options=SpotOptions(min_pixels=1, padding=0),
+    )
+    assert len(result) == (1 if direction > 0 else 0)
+    if len(result):
+        np.testing.assert_array_equal(result.boxes, [[x, 16, x + 1, 17]])
 
 
 @native

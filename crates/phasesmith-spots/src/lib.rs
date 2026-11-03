@@ -257,6 +257,60 @@ struct Integral {
     count: Vec<u32>,
 }
 
+// Interior columns have fixed window widths. Slice each corner stream once per
+// row, so iteration proves its bounds without checking 24 unrelated indices at
+// every pixel. Corner subtraction order matches the clipped scalar path.
+fn integral_corners<T>(
+    values: &[T],
+    rows: (usize, usize),
+    columns: (usize, usize),
+    radius: usize,
+) -> impl Iterator<Item = [&T; 4]> {
+    let (start, end) = columns;
+    let left = (start - radius, end - radius);
+    let right = (start + radius + 1, end + radius + 1);
+    values[rows.0 + left.0..rows.0 + left.1]
+        .iter()
+        .zip(&values[rows.0 + right.0..rows.0 + right.1])
+        .zip(&values[rows.1 + left.0..rows.1 + left.1])
+        .zip(&values[rows.1 + right.0..rows.1 + right.1])
+        .map(|(((a, c), d), e)| [a, c, d, e])
+}
+
+fn classify_row(
+    statistics: (&[i64], &[f64], &[f64]),
+    values: &[f64],
+    mask: &[bool],
+    strong: &mut [bool],
+    noise: impl Iterator<Item = f64>,
+    options: Options,
+) {
+    // Independent lanes permit vectorization without reassociating arithmetic.
+    // Evaluate all predicates, then gate ineligible/masked lanes explicitly;
+    // intermediate NaNs on those lanes cannot become strong pixels.
+    let minimum = i64::try_from(options.min_background).unwrap_or(i64::MAX);
+    for ((((((&n, &s), &v), &value), &masked), dst), pixel_variance) in statistics
+        .0
+        .iter()
+        .zip(statistics.1)
+        .zip(statistics.2)
+        .zip(values)
+        .zip(mask)
+        .zip(strong)
+        .zip(noise)
+    {
+        let nf = n as f64;
+        let excess = value - s / nf;
+        let threshold = options.threshold_sigma * (pixel_variance + v.max(0.0) / (nf * nf)).sqrt();
+        // Integer masks preserve eager predicate evaluation for independent lanes.
+        *dst = (u8::from(!masked)
+            & u8::from(n >= minimum)
+            & u8::from(excess > options.threshold_absolute)
+            & u8::from(excess > threshold))
+            != 0;
+    }
+}
+
 // Compensated accumulation avoids a frame-size-dependent centroid drift for
 // broad connected features. Intensity sums remain in their original order.
 #[derive(Default)]
@@ -304,45 +358,138 @@ impl Integral {
         }
         Ok(())
     }
-    fn rectangle(&self, b: Bounds) -> (f64, f64, i64) {
-        let (a, c, d, e) = (
-            b.y0 * self.width + b.x0,
-            b.y0 * self.width + b.x1,
-            b.y1 * self.width + b.x0,
-            b.y1 * self.width + b.x1,
-        );
-        (
-            self.sum[e] - self.sum[c] - self.sum[d] + self.sum[a],
-            self.variance[e] - self.variance[c] - self.variance[d] + self.variance[a],
-            i64::from(self.count[e]) - i64::from(self.count[c]) - i64::from(self.count[d])
-                + i64::from(self.count[a]),
-        )
-    }
-    fn strong(&self, image: &Image<'_>, options: Options, x: usize, y: usize) -> bool {
-        let i = y * image.width + x;
+    fn classify_clipped(
+        &self,
+        image: &Image<'_>,
+        options: Options,
+        i: usize,
+        [outer, inner]: [[usize; 4]; 2],
+    ) -> bool {
         if image.mask[i] {
             return false;
         }
-        let center = Bounds {
-            x0: x,
-            y0: y,
-            x1: x + 1,
-            y1: y + 1,
+        let count = |[a, c, d, e]: [usize; 4]| {
+            i64::from(self.count[e]) - i64::from(self.count[c]) - i64::from(self.count[d])
+                + i64::from(self.count[a])
         };
-        let (s, v, n) =
-            self.rectangle(center.expanded(options.outer_radius, image.width, image.height));
-        let (si, vi, ni) =
-            self.rectangle(center.expanded(options.inner_radius, image.width, image.height));
-        let n = n - ni;
+        let n = count(outer) - count(inner);
         if n < i64::try_from(options.min_background).unwrap_or(i64::MAX) {
             return false;
         }
+        let sum = |values: &[f64], [a, c, d, e]: [usize; 4]| {
+            values[e] - values[c] - values[d] + values[a]
+        };
         let nf = n as f64;
-        let excess = image.values[i] - (s - si) / nf;
-        excess > options.threshold_absolute
-            && excess
+        let excess = image.values[i] - (sum(&self.sum, outer) - sum(&self.sum, inner)) / nf;
+        if excess > options.threshold_absolute {
+            let v = sum(&self.variance, outer) - sum(&self.variance, inner);
+            excess
                 > options.threshold_sigma
-                    * (image.pixel_variance(i) + (v - vi).max(0.0) / (nf * nf)).sqrt()
+                    * (image.pixel_variance(i) + v.max(0.0) / (nf * nf)).sqrt()
+        } else {
+            false
+        }
+    }
+
+    // Column/row supports depend only on image shape and radii. Hoist clipping
+    // and row-stride multiplication out of the per-pixel threshold arithmetic.
+    fn classify(&self, image: &Image<'_>, options: Options, strong: &mut [bool]) {
+        let interior = if image.width > 2 * options.outer_radius {
+            (options.outer_radius, image.width - options.outer_radius)
+        } else {
+            (0, 0)
+        };
+        let columns: Vec<_> = (0..interior.0)
+            .chain(interior.1..image.width)
+            .map(|x| {
+                (
+                    x,
+                    [options.outer_radius, options.inner_radius].map(|r| {
+                        (
+                            x.saturating_sub(r),
+                            (x + 1).saturating_add(r).min(image.width),
+                        )
+                    }),
+                )
+            })
+            .collect();
+        let length = interior.1 - interior.0;
+        let mut count_row = vec![0_i64; length];
+        let mut sum_row = vec![0.0; length];
+        let mut variance_row = vec![0.0; length];
+        for y in 0..image.height {
+            let rows = [options.outer_radius, options.inner_radius].map(|r| {
+                (
+                    y.saturating_sub(r) * self.width,
+                    (y + 1).saturating_add(r).min(image.height) * self.width,
+                )
+            });
+            for &(x, col) in &columns {
+                let i = y * image.width + x;
+                let indices = std::array::from_fn::<_, 2, _>(|k| {
+                    [
+                        rows[k].0 + col[k].0,
+                        rows[k].0 + col[k].1,
+                        rows[k].1 + col[k].0,
+                        rows[k].1 + col[k].1,
+                    ]
+                });
+                strong[i] = self.classify_clipped(image, options, i, indices);
+            }
+            if interior.0 == interior.1 {
+                continue;
+            }
+            let sums = integral_corners(&self.sum, rows[0], interior, options.outer_radius).zip(
+                integral_corners(&self.sum, rows[1], interior, options.inner_radius),
+            );
+            let variances =
+                integral_corners(&self.variance, rows[0], interior, options.outer_radius).zip(
+                    integral_corners(&self.variance, rows[1], interior, options.inner_radius),
+                );
+            let counts =
+                integral_corners(&self.count, rows[0], interior, options.outer_radius).zip(
+                    integral_corners(&self.count, rows[1], interior, options.inner_radius),
+                );
+            let first = y * image.width + interior.0;
+            let last = y * image.width + interior.1;
+            for ((outer, inner), dst) in counts.zip(&mut count_row) {
+                let count = |[a, c, d, e]: [&u32; 4]| {
+                    i64::from(*e) - i64::from(*c) - i64::from(*d) + i64::from(*a)
+                };
+                *dst = count(outer) - count(inner);
+            }
+            let sum = |[a, c, d, e]: [&f64; 4]| *e - *c - *d + *a;
+            for ((outer, inner), dst) in sums.zip(&mut sum_row) {
+                *dst = sum(outer) - sum(inner);
+            }
+            for ((outer, inner), dst) in variances.zip(&mut variance_row) {
+                *dst = sum(outer) - sum(inner);
+            }
+            let statistics = (&count_row[..], &sum_row[..], &variance_row[..]);
+            let values = &image.values[first..last];
+            let mask = &image.mask[first..last];
+            let dst = &mut strong[first..last];
+            match image.variance {
+                Some(variance) => classify_row(
+                    statistics,
+                    values,
+                    mask,
+                    dst,
+                    variance[first..last].iter().copied(),
+                    options,
+                ),
+                None => classify_row(
+                    statistics,
+                    values,
+                    mask,
+                    dst,
+                    values.iter().map(|value| {
+                        (value.max(0.0) / image.gain + image.read_noise.powi(2)).max(1.0)
+                    }),
+                    options,
+                ),
+            }
+        }
     }
 }
 
@@ -360,17 +507,9 @@ pub fn detect(image: &Image<'_>, options: Options) -> Result<Detection, SpotErro
     let mut strong = vec![false; image.values.len()];
     let mut integral = Integral::new(image);
     integral.rebuild(image, &strong)?;
-    for y in 0..image.height {
-        for x in 0..image.width {
-            strong[y * image.width + x] = integral.strong(image, options, x, y);
-        }
-    }
+    integral.classify(image, options, &mut strong);
     integral.rebuild(image, &strong)?;
-    for y in 0..image.height {
-        for x in 0..image.width {
-            strong[y * image.width + x] = integral.strong(image, options, x, y);
-        }
-    }
+    integral.classify(image, options, &mut strong);
     drop(integral);
     let (mut boxes, mut flags, mut queue, mut rejected_small) =
         (Vec::new(), Vec::new(), Vec::new(), 0);
