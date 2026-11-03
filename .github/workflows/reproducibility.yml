@@ -1,5 +1,12 @@
 name: Positional reproducibility diagnostic
 on:
+  push:
+    branches: [codex/release-0.8-preparation]
+    paths:
+      - .github/workflows/reproducibility.yml
+      - benchmarks/cell_comparison_reproducibility.py
+      - python/phasesmith/single_crystal/cell_comparison.py
+      - python/phasesmith/single_crystal/cell_metrics.py
   workflow_dispatch:
 permissions:
   contents: read

@@ -108,7 +108,12 @@ def main():
         runtime = threadpool_info()
     except ImportError:
         runtime = []
-    result = dict(numpy=np.__version__, numerical_libraries=runtime, comparisons=report)
+    result = dict(
+        numpy=np.__version__,
+        build_config=np.show_config(mode="dicts"),
+        numerical_libraries=runtime,
+        comparisons=report,
+    )
     (args.output / "comparison.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))
 
