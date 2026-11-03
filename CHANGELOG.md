@@ -22,7 +22,8 @@ Development release candidate; not yet published.
   audit comparisons; no tolerance or numerical kernel changes.
 - Verify public Rust package builds and strict documentation in the unpublished
   release workflow, and gate registry publishing on all distribution checks.
-  Document first-publication requirements for the two new crate names.
+  Document first-publication requirements for the two new crate names. Include
+  the canonical MIT license in every public crate archive and check its parity.
 - Reconcile the detector research changes into the consolidated development
   baseline, retaining source identities, finite-support conventions and research
   qualifications in the integration audit.

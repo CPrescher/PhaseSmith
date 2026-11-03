@@ -75,6 +75,13 @@ def release_version(root: Path = ROOT) -> str:
             continue
         package_name = str(package["name"])
         package_names.add(package_name)
+        if package_name in PUBLIC_CRATES:
+            packaged_license = manifest.parent / "LICENSE"
+            if (
+                not packaged_license.is_file()
+                or packaged_license.read_bytes() != (root / "LICENSE").read_bytes()
+            ):
+                raise ValueError(f"public crate {package_name} must include the canonical LICENSE")
         if package_name in PUBLIC_CRATES and package.get("publish") is False:
             raise ValueError(f"public crate {package_name} is marked publish=false")
         for table_name in ("dependencies", "dev-dependencies", "build-dependencies"):
