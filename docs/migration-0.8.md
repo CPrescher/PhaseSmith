@@ -20,6 +20,9 @@ The three unpublished development crates (`phasesmith-spots`,
 modules. Direct development-crate imports must use those module paths. Existing
 facade paths `phasesmith::spots`, `phasesmith::solution` and
 `phasesmith::row_search` remain available. HDF5 is a separate adapter crate.
+Historical diagnostic/backend labels such as `phasesmith-spots Rust` remain
+unchanged for result-format compatibility; they identify a component, not an
+additional published crate.
 
 Rust facade features are `single-crystal` (default), `spots`, `solution`,
 `row-search`, `hdf5`, and `single-crystal-files`. Retired experimental feature
