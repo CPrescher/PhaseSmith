@@ -68,8 +68,15 @@ uv venv
 uv pip install -e '.[dev]'
 maturin develop --uv
 cargo test --workspace --all-features
-uv run pytest
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 uv run pytest
 ```
+
+Set the numerical thread limits before starting Python for the full test suite:
+its exact serial/spawned positional comparisons require the same single-thread
+BLAS configuration in the parent and workers. Changing environment variables
+after NumPy import cannot configure an already-loaded thread pool. See the
+[0.8 migration guide](docs/migration-0.8.md#exact-positional-search-reproducibility)
+for PowerShell and application guidance.
 
 The workspace HDF5 adapter builds bundled native libraries and also needs a C
 compiler, CMake >=3.26 and Git. Ordinary Rust facade builds keep HDF5 optional.

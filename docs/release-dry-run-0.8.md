@@ -66,7 +66,16 @@ test helper search path; `python/` is not added, preserving installed-package
 coverage. The installed wheel also passes all 3,381 tests from outside the
 checkout, and all 21 explicit native/Python cross-comparison tests pass.
 Package-content review adds the canonical PhaseSmith MIT license to each public
-crate alongside its third-party notices; release metadata checks enforce parity. Final remote results follow after the corrected run completes.
+crate alongside applicable third-party notices; release metadata checks enforce parity.
+
+The [second run](https://github.com/CPrescher/PhaseSmith/actions/runs/41699952961)
+passes every target except Windows, where 3,377 tests pass and four benchmark-
+harness checks fail. Fixes preserve the benchmark's owned process-tree timeout
+on Windows, report unavailable load-average metadata as null, and force LF for
+committed corpus/protocol JSON so Windows checkout conversion cannot invalidate
+recorded byte hashes. Frozen JSON records and numerical thresholds are unchanged.
+The 66 focused portability/provenance tests pass locally, including emulated
+Windows checkout hashes. A final full-platform run verifies these corrections.
 
 ## Publication boundary
 

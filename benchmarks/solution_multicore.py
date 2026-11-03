@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -21,7 +20,7 @@ from types import SimpleNamespace
 
 from solution_corpus.audit import shelxt_candidate
 from solution_corpus.data import sha
-from solution_corpus.run import ROOT, collect_jobs, launch
+from solution_corpus.run import ROOT, collect_jobs, host_load_average, launch
 
 COUNTS = (1, 2, 4, 8)
 ENABLED = [
@@ -126,7 +125,7 @@ def batch_panel(args, n, base):
     def run(plan):
         command, work, record = plan
         record.update(
-            host_load_average_before_job=list(os.getloadavg()),
+            host_load_average_before_job=host_load_average(),
             batch_start_offset_seconds=time.perf_counter() - started,
         )
         record.update(launch(command, work, args.seconds))
