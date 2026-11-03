@@ -25,9 +25,12 @@ need Rust 1.89+, a C compiler, CMake 3.26+ and Git; installed wheels do not.
 
 ## Run the self-contained example
 
-The complete script is
-[examples/single_crystal/first_search.py](https://github.com/CPrescher/PhaseSmith/blob/develop/examples/single_crystal/first_search.py).
-Download it, or run it from a checkout. Select a new output directory:
+For a published 0.8 installation, use the
+[versioned script](https://github.com/CPrescher/PhaseSmith/blob/v0.8.0/examples/single_crystal/first_search.py)
+from the matching release tag. That link becomes available when 0.8 is tagged.
+For the unpublished candidate, use `examples/single_crystal/first_search.py` from
+your matching source checkout ([current development copy](https://github.com/CPrescher/PhaseSmith/blob/develop/examples/single_crystal/first_search.py)).
+Select a new output directory:
 
 ```sh
 python examples/single_crystal/first_search.py --output /absolute/path/to/new-tutorial
