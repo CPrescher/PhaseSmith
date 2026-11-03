@@ -75,7 +75,12 @@ on Windows, report unavailable load-average metadata as null, and force LF for
 committed corpus/protocol JSON so Windows checkout conversion cannot invalidate
 recorded byte hashes. Frozen JSON records and numerical thresholds are unchanged.
 The 66 focused portability/provenance tests pass locally, including emulated
-Windows checkout hashes. A final full-platform run verifies these corrections.
+Windows checkout hashes. The [next run](https://github.com/CPrescher/PhaseSmith/actions/runs/41703054562)
+clears those four Windows failures and exposes one mismatched bundled/reference
+JSON copy. The final policy fixes LF for all tracked JSON, after checking all
+695 originals are UTF-8/LF, and adds an early Windows native-asset check before
+compilation. No fixture or frozen JSON content is regenerated. A full-platform
+run verifies the final policy.
 
 ## Publication boundary
 
