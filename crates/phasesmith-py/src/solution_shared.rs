@@ -2,7 +2,7 @@
 use super::{array2, cell, invalid};
 use crate::{NativePreparedReflectionGenerator, hkl_rows};
 use npy::{IntoPyArray, PyReadonlyArray1};
-use phasesmith_solution::{PreparedElementPool, SharedSearchSummary};
+use phasesmith_single_crystal::solution::{PreparedElementPool, SharedSearchSummary};
 use pyo3::{
     prelude::*,
     types::{PyDict, PyList},
@@ -358,12 +358,17 @@ fn shortlist(
     missing: Vec<String>,
     limit: usize,
 ) -> PyResult<Vec<usize>> {
-    phasesmith_solution::screening_shortlist(scores.as_slice()?, &birth_elements, &missing, limit)
-        .map_err(invalid)
+    phasesmith_single_crystal::solution::screening_shortlist(
+        scores.as_slice()?,
+        &birth_elements,
+        &missing,
+        limit,
+    )
+    .map_err(invalid)
 }
 #[pyclass(name = "_IntegratedPeakDensity", frozen)]
 struct NativeDensity {
-    inner: phasesmith_solution::IntegratedPeakDensity,
+    inner: phasesmith_single_crystal::solution::IntegratedPeakDensity,
 }
 #[pymethods]
 impl NativeDensity {
@@ -383,7 +388,7 @@ impl NativeDensity {
         let rho = density.as_slice()?.to_vec();
         let inner = py
             .detach(move || {
-                phasesmith_solution::IntegratedPeakDensity::new(
+                phasesmith_single_crystal::solution::IntegratedPeakDensity::new(
                     cell,
                     shape,
                     &indices,
@@ -406,11 +411,11 @@ impl NativeDensity {
 }
 #[pyfunction(name = "_solution_ball_transform")]
 fn ball(q: f64, radius: f64) -> PyResult<(f64, f64)> {
-    phasesmith_solution::ball_transform(q, radius).map_err(invalid)
+    phasesmith_single_crystal::solution::ball_transform(q, radius).map_err(invalid)
 }
 #[pyfunction(name = "_solution_density_labels")]
 fn labels(mass: f64, scale: Option<f64>, numbers: Vec<u8>) -> PyResult<Vec<bool>> {
-    phasesmith_solution::density_label_mask(mass, scale, &numbers).map_err(invalid)
+    phasesmith_single_crystal::solution::density_label_mask(mass, scale, &numbers).map_err(invalid)
 }
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<NativePool>()?;

@@ -1,7 +1,7 @@
 //! Optional detector measurement boundary. Owned snapshots cross the GIL boundary.
 use npy::ndarray::Array2;
 use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2};
-use phasesmith_spots::{Bounds, Detection, Image, Options};
+use phasesmith_single_crystal::spots::{Bounds, Detection, Image, Options};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
@@ -125,13 +125,12 @@ fn experimental_spots<'py>(
             };
             let options = options(parameters);
             match boxes {
-                None => phasesmith_spots::detect(&image, options),
-                Some(boxes) => {
-                    phasesmith_spots::extract(&image, &boxes, options).map(|spots| Detection {
+                None => phasesmith_single_crystal::spots::detect(&image, options),
+                Some(boxes) => phasesmith_single_crystal::spots::extract(&image, &boxes, options)
+                    .map(|spots| Detection {
                         spots,
                         rejected_small: 0,
-                    })
-                }
+                    }),
             }
         })
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
@@ -216,7 +215,9 @@ fn experimental_local_background<'py>(
                 read_noise,
                 saturation,
             };
-            phasesmith_spots::local_background::extract(&image, &boxes, gap, margin, minimum, clip)
+            phasesmith_single_crystal::spots::local_background::extract(
+                &image, &boxes, gap, margin, minimum, clip,
+            )
         })
         .map_err(|e| PyValueError::new_err(e.to_string()))?;
     let n = spots.len();
@@ -265,7 +266,7 @@ fn experimental_predict_spots<'py>(
             "basis (3,3), geometry (5,3) required",
         ));
     }
-    let geometry = phasesmith_spots::reciprocal::Geometry {
+    let geometry = phasesmith_single_crystal::spots::reciprocal::Geometry {
         origin: p[0],
         fast: p[1],
         slow: p[2],
@@ -275,7 +276,13 @@ fn experimental_predict_spots<'py>(
     };
     let result = py
         .detach(move || {
-            phasesmith_spots::prediction::predict(geometry, [b[0], b[1], b[2]], &hkl, &hints, other)
+            phasesmith_single_crystal::spots::prediction::predict(
+                geometry,
+                [b[0], b[1], b[2]],
+                &hkl,
+                &hints,
+                other,
+            )
         })
         .map_err(|e| PyValueError::new_err(e.to_string()))?;
     let n = result.len();
@@ -331,7 +338,7 @@ fn experimental_predict_spots_with_detector<'py>(
             "basis (3,3), geometry (5,3) required",
         ));
     }
-    let geometry = phasesmith_spots::reciprocal::Geometry {
+    let geometry = phasesmith_single_crystal::spots::reciprocal::Geometry {
         origin: p[0],
         fast: p[1],
         slow: p[2],
@@ -341,7 +348,7 @@ fn experimental_predict_spots_with_detector<'py>(
     };
     let result = py
         .detach(move || {
-            phasesmith_spots::prediction::predict_with_detector(
+            phasesmith_single_crystal::spots::prediction::predict_with_detector(
                 geometry,
                 [b[0], b[1], b[2]],
                 &hkl,
@@ -399,7 +406,7 @@ fn experimental_reciprocal<'py>(
     if p.len() != 5 {
         return Err(PyValueError::new_err("geometry must be (5,3)"));
     }
-    let g = phasesmith_spots::reciprocal::Geometry {
+    let g = phasesmith_single_crystal::spots::reciprocal::Geometry {
         origin: p[0],
         fast: p[1],
         slow: p[2],
@@ -433,7 +440,7 @@ fn experimental_reciprocal_jacobian<'py>(
     if p.len() != 5 {
         return Err(PyValueError::new_err("geometry must be (5,3)"));
     }
-    let g = phasesmith_spots::reciprocal::Geometry {
+    let g = phasesmith_single_crystal::spots::reciprocal::Geometry {
         origin: p[0],
         fast: p[1],
         slow: p[2],
@@ -465,7 +472,7 @@ fn experimental_lattice_fourier<'py>(
     let points = triples(points)?;
     let vectors = triples(vectors)?;
     let result = py
-        .detach(move || phasesmith_spots::reciprocal::fourier(&points, &vectors))
+        .detach(move || phasesmith_single_crystal::spots::reciprocal::fourier(&points, &vectors))
         .map_err(|e| PyValueError::new_err(e.to_string()))?;
     Ok(
         Array2::from_shape_vec((result.len(), 13), result.into_iter().flatten().collect())
@@ -496,7 +503,13 @@ fn experimental_rotation_link<'py>(
     let segments = segments.as_slice()?.to_vec();
     let result = py
         .detach(move || {
-            phasesmith_spots::rotation::link(&frames, &xy, &segments, radius, max_candidates)
+            phasesmith_single_crystal::spots::rotation::link(
+                &frames,
+                &xy,
+                &segments,
+                radius,
+                max_candidates,
+            )
         })
         .map_err(|e| PyValueError::new_err(e.to_string()))?;
     Ok(result.into_pyarray(py))
@@ -517,7 +530,7 @@ fn experimental_rotation_centroid<'py>(
         .map(|r| [r[0], r[1], r[2], r[3]])
         .collect();
     let result = py
-        .detach(move || phasesmith_spots::rotation::summarize(&samples))
+        .detach(move || phasesmith_single_crystal::spots::rotation::summarize(&samples))
         .map_err(|e| PyValueError::new_err(e.to_string()))?;
     Ok(result.to_vec().into_pyarray(py))
 }
@@ -535,7 +548,9 @@ fn experimental_reduce_lattice<'py>(
         .try_into()
         .map_err(|_| PyValueError::new_err("basis must be (3,3)"))?;
     let result = py
-        .detach(move || phasesmith_spots::reduction::reduce(basis, tolerance, max_iterations))
+        .detach(move || {
+            phasesmith_single_crystal::spots::reduction::reduce(basis, tolerance, max_iterations)
+        })
         .map_err(|e| PyValueError::new_err(e.to_string()))?;
     Ok((
         Array2::from_shape_vec((3, 3), result.basis.into_iter().flatten().collect())
@@ -573,7 +588,9 @@ fn experimental_integrate_reduce<'py>(
         .collect();
     let flags = flags.as_slice()?.to_vec();
     let (out, quality) = py
-        .detach(move || phasesmith_spots::integration::accumulate(count, &ids, &values, &flags))
+        .detach(move || {
+            phasesmith_single_crystal::spots::integration::accumulate(count, &ids, &values, &flags)
+        })
         .map_err(|e| PyValueError::new_err(e.to_string()))?;
     Ok((
         Array2::from_shape_vec((count, 6), out.into_iter().flatten().collect())

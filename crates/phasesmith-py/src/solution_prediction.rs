@@ -3,7 +3,7 @@ use super::{array2, cell, invalid};
 use crate::{NativePreparedReflectionGenerator, hkl_rows};
 use npy::Complex64 as Complex;
 use npy::{IntoPyArray, PyReadonlyArray1};
-use phasesmith_solution::{PredictionAudit, PreparedReflectionPrediction};
+use phasesmith_single_crystal::solution::{PredictionAudit, PreparedReflectionPrediction};
 use pyo3::{prelude::*, types::PyDict};
 
 pub(super) fn audit<'py>(py: Python<'py>, a: &PredictionAudit) -> PyResult<Bound<'py, PyDict>> {
@@ -57,7 +57,7 @@ impl NativePrediction {
             .zip(intensity)
             .zip(sigma)
             .map(
-                |((hkl, intensity), sigma)| phasesmith_solution::Observation {
+                |((hkl, intensity), sigma)| phasesmith_single_crystal::solution::Observation {
                     hkl,
                     intensity,
                     sigma,
@@ -65,8 +65,8 @@ impl NativePrediction {
             )
             .collect();
         py.detach(move || {
-            let data = phasesmith_solution::prepare_data(&rows, cell, &group)?;
-            let norm = phasesmith_solution::normalize_wilson(
+            let data = phasesmith_single_crystal::solution::prepare_data(&rows, cell, &group)?;
+            let norm = phasesmith_single_crystal::solution::normalize_wilson(
                 cell,
                 &group,
                 &data.hkl,
@@ -102,7 +102,7 @@ impl NativePrediction {
                 amplitudes,
             })
         })
-        .map_err(|e: phasesmith_solution::SolutionError| invalid(e))
+        .map_err(|e: phasesmith_single_crystal::solution::SolutionError| invalid(e))
     }
     fn metadata<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
         let d = audit(py, &self.inner.audit)?;
@@ -145,7 +145,7 @@ impl NativePrediction {
                 )?;
                 Ok((stats, step))
             })
-            .map_err(|e: phasesmith_solution::SolutionError| invalid(e))?;
+            .map_err(|e: phasesmith_single_crystal::solution::SolutionError| invalid(e))?;
         let d = PyDict::new(py);
         d.set_item(
             "real",
@@ -181,16 +181,18 @@ impl NativePrediction {
         let phases = phases.as_slice()?.to_vec();
         let state = py
             .detach(|| {
-                phasesmith_solution::dual_space_with_prediction(
+                phasesmith_single_crystal::solution::dual_space_with_prediction(
                     self.inner.audit.shape,
                     self.cell,
                     &self.hkl,
                     &self.amplitudes,
                     &phases,
                     &self.inner.support,
-                    &phasesmith_solution::DualSpaceOptions {
+                    &phasesmith_single_crystal::solution::DualSpaceOptions {
                         cycles,
-                        peak_selection: phasesmith_solution::PeakSelection::Fixed(count),
+                        peak_selection: phasesmith_single_crystal::solution::PeakSelection::Fixed(
+                            count,
+                        ),
                         mask_sigma: 0.25,
                         hybrid_m: 3.,
                         omit_fraction: 0.1,
@@ -223,9 +225,14 @@ fn coefficient(
     correlation: f64,
     gain: f64,
 ) -> PyResult<Bound<'_, PyDict>> {
-    let result =
-        phasesmith_solution::prediction_coefficient(value, expected, moment, correlation, gain)
-            .map_err(invalid)?;
+    let result = phasesmith_single_crystal::solution::prediction_coefficient(
+        value,
+        expected,
+        moment,
+        correlation,
+        gain,
+    )
+    .map_err(invalid)?;
     let out = PyDict::new(py);
     out.set_item("value", result.value)?;
     out.set_item("jacobian", result.jacobian)?;

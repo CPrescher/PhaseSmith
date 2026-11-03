@@ -3,7 +3,9 @@ use super::{
     Error, FrameSource, Options, Result, bounds, image,
     math::{V3, dot},
 };
-use phasesmith_spots::{self as spots, Bounds, frame_input, frame_validity, rotation};
+use phasesmith_single_crystal::spots::{
+    self as spots, Bounds, frame_input, frame_validity, rotation,
+};
 /// Owned linked tracks and source-ordered detected observations.
 pub struct Positions {
     /// Half-open detector-pixel rectangles.
@@ -117,7 +119,7 @@ pub(super) fn detect(
 }
 pub(super) fn reciprocal(
     p: &Positions,
-    g: phasesmith_spots::reciprocal::Geometry,
+    g: phasesmith_single_crystal::spots::reciprocal::Geometry,
 ) -> Result<(Vec<V3>, Vec<f64>)> {
     let samples: Vec<_> = p.observations.iter().map(|x| [x[2], x[3], x[4]]).collect();
     let qs = g.convert(&samples)?;

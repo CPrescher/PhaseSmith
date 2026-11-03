@@ -1,7 +1,7 @@
 //! `NumPy` boundary for opt-in symmetry-based scan scaling.
 use npy::ndarray::Array2;
 use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1};
-use phasesmith_spots::scan_scaling as kernel;
+use phasesmith_single_crystal::spots::scan_scaling as kernel;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 

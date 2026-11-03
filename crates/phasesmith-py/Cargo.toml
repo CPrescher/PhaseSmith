@@ -18,9 +18,7 @@ crate-type = ["cdylib"]
 [dependencies]
 phasesmith = { version = "0.8.0", path = "../phasesmith-rs", default-features = false, optional = true }
 phasesmith-hdf5 = { version = "0.8.0", path = "../phasesmith-hdf5", optional = true }
-phasesmith-solution = { version = "0.8.0", path = "../phasesmith-solution", optional = true }
-phasesmith-spots = { version = "0.8.0", path = "../phasesmith-spots", optional = true }
-phasesmith-row-search = { version = "0.8.0", path = "../phasesmith-row-search", optional = true }
+phasesmith-single-crystal = { version = "0.8.0", path = "../phasesmith-single-crystal", default-features = false, optional = true }
 serde_json = { version = "1", optional = true }
 npy = { package = "numpy", version = "0.27" }
 pyo3 = { version = "0.27", features = ["extension-module", "abi3-py311"] }
@@ -40,6 +38,6 @@ workspace = true
 default = ["single-crystal"]
 single-crystal = ["spots", "solution", "row-search"]
 hdf5 = ["dep:phasesmith-hdf5", "dep:phasesmith", "phasesmith/single-crystal-files", "dep:serde_json"]
-spots = ["dep:phasesmith-spots"]
-solution = ["dep:phasesmith-solution"]
-row-search = ["dep:phasesmith-row-search", "dep:serde_json"]
+spots = ["phasesmith-single-crystal/spots"]
+solution = ["phasesmith-single-crystal/solution"]
+row-search = ["phasesmith-single-crystal/row-search", "dep:serde_json"]

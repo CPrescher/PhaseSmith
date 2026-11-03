@@ -11,6 +11,13 @@ workflow in this release.
 
 ## Scientific scope
 
+Start with the [runnable first calculation](single-crystal-quickstart.md), then
+the [complete original-frame configuration/API guide](single-crystal-workflow-api.md).
+The shared [geometry](mathematics/single-crystal-geometry.md),
+[intensity](mathematics/single-crystal-intensities.md) and
+[structure-search](mathematics/structure-search.md) references collect equations,
+units, supports and ownership for both Rust and Python users.
+
 Supported stages include deterministic spot detection and linking, reciprocal
 mapping, lattice hypotheses and FFT/Row grain discovery, positional detector
 calibration, prediction, explicit frame validity/shadow/DAC masks, summation and
@@ -36,6 +43,15 @@ versioned search profile; other low-level methods retain their existing APIs.
 The current example uses [automatic effort](space-group-search-speed.md): try
 short coarse phasing first, then use finer/broader search only after candidate
 acceptance fails. Explicit `fast` and `thorough` modes remain available.
+
+## Rust package boundary
+
+Single-crystal numerical kernels ship in one `phasesmith-single-crystal` crate:
+`spots`, `solution` and `row_search` are feature-selectable modules. The usual
+facade paths shown above remain available. HDF5 lives in its separate adapter
+crate, and the complete application-neutral coordinator lives in
+`phasesmith-workflows`. See [migration](migration-0.8.md) for direct imports from
+the former unpublished component crates.
 
 ## Python API
 
@@ -72,11 +88,16 @@ execution policy and file adapters retain their existing owners; no duplicate
 | Background and corrections | `omega_background`, `intensity_response`, `sensor_offsets`, `intensity_uncertainty` |
 | Reduction, scaling and persistence | `reduction`, `reduction_io`, `reduction_cache`, `empirical_scaling`, `scan_scaling` |
 | Search and assessment | `solution`, `solution_symmetry`, `search` |
+| Complete native file workflow | `workflow` (`WorkflowConfig`, `WorkflowResult`, `run_workflow`) |
 
-All numerical production kernels run in Rust. Python remains an optional array
-and workflow adapter; the complete example's orchestration and some design
-calculations still use Python/NumPy. Importing or running the supported native
-path needs no SciPy, h5py, hdf5plugin, Gemmi, Dioptas, Qt or external solver.
+Native kernels evaluate numerical values/analytical derivatives. The canonical
+original-frame workflow's coordination, design construction and file products
+also run in Rust. Python's `workflow` module is its optional configuration/array
+and notification boundary. Separate lower-level convenience APIs, including
+`prediction.refine_crystal`, retain documented NumPy optimization coordinators;
+the historical Python raw-workflow runner remains an independent regression path.
+Importing or running the supported native path needs no SciPy, h5py, hdf5plugin,
+Gemmi, Dioptas, Qt or external solver.
 SciPy remains an independent validation/reference dependency, including the
 explicit reference backend for omega background; it is not a production backend
 requirement. CIF convenience and post-search external assessment are separate.

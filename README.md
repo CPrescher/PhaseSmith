@@ -1,6 +1,6 @@
 # PhaseSmith
 
-PhaseSmith is an powder and single-crystal diffraction computation library with a
+PhaseSmith is a powder and single-crystal diffraction computation library with a
 Rust numerical core and a typed Python/NumPy API. The current implementation
 includes symmetric TCH, CW U/V/W/X/Y broadening, FCJ asymmetry, wavelength
 components, extensible sample physics, multi-phase CW X-ray/neutron and neutron
@@ -29,6 +29,13 @@ search. Rust applications use the default facade capabilities directly; HDF5
 stays optional for Rust. The [MgSiO3 example](docs/enstatite-raw-workflow.md) keeps
 large raw data external. Structure search includes candidate polishing, with
 explicit termination limits; standalone single-crystal refinement is not included.
+
+Start with the [NumPy-only single-crystal tutorial](docs/single-crystal-quickstart.md)
+or the [complete original-frame API guide](docs/single-crystal-workflow-api.md).
+The [shared mathematical reference](docs/mathematics/index.md) covers detector
+geometry, signed profile intensities, scaling and structure search as well as
+the powder models. Version 0.8 is an unpublished candidate until its release tag;
+PyPI/crates.io installations must match the documentation version.
 
 Install the Python interface from PyPI or the native Rust facade from
 crates.io:

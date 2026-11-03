@@ -110,7 +110,7 @@ The application along omega was inspired by Konstantin Glazyrin's
 The equations are from Baek et al., *Analyst* 140 (2015), 250–257,
 [doi:10.1039/C4AN01061B](https://doi.org/10.1039/C4AN01061B).
 The independent implementation was initially developed in Dioptas; its CPU
-numerical engine is now in `crates/phasesmith-spots/src/omega_background.rs`,
+numerical engine is now in `crates/phasesmith-single-crystal/src/spots/omega_background.rs`,
 behind an opt-in PyO3 boundary. No background-sc or GSAS-II code is reused.
 GSAS-II is not an oracle for this detector/omega preprocessing convention.
 

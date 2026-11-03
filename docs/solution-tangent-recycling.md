@@ -140,7 +140,7 @@ coverage estimate.
 .venv/bin/python benchmarks/solution_tangent_comparison.py --output runs/coupled-legacy --repeats 3 --symmetry-recycling --legacy-tangent-baseline
 .venv/bin/python benchmarks/solution_tangent_comparison.py --output runs/coupled-recycling --repeats 3 --symmetry-recycling
 .venv/bin/python benchmarks/solution_tangent_comparison.py --output runs/coupled-seeds --repeats 1 --symmetry-recycling --seeds 0 1 2 3 4 17 47 2026
-cargo bench -p phasesmith-solution --bench solution -- recycling_10_cycles
+cargo bench -p phasesmith-single-crystal --features solution --bench solution -- recycling_10_cycles
 ```
 
 ## Frozen results (macOS arm64, 29 October 2026)

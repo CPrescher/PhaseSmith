@@ -4,7 +4,7 @@ use npy::{
     IntoPyArray, PyArray1, PyArray2, PyArray3, PyReadonlyArray1, PyReadonlyArray2,
     PyReadonlyArray3, ndarray,
 };
-use phasesmith_spots::fft::{
+use phasesmith_single_crystal::spots::fft::{
     Engine, Field, FittingCloud, FourierCloud, M3, ObservationOwnership, SupportBits, V3,
 };
 use pyo3::{exceptions::PyValueError, prelude::*};

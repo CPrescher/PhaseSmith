@@ -20,8 +20,8 @@ intensity accuracy, identify detector hardware, or validate a crystal structure.
 
 | Module | Responsibility |
 |---|---|
-| `crates/phasesmith-spots/src/profiles_affine.rs` | Exact voxel/parallelogram/exposure masses and fused position/width derivatives |
-| `crates/phasesmith-spots/src/intensity_model.rs` | Slab response, conditional GLS accumulation, frozen linear estimators, empirical values/Jacobians and family centering |
+| `crates/phasesmith-single-crystal/src/spots/profiles_affine.rs` | Exact voxel/parallelogram/exposure masses and fused position/width derivatives |
+| `crates/phasesmith-single-crystal/src/spots/intensity_model.rs` | Slab response, conditional GLS accumulation, frozen linear estimators, empirical values/Jacobians and family centering |
 | `single_crystal/profiles.py` | Typed immutable raw shoeboxes, profile learning and fixed-profile fitting |
 | `single_crystal/profile_refinement.py` | Rust-backed declared strong shape fits; fixed weak extraction; centroid-map training adapter |
 | `single_crystal/sensor_offsets.py` | Explicit sections, translations, optional in-plane rotations and three shared symmetric-gradient terms |

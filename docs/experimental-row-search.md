@@ -72,7 +72,7 @@ establishes grain truth, chemistry, primitivity or a crystal structure.
 ## Frozen mathematics and selected settings
 
 The complete imported numerical conventions are in the repository file
-`crates/phasesmith-row-search/ALGORITHM.md`.
+`crates/phasesmith-single-crystal/ROW_SEARCH_ALGORITHM.md`.
 The crate's `src/lib.rs` is byte-for-byte the selected independent source,
 SHA256 `e6ffdeaa3717dd451d1d3d6752aa069484e2e82585c9d0d10d5eacc49c9f1915`.
 Source provenance and the original selected settings are recorded in

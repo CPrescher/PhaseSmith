@@ -7,9 +7,10 @@ kernels. The historical filename is retained for existing links. See the
 finite support and the specific limitations below remain unchanged.
 
 
-This adds no material/structure prior, space-group assignment, intensity model or
-standard-release API. It consumes the **blindly inferred** lattice and tentative
-HKLs from `experimental.indexing`. Instrument geometry, wavelength, omega-zero
+This positional method adds no material/structure prior, space-group assignment
+or intensity model. It consumes a lattice and tentative HKLs from
+`phasesmith.single_crystal.indexing` or an explicitly declared external source.
+Instrument geometry, wavelength, omega-zero
 convention and axis are held fixed; nine reciprocal-basis coefficients refine
 the unconstrained cell and orientation together. A separate optional
 [orthorhombic metric constraint](experimental-orthorhombic.md) uses six parameters
@@ -21,7 +22,7 @@ ray/plane geometry; the centroid-refinement workflow is described by
 ## Forward model and fused analytical derivatives
 
 Use the same right-handed laboratory/sample basis and zero-based pixel centres
-as `experimental.reciprocal`. B has reciprocal vectors as **rows**, inverse Å
+as `phasesmith.single_crystal.reciprocal`. B has reciprocal vectors as **rows**, inverse Å
 without 2π. For an integer row h, `g = h B`; direct rows are `A = inverse(B).T`.
 Let b and a be the unit incident beam and rotation axis, λ the wavelength in Å,
 and R(a,θ) a right-handed sample rotation. The elastic Ewald equation is

@@ -34,7 +34,7 @@ fn run<'py>(
     let tangent = tangent.map(|t| t.inner.clone());
     let result = py
         .detach(move || {
-            phasesmith_solution::recycle_density_guided(
+            phasesmith_single_crystal::solution::recycle_density_guided(
                 shape,
                 &hkl,
                 &amplitudes,

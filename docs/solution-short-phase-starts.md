@@ -100,7 +100,7 @@ Criterion `short_phase_` measures a complete eight-atom Fe/C/N/O search on a
 recorded. It does not reduce this policy comparison to a scalar integer call.
 
 ```sh
-cargo bench -p phasesmith-solution --bench solution -- short_phase_ --sample-size 20 --warm-up-time 1 --measurement-time 2
+cargo bench -p phasesmith-single-crystal --features solution --bench solution -- short_phase_ --sample-size 20 --warm-up-time 1 --measurement-time 2
 .venv/bin/python benchmarks/solution_short_phase_interleaved.py --output runs/short-phase-new --seconds 15
 ```
 

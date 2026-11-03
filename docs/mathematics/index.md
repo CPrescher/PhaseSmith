@@ -19,12 +19,17 @@ depend on JavaScript or an external math-rendering service.
 | [Pattern composition](pattern-composition.md) | multi-phase and multi-wavelength sums, size, microstrain, preferred orientation, derivative products |
 | [Backgrounds](backgrounds.md) | Smooth Bruckner preprocessing, polynomial, Chebyshev, point, amorphous, and composite backgrounds |
 | [Refinement](refinement.md) | residuals, R factors, constraints, Le Bail redistribution, damped Gauss–Newton, covariance, and quantitative phase analysis |
+| [Single-crystal geometry](single-crystal-geometry.md) | detector supports/noise, rotation observations, reciprocal mapping, Ewald prediction and positional derivatives |
+| [Single-crystal intensities](single-crystal-intensities.md) | finite voxel/affine profile masses, signed GLS amplitudes, conditional covariance, corrections and relative scaling |
+| [Structure search](structure-search.md) | signed HKLs, exact symmetry/absence evidence, phasing, atomic/ADP models, common-data scores and bounded acceptance |
 
 Every section names the native Rust owner and corresponding public Python modules.
 Models not
-implemented by the current API—such as magnetic scattering, absorption,
-extinction, and symmetry-refined anisotropic displacement—are not described as
-available mathematics.
+implemented by the current API, such as magnetic scattering or extinction, are
+not described as available mathematics. Aperture masks do not supply a physical
+absorption correction. Single-crystal candidate ADP polishing is documented
+separately from the supported powder structural models and does not constitute
+a standalone structure-refinement workflow.
 
 ## Shared notation
 

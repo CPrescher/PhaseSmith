@@ -3,7 +3,7 @@ use super::{
     math::{M3, V3, condition, det, dot, inv_t, least, mul, norm, row},
     positions,
 };
-use phasesmith_spots::{
+use phasesmith_single_crystal::spots::{
     fft::{Engine, SupportBits},
     geometry_refinement as geometry,
 };
@@ -568,7 +568,10 @@ pub(super) fn index(p: &Positions, o: &Options, shape: [usize; 2]) -> Result<Ind
             refine_lengths: false,
         },
         geometry_options_v1(),
-        |_, _| o.checkpoint().map_err(|e| phasesmith_spots::SpotError(e.0)),
+        |_, _| {
+            o.checkpoint()
+                .map_err(|e| phasesmith_single_crystal::spots::SpotError(e.0))
+        },
     )?;
     let valid = validate_geometry(&fit, &observed, &fit_training, &eligible)?;
     let mut result = Indexed {

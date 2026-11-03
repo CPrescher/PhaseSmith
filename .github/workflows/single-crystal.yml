@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: '3.13'
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test -p phasesmith-spots -p phasesmith-solution -p phasesmith-row-search -p phasesmith-hdf5 --locked
+      - run: cargo test -p phasesmith-single-crystal --all-features -p phasesmith-hdf5 --locked
       - run: cargo test -p phasesmith-workflows --features single-crystal --locked
       - run: cargo test -p phasesmith --example single_crystal_workflow --features hdf5 --locked
       - run: cargo build -p phasesmith --example single_crystal_workflow --features hdf5 --locked

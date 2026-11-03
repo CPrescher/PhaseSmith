@@ -14,3 +14,12 @@ pub mod backgrounds {}
 
 #[doc = include_str!("mathematics/refinement.md")]
 pub mod refinement {}
+
+#[doc = include_str!("mathematics/single_crystal_geometry.md")]
+pub mod single_crystal_geometry {}
+
+#[doc = include_str!("mathematics/single_crystal_intensities.md")]
+pub mod single_crystal_intensities {}
+
+#[doc = include_str!("mathematics/structure_search.md")]
+pub mod structure_search {}

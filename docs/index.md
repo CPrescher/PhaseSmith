@@ -5,12 +5,21 @@ namespace from the 0.8 development release. See the
 [single-crystal guide](single-crystal.md) for modules, migration, Rust features
 and the raw-frame-to-structure-search boundary.
 
-PhaseSmith provides validated powder-diffraction calculations and refinement
+PhaseSmith provides powder-diffraction calculations/refinement and native
+single-crystal processing, structure search and candidate assessment
 through a native Rust library and a typed Python/NumPy scripting interface.
 Python users install the same Rust numerical core that native applications can
 consume directly—no Python process or sidecar is required for a Rust GUI.
 
 ## Start here
+
+For single crystals, start with the [runnable first calculation](single-crystal-quickstart.md)
+and [original-frame workflow/API](single-crystal-workflow-api.md). The
+[single-crystal guide](single-crystal.md) separates supported methods, input
+priors and known limits. Atomic candidate polishing is internal to search;
+standalone structure refinement is outside this release.
+
+For powder analysis:
 
 1. [Getting started](getting-started.md) — install PhaseSmith and run a first
    calculation.
@@ -41,6 +50,9 @@ and the proposed capability development sequence.
 ## Numerical conventions
 
 - [Complete mathematical reference for Rust and Python](mathematics/index.md)
+- [Single-crystal geometry and derivatives](mathematics/single-crystal-geometry.md)
+- [Signed profile intensities and scaling](mathematics/single-crystal-intensities.md)
+- [Phasing, model comparison and acceptance](mathematics/structure-search.md)
 - [Equations and units](equations.md)
 - [TCH profile](tch-profile.md), [CW broadening](cw-profile.md), and
   [FCJ asymmetry](fcj-profile.md)

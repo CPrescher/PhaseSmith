@@ -3,7 +3,7 @@
 use super::{NativeCancellation, array2, cell, invalid};
 use crate::{NativePreparedReflectionGenerator, hkl_rows};
 use npy::{IntoPyArray, PyReadonlyArray1};
-use phasesmith_solution::{
+use phasesmith_single_crystal::solution::{
     AdpMode, PreparedSymmetricModel, RefinementSummary, SymmetricEvaluation, SymmetricRefinement,
     recover_symmetry,
 };
@@ -266,7 +266,7 @@ impl NativeModel {
                 for (site, p) in model.sites.iter_mut().zip(&state.fractional_xyz) {
                     site.fractional_xyz = *p;
                 }
-                phasesmith_solution::PreparedPeakCompletion::new(
+                phasesmith_single_crystal::solution::PreparedPeakCompletion::new(
                     self.cell,
                     &model.group,
                     &state.fractional_xyz,
@@ -290,7 +290,7 @@ impl NativeModel {
         let parameters = parameters.as_slice()?.to_vec();
         let (state, execution) = py
             .detach(|| {
-                phasesmith_solution::with_solution_workers(workers, || {
+                phasesmith_single_crystal::solution::with_solution_workers(workers, || {
                     self.inner.evaluate(&parameters)
                 })
             })
@@ -327,7 +327,7 @@ impl NativeModel {
             .with_assignment_convergence_stopping(assignment_stopping);
         let (state, execution) = py
             .detach(move || {
-                phasesmith_solution::with_solution_workers(workers, || {
+                phasesmith_single_crystal::solution::with_solution_workers(workers, || {
                     model.refine_with_normal_reuse(
                         &parameters,
                         iterations,
@@ -346,7 +346,10 @@ impl NativeModel {
     }
 }
 
-fn worker_stats(out: &Bound<'_, PyDict>, stats: phasesmith_solution::WorkerStats) -> PyResult<()> {
+fn worker_stats(
+    out: &Bound<'_, PyDict>,
+    stats: phasesmith_single_crystal::solution::WorkerStats,
+) -> PyResult<()> {
     out.set_item("requested_workers", stats.requested)?;
     out.set_item("workers", stats.resolved)?;
     out.set_item("parallel_maps", stats.maps)?;

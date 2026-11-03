@@ -66,7 +66,16 @@ np.linalg.solve = _trace_solve
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument(
+        "--late-limits", action="store_true", help="simulate limits set after NumPy import"
+    )
+    parser.add_argument(
+        "--check", action="store_true", help="require bitwise serial/spawned equality"
+    )
     args = parser.parse_args()
+    if args.late_limits:
+        for name in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+            os.environ[name] = "1"
     args.output.mkdir(parents=True, exist_ok=False)
     os.environ["PHASESMITH_REPRO_OUTPUT"] = str(args.output.resolve())
     from phasesmith import _core
@@ -101,6 +110,8 @@ def main():
     )
     (args.output / "comparison.json").write_text(json.dumps(record, indent=2) + "\n")
     print(json.dumps(record, indent=2))
+    if args.check and not (record["exact_audit"] and record["exact_models"]):
+        raise SystemExit("serial/spawned positional reproducibility failed")
 
 
 if __name__ == "__main__":

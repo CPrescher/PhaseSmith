@@ -1,7 +1,7 @@
 #![allow(missing_docs)]
 use criterion::{Criterion, criterion_group, criterion_main};
 use phasesmith_crystallography::UnitCell;
-use phasesmith_solution::Observation;
+use phasesmith_single_crystal::solution::Observation;
 use phasesmith_workflows::space_group_search::{AssessmentOptions, Hypothesis, assess};
 fn benchmark(c: &mut Criterion) {
     let cell = UnitCell {

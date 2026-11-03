@@ -22,9 +22,7 @@ PUBLIC_CRATES = {
     "phasesmith-model",
     "phasesmith-persistence",
     "phasesmith-workflows",
-    "phasesmith-spots",
-    "phasesmith-solution",
-    "phasesmith-row-search",
+    "phasesmith-single-crystal",
     "phasesmith-hdf5",
 }
 

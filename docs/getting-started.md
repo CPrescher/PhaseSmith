@@ -36,7 +36,18 @@ python -m pip install "phasesmith[refinement]"  # SciPy optimizer adapter
 The native CIF and powder readers, calculation kernels, and built-in
 refinement workflows do not require these optional packages.
 
-## First profile calculation
+## Choose a first calculation
+
+- **Single crystal:** run the [self-contained detection/HKL/search tutorial](single-crystal-quickstart.md).
+  Then configure [original HDF5 counts through the native workflow](single-crystal-workflow-api.md).
+- **Powder:** the example below produces a first profile, with links to complete
+  refinement workflows afterward.
+
+The 0.8 source is a release candidate until publication; an ordinary PyPI install
+currently retrieves the published version. Use a matching source environment
+for candidate documentation, and verify the version/path printed above.
+
+## First powder profile calculation
 
 ```python
 import numpy as np
@@ -65,6 +76,9 @@ print(dense.shape)  # (peak, parameter, sample)
 
 ## Choose the next workflow
 
+- Start from single-crystal frames or integrated HKLs with the
+  [single-crystal guide](single-crystal.md); its input contracts distinguish
+  supplied composition, supplied symmetry and unknown-group assessment.
 - Start from measured powder data and a structure with
   [powder-file and CIF import](cif-import.md).
 - Estimate a non-refinable preprocessing envelope with

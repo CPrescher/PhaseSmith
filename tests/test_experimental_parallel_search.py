@@ -14,6 +14,9 @@ pytestmark = pytest.mark.skipif(
 
 
 def limits(monkeypatch):
+    # CI/release runners set these before Python starts. This restores the
+    # declared environment after tests which intentionally remove the limits;
+    # it cannot reconfigure an already-loaded BLAS library.
     for name in execution._LIMITS:
         monkeypatch.setenv(name, "1")
 

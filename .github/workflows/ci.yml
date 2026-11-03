@@ -24,6 +24,10 @@ jobs:
       - run: cargo test --workspace --all-features
       - name: Check supported facade defaults and focused opt-outs
         run: |
+          cargo check -p phasesmith-single-crystal --no-default-features --locked
+          cargo check -p phasesmith-single-crystal --no-default-features --features spots --locked
+          cargo check -p phasesmith-single-crystal --no-default-features --features solution --locked
+          cargo check -p phasesmith-single-crystal --no-default-features --features row-search --locked
           cargo check -p phasesmith --locked
           cargo check -p phasesmith --no-default-features --locked
           cargo check -p phasesmith-py --no-default-features --locked
@@ -67,6 +71,11 @@ jobs:
 
   python:
     runs-on: ubuntu-latest
+    # These limits must precede NumPy import, including in the parent process.
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      VECLIB_MAXIMUM_THREADS: "1"
     strategy:
       fail-fast: false
       matrix:
@@ -92,22 +101,19 @@ jobs:
       - name: Record NumPy CPU dispatch
         if: matrix.numpy == 'numpy==1.26.4'
         run: python -c "import numpy; numpy.show_runtime()"
-      - run: python -m pytest -q
-      - name: Diagnose minimum-NumPy positional reproducibility
-        if: failure() && matrix.numpy == 'numpy==1.26.4'
-        env:
-          OPENBLAS_NUM_THREADS: "1"
-          OMP_NUM_THREADS: "1"
-          VECLIB_MAXIMUM_THREADS: "1"
+      - name: Check minimum-NumPy exact positional reproducibility
+        if: matrix.numpy == 'numpy==1.26.4'
         run: |
           python -m pip install threadpoolctl
-          python benchmarks/positional_reproducibility.py --output numpy126-repro
+          python benchmarks/positional_reproducibility.py --output numpy126-repro/startup --check
+          OPENBLAS_NUM_THREADS=2 python benchmarks/positional_reproducibility.py --late-limits --output numpy126-repro/late
       - name: Retain minimum-NumPy diagnostic inputs
-        if: failure() && matrix.numpy == 'numpy==1.26.4'
+        if: always() && matrix.numpy == 'numpy==1.26.4'
         uses: actions/upload-artifact@v7.0.0
         with:
           name: numpy126-positional-reproducibility
           path: numpy126-repro/
+      - run: python -m pytest -q
       - name: Check both frozen QARR 1g entry points
         if: matrix.python-version == '3.13'
         run: |

@@ -22,7 +22,7 @@ pub use grains::{Competitor, Grain, Indexed};
 pub use math::{M3, V3};
 pub use measurement::{Measurements, ProfileData};
 use phasesmith_crystallography::{SpaceGroup, UnitCell};
-use phasesmith_spots::{frame_input, frame_validity, reciprocal::Geometry};
+use phasesmith_single_crystal::spots::{frame_input, frame_validity, reciprocal::Geometry};
 pub use positions::Positions;
 pub use scaling::Reduced;
 use std::{fmt, time::Instant};
@@ -41,8 +41,8 @@ impl fmt::Display for Error {
     }
 }
 impl std::error::Error for Error {}
-impl From<phasesmith_spots::SpotError> for Error {
-    fn from(e: phasesmith_spots::SpotError) -> Self {
+impl From<phasesmith_single_crystal::spots::SpotError> for Error {
+    fn from(e: phasesmith_single_crystal::spots::SpotError) -> Self {
         Self(e.to_string())
     }
 }
@@ -51,8 +51,8 @@ impl From<frame_validity::Error> for Error {
         Self(e.to_string())
     }
 }
-impl From<phasesmith_solution::SolutionError> for Error {
-    fn from(e: phasesmith_solution::SolutionError) -> Self {
+impl From<phasesmith_single_crystal::solution::SolutionError> for Error {
+    fn from(e: phasesmith_single_crystal::solution::SolutionError) -> Self {
         Self(e.to_string())
     }
 }
@@ -133,7 +133,7 @@ pub struct Options {
     /// Maximum owned counts/mask/f64 payload across each frame stage, in bytes.
     pub max_in_flight_frame_bytes: usize,
     /// Cooperative stop token checked between bounded stages and numerical work.
-    pub cancellation: phasesmith_solution::Cancellation,
+    pub cancellation: phasesmith_single_crystal::solution::Cancellation,
     /// Maximum source-ordered detection tasks in flight, 1 through 32.
     pub detection_workers: usize,
     /// Private native profile-fitting worker budget, 1 through 32.
@@ -221,8 +221,8 @@ pub trait Observer {
     /// Return an observer failure to stop before the next stage.
     fn solution(
         &mut self,
-        _solution: &phasesmith_solution::Solution,
-        _search: &phasesmith_solution::SharedSearchSummary,
+        _solution: &phasesmith_single_crystal::solution::Solution,
+        _search: &phasesmith_single_crystal::solution::SharedSearchSummary,
     ) -> Result<()> {
         Ok(())
     }
@@ -243,9 +243,9 @@ pub struct Output {
     /// Signed corrected intensities, conditional uncertainties and selection flags.
     pub reduced: Reduced,
     /// Complete native bounded structure-search result.
-    pub solution: phasesmith_solution::Solution,
+    pub solution: phasesmith_single_crystal::solution::Solution,
     /// Actual count-free search audit.
-    pub search: phasesmith_solution::SharedSearchSummary,
+    pub search: phasesmith_single_crystal::solution::SharedSearchSummary,
     /// Measured wall seconds for the complete coordinator, including synchronous observers.
     pub seconds: f64,
 }
@@ -314,7 +314,8 @@ impl Options {
         {
             return Err(Error("invalid element/search controls".into()));
         }
-        let _ = phasesmith_solution::DenseMemoryBudget::new(self.dense_memory_bytes)?;
+        let _ =
+            phasesmith_single_crystal::solution::DenseMemoryBudget::new(self.dense_memory_bytes)?;
         self.check_shadows(shape)?;
         self.geometry.convert(&[[0., 0., 0.]])?;
         Ok(())
@@ -766,8 +767,8 @@ fn search(
     r: &Reduced,
     o: &Options,
 ) -> Result<(
-    phasesmith_solution::Solution,
-    phasesmith_solution::SharedSearchSummary,
+    phasesmith_single_crystal::solution::Solution,
+    phasesmith_single_crystal::solution::SharedSearchSummary,
 )> {
     let observations = observations_from_reduction(r);
     search_observations(&observations, o)
@@ -777,33 +778,33 @@ fn search(
 /// # Errors
 /// Invalid observations, priors, resource limits, or a failed native search.
 pub fn search_observations(
-    observations: &[phasesmith_solution::Observation],
+    observations: &[phasesmith_single_crystal::solution::Observation],
     o: &Options,
 ) -> Result<(
-    phasesmith_solution::Solution,
-    phasesmith_solution::SharedSearchSummary,
+    phasesmith_single_crystal::solution::Solution,
+    phasesmith_single_crystal::solution::SharedSearchSummary,
 )> {
     search_observations_impl(observations, o, None)
 }
 pub(super) fn search_observations_seeded(
-    observations: &[phasesmith_solution::Observation],
+    observations: &[phasesmith_single_crystal::solution::Observation],
     o: &Options,
-    map: &phasesmith_solution::PhaseOnlyResult,
+    map: &phasesmith_single_crystal::solution::PhaseOnlyResult,
 ) -> Result<(
-    phasesmith_solution::Solution,
-    phasesmith_solution::SharedSearchSummary,
+    phasesmith_single_crystal::solution::Solution,
+    phasesmith_single_crystal::solution::SharedSearchSummary,
 )> {
     search_observations_impl(observations, o, Some(map))
 }
 fn search_observations_impl(
-    observations: &[phasesmith_solution::Observation],
+    observations: &[phasesmith_single_crystal::solution::Observation],
     o: &Options,
-    map: Option<&phasesmith_solution::PhaseOnlyResult>,
+    map: Option<&phasesmith_single_crystal::solution::PhaseOnlyResult>,
 ) -> Result<(
-    phasesmith_solution::Solution,
-    phasesmith_solution::SharedSearchSummary,
+    phasesmith_single_crystal::solution::Solution,
+    phasesmith_single_crystal::solution::SharedSearchSummary,
 )> {
-    use phasesmith_solution::{
+    use phasesmith_single_crystal::solution::{
         AdpMode, DenseMemoryBudget, PhasingMethod, SolveOptions, estimate_solution_memory,
         solve_elements,
     };
@@ -844,7 +845,7 @@ fn search_observations_impl(
     };
     let shared = shared_search_options(memory.maximum_atoms);
     let solution = if o.discovery.is_some() {
-        phasesmith_solution::solve_elements_with_policy(
+        phasesmith_single_crystal::solution::solve_elements_with_policy(
             observations,
             o.priors.cell,
             group,
@@ -852,7 +853,7 @@ fn search_observations_impl(
             &options,
             &shared,
             map,
-            phasesmith_solution::ElementSearchPolicy {
+            phasesmith_single_crystal::solution::ElementSearchPolicy {
                 candidate_polishing: o
                     .discovery
                     .as_ref()
@@ -861,7 +862,7 @@ fn search_observations_impl(
             },
         )?
     } else if let Some(map) = map {
-        phasesmith_solution::solve_elements_from_phase_map(
+        phasesmith_single_crystal::solution::solve_elements_from_phase_map(
             observations,
             o.priors.cell,
             group,
@@ -890,8 +891,10 @@ fn search_observations_impl(
 #[cfg(test)]
 mod tests;
 
-fn shared_search_options(maximum_atoms: usize) -> phasesmith_solution::SharedSearchOptions {
-    phasesmith_solution::SharedSearchOptions {
+fn shared_search_options(
+    maximum_atoms: usize,
+) -> phasesmith_single_crystal::solution::SharedSearchOptions {
+    phasesmith_single_crystal::solution::SharedSearchOptions {
         maximum_atoms,
         workers: 1,
         joint_assignment_refinement: true,
@@ -947,8 +950,10 @@ fn shared_search_options(maximum_atoms: usize) -> phasesmith_solution::SharedSea
     }
 }
 
-fn observations_from_reduction(r: &Reduced) -> Vec<phasesmith_solution::Observation> {
-    use phasesmith_solution::Observation;
+fn observations_from_reduction(
+    r: &Reduced,
+) -> Vec<phasesmith_single_crystal::solution::Observation> {
+    use phasesmith_single_crystal::solution::Observation;
     let observations: Vec<_> = r
         .hkl
         .iter()
@@ -972,7 +977,7 @@ fn observations_from_reduction(r: &Reduced) -> Vec<phasesmith_solution::Observat
 /// # Errors
 /// Exact group supplied, invalid catalogue/data/resources, or a failed common input preparation.
 pub fn search_unknown_observations(
-    observations: &[phasesmith_solution::Observation],
+    observations: &[phasesmith_single_crystal::solution::Observation],
     o: &Options,
 ) -> Result<SearchRun> {
     if o.priors.group.is_some() {

@@ -133,7 +133,7 @@ for mode in off control cache; do
   .venv/bin/python benchmarks/solution_corpus_reaudit.py --manifest validation/solution-corpus-v5.json --run "runs/repair-evaluation-final/$mode" --output "runs/repair-evaluation-final/$mode/comparison-verified.json"
 done
 .venv/bin/python benchmarks/solution_repair_cache_verify.py --base runs/repair-evaluation-final
-cargo bench -p phasesmith-solution --bench solution -- repair_evaluation_ --sample-size 10 --measurement-time 1 --warm-up-time 1
+cargo bench -p phasesmith-single-crystal --features solution --bench solution -- repair_evaluation_ --sample-size 10 --measurement-time 1 --warm-up-time 1
 ```
 
 Committed reports under `benchmarks/structure-solution-repair-evaluation-` include

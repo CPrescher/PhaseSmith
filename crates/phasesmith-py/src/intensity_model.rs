@@ -2,7 +2,7 @@
 #![allow(clippy::many_single_char_names)] // Conventional numerical array names at this small boundary.
 use npy::ndarray::Array2;
 use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2};
-use phasesmith_spots::intensity_model as kernel;
+use phasesmith_single_crystal::spots::intensity_model as kernel;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 

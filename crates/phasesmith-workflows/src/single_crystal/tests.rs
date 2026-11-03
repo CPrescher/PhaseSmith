@@ -45,7 +45,7 @@ fn options() -> Options {
                 half_opening_degrees: 35.,
             },
         },
-        cancellation: phasesmith_solution::Cancellation::default(),
+        cancellation: phasesmith_single_crystal::solution::Cancellation::default(),
         mask_workers: 2,
         preparation_workers: 2,
         preparation_batch: 2,
