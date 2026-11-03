@@ -1,0 +1,237 @@
+{
+  "active_caller_audit": {
+    "historical_migration_and_archive_pages_excluded": true,
+    "parsed_python_snippets": 704,
+    "remaining_retired_alias_callers": [],
+    "tracked_files_reviewed": 1162
+  },
+  "artifact_review": {
+    "rust_crates": 11,
+    "rust_source_identity_checked": true,
+    "sdists": 1,
+    "sha256": {
+      "phasesmith-0.8.0-cp311-abi3-macosx_10_12_x86_64.whl": "ae931bbad986a09dc8210cd3218365c878d7165744a04c87b0a7835db468c0d9",
+      "phasesmith-0.8.0-cp311-abi3-macosx_11_0_arm64.whl": "14f8c572ae262d72343e90320ffe6f3093377c8369a59ced9a98cf58ba23627d",
+      "phasesmith-0.8.0-cp311-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl": "cb6127b66449e9ed0879d2e42ca2dab1e625a2fd5b5157cdf2c472c9fce442c0",
+      "phasesmith-0.8.0-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl": "a7e412edbbc7f566f9f60e5c8c2388f846f114037a8cce98e4db557863f961d7",
+      "phasesmith-0.8.0-cp311-abi3-win_amd64.whl": "ab301a5dc8863f94e73d7c29fd4614357e1d5ecd653e8f1b4ec248853888748d",
+      "phasesmith-0.8.0.crate": "88237eee742e0312b8120e1d2ebb9bffdd5efb0c6561ec3774bf544292d9a017",
+      "phasesmith-0.8.0.tar.gz": "36071a42430056067ded95f8d3136b060b2dce34b04e2e2f8bee1d2824fff1b1",
+      "phasesmith-core-0.8.0.crate": "e71a39ce24af29662ebd33deb508ec3dba9675bd9f447bceb0f7b875f27cc7e3",
+      "phasesmith-crystallography-0.8.0.crate": "e8b0eed301fcf8786470361b4bf124ece2ccb56a8e12ff1d810edbca7794d1a3",
+      "phasesmith-engine-0.8.0.crate": "a22c7823d94bb1707a31aca307d615b9f7fb27a155012bdec08013eb785bdf3c",
+      "phasesmith-execution-0.8.0.crate": "3723e3df0aa4d8259de395453a2abd4d03df9410b989af0b53384eb7ed8d9cce",
+      "phasesmith-hdf5-0.8.0.crate": "4ce2f18dc932b78bf15a25388d423f5320e06ad598af61855aedc08a16e98cf6",
+      "phasesmith-io-0.8.0.crate": "7234707a2974127256e8f77a7019f8025151c8b8979fe37f986d1260f78f70dc",
+      "phasesmith-model-0.8.0.crate": "583d4ba424288865906bfdd06e593980f9f966f6bfca42d7bdfd1dd18900e519",
+      "phasesmith-persistence-0.8.0.crate": "c3e5bca88ba837437498bb234d93390c3cc3ffaec2f82e120b6409d949bd3b28",
+      "phasesmith-single-crystal-0.8.0.crate": "37850f43b1c34ec5962ab72d9b4e31b79e31100e165bb647b04e9386278b3421",
+      "phasesmith-workflows-0.8.0.crate": "6d4170cf1fdb5b3986f3f3971069783877e58f0157766997713d4003a3d1260c"
+    },
+    "versions_metadata_and_licenses_checked": true,
+    "wheel_and_sdist_cleaned_namespaces_checked": true,
+    "wheels": 5
+  },
+  "current_python_all_snapshot_unchanged": true,
+  "local_checks": {
+    "cargo_fmt_and_strict_clippy": "passed",
+    "installed_minimum_numpy_wheel": {
+      "deselected": 34,
+      "numpy": "1.26.4",
+      "passed": 3384,
+      "skipped": 27
+    },
+    "note": "Full local suites use the identical production sources from 9dd55fd; 57f8da9 additionally migrates embedded differential tests and docs. Remote workflows validate the exact final source commit.",
+    "python": {
+      "deselected": 34,
+      "numpy": "2.5.4",
+      "passed": 3384,
+      "skipped": 27
+    },
+    "ruff_check_and_format": "passed",
+    "rust": {
+      "ignored": 34,
+      "passed": 567
+    },
+    "rust_python_workflow_differential": {
+      "passed": 11
+    },
+    "strict_mkdocs_and_generated_docs": "passed",
+    "version_and_public_api_snapshot": "passed"
+  },
+  "measured_regression_control": {
+    "accepted": true,
+    "arrays_bitwise_identical": 68,
+    "candidate_record_and_cifs_identical": true,
+    "counts": {
+      "Mg": 16,
+      "O": 48,
+      "Si": 16
+    },
+    "exposed_regression_control": true,
+    "independent_validation": false,
+    "npz_files": 10,
+    "observations": 4844,
+    "r1": 0.0514043045582282,
+    "schema": "phasesmith.single-crystal-workflow-run.v1",
+    "seconds": 14.638064625,
+    "selected_group": {
+      "hall": "-P 2ac 2ab",
+      "index": 289,
+      "number": 61,
+      "symbol": "P b c a"
+    },
+    "standalone_structure_refinement": false,
+    "termination": "r1_target"
+  },
+  "previous_dry_run_record": "release-dry-run-0.8-20261103.json",
+  "publication": {
+    "packages_published": false,
+    "tag_created": false
+  },
+  "release_version": "0.8.0",
+  "retired_aliases": [
+    {
+      "all_owners_importable": true,
+      "namespace": "phasesmith",
+      "removed_aliases": 67
+    },
+    {
+      "all_owners_importable": true,
+      "namespace": "phasesmith.io",
+      "removed_aliases": 16
+    },
+    {
+      "all_owners_importable": true,
+      "namespace": "phasesmith.refinement",
+      "removed_aliases": 85
+    }
+  ],
+  "schema_version": 1,
+  "scope": "Remove internal legacy Python facades before publication; migrate callers including embedded Python in Rust tests.",
+  "tested_source_commit": "57f8da90732e4b1edb49563231523551839c242a",
+  "total_retired_aliases": 168,
+  "workflows": {
+    "ci": {
+      "conclusion": "success",
+      "event": "push",
+      "jobs": [
+        {
+          "conclusion": "success",
+          "name": "rust"
+        },
+        {
+          "conclusion": "success",
+          "name": "python (3.14, numpy)"
+        },
+        {
+          "conclusion": "success",
+          "name": "python (3.13, numpy)"
+        },
+        {
+          "conclusion": "success",
+          "name": "docs"
+        },
+        {
+          "conclusion": "success",
+          "name": "rust-windows-persistence"
+        },
+        {
+          "conclusion": "success",
+          "name": "python (3.12, numpy)"
+        },
+        {
+          "conclusion": "success",
+          "name": "msrv"
+        },
+        {
+          "conclusion": "success",
+          "name": "python (3.11, numpy)"
+        },
+        {
+          "conclusion": "success",
+          "name": "python (3.12, numpy==1.26.4)"
+        }
+      ],
+      "url": "https://github.com/CPrescher/PhaseSmith/actions/runs/41720237004"
+    },
+    "release": {
+      "conclusion": "success",
+      "event": "workflow_dispatch",
+      "jobs": [
+        {
+          "conclusion": "success",
+          "name": "Validate release metadata"
+        },
+        {
+          "conclusion": "success",
+          "name": "Verify release documentation"
+        },
+        {
+          "conclusion": "success",
+          "name": "Windows wheel (x86-64)"
+        },
+        {
+          "conclusion": "success",
+          "name": "macOS wheel (aarch64)"
+        },
+        {
+          "conclusion": "success",
+          "name": "Python source distribution"
+        },
+        {
+          "conclusion": "success",
+          "name": "Linux wheel (x86_64)"
+        },
+        {
+          "conclusion": "success",
+          "name": "Linux wheel (aarch64)"
+        },
+        {
+          "conclusion": "success",
+          "name": "Verify public Rust packages"
+        },
+        {
+          "conclusion": "success",
+          "name": "macOS wheel (x86_64)"
+        },
+        {
+          "conclusion": "skipped",
+          "name": "Attest release distributions"
+        },
+        {
+          "conclusion": "skipped",
+          "name": "Publish Rust crates to crates.io"
+        },
+        {
+          "conclusion": "skipped",
+          "name": "Publish Python distributions to PyPI"
+        },
+        {
+          "conclusion": "skipped",
+          "name": "Publish GitHub Release"
+        }
+      ],
+      "url": "https://github.com/CPrescher/PhaseSmith/actions/runs/41720236629"
+    },
+    "single-crystal": {
+      "conclusion": "success",
+      "event": "push",
+      "jobs": [
+        {
+          "conclusion": "success",
+          "name": "native-and-python (windows-latest)"
+        },
+        {
+          "conclusion": "success",
+          "name": "native-and-python (ubuntu-latest)"
+        },
+        {
+          "conclusion": "success",
+          "name": "native-and-python (macos-latest)"
+        }
+      ],
+      "url": "https://github.com/CPrescher/PhaseSmith/actions/runs/41720236769"
+    }
+  }
+}

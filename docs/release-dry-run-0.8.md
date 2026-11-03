@@ -5,22 +5,45 @@ This records the consolidated 0.8 preparation, separate from the earlier
 Version 0.8.0 remains unpublished until the reviewed release commit is tagged and
 registry publication is explicitly performed.
 
-## Post-dry-run facade cleanup
+## Completed facade-cleanup dry run
 
 The maintainer subsequently requested removal of the internal legacy Python
-facades before publication. Version 0.8 now removes all 168 retired aggregate
-aliases, updates the three remaining benchmark/tool callers, and uses the
-owning modules directly. Embedded Python in three Rust differential-test files
-also uses the owning modules; the cross-language checks exercise those imports.
-Current `__all__` exports and numerical code are
-unchanged. The historical dry run below remains evidence for its exact commit;
-replacement validation of the cleanup is pending.
+facades before publication. The final tested cleanup commit is
+`57f8da90732e4b1edb49563231523551839c242a`; this receipt is a documentation-only
+follow-up. All 168 retired aliases are removed (67 top-level, 85 refinement,
+16 I/O); the owning modules remain importable without deprecation warnings.
+Current `__all__` exports, numerical code and portable data readers are unchanged.
+Three benchmark/tool callers, embedded Python in three Rust test files and the
+API documentation now use the owning modules. A scan of 1,162 tracked files,
+including 704 parsed Python snippets, found no active retired-alias callers.
+Both Dioptas checkouts also have no callers of these retired aliases.
+
+| Gate | Result |
+| --- | --- |
+| [Release dry run](https://github.com/CPrescher/PhaseSmith/actions/runs/41720236629) | All five wheel targets, source build/install/tests, eleven verified Rust archives and strict docs pass |
+| [General CI](https://github.com/CPrescher/PhaseSmith/actions/runs/41720237004) | All nine jobs pass, including Python 3.11–3.14, NumPy 1.26.4 and the migrated Rust/Python differential contracts |
+| [Installed single-crystal wheels](https://github.com/CPrescher/PhaseSmith/actions/runs/41720236769) | Linux, macOS and Windows native/Python/CLI checks pass |
+| Local suites | 567 Rust tests; 3,384 Python tests with NumPy 2.5.4 and all 3,384 again from an installed wheel with NumPy 1.26.4; all eleven optional Rust/Python workflow comparisons pass |
+| Downloaded Apple Silicon wheel | NumPy-only capability/filter smoke, synthetic tutorial and fresh original-frame MgSiO3 control pass |
+| Artifact review | Five wheels and the sdist contain the cleaned namespaces; eleven Rust archives identify the clean final source commit; metadata, licenses and all seventeen SHA-256 hashes reviewed |
+| Measured regression parity | All 68 arrays in ten NPZ files, complete candidate record and both CIFs remain bitwise identical to the validated baseline; accepted Pbca/Mg16 Si16 O48 at R1 0.0514043045582282 |
+
+The [cleanup receipt and artifact hashes](https://github.com/CPrescher/PhaseSmith/blob/develop/validation/results/release-dry-run-0.8-facade-cleanup-20261103.json)
+record the exact source, checks and publication boundary. Local suites retain
+27 explicit skips, 34 external-data/oracle marker exclusions and 34 ignored Rust
+tests; optional cross-language comparisons run separately. The measured control
+remains exposed regression evidence, not independent scientific validation.
+
+An earlier cleanup attempt exposed old imports embedded in Rust differential
+tests; those imports were migrated before the final green runs above. The
+pre-cleanup numerical receipt below remains evidence for its own exact commit.
+No tag or package publication was performed.
 
 ## Completed pre-cleanup dry run
 
 The tested source commit is `f41f6cae2e6c07cc181a5e3ec12ce23fcd9d6495`.
 Its receipt was a documentation-only follow-up to that tested source; the later
-facade cleanup requires its own validation.
+facade cleanup is validated separately above.
 
 | Gate | Result |
 | --- | --- |
