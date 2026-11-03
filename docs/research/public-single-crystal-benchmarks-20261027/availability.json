@@ -1,0 +1,623 @@
+{
+  "checked_date": "2026-10-27",
+  "scope": "Non-biological solid materials; X-ray diffraction only. Research and file-reader checks; no complete reduction or intensity validation.",
+  "method": "Anonymous Zenodo API metadata; bounded HTTP ranges for ZIP directory and selected members; local FabIO decode. Entire archive checksums are repository metadata, not locally verified.",
+  "fabio_version": "2025.10.0",
+  "datasets": [
+    {
+      "zenodo_record": "18910433",
+      "landing_url": "https://zenodo.org/records/18910433",
+      "title": "Raw X-ray diffraction data for Thiourea at 130 K - Low temperature phase - non-modulated",
+      "version": null,
+      "license": {
+        "id": "cc-by-4.0"
+      },
+      "access_right": "open",
+      "files": [
+        {
+          "name": "2_T130K_18MPC001.zip",
+          "bytes": 318376082,
+          "checksum_from_repository": "md5:8fd65514a2bcd5b7332b401795c350a4",
+          "download_url": "https://zenodo.org/records/18910433/files/2_T130K_18MPC001.zip"
+        }
+      ],
+      "archive_member_suffix_counts": {
+        "": 113,
+        ".sfrm": 650,
+        ".png": 6,
+        ".txt": 12,
+        ".mnu": 1,
+        ".js": 1247,
+        ".gif": 3,
+        ".jpg": 1,
+        ".properties": 2,
+        ".vm": 6,
+        ".bmol": 1,
+        ".html": 1,
+        ".sh": 1,
+        ".ins": 25,
+        ".2fcf": 2,
+        ".chk": 3,
+        ".cif": 4,
+        ".ckf": 3,
+        ".fcf": 19,
+        ".hkl": 5,
+        ".lis": 3,
+        ".lst": 3,
+        ".pcf": 2,
+        ".pdb": 3,
+        ".res": 3,
+        ".vrf": 2,
+        ".abs": 2,
+        ".cht": 2,
+        ".eps": 6,
+        ".xht": 2,
+        ".raw": 14,
+        "._ls": 14,
+        "._ma": 2,
+        ".p4p": 4,
+        ".prp": 2,
+        ".ini": 2,
+        ".pdf": 1
+      },
+      "images": [
+        {
+          "archive_member": "2_T130K_18MPC001/mo_18MPC001_rampT160K_01_0001.sfrm",
+          "member_bytes": 794256,
+          "sha256": "6b55b737f69f19d9ec952c3d6452f2f7f359f1e481bd9b06f159ca2cabc702b7",
+          "reader": "Bruker100Image",
+          "array_shape_slow_fast": [
+            1024,
+            768
+          ],
+          "array_dtype": "int32",
+          "array_min": 6,
+          "array_max": 44211,
+          "array_sum": 49414798,
+          "array_sha256_native_bytes": "8d636628614e248054b4880819738a63fd6e005ac8f70b326a483443f065b9b8",
+          "selected_header": {
+            "FORMAT": "100",
+            "VERSION": "18",
+            "NROWS": "1024                               1",
+            "NCOLS": "768                                1",
+            "NFRAMES": "100",
+            "START": "11.364960",
+            "INCREME": "1.000000",
+            "RANGE": "1.000000",
+            "ANGLES": "9.684000         11.364960        299.977800       319.681000",
+            "ENDING": "9.684000         12.364960        299.977800       319.681000",
+            "AXIS": "2",
+            "CENTER": "384.300000       512.800000       384.300000       512.800000",
+            "DISTANC": "2.796100                           3.800100",
+            "WAVELEN": "0.710730         0.709300         0.713590         0.632290",
+            "DETTYPE": "CMOS-PHOTONII        36.954918   1.004000    0 0.425000    0.035000    1",
+            "CCDPARM": "2.892250      36.600000     259.924900    0.000000      163810.000000",
+            "CUMULAT": "4.000000",
+            "CORRECT": "INTERNAL, s/n: A110877 Done inside firmware",
+            "DARK": "INTERNAL, s/n: A110877 Done inside firmware",
+            "LINEAR": "1.000000                           0.000000",
+            "NEXP": "1             0             64            0             0"
+          }
+        },
+        {
+          "archive_member": "2_T130K_18MPC001/mo_18MPC001_rampT160K_02_0001.sfrm",
+          "member_bytes": 794192,
+          "sha256": "1b05912320cd916717982c2c7357576af10af573901ce00d6d90f323dc1ec28c",
+          "reader": "Bruker100Image",
+          "array_shape_slow_fast": [
+            1024,
+            768
+          ],
+          "array_dtype": "int32",
+          "array_min": 5,
+          "array_max": 2796,
+          "array_sum": 49667790,
+          "array_sha256_native_bytes": "186b5f2c1800ec2ec75bb9e299bde2e48e47af36f5eb3cbdc3c3c425cb456c16",
+          "selected_header": {
+            "FORMAT": "100",
+            "VERSION": "18",
+            "NROWS": "1024                               1",
+            "NCOLS": "768                                1",
+            "NFRAMES": "91",
+            "START": "12.256930",
+            "INCREME": "1.000000",
+            "RANGE": "1.000000",
+            "ANGLES": "9.684000         12.256930        58.174170        337.000100",
+            "ENDING": "9.684000         13.256930        58.174170        337.000100",
+            "AXIS": "2",
+            "CENTER": "384.300000       512.800000       384.300000       512.800000",
+            "DISTANC": "2.796100                           3.800100",
+            "WAVELEN": "0.710730         0.709300         0.713590         0.632290",
+            "DETTYPE": "CMOS-PHOTONII        36.954918   1.004000    0 0.425000    0.035000    1",
+            "CCDPARM": "2.892250      36.600000     259.924900    0.000000      163810.000000",
+            "CUMULAT": "4.000000",
+            "CORRECT": "INTERNAL, s/n: A110877 Done inside firmware",
+            "DARK": "INTERNAL, s/n: A110877 Done inside firmware",
+            "LINEAR": "1.000000                           0.000000",
+            "NEXP": "1             0             64            0             0"
+          }
+        },
+        {
+          "archive_member": "2_T130K_18MPC001/mo_18MPC001_rampT160K_03_0001.sfrm",
+          "member_bytes": 794128,
+          "sha256": "3a46346ce174e3aa32bd822316c8847b506e8bd3e67b5c993bff0261c705cccb",
+          "reader": "Bruker100Image",
+          "array_shape_slow_fast": [
+            1024,
+            768
+          ],
+          "array_dtype": "int32",
+          "array_min": 12,
+          "array_max": 993,
+          "array_sum": 49452801,
+          "array_sha256_native_bytes": "f39ca404c05853f5b78f7ad7cf6fec6442ab6f2f91af7ad0ae3de43dc6124758",
+          "selected_header": {
+            "FORMAT": "100",
+            "VERSION": "18",
+            "NROWS": "1024                               1",
+            "NCOLS": "768                                1",
+            "NFRAMES": "77",
+            "START": "295.969000",
+            "INCREME": "1.000000",
+            "RANGE": "1.000000",
+            "ANGLES": "9.684000         295.969000       158.359800       52.561010",
+            "ENDING": "9.684000         296.969000       158.359800       52.561010",
+            "AXIS": "2",
+            "CENTER": "384.300000       512.800000       384.300000       512.800000",
+            "DISTANC": "2.796114                           3.800114",
+            "WAVELEN": "0.710730         0.709300         0.713590         0.632290",
+            "DETTYPE": "CMOS-PHOTONII        36.954918   1.004000    0 0.425000    0.035000    1",
+            "CCDPARM": "2.892250      36.600000     259.924900    0.000000      163810.000000",
+            "CUMULAT": "4.000000",
+            "CORRECT": "INTERNAL, s/n: A110877 Done inside firmware",
+            "DARK": "INTERNAL, s/n: A110877 Done inside firmware",
+            "LINEAR": "1.000000                           0.000000",
+            "NEXP": "1             0             64            0             0"
+          }
+        },
+        {
+          "archive_member": "2_T130K_18MPC001/mo_18MPC001_rampT160K_04_0001.sfrm",
+          "member_bytes": 794176,
+          "sha256": "7ed6170d051aec9f52d7c19273b0ec0414b326b79f2a079bab34ccffb452586c",
+          "reader": "Bruker100Image",
+          "array_shape_slow_fast": [
+            1024,
+            768
+          ],
+          "array_dtype": "int32",
+          "array_min": 9,
+          "array_max": 2889,
+          "array_sum": 49399667,
+          "array_sha256_native_bytes": "906dccc9b010c8dce447815bfa924c8fb50bcd06809c88749bcf4bf3a65ba9f4",
+          "selected_header": {
+            "FORMAT": "100",
+            "VERSION": "18",
+            "NROWS": "1024                               1",
+            "NCOLS": "768                                1",
+            "NFRAMES": "158",
+            "START": "253.492000",
+            "INCREME": "1.000000",
+            "RANGE": "1.000000",
+            "ANGLES": "9.628000         275.609900       253.492000       24.000050",
+            "ENDING": "9.628000         275.609900       254.492000       24.000050",
+            "AXIS": "3",
+            "CENTER": "384.300000       512.800000       384.300000       512.800000",
+            "DISTANC": "2.796114                           3.800114",
+            "WAVELEN": "0.710730         0.709300         0.713590         0.632290",
+            "DETTYPE": "CMOS-PHOTONII        36.954918   1.004000    0 0.425000    0.035000    1",
+            "CCDPARM": "2.892250      36.600000     259.924900    0.000000      163810.000000",
+            "CUMULAT": "4.000000",
+            "CORRECT": "INTERNAL, s/n: A110877 Done inside firmware",
+            "DARK": "INTERNAL, s/n: A110877 Done inside firmware",
+            "LINEAR": "1.000000                           0.000000",
+            "NEXP": "1             0             64            0             0"
+          }
+        },
+        {
+          "archive_member": "2_T130K_18MPC001/mo_18MPC001_rampT160K_05_0001.sfrm",
+          "member_bytes": 794144,
+          "sha256": "949a1d2e3a576f793fac156292d29ac2b0ddf947a621be9e647441b6eed5cdaf",
+          "reader": "Bruker100Image",
+          "array_shape_slow_fast": [
+            1024,
+            768
+          ],
+          "array_dtype": "int32",
+          "array_min": 10,
+          "array_max": 440,
+          "array_sum": 49242821,
+          "array_sha256_native_bytes": "ff1e175cdaa38c36183f9f6761666ee7a9da94d341efc1e3d08546b69858d67f",
+          "selected_header": {
+            "FORMAT": "100",
+            "VERSION": "18",
+            "NROWS": "1024                               1",
+            "NCOLS": "768                                1",
+            "NFRAMES": "90",
+            "START": "280.909100",
+            "INCREME": "1.000000",
+            "RANGE": "1.000000",
+            "ANGLES": "9.684000         280.909100       7.351248         46.086930",
+            "ENDING": "9.684000         281.909100       7.351248         46.086930",
+            "AXIS": "2",
+            "CENTER": "384.300000       512.800000       384.300000       512.800000",
+            "DISTANC": "2.796114                           3.800114",
+            "WAVELEN": "0.710730         0.709300         0.713590         0.632290",
+            "DETTYPE": "CMOS-PHOTONII        36.954918   1.004000    0 0.425000    0.035000    1",
+            "CCDPARM": "2.892250      36.600000     259.924900    0.000000      163810.000000",
+            "CUMULAT": "4.000000",
+            "CORRECT": "INTERNAL, s/n: A110877 Done inside firmware",
+            "DARK": "INTERNAL, s/n: A110877 Done inside firmware",
+            "LINEAR": "1.000000                           0.000000",
+            "NEXP": "1             0             64            0             0"
+          }
+        },
+        {
+          "archive_member": "2_T130K_18MPC001/mo_18MPC001_rampT160K_06_0001.sfrm",
+          "member_bytes": 794192,
+          "sha256": "ce790ecd9bc36d0c65bbf2920e0aa453e6cdc381aa3d7219a97736857ffbd49e",
+          "reader": "Bruker100Image",
+          "array_shape_slow_fast": [
+            1024,
+            768
+          ],
+          "array_dtype": "int32",
+          "array_min": 5,
+          "array_max": 6625,
+          "array_sum": 49241969,
+          "array_sha256_native_bytes": "12b0d64299ee3f41760e8ebbc821c78cd57e007a27596d69802209cea0536dac",
+          "selected_header": {
+            "FORMAT": "100",
+            "VERSION": "18",
+            "NROWS": "1024                               1",
+            "NCOLS": "768                                1",
+            "NFRAMES": "91",
+            "START": "12.256930",
+            "INCREME": "1.000000",
+            "RANGE": "1.000000",
+            "ANGLES": "9.684000         12.256930        250.366800       337.000100",
+            "ENDING": "9.684000         13.256930        250.366800       337.000100",
+            "AXIS": "2",
+            "CENTER": "384.300000       512.800000       384.300000       512.800000",
+            "DISTANC": "2.796150                           3.800150",
+            "WAVELEN": "0.710730         0.709300         0.713590         0.632290",
+            "DETTYPE": "CMOS-PHOTONII        36.954918   1.004000    0 0.425000    0.035000    1",
+            "CCDPARM": "2.892250      36.600000     259.924900    0.000000      163810.000000",
+            "CUMULAT": "4.000000",
+            "CORRECT": "INTERNAL, s/n: A110877 Done inside firmware",
+            "DARK": "INTERNAL, s/n: A110877 Done inside firmware",
+            "LINEAR": "1.000000                           0.000000",
+            "NEXP": "1             0             64            0             0"
+          }
+        }
+      ],
+      "text_evidence": [
+        {
+          "member_or_download": "2_T130K_18MPC001/work/18MPC001T130K.cif",
+          "bytes": 284056,
+          "sha256": "2c09851a3316d8b43d54913e0290d57963f478ecc703fc8bb6f09525065a35ff"
+        },
+        {
+          "member_or_download": "2_T130K_18MPC001/work/18MPC001T130K.hkl",
+          "bytes": 271440,
+          "sha256": "9138164bc1f542b320094b395819af191dbbe77ac4c01f2e21ba55099c074cc1"
+        },
+        {
+          "member_or_download": "2_T130K_18MPC001/work/2_T130K_18MPC001_01._ls",
+          "bytes": 457455,
+          "sha256": "169cfb1b2cfdf297ee57e3b1cf22150198bbddfc97df7216b2f2400875ce4cde"
+        },
+        {
+          "member_or_download": "2_T130K_18MPC001/work/2_T130K_18MPC001_0m.p4p",
+          "bytes": 223151,
+          "sha256": "715d5991dbc2ced2502e5956dfdc5101be27ae5db0dd6766af88e05fc249ef6c"
+        },
+        {
+          "member_or_download": "2_T130K_18MPC001/work/2_T130K_18MPC001_0m.raw",
+          "bytes": 2345639,
+          "sha256": "3cc4851f92bb72d5f030a4147ad12885613026a1132d20ce9b936c50201b0091"
+        },
+        {
+          "member_or_download": "2_T130K_18MPC001/work/archive_18MPC001T130K.cif",
+          "bytes": 285142,
+          "sha256": "b3fc549fbe77d935839d6f566dc968e3abc13913be206c6b59f98ebbf2cd74c2"
+        }
+      ],
+      "archive_member_count": 2172,
+      "acquisition_counts_by_run": {
+        "01": 100,
+        "02": 91,
+        "03": 77,
+        "04": 158,
+        "05": 90,
+        "06": 91
+      }
+    },
+    {
+      "zenodo_record": "11965992",
+      "landing_url": "https://zenodo.org/records/11965992",
+      "title": "RODIN X-ray Diffraction Data 2360289",
+      "version": "1.0.0",
+      "license": {
+        "id": "cc-by-4.0"
+      },
+      "access_right": "open",
+      "files": [
+        {
+          "name": "CCDC_2360289.zip",
+          "bytes": 326642944,
+          "checksum_from_repository": "md5:c951e1e92c5b5144ec06370dea54fe37",
+          "download_url": "https://zenodo.org/records/11965992/files/CCDC_2360289.zip"
+        }
+      ],
+      "archive_member_suffix_counts": {
+        ".sfrm": 618,
+        ".vzs": 1
+      },
+      "images": [
+        {
+          "archive_member": "ag_matrix_01_0001.sfrm",
+          "member_bytes": 795104,
+          "sha256": "cd76c3ec4d4aa25b2d8146f4715895326832706affb19a5fa7b31737c11b5ec7",
+          "reader": "Bruker100Image",
+          "array_shape_slow_fast": [
+            1024,
+            768
+          ],
+          "array_dtype": "int32",
+          "array_min": 0,
+          "array_max": 163810,
+          "array_sum": 50936885,
+          "array_sha256_native_bytes": "fd706177a29956f53d97146a944e2b31514c61e7f5ab817f83b120b6af46e5eb",
+          "selected_header": {
+            "FORMAT": "100",
+            "VERSION": "18",
+            "NROWS": "1024                               1",
+            "NCOLS": "768                                1",
+            "NFRAMES": "12",
+            "START": "355.000000",
+            "INCREME": "-0.500000",
+            "RANGE": "0.500000",
+            "ANGLES": "5.000000         355.000000       0.000000         54.781100",
+            "ENDING": "5.000000         354.500000       0.000000         54.781100",
+            "AXIS": "2",
+            "CENTER": "382.300000       508.000000       382.300000       508.000000",
+            "DISTANC": "4.996073                           6.000073",
+            "WAVELEN": "0.560870         0.559410         0.563800         0.497070",
+            "DETTYPE": "CMOS-PHOTONII        36.954918   1.004000    0 0.425000    0.035000    1",
+            "CCDPARM": "94.235200     36.600000     329.374800    0.000000      163810.000000",
+            "CUMULAT": "5.000000",
+            "CORRECT": "INTERNAL, s/n: A110307 Done inside firmware",
+            "DARK": "INTERNAL, s/n: A110307 Done inside firmware",
+            "LINEAR": "1.000000                           0.000000",
+            "NEXP": "1             0             64            0             0"
+          }
+        },
+        {
+          "archive_member": "ag_pgw240059_01_0001.sfrm",
+          "member_bytes": 794400,
+          "sha256": "c99698215632bccaf7541e5412e02536f9fd6eb7350a8f5c18e95fea25426923",
+          "reader": "Bruker100Image",
+          "array_shape_slow_fast": [
+            1024,
+            768
+          ],
+          "array_dtype": "int32",
+          "array_min": 0,
+          "array_max": 1963,
+          "array_sum": 48842540,
+          "array_sha256_native_bytes": "c29799422bb39affd55d28421eb2e9841c69886b69cf2106eba1153802d589ca",
+          "selected_header": {
+            "FORMAT": "100",
+            "VERSION": "18",
+            "NROWS": "1024                               1",
+            "NCOLS": "768                                1",
+            "NFRAMES": "180",
+            "START": "0.000000",
+            "INCREME": "1.000000",
+            "RANGE": "1.000000",
+            "ANGLES": "0.000000         0.000000         0.000000         54.781100",
+            "ENDING": "0.000000         0.000000         1.000000         54.781100",
+            "AXIS": "3",
+            "CENTER": "382.300000       508.000000       382.300000       508.000000",
+            "DISTANC": "4.996158                           6.000158",
+            "WAVELEN": "0.560870         0.559410         0.563800         0.497070",
+            "DETTYPE": "CMOS-PHOTONII        36.954918   1.004000    0 0.425000    0.035000    1",
+            "CCDPARM": "247.731000    36.600000     329.374800    0.000000      163810.000000",
+            "CUMULAT": "1.000000",
+            "CORRECT": "INTERNAL, s/n: A110307 Done inside firmware",
+            "DARK": "INTERNAL, s/n: A110307 Done inside firmware",
+            "LINEAR": "1.000000                           0.000000",
+            "NEXP": "1             0             64            0             0"
+          }
+        },
+        {
+          "archive_member": "ag_pgw240059_02_0001.sfrm",
+          "member_bytes": 795008,
+          "sha256": "40d02059ebb610593cdf8c98923a7a5e2e2b393011b22aa83747ce0d68c609a9",
+          "reader": "Bruker100Image",
+          "array_shape_slow_fast": [
+            1024,
+            768
+          ],
+          "array_dtype": "int32",
+          "array_min": 0,
+          "array_max": 18960,
+          "array_sum": 51071079,
+          "array_sha256_native_bytes": "b7099346a7d1d478d638ad4759b355e571180478542365912b5cba2b0dda6284",
+          "selected_header": {
+            "FORMAT": "100",
+            "VERSION": "18",
+            "NROWS": "1024                               1",
+            "NCOLS": "768                                1",
+            "NFRAMES": "406",
+            "START": "168.781000",
+            "INCREME": "0.500000",
+            "RANGE": "0.500000",
+            "ANGLES": "0.032000         168.781000       0.000000         54.781100",
+            "ENDING": "0.032000         169.281000       0.000000         54.781100",
+            "AXIS": "2",
+            "CENTER": "382.300000       508.000000       382.300000       508.000000",
+            "DISTANC": "4.996158                           6.000158",
+            "WAVELEN": "0.560870         0.559410         0.563800         0.497070",
+            "DETTYPE": "CMOS-PHOTONII        36.954918   1.004000    0 0.425000    0.035000    1",
+            "CCDPARM": "66.174600     36.600000     329.374800    0.000000      163810.000000",
+            "CUMULAT": "10.000000",
+            "CORRECT": "INTERNAL, s/n: A110307 Done inside firmware",
+            "DARK": "INTERNAL, s/n: A110307 Done inside firmware",
+            "LINEAR": "1.000000                           0.000000",
+            "NEXP": "1             0             64            0             0"
+          }
+        }
+      ],
+      "text_evidence": [],
+      "archive_member_count": 619,
+      "sfrm_groups": {
+        "ag_matrix_01": 12,
+        "ag_matrix_02": 12,
+        "ag_matrix_xa_01": 1,
+        "ag_matrix_xa_02": 1,
+        "ag_pgw240059_01": 180,
+        "ag_pgw240059_02": 406,
+        "ag_pgw240059_xa_01": 1,
+        "ag_pgw240059_xa_02": 1,
+        "strategy_masks_1/mask_TT0.0_DX60.0_Ag": 2,
+        "strategy_masks_1/mask_TT0.1_DX60.0_Ag": 2
+      }
+    },
+    {
+      "zenodo_record": "12594216",
+      "landing_url": "https://zenodo.org/records/12594216",
+      "title": "single crystal XRD of FeO",
+      "version": null,
+      "license": {
+        "id": "cc-by-4.0"
+      },
+      "access_right": "open",
+      "files": [
+        {
+          "name": "p11_s1.zip",
+          "bytes": 892752804,
+          "checksum_from_repository": "md5:c66aa973904be34765120fa9e713b23a",
+          "download_url": "https://zenodo.org/records/12594216/files/p11_s1.zip"
+        },
+        {
+          "name": "p38_s1.zip",
+          "bytes": 430650742,
+          "checksum_from_repository": "md5:67a93892cc3ab4a898d42c5acdc07ff3",
+          "download_url": "https://zenodo.org/records/12594216/files/p38_s1.zip"
+        },
+        {
+          "name": "p01_s1.zip",
+          "bytes": 914324487,
+          "checksum_from_repository": "md5:eef4b2f7dbe8e48ad3aa626e863db0c4",
+          "download_url": "https://zenodo.org/records/12594216/files/p01_s1.zip"
+        },
+        {
+          "name": "logbook.xlsx",
+          "bytes": 17681,
+          "checksum_from_repository": "md5:06fc0fe8afa5d714002763b32d9f2be6",
+          "download_url": "https://zenodo.org/records/12594216/files/logbook.xlsx"
+        },
+        {
+          "name": "p39_s1.zip",
+          "bytes": 304112740,
+          "checksum_from_repository": "md5:578f5ecd62a88de85f4dd134d21e44f2",
+          "download_url": "https://zenodo.org/records/12594216/files/p39_s1.zip"
+        }
+      ],
+      "archive_member_suffix_counts": {
+        ".at_rit": 1,
+        "": 4,
+        ".ini": 3,
+        ".tabbin": 4,
+        ".ccd": 1,
+        ".par": 2,
+        ".run": 1,
+        ".set": 1,
+        ".esperanto": 76,
+        ".dat": 2,
+        ".gsas": 1,
+        ".opt": 1,
+        ".xye": 1,
+        ".sel_od": 1,
+        ".txt": 6
+      },
+      "images": [
+        {
+          "archive_member": "p39_s1/ESPERANTO/feo_p39_s1_1_1.esperanto",
+          "member_bytes": 3967232,
+          "sha256": "132e9a85dd1b8e8cc51f4e9c86a061da19835f6e4d6345e477b1475f6f4bc45d",
+          "reader": "EsperantoImage",
+          "array_shape_slow_fast": [
+            2048,
+            2048
+          ],
+          "array_dtype": "int32",
+          "array_min": -3049,
+          "array_max": 605769,
+          "array_sum": 2706626347,
+          "array_sha256_native_bytes": "06687f1b461fcab486deccd728bec8989f64aac2ad79533892f307f25db15be8",
+          "selected_header": {
+            "WAVELENGTH": "0.29520 0.29520 0.29520 0.29520",
+            "TIME": "1.000 0.000 0.000",
+            "IMAGE": "2048 2048 1 1 \"AGI_BITFIELD\"",
+            "PIXELSIZE": "0.20000 0.20000",
+            "STARTANGLESINDEG": "-38.00000 0.00000 0.00000 0.00000",
+            "ENDANGLESINDEG": "-37.00000 0.00000 0.00000 0.00000",
+            "GONIOMODEL_1": "0.00000 0.00000 0.00000 0.00000 0.00000 1028.00000 976.00000 50.00000 0.00000 430.00000",
+            "GONIOMODEL_2": "0.00000 0.00000 0.00000 0.00000"
+          }
+        }
+      ],
+      "text_evidence": [
+        {
+          "member_or_download": "42005_2024_1797_MOESM5_ESM.cif",
+          "bytes": 22751,
+          "sha256": "fb762bcc982c71b2721ca8885c44459a909672c868351625690c1749b229fe2a"
+        },
+        {
+          "member_or_download": "42005_2024_1797_MOESM6_ESM.cif",
+          "bytes": 21409,
+          "sha256": "85c957500b6254af0c9ab3f7ecdddda44bed6dad116cc58ed275f67bd8610992"
+        }
+      ],
+      "archive_member_count": 105
+    }
+  ],
+  "dioptas_loader_check": {
+    "source_file": "/Users/clemens/Programming/Dioptas/dioptas/model/loader/FabioLoader.py",
+    "scope": "Existing FabioLoader only. No GUI workflow, metadata geometry import, indexing or integration was executed.",
+    "samples": [
+      {
+        "record": "18910433",
+        "sample": "2_T130K_18MPC001/mo_18MPC001_rampT160K_01_0001.sfrm",
+        "shape": [
+          1024,
+          768
+        ],
+        "dtype": "int32",
+        "exactly_one_vertical_flip": true
+      },
+      {
+        "record": "11965992",
+        "sample": "ag_matrix_01_0001.sfrm",
+        "shape": [
+          1024,
+          768
+        ],
+        "dtype": "int32",
+        "exactly_one_vertical_flip": true
+      },
+      {
+        "record": "12594216",
+        "sample": "p39_s1/ESPERANTO/feo_p39_s1_1_1.esperanto",
+        "shape": [
+          2048,
+          2048
+        ],
+        "dtype": "int32",
+        "exactly_one_vertical_flip": true
+      }
+    ]
+  }
+}

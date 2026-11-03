@@ -1,0 +1,399 @@
+{
+  "date": "2026-10-25",
+  "native_scaling": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "seed": 20261024,
+    "shape": [
+      262144,
+      76
+    ],
+    "runs": [
+      {
+        "workers": 8,
+        "masked": false,
+        "label": "current",
+        "runs": [
+          {
+            "seconds": 0.4027911669691093,
+            "checksum": 2123247746.0609512,
+            "steps": 1891915,
+            "capped": 10251,
+            "output_sha256": "7fbc8c659a2f7f4b3590ffb8f6581e4329cdf0fa2a8883cdf1c4321ec6d7194a"
+          },
+          {
+            "seconds": 0.3974207079736516,
+            "checksum": 2123247746.0609512,
+            "steps": 1891915,
+            "capped": 10251,
+            "output_sha256": "7fbc8c659a2f7f4b3590ffb8f6581e4329cdf0fa2a8883cdf1c4321ec6d7194a"
+          },
+          {
+            "seconds": 0.3920288750086911,
+            "checksum": 2123247746.0609512,
+            "steps": 1891915,
+            "capped": 10251,
+            "output_sha256": "7fbc8c659a2f7f4b3590ffb8f6581e4329cdf0fa2a8883cdf1c4321ec6d7194a"
+          }
+        ],
+        "median_seconds": 0.3974207079736516
+      },
+      {
+        "workers": 8,
+        "masked": true,
+        "label": "current",
+        "runs": [
+          {
+            "seconds": 0.3384379579802044,
+            "checksum": 1753731351.0937629,
+            "steps": 1966835,
+            "capped": 12230,
+            "output_sha256": "8f1ab3b34e8022e6d67310fb6d1fa6fa466f57de882a08dd7bbc02358af420d4"
+          },
+          {
+            "seconds": 0.33990983304101974,
+            "checksum": 1753731351.0937629,
+            "steps": 1966835,
+            "capped": 12230,
+            "output_sha256": "8f1ab3b34e8022e6d67310fb6d1fa6fa466f57de882a08dd7bbc02358af420d4"
+          },
+          {
+            "seconds": 0.33858620800310746,
+            "checksum": 1753731351.0937629,
+            "steps": 1966835,
+            "capped": 12230,
+            "output_sha256": "8f1ab3b34e8022e6d67310fb6d1fa6fa466f57de882a08dd7bbc02358af420d4"
+          }
+        ],
+        "median_seconds": 0.33858620800310746
+      },
+      {
+        "workers": 10,
+        "masked": false,
+        "label": "current",
+        "runs": [
+          {
+            "seconds": 0.329420541995205,
+            "checksum": 2123247746.0609512,
+            "steps": 1891915,
+            "capped": 10251,
+            "output_sha256": "7fbc8c659a2f7f4b3590ffb8f6581e4329cdf0fa2a8883cdf1c4321ec6d7194a"
+          },
+          {
+            "seconds": 0.3267677500261925,
+            "checksum": 2123247746.0609512,
+            "steps": 1891915,
+            "capped": 10251,
+            "output_sha256": "7fbc8c659a2f7f4b3590ffb8f6581e4329cdf0fa2a8883cdf1c4321ec6d7194a"
+          },
+          {
+            "seconds": 0.32572137500392273,
+            "checksum": 2123247746.0609512,
+            "steps": 1891915,
+            "capped": 10251,
+            "output_sha256": "7fbc8c659a2f7f4b3590ffb8f6581e4329cdf0fa2a8883cdf1c4321ec6d7194a"
+          }
+        ],
+        "median_seconds": 0.3267677500261925
+      },
+      {
+        "workers": 10,
+        "masked": true,
+        "label": "current",
+        "runs": [
+          {
+            "seconds": 0.2798572920146398,
+            "checksum": 1753731351.0937629,
+            "steps": 1966835,
+            "capped": 12230,
+            "output_sha256": "8f1ab3b34e8022e6d67310fb6d1fa6fa466f57de882a08dd7bbc02358af420d4"
+          },
+          {
+            "seconds": 0.2797808749601245,
+            "checksum": 1753731351.0937629,
+            "steps": 1966835,
+            "capped": 12230,
+            "output_sha256": "8f1ab3b34e8022e6d67310fb6d1fa6fa466f57de882a08dd7bbc02358af420d4"
+          },
+          {
+            "seconds": 0.2802792090224102,
+            "checksum": 1753731351.0937629,
+            "steps": 1966835,
+            "capped": 12230,
+            "output_sha256": "8f1ab3b34e8022e6d67310fb6d1fa6fa466f57de882a08dd7bbc02358af420d4"
+          }
+        ],
+        "median_seconds": 0.2798572920146398
+      }
+    ]
+  },
+  "omega_source_unchanged": true,
+  "fingerprints": {
+    "/Users/clemens/Programming/Dioptas-single-crystal/analysis/background-solver-20261025/before/_core.abi3.so": "713cb8e095f501df2067f575c6f4471858984955d7071d6bb717c4aa20dc5adc",
+    "/Users/clemens/Programming/Dioptas-single-crystal/.venv/lib/python3.13/site-packages/phasesmith/_core.abi3.so": "713cb8e095f501df2067f575c6f4471858984955d7071d6bb717c4aa20dc5adc",
+    "/Users/clemens/Programming/Dioptas-single-crystal/analysis/background-solver-20261025/before/pipeline.py": "5a718f2c373819f11a874988eec86ded0952d12959e07fd99dd43c04869289fe",
+    "/Users/clemens/Programming/Dioptas-single-crystal/dioptas/model/omega_background.py": "f8a53f9af47f1247ae7d0bf62a4ad5229553052d8933b446260e6c557e532368",
+    "/Users/clemens/Programming/PhaseSmith/crates/phasesmith-spots/src/omega_background.rs": "72d33cba06d974ab0dc460af63ec15bc07b965087150c228527f5e9f7fb51b12",
+    "/Users/clemens/Programming/PhaseSmith/runs/omega-solver-20261025/before/omega_background.rs": "72d33cba06d974ab0dc460af63ec15bc07b965087150c228527f5e9f7fb51b12"
+  },
+  "rejected_experiment": {
+    "change": "Bounded reuse of unit-weight initial Cholesky factors and fixed bands",
+    "reason": "No reliable benefit on real scans at the same worker count; native ten-worker synthetic benchmark regressed.",
+    "native": {
+      "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+      "seed": 20261024,
+      "shape": [
+        131072,
+        76
+      ],
+      "runs": [
+        {
+          "workers": 1,
+          "masked": false,
+          "label": "current",
+          "runs": [
+            {
+              "seconds": 1.3738590839784592,
+              "checksum": 1061617785.1578133,
+              "steps": 946784,
+              "capped": 5195,
+              "output_sha256": "078a0984a709204ebed2c3b8a1e02348781a0baa4220fdec119f0205c56e54b7"
+            },
+            {
+              "seconds": 1.3987794590066187,
+              "checksum": 1061617785.1578133,
+              "steps": 946784,
+              "capped": 5195,
+              "output_sha256": "078a0984a709204ebed2c3b8a1e02348781a0baa4220fdec119f0205c56e54b7"
+            },
+            {
+              "seconds": 1.3869577079894952,
+              "checksum": 1061617785.1578133,
+              "steps": 946784,
+              "capped": 5195,
+              "output_sha256": "078a0984a709204ebed2c3b8a1e02348781a0baa4220fdec119f0205c56e54b7"
+            }
+          ],
+          "median_seconds": 1.3869577079894952
+        },
+        {
+          "workers": 1,
+          "masked": false,
+          "label": "before",
+          "runs": [
+            {
+              "seconds": 1.4216210410231724,
+              "checksum": 1061617785.1578133,
+              "steps": 946784,
+              "capped": 5195,
+              "output_sha256": "078a0984a709204ebed2c3b8a1e02348781a0baa4220fdec119f0205c56e54b7"
+            },
+            {
+              "seconds": 1.4388209579628892,
+              "checksum": 1061617785.1578133,
+              "steps": 946784,
+              "capped": 5195,
+              "output_sha256": "078a0984a709204ebed2c3b8a1e02348781a0baa4220fdec119f0205c56e54b7"
+            },
+            {
+              "seconds": 1.4349849169957452,
+              "checksum": 1061617785.1578133,
+              "steps": 946784,
+              "capped": 5195,
+              "output_sha256": "078a0984a709204ebed2c3b8a1e02348781a0baa4220fdec119f0205c56e54b7"
+            }
+          ],
+          "median_seconds": 1.4349849169957452
+        },
+        {
+          "workers": 1,
+          "masked": true,
+          "label": "current",
+          "runs": [
+            {
+              "seconds": 1.2203100000042468,
+              "checksum": 876857752.3642662,
+              "steps": 984212,
+              "capped": 6178,
+              "output_sha256": "9bcab868be83cb6248ccdfaae36ca30db74e6e08d75338f13323fa253950d823"
+            },
+            {
+              "seconds": 1.2195150830084458,
+              "checksum": 876857752.3642662,
+              "steps": 984212,
+              "capped": 6178,
+              "output_sha256": "9bcab868be83cb6248ccdfaae36ca30db74e6e08d75338f13323fa253950d823"
+            },
+            {
+              "seconds": 1.2107821250101551,
+              "checksum": 876857752.3642662,
+              "steps": 984212,
+              "capped": 6178,
+              "output_sha256": "9bcab868be83cb6248ccdfaae36ca30db74e6e08d75338f13323fa253950d823"
+            }
+          ],
+          "median_seconds": 1.2195150830084458
+        },
+        {
+          "workers": 1,
+          "masked": true,
+          "label": "before",
+          "runs": [
+            {
+              "seconds": 1.23774329200387,
+              "checksum": 876857752.3642662,
+              "steps": 984212,
+              "capped": 6178,
+              "output_sha256": "9bcab868be83cb6248ccdfaae36ca30db74e6e08d75338f13323fa253950d823"
+            },
+            {
+              "seconds": 1.240696916996967,
+              "checksum": 876857752.3642662,
+              "steps": 984212,
+              "capped": 6178,
+              "output_sha256": "9bcab868be83cb6248ccdfaae36ca30db74e6e08d75338f13323fa253950d823"
+            },
+            {
+              "seconds": 1.235067582980264,
+              "checksum": 876857752.3642662,
+              "steps": 984212,
+              "capped": 6178,
+              "output_sha256": "9bcab868be83cb6248ccdfaae36ca30db74e6e08d75338f13323fa253950d823"
+            }
+          ],
+          "median_seconds": 1.23774329200387
+        },
+        {
+          "workers": 10,
+          "masked": false,
+          "label": "current",
+          "runs": [
+            {
+              "seconds": 0.16880516696255654,
+              "checksum": 1061617785.1578133,
+              "steps": 946784,
+              "capped": 5195,
+              "output_sha256": "078a0984a709204ebed2c3b8a1e02348781a0baa4220fdec119f0205c56e54b7"
+            },
+            {
+              "seconds": 0.1709202919737436,
+              "checksum": 1061617785.1578133,
+              "steps": 946784,
+              "capped": 5195,
+              "output_sha256": "078a0984a709204ebed2c3b8a1e02348781a0baa4220fdec119f0205c56e54b7"
+            },
+            {
+              "seconds": 0.1820432919776067,
+              "checksum": 1061617785.1578133,
+              "steps": 946784,
+              "capped": 5195,
+              "output_sha256": "078a0984a709204ebed2c3b8a1e02348781a0baa4220fdec119f0205c56e54b7"
+            }
+          ],
+          "median_seconds": 0.1709202919737436
+        },
+        {
+          "workers": 10,
+          "masked": false,
+          "label": "before",
+          "runs": [
+            {
+              "seconds": 0.15982041601091623,
+              "checksum": 1061617785.1578133,
+              "steps": 946784,
+              "capped": 5195,
+              "output_sha256": "078a0984a709204ebed2c3b8a1e02348781a0baa4220fdec119f0205c56e54b7"
+            },
+            {
+              "seconds": 0.16005524998763576,
+              "checksum": 1061617785.1578133,
+              "steps": 946784,
+              "capped": 5195,
+              "output_sha256": "078a0984a709204ebed2c3b8a1e02348781a0baa4220fdec119f0205c56e54b7"
+            },
+            {
+              "seconds": 0.15973245800705627,
+              "checksum": 1061617785.1578133,
+              "steps": 946784,
+              "capped": 5195,
+              "output_sha256": "078a0984a709204ebed2c3b8a1e02348781a0baa4220fdec119f0205c56e54b7"
+            }
+          ],
+          "median_seconds": 0.15982041601091623
+        },
+        {
+          "workers": 10,
+          "masked": true,
+          "label": "current",
+          "runs": [
+            {
+              "seconds": 0.14699479204136878,
+              "checksum": 876857752.3642662,
+              "steps": 984212,
+              "capped": 6178,
+              "output_sha256": "9bcab868be83cb6248ccdfaae36ca30db74e6e08d75338f13323fa253950d823"
+            },
+            {
+              "seconds": 0.1487568329903297,
+              "checksum": 876857752.3642662,
+              "steps": 984212,
+              "capped": 6178,
+              "output_sha256": "9bcab868be83cb6248ccdfaae36ca30db74e6e08d75338f13323fa253950d823"
+            },
+            {
+              "seconds": 0.1468972500297241,
+              "checksum": 876857752.3642662,
+              "steps": 984212,
+              "capped": 6178,
+              "output_sha256": "9bcab868be83cb6248ccdfaae36ca30db74e6e08d75338f13323fa253950d823"
+            }
+          ],
+          "median_seconds": 0.14699479204136878
+        },
+        {
+          "workers": 10,
+          "masked": true,
+          "label": "before",
+          "runs": [
+            {
+              "seconds": 0.1425486250082031,
+              "checksum": 876857752.3642662,
+              "steps": 984212,
+              "capped": 6178,
+              "output_sha256": "9bcab868be83cb6248ccdfaae36ca30db74e6e08d75338f13323fa253950d823"
+            },
+            {
+              "seconds": 0.1389356249710545,
+              "checksum": 876857752.3642662,
+              "steps": 984212,
+              "capped": 6178,
+              "output_sha256": "9bcab868be83cb6248ccdfaae36ca30db74e6e08d75338f13323fa253950d823"
+            },
+            {
+              "seconds": 0.1392894999589771,
+              "checksum": 876857752.3642662,
+              "steps": 984212,
+              "capped": 6178,
+              "output_sha256": "9bcab868be83cb6248ccdfaae36ca30db74e6e08d75338f13323fa253950d823"
+            }
+          ],
+          "median_seconds": 0.1392894999589771
+        }
+      ],
+      "baseline_native": {
+        "path": "/Users/clemens/Programming/PhaseSmith/runs/omega-solver-20261025/before/_core.abi3.so",
+        "sha256": "713cb8e095f501df2067f575c6f4471858984955d7071d6bb717c4aa20dc5adc"
+      },
+      "current_native": {
+        "path": "/Users/clemens/Programming/PhaseSmith/python/phasesmith/_core.abi3.so",
+        "sha256": "c1e4c4e819498346ba67c79d8b4c5fa7cfb7fb3d264c3e0f77a7ce71e1c480cc"
+      },
+      "comparison_scope": "Identical direct native array calls; input snapshots and result allocation included; hashing outside timing"
+    },
+    "retained_in_production": false
+  },
+  "validation": {
+    "dioptas": "146 focused tests passed",
+    "phasesmith": "1313 passed, 11 skipped, 34 deselected",
+    "rust": "cargo fmt --all --check; cargo clippy --workspace --all-targets --all-features; cargo test --workspace --all-features passed"
+  }
+}

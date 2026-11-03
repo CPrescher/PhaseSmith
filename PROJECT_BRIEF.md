@@ -370,6 +370,32 @@ work, and includes variances in frame hashes. Native equations, raw-count
 defaults, linking and centroid accumulation are unchanged. Correlated uncertainty
 from a fitted background remains outside this independent-pixel model.
 
+The experimental detector now stages annular statistics in row-sized buffers
+and evaluates interior threshold lanes together, allowing compiler vectorization
+without changing per-pixel arithmetic. Clipped supports retain the scalar path.
+All scientific records remain byte-identical on synthetic grids, three Fe7C3
+scans and 60 nondefault cases. Fresh one/four-worker comparisons reduce native
+time by approximately 47–48%/45–47%; the measured medians are now lower than
+DIALS at both worker counts. See `docs/threshold-loop-optimization.md` for the
+frozen baselines, equality checks, build boundaries and reproducible timings.
+An unchanged-binary eight-worker follow-up reduces native time a further
+36–38% versus fresh four-worker controls on the three scans, with exact full
+records retained. Dioptas now uses a shared startup resource policy: leave at
+least two CPU slots (one on small machines), additionally cap macOS concurrency
+at the detected performance-core count, and apply memory/task limits. Frame
+detection shares this allowance (ten on the development M4 Pro); the previous
+eight-worker feature cap is removed. Library execution remains explicitly serial
+by default.
+
+A frozen three-scan Fe7C3 position comparison now runs DIALS in an isolated
+external environment with checked common pixels/geometry and reserved rotation
+blocks. Its original timing is superseded by the threshold-loop optimization
+above; the position/lattice conclusions remain applicable. Paired positional consistency
+is mixed, and P7 retains a supercell/indexer ambiguity. This is not labelled
+detector truth or proof of primitive cells. No detector equation or intensity
+integration change follows from this comparison. See
+`docs/fe7c3-dials-position-comparison.md` for timings, protocol and limitations.
+
 The opt-in rotation position hunt now supports bounded parallel frame detection
 while retaining serial loaders, ordered callbacks/budgets and unchanged linking
 and centroid arithmetic. Default library execution remains serial; Dioptas uses
@@ -1453,6 +1479,74 @@ not inherit X-ray doublet or polarization assumptions.
 13. Native X-ray and neutron scattering models with reviewed data provenance.
 14. Fused structural-intensity/profile calculation with analytical JVP/VJP.
 15. First full CIF-backed Rietveld refinement.
+
+## Future experimental milestone: single-frame multi-grain analysis
+
+Extend the opt-in single-crystal workflow to discover and measure several grains
+from one detector exposure, following the snapshot-analysis problem encountered
+in serial crystallography. This is deferred work building on the rotation-series
+position, prediction and integration infrastructure. It is not implemented by
+the existing rotation grain search and does not change the current release scope.
+
+The initial peak list supplies evidence for discovering grain orientations; it
+must not define the final reflection population. After a grain is indexed,
+predict and measure its reflections throughout the declared reciprocal-space
+range and detector footprint, including initially undetected, weak, zero and
+negative observations. Improved weak-spot discovery matters especially when a
+weak grain would otherwise remain undiscovered: a single frame has no adjacent
+rotation exposures from which to recover its orientation. For the current
+rotation workflow, peak-finder replacement remains lower priority when the
+existing reliable spots already establish the relevant lattices.
+
+The future workflow should provide:
+
+- **Peak discovery:** compare the current detector with isolated, pinned PF8
+  and PF9 implementations. Evaluate background-derived detection noise,
+  separate strong-seed and lower growth thresholds, component-level
+  significance and size checks, and radial versus robust local background
+  estimates. Multiscale matched filtering is a further candidate for diffuse
+  weak spots. Control false detections rather than optimizing peak count alone;
+  detection masks must not determine the final weak-reflection integration
+  support. The preliminary weak-peak comparison motivates these experiments
+  but does not establish single-frame grain recovery or final intensity quality.
+- **Multiple-lattice discovery and assignment:** find competing orientations
+  with explicit grain budgets, retaining unassigned spots and ambiguous
+  ownership. Declare whether grains share a cell or may have distinct cells,
+  and whether cell parameters are supplied or inferred. Sparse single-frame
+  data may not identify an unconstrained cell; retain alternative hypotheses
+  and report insufficient evidence rather than forcing a unique solution.
+- **Joint positional refinement and prediction:** refine identifiable grain
+  parameters against a shared calibrated detector model. Any detector refinement
+  needs independent constraints and validation. Predict reflections for every
+  accepted grain before intensity extraction, preserving assignment uncertainty.
+- **Intensity extraction and overlaps:** fit signed intensities at predicted
+  positions using fixed or strong-reference profiles and explicit background
+  models. Avoid freely fitting weak-spot centres and widths to noise. Account
+  for all grains in background exclusions and fit overlapping contributions
+  jointly where identifiable; flag unresolved intensity partitions. Report
+  measured finite-support spot counts separately from complete-reflection
+  intensity estimates. A single exposure can be partial; any partiality
+  correction, extrapolation or merging across snapshots needs its own declared
+  physical model and validation.
+
+Exit gates must prioritize correct grain recovery and false-grain rejection,
+orientation/cell accuracy, reflection-assignment accuracy and ambiguity, and
+prediction coverage. Include weak-grain/strong-grain mixtures, overlapping spots,
+asymmetric backgrounds, masks and noise-only controls, with independent synthetic
+truth and reserved measured examples. Test extraction of deliberately omitted
+discovery peaks, signed weak/null intensity bias and uncertainty, finite-support
+boundaries, deterministic results and realistic multi-grain runtime/memory.
+More detected spots alone is not a promotion criterion. Production numerical
+kernels remain Rust-owned with independent Python references and the existing
+derivative, support and benchmark requirements.
+
+Use [CrystFEL](https://www.desy.de/~twhite/crystfel/) and
+[FDIP/PF9 (Gevorkov et al., 2024)](https://doi.org/10.3390/cryst14020164)
+as methodological references and external comparators. Their GPL implementations
+must remain outside the MIT production implementation; independently implement
+documented equations and validate against pinned external outputs, without
+introducing an upstream runtime dependency.
+
 
 ## Deferred post-1.0 roadmap
 

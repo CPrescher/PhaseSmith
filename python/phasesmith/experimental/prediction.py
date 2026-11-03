@@ -56,8 +56,11 @@ def map_predictions(values, jacobians, flags, geometry):
     xy = values[valid, :2].copy()
     mapped = mapped_xy(geometry.pixel_map, xy, inverse=True)
     chain = np.asarray(geometry.pixel_map.inverse_jacobian(xy))
-    if (chain.dtype.kind not in "fiu" or chain.shape != (len(xy), 2, 2)
-            or not np.isfinite(chain).all()):
+    if (
+        chain.dtype.kind not in "fiu"
+        or chain.shape != (len(xy), 2, 2)
+        or not np.isfinite(chain).all()
+    ):
         raise ValueError("pixel inverse Jacobian must be finite real shape (n,2,2)")
     values[valid, :2] = mapped
     for jac in jacobians:

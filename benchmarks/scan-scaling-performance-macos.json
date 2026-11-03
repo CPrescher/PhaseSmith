@@ -1,0 +1,21 @@
+{
+  "observations": 16384,
+  "families": 4096,
+  "references": 13104,
+  "warmup_seconds": 0.001463833003072068,
+  "native_seconds": [
+    0.0012215410242788494,
+    0.0010945419780910015,
+    0.0010364160116296262,
+    0.0010907080140896142,
+    0.0010643750138115138
+  ],
+  "native_median_seconds": 0.0010907080140896142,
+  "independent_reference_seconds": 0.5968260839872528,
+  "coefficient": -0.2500114773886882,
+  "known_coefficient": -0.25,
+  "variance": 1.7252573604937227e-07,
+  "converged": true,
+  "byte_exact_repeats": true,
+  "reference_parity": true
+}
