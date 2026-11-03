@@ -23,6 +23,7 @@ import numpy as np
 import phasesmith as ps
 import rietx as rx
 from compare_xrd_rust import measure_interleaved
+from phasesmith.io.powder import read_powder_data
 from phasesmith.refinement import rietveld as rv
 from phasesmith.validation import run_qarr_1g_validation, verify_validation_dataset
 from phasesmith.validation.real_data import (
@@ -52,7 +53,7 @@ def prepare(root: Path):
     """Map the existing validation's initial physical model without changing it."""
     p = rx.Parameter
     v = _qarr_instrument_values(root / "cuka.instprm")
-    d = ps.read_powder_data(root / "cpd-1g.prn", format="columns")
+    d = read_powder_data(root / "cpd-1g.prn", format="columns")
     bg = ps.SmoothBrucknerBackground(smooth_width=1, iterations=50, chebyshev_order=None).estimate(
         d.x, d.observed_y
     )

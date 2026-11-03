@@ -78,6 +78,10 @@ remains exported.
 
 ## Compatibility window
 
+**0.8 update:** the maintainer chose to retire these internal aliases before
+0.8, superseding the original 1.0 removal schedule below. The module-qualified
+imports on this page remain valid; see [Migrating to 0.8](migration-0.8.md#retired-python-facades).
+
 The moved 0.5 spellings are absent from the 0.6 `__all__` lists and public API
 snapshot. Explicit access still resolves to the same object throughout 0.6 and 0.7 and emits a
 `DeprecationWarning`. This compatibility layer performs no data conversion and

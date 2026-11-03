@@ -34,9 +34,32 @@ cargo check -p phasesmith --no-default-features --features spots,solution,row-se
 cargo check -p phasesmith --features single-crystal-files
 ```
 
-Published powder compatibility aliases keep their separate pre-1.0 policy;
-see [the 0.6 migration](migration-0.6.md). They are not removed as part of the
-single-crystal promotion.
+## Retired Python facades
+
+The deprecated aliases from the 0.5 namespace transition are removed in 0.8,
+by maintainer decision: these were internal compatibility layers. This
+supersedes the previous plan to keep them until 1.0. Import from the owning
+modules; old spellings now raise `ImportError`/`AttributeError` instead of
+resolving with a warning.
+
+| Retired import | Supported import |
+| --- | --- |
+| `from phasesmith import WorkflowSpec` | `from phasesmith.automation import WorkflowSpec` |
+| `from phasesmith import read_powder_data` | `from phasesmith.io.powder import read_powder_data` |
+| `from phasesmith import read_cif` | `from phasesmith.io.cif import read_cif` |
+| `from phasesmith import review_rietveld_input` | `from phasesmith.refinement.readiness import review_rietveld_input` |
+| `from phasesmith import write_rietveld_json` | `from phasesmith.reporting import write_rietveld_json` |
+| `from phasesmith.refinement import LeBailInput, refine` | `from phasesmith.refinement.lebail import LeBailInput, refine` |
+| `from phasesmith.refinement import RietveldInput` | `from phasesmith.refinement.rietveld import RietveldInput` |
+| `from phasesmith.io import convert_rowles_topas_bundle` | `from phasesmith.io.topas import convert_rowles_topas_bundle` |
+
+The same ownership rule applies to all moved automation, adapter, reporting,
+refinement-method and dataset-conversion names. See [the 0.6 ownership
+migration](migration-0.6.md) for the remaining method and converter modules.
+Current convenience exports in `__all__` and the Rust `phasesmith` application
+crate remain supported. The API snapshot is unchanged because the retired
+aliases were already excluded; numerical behavior and portable saved-data
+readers are unchanged.
 
 ## Persisted data and scientific inputs
 

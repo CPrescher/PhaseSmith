@@ -1,5 +1,9 @@
 # PhaseSmith 0.7.0 release review
 
+**Historical 0.7 record:** the compatibility aliases described below were
+removed for 0.8 by maintainer decision; see [the current migration](migration-0.8.md#retired-python-facades).
+
+
 ## Version and scope
 
 **0.7.0** is the next release after 0.5.0. It includes the intentional 0.6

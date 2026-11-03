@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from phasesmith.io import convert_rowles_topas_bundle
+from phasesmith.io.topas import convert_rowles_topas_bundle
 from phasesmith.validation import verify_validation_dataset
 
 
