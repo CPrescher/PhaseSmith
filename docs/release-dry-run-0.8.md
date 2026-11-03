@@ -10,7 +10,9 @@ registry publication is explicitly performed.
 The maintainer subsequently requested removal of the internal legacy Python
 facades before publication. Version 0.8 now removes all 168 retired aggregate
 aliases, updates the three remaining benchmark/tool callers, and uses the
-owning modules directly. Current `__all__` exports and numerical code are
+owning modules directly. Embedded Python in three Rust differential-test files
+also uses the owning modules; the cross-language checks exercise those imports.
+Current `__all__` exports and numerical code are
 unchanged. The historical dry run below remains evidence for its exact commit;
 replacement validation of the cleanup is pending.
 
