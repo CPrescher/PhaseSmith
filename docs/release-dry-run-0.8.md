@@ -5,7 +5,34 @@ This records the consolidated 0.8 preparation, separate from the earlier
 Version 0.8.0 remains unpublished until the reviewed release commit is tagged and
 registry publication is explicitly performed.
 
-## Changes under validation
+## Completed final dry run
+
+The tested source commit is `f41f6cae2e6c07cc181a5e3ec12ce23fcd9d6495`.
+The final receipt is a documentation-only follow-up to that tested source.
+
+| Gate | Result |
+| --- | --- |
+| [Release dry run](https://github.com/CPrescher/PhaseSmith/actions/runs/41713728212) | All five wheel targets, source build/install/tests, eleven verified Rust archives and strict docs pass |
+| [General CI](https://github.com/CPrescher/PhaseSmith/actions/runs/41713728515) | Rust/Clippy/docs, Rust 1.89, Windows persistence, Python 3.11–3.14 and NumPy 1.26.4 pass |
+| [Installed single-crystal wheels](https://github.com/CPrescher/PhaseSmith/actions/runs/41713728368) | Linux, macOS and Windows native/Python/CLI capability and comparison checks pass |
+| Local full suites after metric fix | 567 Rust tests and 3,384 Python tests; all 3,384 Python tests also pass with an installed NumPy 1.26 wheel |
+| Final downloaded Apple Silicon wheel | NumPy-only capability/filter smoke, synthetic tutorial and fresh original-count MgSiO3 control pass |
+| Measured numerical parity | All 68 arrays in ten NPZ files, complete candidate record and both CIFs are bitwise identical to the validated baseline; Pbca/Mg16 Si16 O48 remains accepted |
+| Artifact review | Five wheels, one sdist and eleven Rust archives have reviewed metadata, versions, licenses, source identity and consolidated module layout; SHA-256 hashes retained |
+
+The [machine-readable receipt and all artifact hashes](https://github.com/CPrescher/PhaseSmith/blob/develop/validation/results/release-dry-run-0.8-20261103.json)
+record the exact commit and job results. Local Python suites retain 27 explicit
+external-input/native-cross-comparison skips and 34 external-data/oracle marker
+exclusions; Rust retains 34 explicitly ignored tests. Required remote differential
+and native cross-comparison checks run in their designated jobs. Earlier checks
+and subsequent fixes are retained below rather than rewritten as new science.
+
+Registry publishing, attestations and GitHub Release creation are intentionally
+skipped on a manual dispatch. No release tag is created. The new-crate bootstrap
+and final release-status wording/main/tag steps remain publication operations,
+as described in [the release process](releasing.md).
+
+## Validated scope
 
 - Add a runnable NumPy-only synthetic tutorial, full native file-workflow input,
   configuration/result/error guide, migration instructions and shared Rust/Python
@@ -100,7 +127,7 @@ A 1,000-index benchmark (ten paired-fit repetitions, Apple Silicon) records medi
 0.2345 s before and 0.2314 s after, within timing noise. The maximum fitted-basis
 change is 1.85e-22, with unchanged recommended oP setting and history lengths.
 No tolerance, acceptance criterion, native kernel or frozen observation is changed.
-Final full-platform results are recorded below after this correction is verified.
+The completed full-platform results at the top include this correction.
 
 ## Publication boundary
 
