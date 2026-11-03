@@ -7,6 +7,7 @@ The optional saved arrays identify the earliest differing stage on the host BLAS
 import argparse
 import inspect
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -16,6 +17,17 @@ from phasesmith.single_crystal.reciprocal import PanelGeometry
 
 SOLVE = np.linalg.solve
 RECORDS = []
+CHAIN_STATE = {}
+
+
+def profile(frame, event, result):
+    global CHAIN_STATE
+    if event == "return" and frame.f_code.co_name == "metric_chain":
+        CHAIN_STATE = {
+            "metric_" + name: value
+            for name, value in frame.f_locals.items()
+            if name in {"a", "g", "c", "ci", "d", "scale", "m", "phi", "dc"}
+        }
 
 
 def trace(a, b):
@@ -26,7 +38,11 @@ def trace(a, b):
         # Retain references, not formatted/rounded copies; these arrays are not
         # mutated by the optimizer after its next step.
         arrays = {
-            k: state[k] for k in ("b0", "b", "jac", "r", "weights", "chain", "j", "rr", "normal")
+            **CHAIN_STATE,
+            **{
+                k: state[k]
+                for k in ("b0", "b", "jac", "r", "weights", "chain", "j", "rr", "normal")
+            },
         }
         arrays.update(
             projected_basis=state["setting"].projected_basis,
@@ -64,6 +80,7 @@ def main():
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     np.linalg.solve = trace
+    sys.setprofile(profile)
     report = []
     for repetition in range(args.repetitions):
         points, basis, training, observed, geometry = fixture()
@@ -102,6 +119,7 @@ def main():
         report.append(dict(repetition=repetition, exact=exact, differences=differences))
         if differences or not exact:
             break
+    sys.setprofile(None)
     try:
         from threadpoolctl import threadpool_info
 
