@@ -2,6 +2,13 @@
 
 ## Purpose and current release
 
+`develop` is the consolidated starting point for continuing development. It
+includes the 0.7 mainline, the recent HKL/single-crystal/native-workflow work and
+the reviewed unfinished detector/research changes. `main` retains the 0.7 release
+baseline until release review. Start new task branches from `develop`; see the
+[3 November branch audit](docs/integration/development-baseline-20261103.md) for
+inclusion, superseded work and intentionally separate historical experiments.
+
 PhaseSmith is a powder and single-crystal diffraction library with native Rust
 numerical kernels and an optional typed Python/NumPy frontend. GUI applications
 own presentation, acquisition configuration and application state. The current

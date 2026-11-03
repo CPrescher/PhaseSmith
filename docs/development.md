@@ -9,6 +9,7 @@ in the repository archive, outside the documentation search index.
 
 ## Historical integration and archive records
 
+- [Complete development baseline and supersession audit, 3 November 2026](integration/development-baseline-20261103.md)
 - [Rowles laboratory model and TOPAS-compatible optics roadmap](archive/rowles-optics-roadmap-2026-08-10.md)
 - [Structure-search commit and integration audit](integration/structure-search-commit-audit.md)
 - [Validated structure-search integration and threshold Clippy fix](integration/structure-search-merge.md)
