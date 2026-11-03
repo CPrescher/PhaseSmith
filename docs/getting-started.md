@@ -1,7 +1,7 @@
 # Getting started
 
 Single-crystal workflows use the supported `phasesmith.single_crystal`
-namespace from the 0.8 development release. See the
+namespace from release 0.8. See the
 [single-crystal guide](single-crystal.md) for modules, migration, Rust features
 and the raw-frame-to-structure-search boundary.
 
@@ -43,9 +43,8 @@ refinement workflows do not require these optional packages.
 - **Powder:** the example below produces a first profile, with links to complete
   refinement workflows afterward.
 
-The 0.8 source is a release candidate until publication; an ordinary PyPI install
-currently retrieves the published version. Use a matching source environment
-for candidate documentation, and verify the version/path printed above.
+Use documentation matching the installed release, and verify the version/path
+printed above. Single-crystal APIs require PhaseSmith 0.8 or newer.
 
 ## First powder profile calculation
 
