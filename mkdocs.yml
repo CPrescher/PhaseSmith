@@ -1,6 +1,6 @@
 site_name: PhaseSmith
 site_url: https://phasesmith.readthedocs.io/
-site_description: Powder and single-crystal diffraction in Rust and Python
+site_description: Powder and single-crystal diffraction analysis in Rust and Python
 repo_url: https://github.com/CPrescher/PhaseSmith
 repo_name: CPrescher/PhaseSmith
 edit_uri: edit/main/docs/

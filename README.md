@@ -1,41 +1,33 @@
 # PhaseSmith
 
-PhaseSmith is a powder and single-crystal diffraction computation library with a
-Rust numerical core and a typed Python/NumPy API. The current implementation
-includes symmetric TCH, CW U/V/W/X/Y broadening, FCJ asymmetry, wavelength
-components, extensible sample physics, multi-phase CW X-ray/neutron and neutron
-TOF calculation, plus scripted Le Bail, [CW Pawley](docs/pawley.md) and [TOF Pawley](docs/tof-pawley.md) workflows. Analytical
-derivatives are computed during fused peak accumulation. The crystallography
-foundation includes native general-cell mathematics, P1 complex structure
-factors, exact symmetry, bounded reflection generation, and prepared X-ray and
-neutron scattering factors with analytical derivatives. General-symmetry
-structural intensities and monochromatic structural patterns now have a fused
-native values/JVP/VJP path, direct fixed CIF anisotropic displacement, and a
-scriptable `RietveldPhase` API.
-CIF-backed Le Bail can refine setting-aware lattice parameters with analytical
-derivatives and guarded, stable-ID reflection-domain regeneration.
-The first full CIF-backed Rietveld workflow now refines CW profile/background,
-phase scale, lattice, symmetry-allowed coordinates, occupancy, and isotropic
-displacement through matrix-free Rust JVP/VJP products with safe checkpoints
-and structured logs.
-Model-independent preprocessing now includes a native Smooth Bruckner
-background implementation compatible with pinned xypattern/Dioptas behavior,
-plus optional Chebyshev compression and plain NumPy subtraction results.
+PhaseSmith is an open-source library for powder and single-crystal diffraction
+analysis, with a native Rust numerical core and a typed Python/NumPy API.
+It supports scientific scripts and native applications through the same
+calculation kernels.
 
-The 0.8 development release promotes [single-crystal analysis](docs/single-crystal.md)
-into ordinary builds: `phasesmith.single_crystal` covers original-frame masks,
-spot/lattice/grain discovery, geometry, learned profiles, scaling and structure
-search. Rust applications use the default facade capabilities directly; HDF5
-stays optional for Rust. The [MgSiO3 example](docs/enstatite-raw-workflow.md) keeps
-large raw data external. Structure search includes candidate polishing, with
-explicit termination limits; standalone single-crystal refinement is not included.
+- **Powder diffraction:** X-ray and neutron constant-wavelength and neutron TOF
+  calculations, background subtraction, Le Bail intensity extraction,
+  [CW Pawley](docs/pawley.md), [TOF Pawley](docs/tof-pawley.md), and
+  [Rietveld refinement](docs/rietveld.md). Profile models include TCH, CW
+  U/V/W/X/Y broadening, FCJ asymmetry, wavelength components and explicit sample
+  physics, with analytical derivatives and multi-phase workflows.
+- **Single-crystal diffraction:** original-frame masks, spot detection,
+  reciprocal indexing, lattice/grain discovery, geometry fitting, prediction,
+  integration, learned profiles, intensity corrections/scaling, structure search
+  and candidate assessment. These capabilities ship in ordinary builds from
+  version 0.8 through [`phasesmith.single_crystal`](docs/single-crystal.md)
+  and the native Rust facade.
 
-Start with the [NumPy-only single-crystal tutorial](docs/single-crystal-quickstart.md)
-or the [complete original-frame API guide](docs/single-crystal-workflow-api.md).
-The [shared mathematical reference](docs/mathematics/index.md) covers detector
-geometry, signed profile intensities, scaling and structure search as well as
-the powder models. Version 0.8 adds the supported single-crystal APIs;
-PyPI/crates.io installations must match the documentation version.
+Shared crystallography includes general cells, exact symmetry, reflection
+generation, X-ray/neutron scattering factors and structure factors. The
+[mathematical reference](docs/mathematics/index.md) documents the equations,
+units and analytical derivatives for both APIs.
+
+Single-crystal structure search includes internal candidate polishing with
+explicit termination limits; standalone single-crystal structure refinement
+is outside the current scope. See the [single-crystal guide](docs/single-crystal.md)
+for supported inputs, priors and validation limits. The
+[MgSiO3 example](docs/enstatite-raw-workflow.md) keeps large raw data external.
 
 Install the Python interface from PyPI or the native Rust facade from
 crates.io:
@@ -45,9 +37,18 @@ python -m pip install phasesmith
 cargo add phasesmith
 ```
 
-Use the [versioned documentation](https://phasesmith.readthedocs.io/) to follow
-the shortest path from powder data and a CIF to background subtraction, Le
-Bail extraction, Rietveld refinement, reports, and persistence. Documentation
+Choose a starting point in the [versioned documentation](https://phasesmith.readthedocs.io/):
+
+- **Powder:** [first calculation](docs/getting-started.md),
+  [powder-file/CIF import](docs/cif-import.md), then
+  [Le Bail](docs/lebail.md), [Pawley](docs/pawley.md) or
+  [Rietveld](docs/rietveld.md).
+- **Single crystal:** [NumPy-only tutorial](docs/single-crystal-quickstart.md)
+  or the [complete original-frame workflow/API](docs/single-crystal-workflow-api.md).
+- **Native Rust applications:** [Rust API and integration guide](docs/rust-api.md).
+  Rust consumers call the library directly; HDF5 input is optional.
+
+Use documentation matching the installed PyPI/crates.io version. Documentation
 sources live in [docs](docs/index.md), and the architecture and non-negotiable
 numerical rules are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md). The tag-driven
 GitHub/PyPI/crates.io process is documented in
@@ -56,8 +57,8 @@ GitHub/PyPI/crates.io process is documented in
 ## Development
 
 Use `develop` as the complete development baseline. It combines the recent
-single-crystal worktrees and reconciled detector changes; `main` retains the
-0.7 release baseline. The [branch audit](docs/integration/development-baseline-20261103.md)
+single-crystal worktrees and reconciled detector changes; `main` contains the
+published 0.8 release baseline. The [branch audit](docs/integration/development-baseline-20261103.md)
 explains which work is included and which historical experiments remain separate.
 Create new task branches from an up-to-date `develop`.
 

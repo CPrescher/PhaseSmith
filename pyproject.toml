@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 name = "phasesmith"
 version = "0.8.0"
-description = "Powder and single-crystal diffraction calculations in Rust and Python"
+description = "Powder and single-crystal diffraction analysis in Rust and Python"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "PhaseSmith contributors" }]
