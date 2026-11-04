@@ -1,14 +1,21 @@
 # `PhaseSmith`
 
-`PhaseSmith` is a native Rust library for powder-diffraction profile calculation,
-single-crystal detection/integration/structure search, crystallography, Le Bail extraction, Rietveld refinement, and versioned project
-persistence. This facade is the recommended dependency for applications. It
+`PhaseSmith` is a native Rust library for powder and single-crystal diffraction
+analysis. Powder workflows include profile calculation, Le Bail extraction,
+Pawley and Rietveld refinement. Single-crystal workflows include detector
+processing, lattice/grain discovery, geometry, integration, scaling, structure
+search and candidate assessment. Both use shared crystallography kernels.
+This facade is the recommended dependency for applications. It
 exposes the focused implementation crates under one version without embedding
 Python, `PyO3`, a GUI toolkit, or a process runtime.
 
 The Python distribution is a separate adapter over the same native kernels. A
 Rust program, including a Tauri desktop application, calls this crate directly
 and does not need a Python interpreter or sidecar.
+
+Single-crystal kernels are enabled by default; HDF5 input is optional.
+Internal candidate polishing belongs to structure search; standalone
+single-crystal structure refinement is outside the current scope.
 
 ## Which API should I start with?
 

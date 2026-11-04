@@ -1,7 +1,7 @@
 # Python API map
 
 Single-crystal workflows use the supported `phasesmith.single_crystal`
-namespace from the 0.8 development release. See the
+namespace from release 0.8. See the
 [single-crystal guide](single-crystal.md) for modules, migration, Rust features
 and the raw-frame-to-structure-search boundary.
 
