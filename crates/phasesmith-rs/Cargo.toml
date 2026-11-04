@@ -1,6 +1,6 @@
 [package]
 name = "phasesmith"
-description = "Powder and single-crystal diffraction calculation and analysis library"
+description = "Powder and single-crystal diffraction analysis in Rust and Python"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -9,7 +9,7 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 readme.workspace = true
-keywords = ["diffraction", "rietveld", "crystallography", "powder", "science"]
+keywords = ["diffraction", "rietveld", "crystallography", "powder", "single-crystal"]
 categories = ["science"]
 
 [dependencies]

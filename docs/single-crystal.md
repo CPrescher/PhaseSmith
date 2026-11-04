@@ -1,6 +1,6 @@
 # Single-crystal diffraction
 
-Starting with the 0.8 development release, single-crystal analysis is a normal
+Starting with release 0.8, single-crystal analysis is a normal
 PhaseSmith capability. Python uses `phasesmith.single_crystal`; native consumers
 use `phasesmith::spots`, `phasesmith::row_search`, `phasesmith::solution` and
 `phasesmith::workflows::single_crystal`.

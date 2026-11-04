@@ -1,4 +1,4 @@
-"""Fast, validated powder-diffraction profile calculations.
+"""Powder and single-crystal diffraction analysis in Rust and Python.
 
 The equations shared by the Python and Rust APIs are documented at
 https://phasesmith.readthedocs.io/en/latest/mathematics/.

@@ -1,6 +1,7 @@
 # Rust API
 
-Native applications depend on the `phasesmith` facade crate. This is the
+Native applications use the `phasesmith` facade crate for powder and
+single-crystal diffraction analysis. This is the
 recommended boundary for a Tauri desktop application or any other Rust
 consumer; Python is not embedded or launched.
 
@@ -13,7 +14,7 @@ an explicit compatible range in `Cargo.toml`:
 
 ```toml
 [dependencies]
-phasesmith = "0.3"
+phasesmith = "0.8"
 ```
 
 ## Facade modules
@@ -26,8 +27,17 @@ phasesmith = "0.3"
 | `phasesmith::execution` | `phasesmith-execution` | Bounded deterministic execution policies. |
 | `phasesmith::io` | `phasesmith-io` | Powder and CIF input adapters. |
 | `phasesmith::model` | `phasesmith-model` | Application-neutral project and pattern records. |
-| `phasesmith::workflows` | `phasesmith-workflows` | Le Bail, Rietveld, quantitative, and validation workflows. |
+| `phasesmith::workflows` | `phasesmith-workflows` | Le Bail, Pawley, Rietveld, quantitative, validation and single-crystal workflows. |
+| `phasesmith::spots` | `phasesmith-single-crystal` | Single-crystal detection, geometry, integration and profile kernels. |
+| `phasesmith::row_search` | `phasesmith-single-crystal` | Equidistant reciprocal-row grouping for lattice discovery. |
+| `phasesmith::solution` | `phasesmith-single-crystal` | Structure search and candidate assessment from corrected intensities. |
+| `phasesmith::hdf5` (optional) | `phasesmith-hdf5` | Native HDF5 detector-frame input. |
 | `phasesmith::persistence` | `phasesmith-persistence` | Native JSON+NPZ project persistence and reports. |
+
+Single-crystal kernels are enabled by default. The
+[native single-crystal workflow](single-crystal-native-workflow.md) coordinates
+original frames through structure search; HDF5 input requires the `hdf5` feature.
+Standalone single-crystal structure refinement is outside the current scope.
 
 The complete generated Rust reference is published by docs.rs:
 
