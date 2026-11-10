@@ -10,6 +10,8 @@ development versions.
 
 - Refresh distributed example metadata and documentation. Public APIs and
   numerical kernels are unchanged.
+- Preserve existing readiness diagnostics while updating one condition for
+  current lint checks.
 
 ## 0.8.0
 
