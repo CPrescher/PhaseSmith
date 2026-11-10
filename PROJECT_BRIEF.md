@@ -2,6 +2,10 @@
 
 ## Purpose and current release
 
+The 0.8.1 candidate refreshes release distributions from the current documented
+baseline. Public APIs and numerical kernels are unchanged. The release tag and
+registry uploads require a separate publication decision.
+
 The 0.8 public Rust package boundary groups detector/integration, structure-search
 and row-grouping kernels into `phasesmith-single-crystal`, with independently
 selectable `spots`, `solution` and `row-search` features. These were three
@@ -38,7 +42,7 @@ inclusion, superseded work and intentionally separate historical experiments.
 PhaseSmith is a powder and single-crystal diffraction library with native Rust
 numerical kernels and an optional typed Python/NumPy frontend. GUI applications
 own presentation, acquisition configuration and application state. The current
-source version is **0.8.0**. Registry records and the tagged release, rather than
+source version is **0.8.1** (unpublished candidate). Registry records and the tagged release, rather than
 source-version text, establish publication status.
 
 Powder workflows include profile/background evaluation, crystallography,
