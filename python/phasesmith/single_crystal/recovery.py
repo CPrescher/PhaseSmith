@@ -153,9 +153,10 @@ def _coherent_parent(
     samples,
 ):
     from .grains import _refine, _same_oriented_basis, _score, _valid_basis
-    from .ownership import _physical_fields
+    from .ownership import _physical_fields, _physical_measure
 
     choices = []
+    measure = _physical_measure(charts, valid, ownership)
     for trial, sample in enumerate(samples):
         hh = h[sample]
         if abs(np.linalg.det(hh)) < 0.5:
@@ -186,7 +187,9 @@ def _coherent_parent(
             continue
         if _score(engine, q, proposed, tolerance)[2].sum() < 12:
             continue
-        ee, _, physical = _physical_fields(engine, q, [proposed], charts, valid, options, ownership)
+        ee, _, physical = _physical_fields(
+            engine, q, [proposed], charts, valid, options, ownership, _measure=measure
+        )
         if int(physical.sum()) < 17 or any(
             _same_oriented_basis(proposed, old[-1]) for old in choices
         ):
@@ -284,7 +287,12 @@ def _parallel_coherent(engine, q, observed, geometry, parents, options, recovery
 def coherent_proposals(engine, q, observed, geometry, parents, options, recovery, progress=None):
     from . import fitting_tasks
     from .grains import _refine, _same_oriented_basis, _score, _valid_basis
-    from .ownership import GrainOwnershipOptions, _physical_fields, observation_charts
+    from .ownership import (
+        GrainOwnershipOptions,
+        _physical_fields,
+        _physical_measure,
+        observation_charts,
+    )
     from .prediction import predict_spots
 
     if fitting_tasks.active() is not None:
@@ -293,7 +301,10 @@ def coherent_proposals(engine, q, observed, geometry, parents, options, recovery
         )
     ownership = GrainOwnershipOptions()
     charts, valid = observation_charts(observed, geometry, ownership)
-    evidence, _, _ = _physical_fields(engine, q, parents, charts, valid, options, ownership)
+    measure = _physical_measure(charts, valid, ownership)
+    evidence, _, _ = _physical_fields(
+        engine, q, parents, charts, valid, options, ownership, _measure=measure
+    )
     order = sorted(range(len(parents)), key=lambda i: (-float(evidence[i].sum()), i))[
         : recovery.max_split_parents
     ]
@@ -356,7 +367,7 @@ def coherent_proposals(engine, q, observed, geometry, parents, options, recovery
             if _score(engine, q, proposed, tolerance)[2].sum() < 12:
                 continue
             ee, _, physical = _physical_fields(
-                engine, q, [proposed], charts, valid, options, ownership
+                engine, q, [proposed], charts, valid, options, ownership, _measure=measure
             )
             if int(physical.sum()) < 17 or any(
                 _same_oriented_basis(proposed, old[-1]) for old in choices

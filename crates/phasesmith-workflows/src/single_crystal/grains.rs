@@ -100,21 +100,24 @@ fn mask(s: &[(V3, f64)]) -> Vec<bool> {
     s.iter().map(|(h, d)| *d < 0.015 && *h != [0.; 3]).collect()
 }
 fn assign(e: &Engine, q: &[V3], a: &[M3]) -> Result<Vec<i32>> {
-    let models = a
-        .iter()
-        .map(|&a| Ok((a, inv_t(a)?)))
-        .collect::<Result<Vec<_>>>()?;
+    let models = assignment_models(a)?;
     Ok(e.assign(q, &models, 0.015, 0.8).0)
 }
+fn assignment_models(a: &[M3]) -> Result<Vec<(M3, M3)>> {
+    a.iter().map(|&a| Ok((a, inv_t(a)?))).collect()
+}
 #[allow(clippy::float_cmp)] // Integer HKLs and exact zero/signed determinant sentinels.
-fn integer_basis(indices: &[V3]) -> Option<M3> {
+fn integer_basis(indices: &[V3], stop_if_primitive: bool) -> Option<M3> {
+    // Validate the entire input before the private index-only shortcut.
+    if indices
+        .iter()
+        .flatten()
+        .any(|x| !x.is_finite() || x.abs() > 1_000_000. || *x != x.round_ties_even())
+    {
+        return None;
+    }
     let mut basis: [Option<[i128; 3]>; 3] = [None; 3];
     for h in indices {
-        if h.iter()
-            .any(|x| !x.is_finite() || x.abs() > 1_000_000. || *x != x.round_ties_even())
-        {
-            return None;
-        }
         let mut row = h.map(|x| x as i128);
         for col in 0..3 {
             while row[col] != 0 {
@@ -137,6 +140,11 @@ fn integer_basis(indices: &[V3]) -> Option<M3> {
                 }
             }
         }
+        // Upper triangular positive unit pivots generate Z³. Later integer
+        // rows cannot change its index; this consumer does not need its basis.
+        if stop_if_primitive && (0..3).all(|i| basis[i].is_some_and(|r| r[i] == 1)) {
+            return Some([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]);
+        }
     }
     if basis
         .iter()
@@ -152,8 +160,30 @@ fn integer_basis(indices: &[V3]) -> Option<M3> {
         basis[2]?.map(|x| x as f64),
     ])
 }
+struct RefinementFit {
+    h: Vec<V3>,
+    points: Vec<V3>,
+    updated: M3,
+}
+struct ScoredBasis {
+    direct: M3,
+    scores: Vec<(V3, f64)>,
+}
+impl RefinementFit {
+    fn matches(&self, h: &[V3], points: &[V3]) -> bool {
+        fn same(a: &[V3], b: &[V3]) -> bool {
+            a.len() == b.len()
+                && a.iter()
+                    .flatten()
+                    .zip(b.iter().flatten())
+                    .all(|(a, b)| a.to_bits() == b.to_bits())
+        }
+        same(&self.h, h) && same(&self.points, points)
+    }
+}
 #[allow(clippy::float_cmp)] // Inferred HKLs are exact rounded integers.
-fn refine(e: &Engine, q: &[V3], mut a: M3) -> Result<Option<M3>> {
+fn refine(e: &Engine, q: &[V3], mut a: M3) -> Result<Option<ScoredBasis>> {
+    let mut previous: Option<RefinementFit> = None;
     for cycle in 0..8 {
         let s = score(e, q, a)?;
         let mut h = Vec::new();
@@ -167,13 +197,19 @@ fn refine(e: &Engine, q: &[V3], mut a: M3) -> Result<Option<M3>> {
         if h.len() < 6 {
             return Ok(None);
         }
-        let Ok(b) = least(&h, &points) else {
-            return Ok(None);
+        let updated = if let Some(fit) = previous.as_ref().filter(|fit| fit.matches(&h, &points)) {
+            fit.updated
+        } else {
+            let Ok(b) = least(&h, &points) else {
+                return Ok(None);
+            };
+            if det(b).abs() < 1e-12 {
+                return Ok(None);
+            }
+            let updated = inv_t(b)?;
+            previous = Some(RefinementFit { h, points, updated });
+            updated
         };
-        if det(b).abs() < 1e-12 {
-            return Ok(None);
-        }
-        let updated = inv_t(b)?;
         let delta = a
             .iter()
             .flatten()
@@ -194,12 +230,13 @@ fn refine(e: &Engine, q: &[V3], mut a: M3) -> Result<Option<M3>> {
     let mut ids: Vec<_> = (0..q.len()).filter(|&i| selected[i]).collect();
     ids.sort_by(|&i, &j| s[i].1.total_cmp(&s[j].1));
     let mut best = a;
+    let mut best_score = None;
     for size in [24, 48, 96] {
         if ids.len() < size {
             continue;
         }
         let hs: Vec<_> = ids[..size].iter().map(|&i| s[i].0).collect();
-        if let Some(h) = integer_basis(&hs) {
+        if let Some(h) = integer_basis(&hs, true) {
             if det(h).round().abs() <= 1. {
                 continue;
             }
@@ -207,16 +244,21 @@ fn refine(e: &Engine, q: &[V3], mut a: M3) -> Result<Option<M3>> {
             if !valid(t) {
                 continue;
             }
-            let m = mask(&score(e, q, t)?);
+            let scored = score(e, q, t)?;
+            let m = mask(&scored);
             if (0..q.len()).filter(|&i| m[i] && selected[i]).count() as f64
                 >= 0.9 * selected.iter().filter(|&&v| v).count() as f64
                 && det(t).abs() < det(best).abs()
             {
                 best = t;
+                best_score = Some(scored);
             }
         }
     }
-    Ok(Some(best))
+    Ok(Some(ScoredBasis {
+        direct: best,
+        scores: best_score.unwrap_or(s),
+    }))
 }
 #[allow(clippy::float_cmp)] // Integer HKLs and exact zero/signed determinant sentinels.
 fn joint(e: &Engine, q: &[V3], mut models: Vec<M3>) -> Result<(Vec<M3>, Vec<i32>)> {
@@ -346,10 +388,11 @@ fn discover(q: &[V3], o: &Options) -> Result<Vec<M3>> {
             if tried > 32 {
                 break;
             }
-            let Some(a) = refine(&e, &block, a)? else {
+            let Some(fit) = refine(&e, &block, a)? else {
                 continue;
             };
-            let s = score(&e, &block, a)?;
+            let a = fit.direct;
+            let s = fit.scores;
             let selected = mask(&s);
             let count = selected.iter().filter(|&&v| v).count();
             let own: Vec<_> = block
@@ -601,7 +644,8 @@ fn discover_and_validate(
 ) -> Result<Vec<Grain>> {
     let models = discover(train, o)?;
     let e = Engine::new(4).map_err(Error)?;
-    let labels = assign(&e, q, &models)?;
+    let assignments = assignment_models(&models)?;
+    let labels = e.assign(q, &assignments, 0.015, 0.8).0;
     let held: Vec<_> = q
         .iter()
         .zip(training.iter())
@@ -610,7 +654,7 @@ fn discover_and_validate(
     let mut null = vec![vec![]; models.len()];
     for &rotation in &o.null_rotations {
         let rotated: Vec<_> = held.iter().map(|&q| row(q, rotation)).collect();
-        let l = assign(&e, &rotated, &models)?;
+        let l = e.assign(&rotated, &assignments, 0.015, 0.8).0;
         for (i, n) in null.iter_mut().enumerate() {
             n.push(l.iter().filter(|&&x| x == i as i32 + 1).count());
         }
@@ -807,15 +851,116 @@ fn geometry_options_v1() -> geometry::Options {
 mod tests {
     use super::*;
     #[test]
+    fn refinement_reuse_keys_preserve_signed_zero_lengths_and_order() {
+        let fit = RefinementFit {
+            h: vec![[1., 0., 0.], [0., 1., 0.]],
+            points: vec![[0.25, 0., 0.], [0., 0.2, 0.]],
+            updated: [[4., 0., 0.], [0., 5., 0.], [0., 0., 6.]],
+        };
+        assert!(fit.matches(&fit.h, &fit.points));
+        assert!(!fit.matches(&fit.h[..1], &fit.points));
+        let mut h = fit.h.clone();
+        h[0][1] = -0.;
+        assert!(!fit.matches(&h, &fit.points));
+        let mut q = fit.points.clone();
+        q[0][1] = -0.;
+        assert!(!fit.matches(&fit.h, &q));
+        q = fit.points.clone();
+        q[0][0] = f64::from_bits(q[0][0].to_bits() + 1);
+        assert!(!fit.matches(&fit.h, &q));
+        q.swap(0, 1);
+        h = fit.h.clone();
+        h.swap(0, 1);
+        assert!(!fit.matches(&h, &q));
+    }
+    #[test]
+    fn primitive_shortcut_matches_independent_exact_minor_index() {
+        fn gcd128(mut a: i128, mut b: i128) -> i128 {
+            while b != 0 {
+                (a, b) = (b, a % b);
+            }
+            a.abs()
+        }
+        let mut seed = 83_u64;
+        for scale in [1, 2, 3] {
+            for _ in 0..100 {
+                let rows: Vec<[i128; 3]> = (0..8)
+                    .map(|_| {
+                        std::array::from_fn(|_| {
+                            seed = seed.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1);
+                            (i128::from((seed >> 32) % 13) - 6) * scale
+                        })
+                    })
+                    .collect();
+                let mut index = 0;
+                for i in 0..rows.len() {
+                    for j in i + 1..rows.len() {
+                        for k in j + 1..rows.len() {
+                            let [a, b, c] = [rows[i], rows[j], rows[k]];
+                            let minor = a[0] * (b[1] * c[2] - b[2] * c[1])
+                                - a[1] * (b[0] * c[2] - b[2] * c[0])
+                                + a[2] * (b[0] * c[1] - b[1] * c[0]);
+                            index = gcd128(index, minor);
+                        }
+                    }
+                }
+                let h: Vec<_> = rows.iter().map(|h| h.map(|x| x as f64)).collect();
+                for shortcut in [false, true] {
+                    let result = integer_basis(&h, shortcut);
+                    if index == 0 {
+                        assert!(result.is_none());
+                    } else {
+                        assert_eq!(det(result.unwrap()).abs().round() as i128, index);
+                    }
+                }
+            }
+        }
+    }
+    #[test]
+    fn primitive_shortcut_validates_rows_after_unit_pivots() {
+        for invalid in [f64::NAN, f64::INFINITY, 1_000_001., 0.5] {
+            let h = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [invalid, 0., 0.]];
+            assert!(integer_basis(&h, true).is_none());
+            assert!(integer_basis(&h, false).is_none());
+        }
+        assert!(integer_basis(&[[1., 0., 0.], [0., 1., 0.]], true).is_none());
+    }
+    #[test]
+    fn retained_alias_scores_equal_a_fresh_score_bit_for_bit() {
+        let q: Vec<_> = (-3..=3)
+            .flat_map(|x| {
+                (-3..=3).flat_map(move |y| {
+                    (-3..=3).map(move |z| [f64::from(x) / 4., f64::from(y) / 5., f64::from(z) / 6.])
+                })
+            })
+            .collect();
+        for workers in [1, 4] {
+            let e = Engine::new(workers).unwrap();
+            let result = refine(&e, &q, [[8., 0., 0.], [0., 10., 0.], [0., 0., 12.]])
+                .unwrap()
+                .unwrap();
+            assert!((det(result.direct).abs() - 120.).abs() < 1e-9);
+            let fresh = score(&e, &q, result.direct).unwrap();
+            for ((h, d), (old_h, old_d)) in result.scores.iter().zip(fresh) {
+                assert_eq!(h.map(f64::to_bits), old_h.map(f64::to_bits));
+                assert_eq!(d.to_bits(), old_d.to_bits());
+            }
+        }
+    }
+    #[test]
     fn inferred_integer_lattice_preserves_the_index_and_rejects_rank_deficiency() {
         let h = vec![[2., 0., 0.], [0., 3., 0.], [0., 0., 4.], [2., 3., 4.]];
-        let a = integer_basis(&h).unwrap();
+        let a = integer_basis(&h, false).unwrap();
         assert!((det(a).abs() - 24.).abs() < 1e-12);
         let mut primitive = h;
         primitive.push([1., 1., 1.]);
-        let a = integer_basis(&primitive).unwrap();
+        let a = integer_basis(&primitive, false).unwrap();
         assert!((det(a).abs() - 2.).abs() < 1e-12);
-        assert!(integer_basis(&[[1., 0., 0.], [0., 1., 0.]]).is_none());
-        assert!(integer_basis(&[[1e7, 0., 0.]]).is_none());
+        assert!(integer_basis(&[[1., 0., 0.], [0., 1., 0.]], false).is_none());
+        assert!(integer_basis(&[[1e7, 0., 0.]], false).is_none());
     }
 }
+
+#[cfg(test)]
+#[path = "grains_benchmark.rs"]
+mod benchmark;
