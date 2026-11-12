@@ -317,5 +317,5 @@ are in the root `summary.json`, and the rejected trial is in `selection-trial/`.
 The production FFT and row paths remain on CPU. GPU implementations are retained
 only under `benchmarks/grain_gpu/` as optional analysis tools; they add no runtime
 backend or package dependency. Compact results are versioned in
-[`grain_cpu_speed.summary.json`](../benchmarks/grain_cpu_speed.summary.json) and
-[`native_grain_cpu.summary.json`](../benchmarks/native_grain_cpu.summary.json).
+[`grain_cpu_speed.summary.json`](https://github.com/CPrescher/PhaseSmith/blob/develop/benchmarks/grain_cpu_speed.summary.json) and
+[`native_grain_cpu.summary.json`](https://github.com/CPrescher/PhaseSmith/blob/develop/benchmarks/native_grain_cpu.summary.json).

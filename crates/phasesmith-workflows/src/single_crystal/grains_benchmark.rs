@@ -262,6 +262,12 @@ fn positions(observed: &[V3], o: &mut Options) -> Positions {
 #[test]
 #[ignore = "release benchmark; requires PHASESMITH_NATIVE_GRAIN_INPUT and OUTPUT"]
 fn complete_native_grain_benchmark() {
+    if std::env::var_os("PHASESMITH_NATIVE_GRAIN_INPUT").is_none()
+        && std::env::var_os("PHASESMITH_NATIVE_GRAIN_OUTPUT").is_none()
+    {
+        eprintln!("native grain benchmark skipped: configure its input and output paths");
+        return;
+    }
     let repeats =
         std::env::var("PHASESMITH_NATIVE_GRAIN_REPEATS").map_or(1, |n| n.parse().unwrap());
     let mut expected = None;
