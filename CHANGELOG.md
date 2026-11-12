@@ -6,6 +6,13 @@ development versions.
 
 ## Unreleased
 
+## 0.8.1
+
+- Refresh distributed example metadata and documentation. Public APIs and
+  numerical kernels are unchanged.
+- Preserve existing readiness diagnostics while updating one condition for
+  current lint checks.
+
 ## 0.8.0
 
 Release date: 2026-11-03.

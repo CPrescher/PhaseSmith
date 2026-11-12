@@ -1,15 +1,16 @@
 # PhaseSmith documentation
 
-Single-crystal workflows use the supported `phasesmith.single_crystal`
-namespace from the 0.8 development release. See the
-[single-crystal guide](single-crystal.md) for modules, migration, Rust features
-and the raw-frame-to-structure-search boundary.
-
-PhaseSmith provides powder-diffraction calculations/refinement and native
-single-crystal processing, structure search and candidate assessment
-through a native Rust library and a typed Python/NumPy scripting interface.
+PhaseSmith is an open-source library for powder and single-crystal diffraction
+analysis, with a native Rust numerical core and a typed Python/NumPy API.
+Powder workflows cover X-ray/neutron calculations, background subtraction,
+Le Bail, Pawley and Rietveld refinement. Single-crystal workflows cover detector
+frames, spot/lattice/grain discovery, geometry, integration, scaling, structure
+search and candidate assessment.
 Python users install the same Rust numerical core that native applications can
 consume directly—no Python process or sidecar is required for a Rust GUI.
+
+Single-crystal workflows use the supported `phasesmith.single_crystal`
+namespace from release 0.8. Use documentation matching your installed release.
 
 ## Start here
 

@@ -297,16 +297,18 @@ def _review_models(input_data: RietveldInput) -> list[RietveldReadinessDiagnosti
                         phase_id=phase.phase_id,
                     )
                 )
-        elif isinstance(correction, (ConstantWavelengthNeutronLorentz, TimeOfFlightNeutronLorentz)):
-            if probe is not RadiationProbe.NEUTRON:
-                diagnostics.append(
-                    _diagnostic(
-                        "warning",
-                        "phase.intensity_correction_probe_mismatch",
-                        "A neutron Lorentz correction is paired with X-ray radiation.",
-                        phase_id=phase.phase_id,
-                    )
+        elif (
+            isinstance(correction, (ConstantWavelengthNeutronLorentz, TimeOfFlightNeutronLorentz))
+            and probe is not RadiationProbe.NEUTRON
+        ):
+            diagnostics.append(
+                _diagnostic(
+                    "warning",
+                    "phase.intensity_correction_probe_mismatch",
+                    "A neutron Lorentz correction is paired with X-ray radiation.",
+                    phase_id=phase.phase_id,
                 )
+            )
         correction_wavelength = (
             correction.wavelength_angstrom
             if isinstance(
