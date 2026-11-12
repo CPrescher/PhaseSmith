@@ -8,6 +8,30 @@ from itertools import product
 import numpy as np
 
 
+def integer_lattice_index(indices):
+    """Independent index: gcd of all exact 3x3 minors; zero means rank <3.
+
+    This small-array reference uses Python integers and the determinant formula,
+    not Euclidean row reduction or native code. A full-rank row lattice is Z^3
+    exactly when that gcd is one.
+    """
+    from itertools import combinations
+    from math import gcd
+
+    index = 0
+    for rows in combinations(indices, 3):
+        a, b, c = ([int(x) for x in row] for row in rows)
+        determinant = (
+            a[0] * (b[1] * c[2] - b[2] * c[1])
+            - a[1] * (b[0] * c[2] - b[2] * c[0])
+            + a[2] * (b[0] * c[1] - b[1] * c[0])
+        )
+        index = gcd(index, abs(determinant))
+        if index == 1:
+            break
+    return index
+
+
 def fourier_newton(points, initial, radius):
     """Independent NumPy implementation of the bounded 20-pass ascent.
 

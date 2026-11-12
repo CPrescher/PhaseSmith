@@ -1478,3 +1478,21 @@ The local `fft-parallel-fitting-recovery` report records complete cold inverses,
 CPU costs, every retained/rejected model, original 28-hypothesis parity, and the
 remaining gap to one second. These development datasets are regression cases,
 not an untouched generalization test.
+
+### Exact CPU fit and recovery reuse (2026-11-12)
+
+Cell refinement now reuses a least-squares update only for byte-identical ordered
+HKL/selected-point inputs within the same fit. Its index-only integer core check
+can stop after a unit-diagonal triangular basis establishes Z³. Coherent recovery
+reuses the original model-independent measure for its frozen observation chart.
+All selections, refinement cycles, proposals and validation gates are retained.
+See [the CPU benchmark and exact-result checks](grain-cpu-speed.md) for paired
+full-search timings, numerical proofs, tests and the cases with no measurable gain.
+
+The separate native Rust coordinator also reuses identical least-squares updates,
+primitive-index checks, final scores and fixed null-assignment inverses. Its full
+position-table benchmark (including geometry fitting on successful detector
+controls) preserved every result bit in 1,170 executions. Native gains were small:
+about 2% at 1,800 tracks and effectively unchanged at 5,000 tracks. See the native
+section of the same [CPU report](grain-cpu-speed.md) for scope, all timings,
+variation, and the unchanged small-control failure.
