@@ -3457,7 +3457,7 @@
       "tier": "single-crystal"
     }
   ],
-  "package_version": "0.8.1",
+  "package_version": "0.8.2",
   "schema_version": 1,
   "scope": "Names in __all__ for the listed modules; callable signatures use inspect.signature without evaluating string annotations"
 }

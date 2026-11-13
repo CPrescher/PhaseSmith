@@ -14,17 +14,17 @@ publish = false
 [dependencies]
 nalgebra = "0.35"
 flate2 = { version = "1.1", default-features = false, features = ["rust_backend"] }
-phasesmith-core = { version = "0.8.1", path = "../phasesmith-core" }
-phasesmith-crystallography = { version = "0.8.1", path = "../phasesmith-crystallography" }
-phasesmith-engine = { version = "0.8.1", path = "../phasesmith-engine" }
-phasesmith-execution = { version = "0.8.1", path = "../phasesmith-execution" }
-phasesmith-io = { version = "0.8.1", path = "../phasesmith-io" }
-phasesmith-model = { version = "0.8.1", path = "../phasesmith-model" }
-phasesmith-workflows = { version = "0.8.1", path = "../phasesmith-workflows" }
+phasesmith-core = { version = "0.8.2", path = "../phasesmith-core" }
+phasesmith-crystallography = { version = "0.8.2", path = "../phasesmith-crystallography" }
+phasesmith-engine = { version = "0.8.2", path = "../phasesmith-engine" }
+phasesmith-execution = { version = "0.8.2", path = "../phasesmith-execution" }
+phasesmith-io = { version = "0.8.2", path = "../phasesmith-io" }
+phasesmith-model = { version = "0.8.2", path = "../phasesmith-model" }
+phasesmith-workflows = { version = "0.8.2", path = "../phasesmith-workflows" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["float_roundtrip"] }
 sha2 = "=0.10.9"
-zip = { version = "=5.1.1", default-features = false, features = ["deflate-flate2"] }
+zip = { version = "=9.5.1", default-features = false, features = ["deflate-flate2"] }
 
 [[bin]]
 name = "phasesmith-validation"

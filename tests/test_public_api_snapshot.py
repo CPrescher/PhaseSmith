@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "public_api_snapshot.py"
-SNAPSHOT = ROOT / "api" / "python-public-api-v0.8.1.json"
+SNAPSHOT = ROOT / "api" / "python-public-api-v0.8.2.json"
 
 
 def _snapshot_module() -> object:
@@ -25,7 +25,7 @@ def test_checked_in_public_api_snapshot_matches_live_exports() -> None:
 
     assert module.build_snapshot() == expected
     assert expected["schema_version"] == 1
-    assert expected["package_version"] == "0.8.1"
+    assert expected["package_version"] == "0.8.2"
     assert [item["module"] for item in expected["modules"]][:6] == [
         "phasesmith",
         "phasesmith.io",
