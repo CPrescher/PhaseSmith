@@ -423,8 +423,8 @@ fn calculate_dense_reflection(
                 factor * contribution_imag,
             );
         }
-        for component in 0..3 {
-            let factor = TWO_PI * f64::from(batch.hkl[reflection][component]);
+        for (component, &index) in batch.hkl[reflection].iter().enumerate() {
+            let factor = TWO_PI * f64::from(index);
             set_derivative(
                 result,
                 validated.layout.coordinate(site, component),
@@ -562,8 +562,8 @@ fn calculate_vjp_reflection(
                 * factor
                 * (f_real * contribution_real + f_imag * contribution_imag);
         }
-        for component in 0..3 {
-            let factor = TWO_PI * f64::from(batch.hkl[reflection][component]);
+        for (component, &index) in batch.hkl[reflection].iter().enumerate() {
+            let factor = TWO_PI * f64::from(index);
             let d_real = -factor * contribution_imag;
             let d_imag = factor * contribution_real;
             result.gradient[validated.layout.coordinate(site, component)] +=
@@ -756,6 +756,7 @@ mod tests {
             scale: 1.3,
         };
         let dense = calculate_p1_dense(base_cell, batch).expect("dense");
+        #[allow(clippy::needless_range_loop)] // `parameter` selects which input to perturb
         for parameter in 0..layout.parameter_count() {
             let step = if parameter < 3 { 1e-6 } else { 1e-7 };
             let mut plus_cell = base_cell;
