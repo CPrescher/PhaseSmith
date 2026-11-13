@@ -6,6 +6,12 @@ development versions.
 
 ## Unreleased
 
+## 0.8.2
+
+- Upgrade the `zip` dependency of `phasesmith-persistence` and
+  `phasesmith-validation` from 5.1.1 to 9.5.1 to address published zip
+  security advisories. Public APIs and numerical kernels are unchanged.
+
 ## 0.8.1
 
 - Refresh distributed example metadata and documentation. Public APIs and

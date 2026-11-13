@@ -198,7 +198,10 @@ pub(crate) fn read_npz(
     let mut total_uncompressed = 0_u64;
     for index in 0..archive.len() {
         let mut member = archive.by_index(index).map_err(|error| zip_error(&error))?;
-        let name = member.name().to_owned();
+        let name = member
+            .name()
+            .map_err(|error| zip_error(&error))?
+            .into_owned();
         if !expected.contains(&name) || !observed.insert(name.clone()) || !member.is_file() {
             return Err(PersistenceError::InvalidArchive {
                 message: "archive contains an unexpected or duplicate member".to_owned(),

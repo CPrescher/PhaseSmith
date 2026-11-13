@@ -771,8 +771,8 @@ fn site_value_base(
             symmetry.1 += displacement * sin_phase;
         }
     } else {
-        for expanded_index in validated.site_offsets[site]..validated.site_offsets[site + 1] {
-            let position = validated.expanded.fractional_xyz[expanded_index];
+        let expanded = validated.site_offsets[site]..validated.site_offsets[site + 1];
+        for &position in &validated.expanded.fractional_xyz[expanded] {
             let phase = TWO_PI
                 * hkl
                     .iter()
