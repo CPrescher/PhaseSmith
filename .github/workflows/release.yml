@@ -263,10 +263,26 @@ jobs:
       - name: Publish public workspace crates in dependency order
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.crates-auth.outputs.token }}
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        # Crates already carrying this version (from an interrupted run) are
+        # skipped, so re-running this job resumes the publication.
         run: |
+          published="$(python3 scripts/published_crates.py --version "$RELEASE_VERSION")"
+          skip=()
+          while IFS= read -r crate; do
+            [[ -z "$crate" ]] && continue
+            echo "Skipping $crate $RELEASE_VERSION: already on crates.io"
+            skip+=(--exclude "$crate")
+          done <<< "$published"
+          public_count="$(python3 -c 'import sys; sys.path.insert(0, "scripts"); import release_version as r; print(len(r.PUBLIC_CRATES))')"
+          if (( ${#skip[@]} / 2 == public_count )); then
+            echo "Every public crate is already published at $RELEASE_VERSION."
+            exit 0
+          fi
           cargo publish --workspace --locked \
             --exclude phasesmith-py \
-            --exclude phasesmith-validation
+            --exclude phasesmith-validation \
+            ${skip[@]+"${skip[@]}"}
 
   github-release:
     name: Publish GitHub Release
