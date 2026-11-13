@@ -556,8 +556,8 @@ impl PhaseOriginMap {
         for a in 0..3 {
             out.gradient[a] /= self.weight;
             out.alpha_gradient[a] /= self.weight;
-            for b in 0..3 {
-                out.hessian[a][b] /= self.weight;
+            for value in &mut out.hessian[a] {
+                *value /= self.weight;
             }
         }
         Ok(out)

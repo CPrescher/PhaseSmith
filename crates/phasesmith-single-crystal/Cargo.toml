@@ -20,8 +20,8 @@ row-search = ["dep:serde", "dep:serde_json"]
 rayon = { version = "1.11", optional = true }
 sha2 = { version = "=0.10.9", optional = true }
 rustfft = { version = "=6.4.1", optional = true }
-phasesmith-execution = { version = "0.8.1", path = "../phasesmith-execution", optional = true }
-phasesmith-crystallography = { version = "0.8.1", path = "../phasesmith-crystallography", optional = true }
+phasesmith-execution = { version = "0.8.2", path = "../phasesmith-execution", optional = true }
+phasesmith-crystallography = { version = "0.8.2", path = "../phasesmith-crystallography", optional = true }
 ndarray = { version = "=0.17.2", default-features = false, features = ["std"], optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true }

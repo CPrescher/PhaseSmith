@@ -56,7 +56,7 @@ pub fn run_nist_srm660c_validation(
 
     for index in 0..archive.len() {
         let mut member = archive.by_index(index)?;
-        let name = member.name().to_owned();
+        let name = member.name()?.into_owned();
         if name.starts_with("__MACOSX/") || !name.to_ascii_lowercase().ends_with(".cif") {
             continue;
         }

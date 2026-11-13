@@ -1,6 +1,7 @@
 //! Python bindings for the `PhaseSmith` numerical core.
 
 #![allow(clippy::needless_pass_by_value)] // PyO3 extracts owned argument guards.
+#![allow(clippy::used_underscore_items)] // PyO3 registers private `_`-prefixed Python functions.
 
 use std::path::PathBuf;
 use std::sync::Arc;
