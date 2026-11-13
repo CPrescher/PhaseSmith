@@ -830,7 +830,7 @@ checksum = "2ee67f1008b1ba2321834326597b8e186293b049a023cdef258527550b9935b4"
 
 [[package]]
 name = "phasesmith"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "phasesmith-core",
  "phasesmith-crystallography",
@@ -848,7 +848,7 @@ dependencies = [
 
 [[package]]
 name = "phasesmith-core"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "criterion",
  "phasesmith-execution",
@@ -856,7 +856,7 @@ dependencies = [
 
 [[package]]
 name = "phasesmith-crystallography"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "criterion",
  "phasesmith-execution",
@@ -864,7 +864,7 @@ dependencies = [
 
 [[package]]
 name = "phasesmith-engine"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "criterion",
  "phasesmith-core",
@@ -874,14 +874,14 @@ dependencies = [
 
 [[package]]
 name = "phasesmith-execution"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "rayon",
 ]
 
 [[package]]
 name = "phasesmith-hdf5"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "hdf5-bitshuffle",
  "hdf5-metno",
@@ -891,7 +891,7 @@ dependencies = [
 
 [[package]]
 name = "phasesmith-io"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "moyo",
  "phasesmith-core",
@@ -901,7 +901,7 @@ dependencies = [
 
 [[package]]
 name = "phasesmith-model"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "phasesmith-core",
  "phasesmith-engine",
@@ -909,7 +909,7 @@ dependencies = [
 
 [[package]]
 name = "phasesmith-persistence"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "flate2",
  "phasesmith-core",
@@ -926,7 +926,7 @@ dependencies = [
 
 [[package]]
 name = "phasesmith-py"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "numpy",
  "phasesmith",
@@ -946,7 +946,7 @@ dependencies = [
 
 [[package]]
 name = "phasesmith-single-crystal"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "criterion",
  "ndarray",
@@ -961,7 +961,7 @@ dependencies = [
 
 [[package]]
 name = "phasesmith-validation"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "flate2",
  "nalgebra",
@@ -980,7 +980,7 @@ dependencies = [
 
 [[package]]
 name = "phasesmith-workflows"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "criterion",
  "nalgebra",
