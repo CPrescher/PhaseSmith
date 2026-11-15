@@ -47,7 +47,7 @@ pub use geometry::{
 };
 pub use integrate::{
     Background, Frame, FrameReader, Intensity, MeasureOptions, MeasuredReflection, Measurement,
-    Monitor, NoMonitor, Noise, Partial, Stage, measure,
+    Monitor, NoMonitor, Noise, Partial, PixelVariance, Stage, measure,
 };
 pub use merging::{
     Merged, MergingBin, MergingOptions, MergingStatistics, Observation, merge, merging_statistics,

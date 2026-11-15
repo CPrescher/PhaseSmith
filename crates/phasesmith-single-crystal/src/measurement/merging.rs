@@ -137,12 +137,17 @@ pub struct MergingBin {
 #[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
 pub struct MergingStatistics {
-    /// All observations (limits: largest observed d to `d_min`).
+    /// All observations to `d_min` (limits: largest observed or, with a
+    /// lattice, possible d to `d_min`).
     pub overall: MergingBin,
-    /// Resolution shells of equal reciprocal volume, low resolution first.
+    /// Resolution shells of equal reciprocal volume from the largest observed
+    /// d (with a lattice: the largest possible d) to `d_min`, low resolution
+    /// first; their unique and possible reflections add up to `overall`.
     pub shells: Vec<MergingBin>,
     /// Bins in mean I/σ, weakest first.
     pub signal: Vec<MergingBin>,
+    /// Observations left out because their d is below `d_min`.
+    pub beyond_d_min: usize,
 }
 
 fn bin(limits: [f64; 2], groups: &[(&Merged, Vec<f64>)], possible: Option<usize>) -> MergingBin {
@@ -213,11 +218,13 @@ fn possible(
 /// `R_int`, `R_meas`, redundancy and (with a lattice) completeness of the
 /// observations under the operations, overall, in resolution shells of equal
 /// reciprocal volume and in bins of mean I/σ. Pass only the observations to
-/// merge (for example the usable ones). Systematic absences are not removed:
+/// merge (for example the usable ones). Observations with d below
+/// `MergingOptions::d_min` are left out (counted in
+/// [`MergingStatistics::beyond_d_min`]). Systematic absences are not removed:
 /// no space group is assumed.
 /// # Errors
-/// Nonfinite intensities, nonpositive σ or d, no observation, no shells, or
-/// an invalid resolution limit.
+/// Nonfinite intensities, nonpositive σ or d, no observation (within
+/// `d_min`), no shells, or an invalid resolution limit.
 pub fn merging_statistics(
     observations: &[Observation],
     operations: &[Rotation],
@@ -238,7 +245,6 @@ pub fn merging_statistics(
     {
         return Err(invalid("invalid observations or merging options"));
     }
-    let d_max = observations.iter().map(|o| o.d).fold(0., f64::max);
     let d_min = options.d_min.unwrap_or_else(|| {
         observations
             .iter()
@@ -248,9 +254,30 @@ pub fn merging_statistics(
     if !d_min.is_finite() || d_min <= 0. {
         return Err(invalid("invalid resolution limit"));
     }
-    let merged = merge(observations, operations);
+    // Relative tolerance for d computed at the limit itself.
+    let floor = d_min * (1. - 1e-9);
+    let all = observations.len();
+    let observations: Vec<Observation> = observations
+        .iter()
+        .copied()
+        .filter(|o| o.d >= floor)
+        .collect();
+    if observations.is_empty() {
+        return Err(invalid("no observation within the resolution limit"));
+    }
+    let all_possible = options
+        .lattice
+        .as_ref()
+        .map(|l| possible(l, d_min, operations))
+        .transpose()?;
+    let d_max = observations
+        .iter()
+        .map(|o| o.d)
+        .chain(all_possible.iter().flatten().map(|p| p.1))
+        .fold(0., f64::max);
+    let merged = merge(&observations, operations);
     let mut members: BTreeMap<[i64; 3], Vec<f64>> = BTreeMap::new();
-    for o in observations {
+    for o in &observations {
         members
             .entry(equivalent_representative(o.hkl, operations))
             .or_default()
@@ -260,16 +287,14 @@ pub fn merging_statistics(
         .iter()
         .map(|m| (m, members.remove(&m.hkl).unwrap_or_default()))
         .collect();
-    let all_possible = options
-        .lattice
-        .as_ref()
-        .map(|l| possible(l, d_min, operations))
-        .transpose()?;
     let q = |d: f64| d.powi(-3);
     let (q0, q1) = (q(d_max), q(d_min));
     let shells = options.shells;
     let limit = |i: usize| (q0 + (q1 - q0) * i as f64 / shells as f64).cbrt().recip();
-    let in_shell = |d: f64, s: usize| d <= limit(s) && (d > limit(s + 1) || s + 1 == shells);
+    // The outer limits are open against rounding of the shell edges; every
+    // kept d lies in [d_min, d_max].
+    let in_shell =
+        |d: f64, s: usize| (s == 0 || d <= limit(s)) && (s + 1 == shells || d > limit(s + 1));
     let mut shell_bins = Vec::with_capacity(shells);
     for s in 0..shells {
         let chosen: Vec<_> = groups
@@ -301,5 +326,6 @@ pub fn merging_statistics(
         overall,
         shells: shell_bins,
         signal,
+        beyond_d_min: all - observations.len(),
     })
 }

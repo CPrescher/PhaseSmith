@@ -98,6 +98,18 @@ pub fn extract(
     Ok((spots, diagnostics))
 }
 
+/// Pixel variance entering the σ of sums (peak, plane covariance, border).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum SumVariance {
+    /// `max(max(counts, 0)/gain + read², 1)`: the former rule, kept for
+    /// [`extract`] and the native workflow.
+    Floored,
+    /// `max(counts, 0)/gain + read²` per pixel (unbiased for Poisson counts);
+    /// a peak or border sum's variance is at least that of its fitted
+    /// background and at least one count², so σ stays positive.
+    CountsOrBackground,
+}
+
 /// Internal profile-collection variant retaining the full fitted-plane covariance.
 #[allow(
     clippy::too_many_arguments,
@@ -111,6 +123,34 @@ pub(crate) fn extract_full(
     margin: usize,
     minimum: usize,
     clip: f64,
+) -> Result<(Vec<Spot>, Vec<[f64; 12]>, Vec<[f64; 9]>), SpotError> {
+    extract_full_with(
+        image,
+        boxes,
+        gap,
+        margin,
+        minimum,
+        clip,
+        SumVariance::Floored,
+    )
+}
+
+/// [`extract_full`] with a choice of the variance of sums. Clipping, the
+/// residual RMS and all flags except [`BOUNDARY`] use the floored pixel
+/// variance in either case.
+#[allow(
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    clippy::type_complexity
+)]
+pub(crate) fn extract_full_with(
+    image: &Image<'_>,
+    boxes: &[Bounds],
+    gap: usize,
+    margin: usize,
+    minimum: usize,
+    clip: f64,
+    sum: SumVariance,
 ) -> Result<(Vec<Spot>, Vec<[f64; 12]>, Vec<[f64; 9]>), SpotError> {
     image.validate()?;
     if boxes.len() > 1_000_000
@@ -128,7 +168,7 @@ pub(crate) fn extract_full(
         }
     }
     let coverage = SparseCoverage::new(boxes, gap, image.width, image.height);
-    extract_boxes(image, boxes, gap, margin, minimum, clip, &coverage)
+    extract_boxes(image, boxes, gap, margin, minimum, clip, &coverage, sum)
 }
 
 /// How many signal boxes and guarded boxes cover each pixel near one box.
@@ -228,7 +268,19 @@ fn extract_boxes(
     minimum: usize,
     clip: f64,
     coverage: &impl Coverage,
+    sum: SumVariance,
 ) -> Result<(Vec<Spot>, Vec<[f64; 12]>, Vec<[f64; 9]>), SpotError> {
+    // Variance of a pixel in a sum, given its floored variance and fitted
+    // background. A supplied variance image is always used as given.
+    let counts = sum == SumVariance::CountsOrBackground && image.variance.is_none();
+    let read = image.read_noise.powi(2);
+    let sum_variance = |value: f64, floored: f64| {
+        if counts {
+            value.max(0.0) / image.gain + read
+        } else {
+            floored
+        }
+    };
     let mut out = Vec::with_capacity(boxes.len());
     let mut diagnostics = Vec::with_capacity(boxes.len());
     let mut covariances = Vec::with_capacity(boxes.len());
@@ -311,10 +363,11 @@ fn extract_boxes(
         let mut residual = 0.0;
         for (s, &yes) in samples.iter().zip(&keep) {
             if yes {
+                let var = sum_variance(s.value, s.variance);
                 let v = mv(inv, s.x);
                 for i in 0..3 {
                     for j in 0..3 {
-                        cov[i][j] += s.variance * v[i] * v[j];
+                        cov[i][j] += var * v[i] * v[j];
                     }
                 }
                 residual += ((s.value - dot(s.x, coeff)) / s.variance.sqrt()).powi(2);
@@ -328,6 +381,7 @@ fn extract_boxes(
             (0_usize, 0.0, 0.0, f64::NEG_INFINITY);
         let (mut q, mut eq) = ([0.0; 3], [0.0; 3]);
         let (mut edge, mut edge_var) = (0.0, 0.0);
+        let (mut background_variance, mut edge_background) = (0.0, 0.0);
         let (mut weight, mut wx, mut wy, mut wxx, mut wyy) = (0.0, 0.0, 0.0, 0.0, 0.0);
         for y in b.y0..b.y1 {
             for x in b.x0..b.x1 {
@@ -344,10 +398,12 @@ fn extract_boxes(
                 }
                 let p = basis(x, y);
                 let d = image.values[i];
-                let v = image.pixel_variance(i);
+                let v = sum_variance(d, image.pixel_variance(i));
+                let expected = dot(p, coeff).max(0.0) / image.gain + read;
                 count += 1;
                 sum += d;
                 variance += v;
+                background_variance += expected;
                 maximum = maximum.max(d);
                 for j in 0..3 {
                     q[j] += p[j];
@@ -361,11 +417,17 @@ fn extract_boxes(
                 if x == b.x0 || x + 1 == b.x1 || y == b.y0 || y + 1 == b.y1 {
                     edge += d;
                     edge_var += v;
+                    edge_background += expected;
                     for j in 0..3 {
                         eq[j] += p[j];
                     }
                 }
             }
+        }
+        if counts && count > 0 {
+            // NaN backgrounds (no plane) leave the counts' variance.
+            variance = variance.max(background_variance).max(1.0);
+            edge_var = edge_var.max(edge_background);
         }
         let intensity = sum - dot(q, coeff);
         let bg_var = if model.is_some() {
@@ -548,8 +610,19 @@ mod tests {
                 .collect();
             let dense = DenseCoverage::new(&boxes, gap, width, height);
             let sparse = SparseCoverage::new(&boxes, gap, width, height);
-            let a = extract_boxes(&image, &boxes, gap, 5, 20, 4., &dense).unwrap();
-            let b = extract_boxes(&image, &boxes, gap, 5, 20, 4., &sparse).unwrap();
+            let a = extract_boxes(&image, &boxes, gap, 5, 20, 4., &dense, SumVariance::Floored)
+                .unwrap();
+            let b = extract_boxes(
+                &image,
+                &boxes,
+                gap,
+                5,
+                20,
+                4.,
+                &sparse,
+                SumVariance::Floored,
+            )
+            .unwrap();
             let bits = |r: &(Vec<Spot>, Vec<[f64; 12]>, Vec<[f64; 9]>)| {
                 r.0.iter()
                     .flat_map(|s| {

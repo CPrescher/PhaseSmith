@@ -59,6 +59,21 @@ fn gaussian(seed: u64) -> f64 {
     let (u, v) = (uniform(seed), uniform(seed ^ 0x5555_aaaa_5555_aaaa));
     (-2. * u.ln()).sqrt() * (std::f64::consts::TAU * v).cos()
 }
+/// Deterministic Poisson sample (Knuth below 30, rounded normal above).
+fn poisson(lambda: f64, seed: u64) -> f64 {
+    if lambda >= 30. {
+        return (lambda + lambda.sqrt() * gaussian(seed)).round().max(0.);
+    }
+    let limit = (-lambda).exp();
+    let (mut k, mut p) = (0u64, 1.);
+    loop {
+        p *= uniform(seed.wrapping_mul(31).wrapping_add(k));
+        if p <= limit {
+            return k as f64;
+        }
+        k += 1;
+    }
+}
 fn phi(x: f64) -> f64 {
     super::shape::phi(x)
 }
@@ -105,6 +120,7 @@ struct Synthetic {
     spots: Vec<Spot>,
     background: [f64; 3],
     noise: bool,
+    poisson: bool,
     mask: Option<MaskFn>,
     extra: Option<ExtraFn>,
     reads: AtomicUsize,
@@ -117,6 +133,7 @@ impl Synthetic {
             spots,
             background: [20., 0.02, 0.03],
             noise: true,
+            poisson: false,
             mask: None,
             extra: None,
             reads: AtomicUsize::new(0),
@@ -154,7 +171,11 @@ impl Synthetic {
         self.reads.fetch_add(1, Ordering::Relaxed);
         let [h, w] = self.shape;
         let mut values = self.expectation(f);
-        if self.noise {
+        if self.poisson {
+            for (i, v) in values.iter_mut().enumerate() {
+                *v = poisson(*v, (f * h * w + i) as u64);
+            }
+        } else if self.noise {
             for (i, v) in values.iter_mut().enumerate() {
                 *v += v.sqrt() * gaussian((f * h * w + i) as u64);
             }
@@ -748,7 +769,8 @@ fn every_summation_flag_is_raised_where_it_applies() {
     assert_eq!(f[7] & BOUNDARY, BOUNDARY);
     assert_eq!(f[8] & MODEL, MODEL);
     assert_eq!(f[9] & HIDDEN, HIDDEN);
-    assert_eq!(f[10], NO_DATA);
+    // Its whole window is excluded in the measuring scan.
+    assert_eq!(f[10], NO_DATA | PARTIAL | HIDDEN);
     assert_eq!(m.reflections[10].frames_measured, 0);
     // The clean reflection: expected counts within σ (no noise added).
     let r = &m.reflections[0];
@@ -1187,4 +1209,274 @@ fn merging_statistics_on_synthetic_equivalents() {
     assert_eq!(s.signal[3].unique, 1); // mean I/σ 40
     assert_eq!(s.signal[2].unique, 1); // 20
     assert!(merging_statistics(&[], &ops, &MergingOptions::default()).is_err());
+}
+
+// ------------------------------------------------- review regressions (PR 12)
+
+#[test]
+fn merging_leaves_out_observations_beyond_d_min_and_shells_cover_all_possible() {
+    let lat = Lattice::new(
+        [[5., 0., 0.], [0., 6., 0.], [0., 0., 7.]],
+        Bravais::OrthorhombicP,
+    )
+    .unwrap();
+    let ops = LatticeSystem::Orthorhombic.holohedry();
+    let mut obs = Vec::new();
+    for h in -7..=7i64 {
+        for k in -8..=8i64 {
+            for l in -9..=9i64 {
+                let hkl = [h, k, l];
+                let d = 1. / norm(lat.q(hkl));
+                if hkl != [0; 3] && d >= 0.8 && hkl == equivalent_representative(hkl, &ops) {
+                    obs.push(Observation::new(hkl, 100., 10., d));
+                }
+            }
+        }
+    }
+    // d_min coarser than the data: completeness may not exceed one.
+    let options = MergingOptions {
+        d_min: Some(1.0),
+        lattice: Some(lat),
+        ..MergingOptions::default()
+    };
+    let s = merging_statistics(&obs, &ops, &options).unwrap();
+    assert_eq!(s.overall.completeness, Some(1.));
+    assert!(s.beyond_d_min > 0);
+    assert_eq!(s.overall.observations + s.beyond_d_min, obs.len());
+    for b in &s.shells {
+        assert_eq!(b.completeness, Some(1.), "{b:?}");
+    }
+    // Low-angle reflections missing (beam stop): shells see them.
+    let cut: Vec<Observation> = obs.iter().copied().filter(|o| o.d <= 3.).collect();
+    let s = merging_statistics(&cut, &ops, &options).unwrap();
+    let possible: usize = s.shells.iter().map(|b| b.possible.unwrap()).sum();
+    let unique: usize = s.shells.iter().map(|b| b.unique).sum();
+    assert_eq!(possible, s.overall.possible.unwrap());
+    assert_eq!(unique, s.overall.unique);
+    assert!(s.shells[0].completeness.unwrap() < 1.);
+    assert!(s.shells[0].limits[0] > 3.);
+    // Nothing within the limit is an error.
+    let options = MergingOptions {
+        d_min: Some(10.),
+        ..MergingOptions::default()
+    };
+    assert!(merging_statistics(&cut, &ops, &options).is_err());
+}
+
+#[test]
+fn the_measuring_scan_decides_partial_and_hidden() {
+    let g = geometry();
+    let s = scan();
+    let reflections = predict(
+        &[lattice(Bravais::OrthorhombicP)],
+        &g,
+        &s,
+        SHAPE,
+        &PredictOptions::new(1.6, 2.),
+        None,
+    )
+    .unwrap();
+    let data = Synthetic::new(SHAPE, s.clone(), spots_for(&reflections, 0.3));
+    let measuring = s.clone().with_excluded((30..34).collect()).unwrap();
+    let m = measure(
+        &|f| data.frame(f),
+        &g,
+        &measuring,
+        SHAPE,
+        &reflections,
+        &MeasureOptions::default(),
+        &NoMonitor,
+    )
+    .unwrap();
+    let mut touched = 0;
+    for r in &m.reflections {
+        let w = r.reflection.frames;
+        let cut = (w[0]..=w[1]).any(|f| (30..34).contains(&f));
+        assert_eq!(
+            r.flags & PARTIAL != 0,
+            cut || r.reflection.flags & PARTIAL != 0
+        );
+        assert_eq!(
+            r.flags & HIDDEN != 0,
+            (30..34).contains(&r.reflection.centre_frame) || r.reflection.flags & HIDDEN != 0
+        );
+        if cut {
+            touched += 1;
+            assert!(!r.usable());
+        }
+    }
+    assert!(touched > 5, "{touched}");
+}
+
+#[test]
+fn centre_frames_lie_in_the_window_when_exposures_leave_gaps() {
+    let g = geometry();
+    let s = Scan::new(0., 1., 0.3, 60).unwrap();
+    let r = predict(
+        &[lattice(Bravais::OrthorhombicP)],
+        &g,
+        &s,
+        SHAPE,
+        &PredictOptions::new(1.6, 0.05),
+        None,
+    )
+    .unwrap();
+    assert!(r.len() > 50);
+    for x in &r {
+        assert!(
+            x.frames[0] <= x.centre_frame && x.centre_frame <= x.frames[1],
+            "{x:?}"
+        );
+        let b = s.bounds(x.centre_frame);
+        // The centre exposure holds ω or is the nearest one.
+        let distance = (b[0] - x.xyz[2]).max(x.xyz[2] - b[1]).max(0.);
+        for f in x.frames[0]..=x.frames[1] {
+            let o = s.bounds(f);
+            assert!(distance <= (o[0] - x.xyz[2]).max(x.xyz[2] - o[1]).max(0.) + 1e-12);
+        }
+    }
+    // The centre pixel masked on every frame hides every reflection.
+    let pixels: Vec<(usize, usize)> = r
+        .iter()
+        .map(|x| {
+            (
+                (x.xyz[0] + 0.5).floor() as usize,
+                (x.xyz[1] + 0.5).floor() as usize,
+            )
+        })
+        .collect();
+    let mut data = Synthetic::new(SHAPE, s.clone(), vec![]);
+    data.noise = false;
+    data.mask = Some(Box::new(move |_, x, y| pixels.contains(&(x, y))));
+    let m = measure(
+        &|f| data.frame(f),
+        &g,
+        &s,
+        SHAPE,
+        &r,
+        &MeasureOptions::default(),
+        &NoMonitor,
+    )
+    .unwrap();
+    assert!(m.reflections.iter().all(|x| x.flags & HIDDEN != 0));
+}
+
+#[test]
+fn summation_sigma_matches_the_scatter_at_low_photon_counting_background() {
+    // Weak reflections (30–230 counts) on Poisson backgrounds of 0.02–20
+    // counts per pixel; pull SD of (I − I_expected)/σ for both variance rules.
+    let g = geometry();
+    let s = scan();
+    let reflections = predict(
+        &[lattice(Bravais::OrthorhombicP)],
+        &g,
+        &s,
+        SHAPE,
+        &PredictOptions::new(1.6, 1.5),
+        None,
+    )
+    .unwrap();
+    let mut table = Vec::new();
+    for b in [0.02, 0.2, 2., 20.] {
+        let spots: Vec<Spot> = spots_for(&reflections, 0.25)
+            .into_iter()
+            .enumerate()
+            .map(|(i, mut sp)| {
+                sp.intensity = 30. + 200. * uniform(i as u64 * 104_729 + 7);
+                sp
+            })
+            .collect();
+        let mut data = Synthetic::new(SHAPE, s.clone(), spots);
+        data.background = [b, 0., 0.];
+        data.poisson = true;
+        let mut row = vec![b];
+        for variance in [
+            PixelVariance::FlooredAtOne,
+            PixelVariance::CountsOrBackground,
+        ] {
+            let mut options = MeasureOptions::default();
+            options.noise.variance = variance;
+            let m = measure(
+                &|f| data.frame(f),
+                &g,
+                &s,
+                SHAPE,
+                &reflections,
+                &options,
+                &NoMonitor,
+            )
+            .unwrap();
+            let z: Vec<f64> = m
+                .reflections
+                .iter()
+                .zip(&data.spots)
+                .filter(|(r, _)| r.usable())
+                .map(|(r, sp)| {
+                    let e = sp.expected(r.bounds, &window_frames(&r.reflection, &s), &s);
+                    (r.summation.value - e) / r.summation.sigma
+                })
+                .collect();
+            let n = z.len() as f64;
+            let mean = z.iter().sum::<f64>() / n;
+            let sd = (z.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / (n - 1.)).sqrt();
+            assert!(z.len() > 60);
+            assert!(mean.abs() < 0.3, "{b} {variance:?} {mean}");
+            row.push(sd);
+        }
+        table.push(row);
+    }
+    eprintln!("background  pull SD floored-at-one  pull SD counts-or-background");
+    for r in &table {
+        eprintln!("{:>10}  {:>21.3}  {:>28.3}", r[0], r[1], r[2]);
+    }
+    for r in &table {
+        assert!((0.85..1.2).contains(&r[2]), "{table:?}");
+    }
+    assert!(table[0][1] < 0.75, "{table:?}");
+}
+
+#[test]
+fn block_accumulation_equals_one_pass_and_the_pair_budget_names_its_option() {
+    let mut ids = Vec::new();
+    let mut values = Vec::new();
+    let mut flags = Vec::new();
+    for k in 0..200usize {
+        let i = (k * 7) % 23;
+        let mut v = [0.; 11];
+        v[2] = (k as f64).sin() * 100.;
+        v[3] = 1. + (k % 5) as f64;
+        v[4] = 3.;
+        v[9] = 81.;
+        v[10] = 200.;
+        ids.push(i);
+        values.push(v);
+        flags.push(if k % 31 == 0 { 2 } else { 0 });
+    }
+    let one = crate::spots::integration::accumulate(25, &ids, &values, &flags).unwrap();
+    let blocks = super::integrate::accumulate_blocks(13, 25, &ids, &values, &flags).unwrap();
+    let bits = |r: &(Vec<[f64; 6]>, Vec<u32>)| {
+        r.0.iter()
+            .flatten()
+            .map(|v| v.to_bits())
+            .chain(r.1.iter().map(|&f| u64::from(f)))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(bits(&one), bits(&blocks));
+    let (data, reflections, _) = synthetic_lattice(0.25);
+    let options = MeasureOptions {
+        max_pairs: 10,
+        ..MeasureOptions::default()
+    };
+    let e = measure(
+        &|f| data.frame(f),
+        &geometry(),
+        &data.scan,
+        SHAPE,
+        &reflections,
+        &options,
+        &NoMonitor,
+    )
+    .unwrap_err();
+    assert!(e.0.contains("MeasureOptions::max_pairs"), "{}", e.0);
+    assert_eq!(data.reads.load(Ordering::Relaxed), 0);
 }

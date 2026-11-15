@@ -29,6 +29,14 @@ development versions.
   `merging_statistics` and `merge` give R_int, R_meas, redundancy and
   completeness overall, by resolution shell and by I/σ. See
   `docs/measurement.md`.
+  `Noise::variance` (`PixelVariance`) chooses the pixel variance of the
+  summation σ: `CountsOrBackground` (default, unbiased for photon counting)
+  or `FlooredAtOne` (the one-count² floor of `local_background::extract`).
+  `measure` applies the exclusions of its own scan (`PARTIAL`, `HIDDEN`);
+  `MeasureOptions::max_pairs` sets the reflection–frame pair budget;
+  `merging_statistics` leaves out observations beyond `d_min`
+  (`MergingStatistics::beyond_d_min`) and starts the shells at the largest
+  possible d when a lattice is given.
 - Add `LatticeSystem::holohedry`, `Bravais::holohedry`,
   `LatticeSystem::laue_symbol`, `transform_index` and
   `equivalent_representative` to `lattice_symmetry`: the point-group

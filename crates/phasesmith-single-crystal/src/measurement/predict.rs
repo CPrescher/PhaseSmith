@@ -168,7 +168,8 @@ pub struct Reflection {
     /// First and last frame of the rocking window, inclusive, clipped to
     /// the scan.
     pub frames: [usize; 2],
-    /// Frame whose step interval holds ω.
+    /// Frame whose exposure holds ω (the nearest exposure when ω falls
+    /// between exposures), within `frames`.
     pub centre_frame: usize,
     /// [`AXIAL`], [`PARTIAL`] and [`HIDDEN`] as known before measuring.
     pub flags: u32,
@@ -270,7 +271,17 @@ fn reflection(
     if zeta.abs() < options.axial_zeta || zeta.is_nan() {
         flags |= AXIAL;
     }
-    let centre_frame = scan.frame_of(xyz[2]);
+    // The exposure holding ω, or the nearest one when ω falls between
+    // exposures, kept inside the window.
+    let mut centre_frame = scan.frame_of(xyz[2]);
+    let end = scan.bounds(centre_frame)[1];
+    if xyz[2] > end && centre_frame + 1 < scan.frames {
+        let next = scan.bounds(centre_frame + 1)[0];
+        if next - xyz[2] < xyz[2] - end {
+            centre_frame += 1;
+        }
+    }
+    let centre_frame = centre_frame.clamp(frames[0], frames[1]);
     let x = ((xyz[0] + 0.5).floor().max(0.) as usize).min(shape[1] - 1);
     let y = ((xyz[1] + 0.5).floor().max(0.) as usize).min(shape[0] - 1);
     if scan.is_excluded(centre_frame) || visible.is_some_and(|v| !v(centre_frame, x, y)) {

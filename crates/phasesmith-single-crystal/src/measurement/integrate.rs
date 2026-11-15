@@ -106,7 +106,36 @@ impl Default for Background {
     }
 }
 
-/// Detector noise model: variance `max(counts, 0) / gain + read_noise²`.
+/// Pixel variance entering the summation σ (peak sum, background-plane
+/// covariance, box border).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+#[non_exhaustive]
+pub enum PixelVariance {
+    /// `max(counts, 0) / gain + read_noise²` per pixel, unbiased for
+    /// photon-counting detectors; the variance of a box sum is at least that
+    /// of its fitted background and at least one count², so σ stays
+    /// positive. Default.
+    #[default]
+    CountsOrBackground,
+    /// `max(max(counts, 0) / gain + read_noise², 1)`: the floor of one count²
+    /// per pixel of [`crate::spots::local_background::extract`] and the native
+    /// workflow. It overestimates σ on near-empty photon-counting pixels (up
+    /// to 2× for weak reflections at a background of 0.02 counts per pixel).
+    FlooredAtOne,
+}
+impl PixelVariance {
+    fn model(self) -> local_background::SumVariance {
+        match self {
+            Self::CountsOrBackground => local_background::SumVariance::CountsOrBackground,
+            Self::FlooredAtOne => local_background::SumVariance::Floored,
+        }
+    }
+}
+
+/// Detector noise model. The background fit (clipping, residual RMS and the
+/// [`super::MODEL`] flag) weighs pixels by `max(max(counts, 0) / gain +
+/// read_noise², 1)` whatever [`Noise::variance`] says; σ of the sums uses
+/// [`Noise::variance`]. Profile fitting uses the floored variance.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[non_exhaustive]
 pub struct Noise {
@@ -116,6 +145,9 @@ pub struct Noise {
     pub read_noise: f64,
     /// Counts at and above which a pixel is saturated. Default none.
     pub saturation: Option<f64>,
+    /// Pixel variance of the summation σ. Default
+    /// [`PixelVariance::CountsOrBackground`].
+    pub variance: PixelVariance,
 }
 impl Default for Noise {
     fn default() -> Self {
@@ -123,6 +155,7 @@ impl Default for Noise {
             gain: 1.,
             read_noise: 0.,
             saturation: None,
+            variance: PixelVariance::default(),
         }
     }
 }
@@ -148,6 +181,9 @@ pub struct MeasureOptions {
     /// Most shoebox pixels kept for profile fitting (one sample is 25 bytes).
     /// Default twenty million.
     pub max_samples: usize,
+    /// Most (reflection, frame) pairs, extra profile frames included (about
+    /// 200 bytes each, at most twenty million). Default one million.
+    pub max_pairs: usize,
 }
 impl Default for MeasureOptions {
     fn default() -> Self {
@@ -159,6 +195,7 @@ impl Default for MeasureOptions {
             profile: None,
             workers: std::thread::available_parallelism().map_or(1, |n| n.get().min(8)),
             max_samples: 20_000_000,
+            max_pairs: 1_000_000,
         }
     }
 }
@@ -178,6 +215,8 @@ impl MeasureOptions {
             || self.noise.read_noise < 0.
             || self.noise.saturation.is_some_and(|s| !s.is_finite())
             || self.max_samples > 100_000_000
+            || self.max_pairs == 0
+            || self.max_pairs > 20_000_000
         {
             return Err(invalid("invalid measurement options"));
         }
@@ -342,6 +381,54 @@ struct FrameRows {
     hidden: Vec<usize>,
 }
 
+/// [`integration::accumulate`] in blocks of whole reflections, each within
+/// its one-million-pair limit; per-reflection order and results unchanged.
+fn accumulate(
+    n: usize,
+    ids: &[usize],
+    values: &[[f64; 11]],
+    flags: &[u32],
+) -> Result<(Vec<[f64; 6]>, Vec<u32>)> {
+    accumulate_blocks(1_000_000, n, ids, values, flags)
+}
+pub(super) fn accumulate_blocks(
+    limit: usize,
+    n: usize,
+    ids: &[usize],
+    values: &[[f64; 11]],
+    flags: &[u32],
+) -> Result<(Vec<[f64; 6]>, Vec<u32>)> {
+    if ids.len() <= limit {
+        return integration::accumulate(n, ids, values, flags);
+    }
+    let mut per = vec![0usize; n];
+    for &i in ids {
+        per[i] += 1;
+    }
+    let (mut sums, mut quality) = (Vec::with_capacity(n), Vec::with_capacity(n));
+    let mut start = 0;
+    while start < n {
+        let (mut end, mut count) = (start, 0);
+        while end < n && (end == start || count + per[end] <= limit) {
+            count += per[end];
+            end += 1;
+        }
+        let (mut bi, mut bv, mut bf) = (vec![], vec![], vec![]);
+        for ((&i, v), &f) in ids.iter().zip(values).zip(flags) {
+            if (start..end).contains(&i) {
+                bi.push(i - start);
+                bv.push(*v);
+                bf.push(f);
+            }
+        }
+        let (s, q) = integration::accumulate(end - start, &bi, &bv, &bf)?;
+        sums.extend(s);
+        quality.extend(q);
+        start = end;
+    }
+    Ok((sums, quality))
+}
+
 /// Peak box of odd side `size` around `(x, y)`, clipped to the detector, and
 /// the centre pixel.
 fn peak_box(x: f64, y: f64, size: usize, shape: [usize; 2]) -> (Bounds, usize) {
@@ -437,12 +524,19 @@ pub fn measure(
             }
         }
     }
-    if pairs > 1_000_000 {
-        return Err(invalid("reflection-frame pair budget exceeded"));
+    if pairs > options.max_pairs {
+        return Err(invalid(format!(
+            "{pairs} reflection-frame pairs exceed MeasureOptions::max_pairs ({}); raise it \
+             (up to 20000000), or use a coarser resolution limit or narrower rocking width",
+            options.max_pairs
+        )));
     }
     let keep_samples = options.profile.is_some();
     if keep_samples && sample_count > options.max_samples {
-        return Err(invalid("profile sample budget exceeded"));
+        return Err(invalid(format!(
+            "{sample_count} profile samples exceed MeasureOptions::max_samples ({})",
+            options.max_samples
+        )));
     }
     let wanted: Vec<usize> = (0..scan.frames)
         .filter(|&f| !active[f].is_empty())
@@ -481,13 +575,14 @@ pub fn measure(
         let core_spots = if core_boxes.is_empty() {
             vec![]
         } else {
-            local_background::extract_full(
+            local_background::extract_full_with(
                 &image,
                 &core_boxes,
                 bg.gap,
                 bg.margin,
                 bg.minimum,
                 bg.clip,
+                options.noise.variance.model(),
             )?
             .0
         };
@@ -607,7 +702,7 @@ pub fn measure(
     for p in &mut partials {
         p.sort_by_key(|p| p.frame);
     }
-    let (sums, quality) = integration::accumulate(n, &ids, &values, &flags)?;
+    let (sums, quality) = accumulate(n, &ids, &values, &flags)?;
     drop((ids, values, flags));
 
     let axis = unit(geometry.axis);
@@ -616,7 +711,13 @@ pub fn measure(
     for (i, r) in reflections.iter().enumerate() {
         let s = sums[i];
         let mut flags = quality[i] | r.flags;
-        if hidden[i] {
+        // The measuring scan decides: a window frame it excludes truncates the
+        // sum, an excluded centre frame hides the reflection, whatever scan
+        // `predict` saw.
+        if (r.frames[0]..=r.frames[1]).any(|f| scan.is_excluded(f)) {
+            flags |= super::PARTIAL;
+        }
+        if hidden[i] || scan.is_excluded(r.centre_frame) {
             flags |= HIDDEN;
         }
         let (mut w, mut wx, mut wy, mut wz) = (0., 0., 0., 0.);

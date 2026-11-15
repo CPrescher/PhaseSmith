@@ -94,6 +94,8 @@ inside the scan's rotation range (one entry per turn for scans longer than
 - the rocking window: all frames whose exposure overlaps
   `ω ± rocking_width / (2 max(|ζ|, axial_zeta/2))`, the half width capped at
   `max(max_window_frames · step, 5 · rocking_width)`;
+- the centre frame: the exposure holding ω, or the nearest exposure when ω
+  falls between exposures (`exposure < step`), always inside the window;
 - flags known before measuring: `AXIAL` (`|ζ| < axial_zeta`, default 0.1),
   `PARTIAL` (window cut by the scan ends or an excluded frame), `HIDDEN`
   (centre frame excluded, or `visible(frame, x, y)` false).
@@ -113,10 +115,36 @@ guard of `gap` pixels (default 2), leaving out the guards of *all* boxes of the
 frame (every lattice) and masked and saturated pixels, with iterative clipping
 at `clip` robust standard deviations (default 4) and at least `minimum` ring
 pixels (default 20). The background-subtracted box sum and its
-counting-statistics variance (pixel variance `max(counts, 0)/gain +
-read_noise²` plus the propagated plane covariance) are added over the frames
-with `spots::integration::accumulate`. Nothing is cut on I/σ: weak and negative
+counting-statistics variance (the peak pixels' variance plus the propagated
+plane covariance) are added over the frames with
+`spots::integration::accumulate`. Nothing is cut on I/σ: weak and negative
 intensities stay.
+
+Pixel variance (`Noise::variance`):
+
+- `PixelVariance::CountsOrBackground` (default): `max(counts, 0)/gain +
+  read_noise²` per pixel, which is unbiased for Poisson counts; a box sum's
+  variance is at least that of its fitted background and at least one count²,
+  so σ stays positive on empty boxes.
+- `PixelVariance::FlooredAtOne`: every pixel at least one count², the rule of
+  `local_background::extract` and the native workflow. It overestimates σ on
+  near-empty photon-counting pixels.
+
+The background fit itself (clipping, residual RMS, `MODEL`) uses the floored
+pixel variance in both cases. Pull SD of (I − I_true)/σ for weak reflections
+(30–230 counts, 9 px box) with Poisson backgrounds, averaged over four noise
+seeds of about 90 reflections each (spread about ±0.1):
+
+| background (counts/pixel) | `FlooredAtOne` | `CountsOrBackground` |
+|---|---|---|
+| 0.02 | 0.46 | 1.01 |
+| 0.2 | 0.60 | 0.98 |
+| 2 | 0.94 | 0.96 |
+| 20 | 1.05 | 1.05 |
+
+Exclusions are those of the scan given to `measure`: a reflection whose window
+holds a frame that scan excludes is `PARTIAL`, and one whose centre frame it
+excludes is `HIDDEN`, whatever scan `predict` saw.
 
 Flags (`FLAG_NAMES`; zero means usable):
 
@@ -128,8 +156,8 @@ Flags (`FLAG_NAMES`; zero means usable):
 | `OVERLAP` | 8 | box shares pixels with another reflection's box on a common frame (same or other lattice); not deblended |
 | `BACKGROUND` | 16 | too few ring pixels on some frame; intensity NaN |
 | `AXIAL` | 128 | close to the rotation axis |
-| `PARTIAL` | 256 | window cut by the scan ends or an excluded frame |
-| `HIDDEN` | 512 | centre frame excluded, centre pixel masked on the centre frame, or hidden by `visible` |
+| `PARTIAL` | 256 | window cut by the scan ends or a frame excluded in the predicting or measuring scan |
+| `HIDDEN` | 512 | centre frame excluded (predicting or measuring scan), centre pixel masked on the centre frame, or hidden by `visible` |
 | `NO_DATA` | 1024 | no frame of the window was measured |
 | `BOUNDARY` | 2048 | significant signal in the outermost pixels of a box |
 | `MODEL` | 4096 | the background plane fits its ring poorly |
@@ -151,7 +179,9 @@ the extraction used to allocate on every call (`extract` keeps its signature
 and its results bit for bit). Profile fitting keeps the shoebox pixels of all
 (reflection, frame) pairs, 25 bytes per pixel, checked against
 `MeasureOptions::max_samples` (default twenty million) before any frame is
-read. Budgets: one million reflections and one million reflection–frame pairs.
+read. Budgets: one million reflections, and `MeasureOptions::max_pairs`
+(default one million, at most twenty million) reflection–frame pairs; the
+error names the option.
 
 Progress and cancellation: the `Monitor` (any `Fn(Stage, usize, usize) -> bool
 + Sync`) is called after each frame and around the profile stages; returning
@@ -178,7 +208,9 @@ explicitly.
 Teachers: unflagged reflections with the highest summed I/σ, at most
 `max_teachers` (default 300); `spots::profiles::learn` keeps those over at
 least three frames with summed I/σ above `teacher_snr` (default 20) whose first
-and last frames hold below 5 % of the total. One global profile and one per
+and last frames hold below 5 % of the total and whose shoeboxes carry no flag
+on any frame, the extra profile frames included (so a neighbour overlapping only
+there excludes the teacher). One global profile and one per
 region (detector halves × scan halves, `regions` = 2 × 2 × 2) are learned; a
 region with fewer than `minimum_teachers` (8) uses the global profile. No
 space group or family partition is involved. `spots::profiles::fit` then fits
@@ -241,8 +273,10 @@ mates share it).
 
 `merge(observations, operations)` merges equivalent observations (unweighted
 mean, σ = √(Σσ²)/n). `merging_statistics(observations, operations, options)`
-reports, overall, in `shells` resolution shells of equal reciprocal volume
-(default 4) and in bins of the mean I/σ of each unique reflection (default
+leaves out observations with d below `MergingOptions::d_min` (counted in
+`beyond_d_min`) and reports, overall, in `shells` resolution shells of equal
+reciprocal volume (default 4, from the largest observed d, or with a lattice the
+largest possible d, to `d_min`) and in bins of the mean I/σ of each unique reflection (default
 edges 3, 10, 30): observations, unique reflections, redundancy,
 `R_int = Σ|I − ⟨I⟩| / Σ I` and `R_meas` (with √(n/(n−1))) over unique
 reflections observed at least twice, mean I/σ, and, when
@@ -296,8 +330,8 @@ no diamond-reflection mask):
 
 | | summation | profile | profile, else summation |
 |---|---|---|---|
-| usable | 5027 | 4146 | 5056 |
-| R_int (mmm, unscaled) | 12.1 % | 12.9 % | 9.9 % |
+| usable | 5027 | 4161 | 5058 |
+| R_int (mmm, unscaled) | 12.1 % | 12.8 % | 9.9 % |
 | R_int shells (low → high) | 10.4 / 20.3 / 27.1 / 36.8 % | 11.0 / 14.6 / 18.4 / 22.3 % | 9.4 / 12.1 / 15.5 / 17.6 % |
 | Pbca absences, mean I/σ (n > 3σ) | 0.18–1.18 (8 of 739) | −0.37–0.43 (5 of 738) | −0.37–0.54 (5 of 741) |
 | Pearson with CrysAlis `dom1_v9.hkl` (merged in mmm) | 0.999 (one outlier removed: 0.44 with it) | 0.987 | 0.999 |
