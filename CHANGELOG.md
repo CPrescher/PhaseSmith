@@ -6,6 +6,10 @@ development versions.
 
 ## Unreleased
 
+## 0.8.4
+
+Release date: 2026-11-15.
+
 - Add `grains::Options::merge_angle` (degrees, default 0: off),
   `grains::merge_domains` and `grains::misorientation`. Discovered lattices
   with the same cell (in any setting) whose orientations all differ by at most
