@@ -309,8 +309,14 @@ fn normal_inverse(j: &DMatrix<f64>) -> Option<DMatrix<f64>> {
 /// axes) a, c; orthorhombic a, b, c; monoclinic (unique b) a, b, c, β;
 /// triclinic all six. All positions carry equal weight.
 ///
+/// `start` must be right handed, as every [`BravaisMatch`](super::BravaisMatch)
+/// basis is, and every index must satisfy the type's centring condition
+/// ([`Centring::allows`](super::Centring::allows)); [`index`] only returns such
+/// indices.
+///
 /// # Errors
-/// Mismatched lengths, non-finite positions, a 000 index, fewer than
+/// A left-handed or singular `start`, an index forbidden by the centring,
+/// mismatched lengths, non-finite positions, a 000 index, fewer than
 /// `(P + 3) / 3 + 1` positions, an impossible starting cell, invalid options,
 /// or indices that do not determine the parameters (singular normal matrix).
 pub fn refine_cell(
@@ -341,6 +347,19 @@ pub fn refine_cell(
         ));
     }
     conventional_reciprocal(start)?;
+    if super::det(start) <= 0. {
+        return Err(SpotError(
+            "start must be a right-handed basis (positive determinant)".into(),
+        ));
+    }
+    let centring = bravais.centring();
+    if let Some(h) = hkl.iter().find(|h| !centring.allows(**h)) {
+        return Err(SpotError(format!(
+            "index {h:?} is forbidden by the {:?} centring of {}",
+            centring,
+            bravais.symbol()
+        )));
+    }
     let model = Model {
         system,
         q,

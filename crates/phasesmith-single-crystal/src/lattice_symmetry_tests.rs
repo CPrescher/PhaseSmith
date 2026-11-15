@@ -861,3 +861,150 @@ fn refinement_inputs_are_checked() {
     assert!(index(&q, a, Bravais::OrthorhombicP, 0.).is_err());
     assert!(index(&q, [[0.; 3]; 3], Bravais::OrthorhombicP, 0.01).is_err());
 }
+
+// ---- Review regressions ----
+
+/// The match of `bravais` in a search of the exact lattice of `cell`.
+fn exact_match(bravais: Bravais, cell: [f64; 6], rng: &mut Lcg) -> (M3, BravaisMatch) {
+    let input = scrambled(bravais, cell, 0., rng);
+    let found = search(input, &SearchOptions::default()).unwrap();
+    let m = found
+        .into_iter()
+        .find(|m| m.bravais == bravais)
+        .unwrap_or_else(|| panic!("{} missing for {cell:?}", bravais.symbol()));
+    (input, m)
+}
+
+#[test]
+fn pseudo_symmetric_lattices_keep_their_exact_setting() {
+    let rng = &mut Lcg(83);
+    // tI with c/a ≈ √2 is close to cF; hR with these c/a close to cP.
+    for (bravais, cell) in [
+        (Bravais::TetragonalI, [6.70, 6.70, 9.50, 90., 90., 90.]),
+        (
+            Bravais::RhombohedralR,
+            [8.0189, 8.0189, 9.9157, 90., 90., 120.],
+        ),
+    ] {
+        let (_, m) = exact_match(bravais, cell, rng);
+        assert!(
+            same_cell(m.constrained_cell, cell, 1e-9, 1e-7) && m.angle_deviation < 1e-7,
+            "{}: {:?}, {}",
+            bravais.symbol(),
+            m.constrained_cell,
+            m.angle_deviation
+        );
+        // Index and refine noise-free positions from the reported setting.
+        let truth = rotate_rows(cell_basis(cell).unwrap(), &rotation(rng));
+        let (q, hkl) = positions(bravais, truth, 0.7, 0., rng);
+        let indexed = index(&q, truth, bravais, 0.015).unwrap();
+        assert!(indexed.iter().zip(&hkl).all(|(i, h)| *i == Some(*h)));
+        let fit = refine_cell(
+            &q,
+            &hkl,
+            strained(truth, 0.005),
+            bravais,
+            &RefineOptions::default(),
+        )
+        .unwrap();
+        assert!(same_cell(fit.cell, cell, 1e-9, 1e-7) && fit.rms < 1e-10);
+    }
+    // Scan c/a across the critical ratios (±1 %, 0.2 % steps).
+    let mut cases = Vec::new();
+    for k in -5..=5 {
+        let f = 1. + 0.002 * f64::from(k);
+        let a = 6.7;
+        cases.push((
+            Bravais::TetragonalI,
+            [a, a, a * 2f64.sqrt() * f, 90., 90., 90.],
+        ));
+        for ratio in [0.612_372, 1.224_745, 2.449_490] {
+            cases.push((
+                Bravais::RhombohedralR,
+                [a, a, a * ratio * f, 90., 90., 120.],
+            ));
+        }
+    }
+    // And random cells of both types, any c/a.
+    for _ in 0..150 {
+        let a = 3. + 9. * rng.next();
+        let tc = a * (0.3 + 3.5 * rng.next());
+        cases.push((Bravais::TetragonalI, [a, a, tc, 90., 90., 90.]));
+        let hc = a * (0.3 + 4. * rng.next());
+        cases.push((Bravais::RhombohedralR, [a, a, hc, 90., 90., 120.]));
+    }
+    for (bravais, cell) in cases {
+        let (_, m) = exact_match(bravais, cell, rng);
+        assert!(
+            same_cell(m.constrained_cell, cell, 1e-9, 1e-7) && m.angle_deviation < 1e-7,
+            "{} {:?}: {:?}, {}",
+            bravais.symbol(),
+            cell,
+            m.constrained_cell,
+            m.angle_deviation
+        );
+    }
+}
+
+#[test]
+fn exact_lattices_give_the_same_settings_from_any_basis() {
+    let rng = &mut Lcg(89);
+    for (bravais, cell, _) in cases() {
+        let reference = scrambled(bravais, cell, 0., rng);
+        let first = search(reference, &SearchOptions::default()).unwrap();
+        for _ in 0..4 {
+            let r = rotation(rng);
+            let other = rotate_rows(apply(unimodular(rng), reference), &r);
+            let second = search(other, &SearchOptions::default()).unwrap();
+            assert_eq!(symbols(&first), symbols(&second), "{}", bravais.symbol());
+            for (x, y) in first.iter().zip(&second) {
+                assert!(
+                    same_cell(x.cell, y.cell, 1e-9, 1e-7),
+                    "{} {}: {:?} vs {:?}",
+                    bravais.symbol(),
+                    x.bravais.symbol(),
+                    x.cell,
+                    y.cell
+                );
+                // Both are bases of conventional cells of the same lattice
+                // with the same metric (equivalent under a lattice symmetry
+                // when the metric is exactly symmetric).
+                let turned = rotate_rows(x.conventional, &r);
+                let dual = inverse_transpose_for_test(other);
+                for v in turned {
+                    for d in dual {
+                        let c = dot(v, d);
+                        assert!((c - c.round()).abs() < 1e-7);
+                    }
+                }
+                for i in 0..3 {
+                    for j in 0..3 {
+                        let (g, h) = (
+                            dot(turned[i], turned[j]),
+                            dot(y.conventional[i], y.conventional[j]),
+                        );
+                        assert!((g - h).abs() < 1e-9 * dot(turned[i], turned[i]).max(1.));
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn refinement_rejects_left_handed_starts_and_forbidden_indices() {
+    let cell = [5., 6., 7., 90., 100., 90.];
+    let a = cell_basis(cell).unwrap();
+    let (q, hkl) = positions(Bravais::MonoclinicP, a, 0.6, 0., &mut Lcg(97));
+    let options = RefineOptions::default();
+    let mut left = a;
+    left[1] = left[1].map(|x| -x);
+    let err = refine_cell(&q, &hkl, left, Bravais::MonoclinicP, &options).unwrap_err();
+    assert!(err.0.contains("right-handed"), "{}", err.0);
+    // Primitive indices fitted as body centred: (1 0 0) is forbidden.
+    let c = cell_basis([5., 5., 5., 90., 90., 90.]).unwrap();
+    let (q, hkl) = positions(Bravais::CubicP, c, 0.6, 0., &mut Lcg(101));
+    let err = refine_cell(&q, &hkl, c, Bravais::CubicI, &options).unwrap_err();
+    assert!(err.0.contains("centring"), "{}", err.0);
+    assert!(refine_cell(&q, &hkl, c, Bravais::CubicP, &options).is_ok());
+}

@@ -46,10 +46,15 @@
 //!    angle tolerance. The obliquity does not depend on how the plane's own
 //!    basis is chosen; without it, very oblique cells built from long, nearly
 //!    parallel vectors can meet the 90° angles of a triclinic lattice by
-//!    accident. Of the candidates of one type, the one with the smallest
-//!    `a² + b² + c²` wins; equal sums (symmetry-equivalent settings) are
-//!    separated by the smaller deviation, then by the cell parameters, then
-//!    by the transform.
+//!    accident.
+//! 5. Candidates of one type are grouped by symmetry element: the unique
+//!    axis (monoclinic, hexagonal axes) or the set of three axes. Within a
+//!    group the settings are equivalent and the smallest `a² + b² + c²` wins
+//!    (then the smaller deviation). Between groups, which stand for different
+//!    (pseudo-)symmetry elements, the smaller deviation wins, then the
+//!    shorter cell. Remaining ties go to the cell parameters, then the
+//!    transform. So a pseudo-symmetric lattice (tI with c/a near √2) keeps
+//!    its exact setting rather than a slightly shorter, slightly wrong one.
 //!
 //! Standard settings, chosen deterministically:
 //!
@@ -708,13 +713,16 @@ struct Candidate {
     score: f64,
 }
 impl Candidate {
-    /// Shorter cell first; symmetry-equivalent (equal-sum) settings by the
-    /// smaller deviation, the cell, then the transform.
-    fn better_than(&self, other: &Self) -> bool {
+    /// Order of candidates: `deviation_first` between different symmetry
+    /// elements (smaller deviation, then shorter cell), otherwise between
+    /// settings of one element (shorter cell, then smaller deviation); then
+    /// the cell and the transform. Scores are deviations in units of the
+    /// tolerance and tie within 10⁻⁹ absolutely, so exact metrics, whose
+    /// deviations are rounding noise, tie as they should.
+    fn better_than(&self, other: &Self, deviation_first: bool) -> bool {
         use std::cmp::Ordering::{Equal, Greater, Less};
-        let close = |x: f64, y: f64, rel: f64| (x - y).abs() <= rel * x.abs().max(y.abs());
-        let by = |x: f64, y: f64, rel: f64| {
-            if close(x, y, rel) {
+        let by = |x: f64, y: f64, tie: f64| {
+            if (x - y).abs() <= tie {
                 Equal
             } else if x < y {
                 Less
@@ -722,9 +730,15 @@ impl Candidate {
                 Greater
             }
         };
-        let mut order = by(self.sum, other.sum, 1e-9).then(by(self.score, other.score, 1e-9));
+        let sum = by(self.sum, other.sum, 1e-9 * self.sum.max(other.sum));
+        let score = by(self.score, other.score, 1e-9);
+        let mut order = if deviation_first {
+            score.then(sum)
+        } else {
+            sum.then(score)
+        };
         for k in 0..6 {
-            order = order.then(by(self.cell[k], other.cell[k], 1e-12));
+            order = order.then(by(self.cell[k], other.cell[k], 1e-9 * self.cell[k].abs()));
         }
         order.then(self.transform.cmp(&other.transform)) == Less
     }
@@ -783,7 +797,12 @@ pub fn search(basis: M3, options: &SearchOptions) -> Result<Vec<BravaisMatch>> {
         })
         .collect();
 
-    let mut best: Vec<Option<Candidate>> = (0..14).map(|_| None).collect();
+    // Candidates grouped by type and symmetry element: the unique axis for
+    // monoclinic and hexagonal axes, the set of axes otherwise. Settings of
+    // one element (in-plane bases, axis order, signs) are equivalent and
+    // compete by length; different elements are different (pseudo-)symmetry
+    // and compete by deviation.
+    let mut groups: Vec<(Bravais, [usize; 3], Candidate)> = Vec::new();
     let mut consider = |rows: [usize; 3], hexagonal: bool| {
         let t0: Transform = rows.map(|r| coefficients[r]);
         let d0 = det_i(t0);
@@ -865,9 +884,24 @@ pub fn search(basis: M3, options: &SearchOptions) -> Result<Vec<BravaisMatch>> {
                     score: (length_deviation / options.length_tolerance)
                         .max(angle_deviation / options.angle_tolerance),
                 };
-                let slot = &mut best[bravais as usize];
-                if slot.as_ref().is_none_or(|b| candidate.better_than(b)) {
-                    *slot = Some(candidate);
+                let key = match bravais.system() {
+                    LatticeSystem::Monoclinic => [rows[1], usize::MAX, usize::MAX],
+                    LatticeSystem::Hexagonal | LatticeSystem::Rhombohedral => {
+                        [rows[2], usize::MAX, usize::MAX]
+                    }
+                    _ => {
+                        let mut k = rows;
+                        k.sort_unstable();
+                        k
+                    }
+                };
+                match groups.iter_mut().find(|g| g.0 == bravais && g.1 == key) {
+                    Some(g) => {
+                        if candidate.better_than(&g.2, false) {
+                            g.2 = candidate;
+                        }
+                    }
+                    None => groups.push((bravais, key, candidate)),
                 }
             }
         }
@@ -906,6 +940,13 @@ pub fn search(basis: M3, options: &SearchOptions) -> Result<Vec<BravaisMatch>> {
         });
         Ok(())
     };
+    let mut best: Vec<Option<Candidate>> = (0..14).map(|_| None).collect();
+    for (bravais, _, candidate) in groups {
+        let slot = &mut best[bravais as usize];
+        if slot.as_ref().is_none_or(|b| candidate.better_than(b, true)) {
+            *slot = Some(candidate);
+        }
+    }
     for bravais in Bravais::ALL {
         if let Some(c) = &best[bravais as usize] {
             debug_assert!(c.conventional.iter().flatten().all(|x| x.is_finite()));

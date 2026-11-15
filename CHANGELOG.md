@@ -16,11 +16,15 @@ development versions.
     obliquities within `SearchOptions` (defaults 1 % and 1°). Each result
     gives the integer transform, the conventional basis in a documented
     standard setting, the measured and constrained cells, an idealized basis
-    and the deviations; highest symmetry first, aP always present.
+    and the deviations; highest symmetry first, aP always present. Settings
+    of different (pseudo-)symmetry elements compete by deviation, settings of
+    one element by length, so pseudo-symmetric lattices keep their exact
+    setting.
   - `refine_cell` fits the orientation and the free cell parameters of a
     lattice system (1 to 6) to indexed reciprocal positions, with standard
     uncertainties of the cell and volume from the fit covariance; `index`
-    assigns conventional indices that the centring allows.
+    assigns conventional indices that the centring allows. `refine_cell`
+    rejects a left-handed start and indices the centring forbids.
   - Also public: `niggli`, `cell_parameters`, `cell_basis`, `constrain_cell`,
     `Bravais`, `Centring` and `LatticeSystem`. See
     `docs/lattice-symmetry.md`.

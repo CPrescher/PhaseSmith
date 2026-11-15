@@ -74,8 +74,17 @@ Method:
    basis. Without it a triclinic lattice can show a "monoclinic" cell with
    β ≈ 165° made of long, nearly parallel vectors whose 90° angles hold by
    accident.
-5. **One setting per type.** Smallest `a² + b² + c²`; symmetry-equivalent
-   settings (equal sums) by smaller deviation, then cell, then transform.
+5. **One setting per type.** Candidates are grouped by symmetry element: the
+   unique axis (monoclinic, hexagonal axes) or the set of three axes. Within a
+   group the settings are equivalent and the smallest `a² + b² + c²` wins.
+   Between groups, which are different (pseudo-)symmetry elements, the
+   smaller deviation wins, then the shorter cell; then cell, then transform.
+   Ranking by length first would let a pseudo-symmetric lattice (tI with
+   c/a ≈ √2, hR with c/a near 0.612, 1.225 or 2.449) report a slightly
+   shorter setting of a different element, with a nonzero deviation, in
+   place of the exact one. Deviations tie within 10⁻⁹ of the tolerance, so
+   exact metrics give the same setting, up to a lattice symmetry, from any
+   basis.
 
 | type | setting |
 |---|---|
@@ -127,7 +136,10 @@ halved until the cost does not increase; the fit stops when a cycle lowers
 `Σ|Δq|²` by at most `options.tolerance` (relative) or when no step lowers it.
 
 Uncertainties come from the covariance `s² (JᵀJ)⁻¹` with
-`s² = Σ|Δq|² / (3N − P)`; all positions carry equal weight. Tied lengths share
+`s² = Σ|Δq|² / (3N − P − 3)`: N positions give 3N residual components, and
+P cell parameters plus the three orientation parameters are fitted. All
+positions carry equal weight. `start` must be right handed (every search
+result is), and indices forbidden by the type's centring are rejected. Tied lengths share
 one uncertainty, fixed angles have none, and the volume uncertainty is
 propagated from the cell parameters. In tests with Gaussian position noise
 the pulls `(estimate − truth) / su` have a mean near 0 and a standard
@@ -155,7 +167,6 @@ close; `BravaisMatch::idealized` is a good choice.
 - The refinement weights all positions equally, has no outlier rejection and
   does not refine the instrument; detector-space refinement remains in
   `spots::geometry_refinement`.
-- Equal-sum ties between symmetry-equivalent settings of an exactly
-  symmetric metric are broken by the integer transform, which depends on the
-  input basis; the cell is then identical and the bases differ by a lattice
-  symmetry operation.
+- For an exactly symmetric metric, settings related by a lattice symmetry
+  are indistinguishable; the one returned has the same cell and metric from
+  any input basis but may be a symmetry image of the one from another basis.
