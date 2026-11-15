@@ -5,19 +5,19 @@
 //! or symmetry input. This is the native counterpart of
 //! `phasesmith.single_crystal.grains.find_grains` (equations and boundaries:
 //! `docs/experimental-grain-search.md`); the native single-crystal workflow
-//! uses it with [`Options::default`].
+//! uses it with [`Options::default`](crate::grains::Options::default).
 //!
-//! - [`discover`]: training positions only. Each round searches the positions
+//! - [`discover`](crate::grains::discover): training positions only. Each round searches the positions
 //!   no model owns or explains, refines the strongest Fourier triplets, keeps
 //!   the best new lattice and refits all models with exclusive ownership.
-//!   [`Method::Rows`] proposes one lattice per row-search group and
-//!   consolidates them; [`Method::Both`] pools those with the FFT models.
-//! - [`validate`]: the first use of withheld positions. The frozen pool is
+//!   [`Method::Rows`](crate::grains::Method::Rows) proposes one lattice per row-search group and
+//!   consolidates them; [`Method::Both`](crate::grains::Method::Both) pools those with the FFT models.
+//! - [`validate`](crate::grains::validate): the first use of withheld positions. The frozen pool is
 //!   assigned once, and once per rotated control; acceptance is per model.
-//! - [`find`]: both, for a caller-supplied training partition.
+//! - [`find`](crate::grains::find): both, for a caller-supplied training partition.
 //!
-//! Defaults reproduce the native workflow bit for bit. [`Options::round_controls`],
-//! [`Options::min_tight_fraction`] and the row methods are opt-in.
+//! Defaults reproduce the native workflow bit for bit. [`Options::round_controls`](crate::grains::Options::round_controls),
+//! [`Options::min_tight_fraction`](crate::grains::Options::min_tight_fraction) and the row methods are opt-in.
 // Moved with the workflow's coordinator code, which allows these casts and
 // short names for its whole module.
 #![allow(
