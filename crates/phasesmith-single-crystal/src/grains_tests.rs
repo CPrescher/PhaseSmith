@@ -380,3 +380,174 @@ fn progress_cancels_and_options_are_checked() {
     };
     assert!(discover(&q, &too_many, &controls(), &Method::Fft, &mut |_, _| Ok(())).is_err());
 }
+
+/// Rotation by `degrees` about the unit vector along (1, 2, 3).
+fn tilt(degrees: f64) -> M3 {
+    let n = [1., 2., 3.].map(|x: f64| x / 14_f64.sqrt());
+    let (s, c) = degrees.to_radians().sin_cos();
+    std::array::from_fn(|i| {
+        std::array::from_fn(|j| {
+            let cross = match (i, j) {
+                (0, 1) => -n[2],
+                (0, 2) => n[1],
+                (1, 0) => n[2],
+                (1, 2) => -n[0],
+                (2, 0) => -n[1],
+                (2, 1) => n[0],
+                _ => 0.,
+            };
+            c * f64::from(u8::from(i == j)) + s * cross + (1. - c) * n[i] * n[j]
+        })
+    })
+}
+/// One crystal whose reflections come from two orientations `degrees`
+/// apart, each reflection from one of them at random, plus noise. Returns
+/// the positions and the two direct bases.
+fn two_domains(degrees: f64) -> (Vec<V3>, M3, M3) {
+    let rng = &mut Lcg(11);
+    let direct = monoclinic(ENSTATITE.0, ENSTATITE.1);
+    let first = rotation(0.4, 1.1, -0.7);
+    let second = mul(first, tilt(degrees));
+    let reciprocal = inv_t(direct).unwrap();
+    let mut q = vec![];
+    for h in -14..=14 {
+        for k in -14..=14 {
+            for l in -14..=14 {
+                let node = row([f64::from(h), f64::from(k), f64::from(l)], reciprocal);
+                let n = norm(node);
+                if (h, k, l) == (0, 0, 0) || n > 0.9 || rng.next() > 0.9 {
+                    continue;
+                }
+                let p = row(node, if rng.next() < 0.5 { first } else { second });
+                q.push(std::array::from_fn(|j| p[j] + 0.002 * (rng.next() - 0.5)));
+            }
+        }
+    }
+    q.extend(noise(200, rng));
+    (shuffle(q, rng), mul(direct, first), mul(direct, second))
+}
+
+#[test]
+fn misorientation_is_the_rotation_between_settings_of_one_cell() {
+    let a = mul(
+        monoclinic(MONOCLINIC.0, MONOCLINIC.1),
+        rotation(0.4, 1.1, -0.7),
+    );
+    // Another setting of the same lattice, turned by 0.26°.
+    let setting = [[1., 0., 0.], [1., 1., 0.], [0., -1., -1.]];
+    let b = mul(mul(setting, a), tilt(0.26));
+    let angle = misorientation(a, b).unwrap();
+    assert!((angle - 0.26).abs() < 1e-6, "{angle}");
+    assert!((misorientation(b, a).unwrap() - 0.26).abs() < 1e-6);
+    assert!(misorientation(a, a).unwrap() < 1e-6);
+    // Inverted basis: the lattice is the same.
+    let inverted = a.map(|r| r.map(|x| -x));
+    assert!(misorientation(a, inverted).unwrap() < 1e-6);
+    // A 1 % strain along c is another cell; 0.1 % is not and adds no angle.
+    let strained = |f: f64| mul([[1., 0., 0.], [0., 1., 0.], [0., 0., f]], a);
+    assert!(misorientation(a, strained(1.01)).is_none());
+    assert!(misorientation(a, strained(1.001)).unwrap() < 0.05);
+    // A different crystal, a supercell and a singular basis.
+    let other = mul(monoclinic(SMALL.0, SMALL.1), rotation(0.4, 1.1, -0.7));
+    assert!(misorientation(a, other).is_none());
+    let doubled = mul([[2., 0., 0.], [0., 1., 0.], [0., 0., 1.]], a);
+    assert!(misorientation(a, doubled).is_none());
+    assert!(misorientation(a, [[0.; 3]; 3]).is_none());
+}
+
+#[test]
+fn domains_of_one_crystal_merge_and_separate_grains_stay_apart() {
+    let with = |merge_angle: f64| Options {
+        merge_angle,
+        ..Options::default()
+    };
+    let owned = |q: &[V3], models: &[M3], o: &Options| {
+        let search = Search {
+            e: Engine::new(o.workers).unwrap(),
+            o,
+        };
+        let labels = search.assign(q, models).unwrap();
+        (1..=models.len() as i32)
+            .map(|i| labels.iter().filter(|&&l| l == i).count())
+            .collect::<Vec<_>>()
+    };
+
+    // 0.26° apart: one lattice that owns nearly all reflections.
+    let (q, a, b) = two_domains(0.26);
+    let reflections = q.len() - 200;
+    let merged = merge_domains(&q, &[a, b], &with(0.5)).unwrap();
+    assert_eq!(merged.len(), 1);
+    assert_eq!(merged[0].domains, 2);
+    assert!((merged[0].angle - 0.26).abs() < 0.01, "{}", merged[0].angle);
+    assert!(misorientation(merged[0].direct, a).unwrap() < 0.26);
+    let count = owned(&q, &[merged[0].direct], &with(0.5))[0];
+    assert!(count as f64 > 0.95 * reflections as f64, "{count}");
+    // Off, or a limit below the angle: both come back untouched.
+    for limit in [0., 0.2] {
+        let kept = merge_domains(&q, &[a, b], &with(limit)).unwrap();
+        assert_eq!(
+            kept.iter().map(|m| m.direct).collect::<Vec<_>>(),
+            vec![a, b]
+        );
+        assert!(kept.iter().all(|m| m.domains == 1 && m.angle == 0.));
+    }
+
+    // 3° apart: within a 5° limit, but one lattice cannot hold both, so the
+    // merge is refused and the grains stay as they were.
+    let (q, a, b) = two_domains(3.);
+    assert!((misorientation(a, b).unwrap() - 3.).abs() < 1e-6);
+    let apart = merge_domains(&q, &[a, b], &with(5.)).unwrap();
+    assert_eq!(
+        apart.iter().map(|m| m.direct).collect::<Vec<_>>(),
+        vec![a, b]
+    );
+
+    // Three lattices: the two domains merge, the other crystal is refit only.
+    let (mut q, a, b) = two_domains(0.26);
+    let other = monoclinic(SMALL.0, SMALL.1);
+    let turn = rotation(2.2, -0.9, 0.5);
+    q.extend(grain(other, turn, 0.7, &mut Lcg(9)));
+    let third = mul(other, turn);
+    let merged = merge_domains(&q, &[a, third, b], &with(0.5)).unwrap();
+    // The merged lattice takes the place of its larger part.
+    assert_eq!(merged.len(), 2);
+    let joined = merged.iter().find(|m| m.domains == 2).unwrap();
+    let single = merged.iter().find(|m| m.domains == 1).unwrap();
+    assert!(misorientation(joined.direct, a).unwrap() < 0.26);
+    assert!(misorientation(single.direct, third).unwrap() < 0.05);
+    assert_eq!(single.angle, 0.);
+}
+
+#[test]
+fn merging_leaves_distinct_grains_untouched_and_checks_its_angle() {
+    let q = three_grains();
+    let controlled = |merge_angle: f64| Options {
+        round_controls: 16,
+        min_tight_fraction: 0.75,
+        merge_angle,
+        ..Options::default()
+    };
+    let bases = |o: &Options| {
+        run(&q, o, &Method::Fft)
+            .iter()
+            .map(|g| g.direct)
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(bases(&controlled(0.)), bases(&controlled(0.5)));
+    assert_eq!(
+        bases(&Options::default()),
+        bases(&Options {
+            merge_angle: 0.5,
+            ..Options::default()
+        })
+    );
+    for bad in [-0.1, 10.5, f64::NAN] {
+        let o = Options {
+            merge_angle: bad,
+            ..Options::default()
+        };
+        assert!(o.check().is_err(), "{bad}");
+        assert!(merge_domains(&q, &[], &o).is_err());
+    }
+    assert_eq!(merge_domains(&q, &[], &controlled(0.5)).unwrap(), vec![]);
+}

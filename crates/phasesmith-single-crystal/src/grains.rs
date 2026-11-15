@@ -17,7 +17,8 @@
 //! - [`find`](crate::grains::find): both, for a caller-supplied training partition.
 //!
 //! Defaults reproduce the native workflow bit for bit. [`Options::round_controls`](crate::grains::Options::round_controls),
-//! [`Options::min_tight_fraction`](crate::grains::Options::min_tight_fraction) and the row methods are opt-in.
+//! [`Options::min_tight_fraction`](crate::grains::Options::min_tight_fraction),
+//! [`Options::merge_angle`](crate::grains::Options::merge_angle) and the row methods are opt-in.
 // Moved with the workflow's coordinator code, which allows these casts and
 // short names for its whole module.
 #![allow(
@@ -91,6 +92,13 @@ pub struct Options {
     /// reciprocal tolerance. 0 (default) disables the check. Matches of a
     /// real lattice cluster at its nodes; chance matches fill the sphere.
     pub min_tight_fraction: f64,
+    /// Largest misorientation, degrees, at which discovered lattices with
+    /// the same cell are merged into one (see [`merge_domains`]). 0
+    /// (default) never merges; at most 10. A crystal with a few tenths of a
+    /// degree of mosaic spread can otherwise come out as two lattices: after
+    /// the joint refit each position has one owner, so the shared-support
+    /// duplicate check cannot see them.
+    pub merge_angle: f64,
 }
 impl Default for Options {
     fn default() -> Self {
@@ -113,6 +121,7 @@ impl Default for Options {
             workers: 4,
             round_controls: 0,
             min_tight_fraction: 0.,
+            merge_angle: 0.,
         }
     }
 }
@@ -132,6 +141,7 @@ impl Options {
             self.max_condition,
             self.ambiguity_ratio,
             self.min_tight_fraction,
+            self.merge_angle,
         ];
         if finite.iter().any(|x| !x.is_finite()) {
             return bad("grain options must be finite");
@@ -167,6 +177,9 @@ impl Options {
         }
         if !open(self.ambiguity_ratio, 0., 1.) || !(0. ..=1.).contains(&self.min_tight_fraction) {
             return bad("invalid ambiguity ratio or tight fraction");
+        }
+        if !(0. ..=10.).contains(&self.merge_angle) {
+            return bad("merge_angle must be in [0,10] degrees");
         }
         Ok(())
     }
@@ -909,6 +922,181 @@ impl Search<'_> {
         }
         Ok(proposals)
     }
+    /// Training-only merge of lattices of one crystal ([`merge_domains`]).
+    /// Without a merge the models are returned untouched, bit for bit.
+    fn merge(&self, q: &[V3], models: &[M3]) -> Result<Vec<Merged>> {
+        let limit = self.o.merge_angle;
+        let mut out: Vec<Merged> = models
+            .iter()
+            .map(|&direct| Merged {
+                direct,
+                domains: 1,
+                angle: 0.,
+            })
+            .collect();
+        let mut refused: Vec<(M3, M3)> = Vec::new();
+        while limit > 0. && out.len() > 1 {
+            let directs: Vec<M3> = out.iter().map(|m| m.direct).collect();
+            let labels = self.assign(q, &directs)?;
+            let owns = |l: i32, i: usize| l == i as i32 + 1;
+            let counts: Vec<usize> = (0..out.len())
+                .map(|i| labels.iter().filter(|&&l| owns(l, i)).count())
+                .collect();
+            // Largest lattices first, so a third domain joins the main one.
+            let mut order: Vec<usize> = (0..out.len()).collect();
+            order.sort_by(|&i, &j| counts[j].cmp(&counts[i]).then(i.cmp(&j)));
+            let pair = order.iter().enumerate().find_map(|(n, &i)| {
+                order[n + 1..].iter().find_map(|&j| {
+                    if refused.contains(&(directs[i], directs[j])) {
+                        return None;
+                    }
+                    misorientation(directs[i], directs[j])
+                        .filter(|&angle| angle <= limit)
+                        .map(|angle| (i, j, angle))
+                })
+            });
+            let Some((i, j, angle)) = pair else {
+                break;
+            };
+            let block: Vec<V3> = q
+                .iter()
+                .zip(&labels)
+                .filter_map(|(&q, &l)| (owns(l, i) || owns(l, j)).then_some(q))
+                .collect();
+            let parts = counts[i] + counts[j];
+            let at = i - usize::from(j < i);
+            let mut merged = None;
+            if let Some(fit) = self.refine(&block, directs[i])? {
+                let mut next = directs.clone();
+                next[i] = fit.direct;
+                next.remove(j);
+                let (next, labels) = self.joint(q, next)?;
+                let kept = labels.iter().filter(|&&l| owns(l, at)).count();
+                if kept as f64 >= MERGE_KEEP * parts as f64 {
+                    merged = Some(next);
+                }
+            }
+            let Some(next) = merged else {
+                refused.push((directs[i], directs[j]));
+                continue;
+            };
+            let joined = Merged {
+                direct: next[at],
+                domains: out[i].domains + out[j].domains,
+                angle: angle.max(out[i].angle).max(out[j].angle),
+            };
+            out.remove(j);
+            out[at] = joined;
+            for (m, direct) in out.iter_mut().zip(next) {
+                m.direct = direct;
+            }
+            refused.clear();
+        }
+        Ok(out)
+    }
+}
+
+/// Cells of one crystal agree within this relative length and this angle
+/// (degrees) once one basis is mapped onto the other. Refinement scatter of
+/// one grain is a few 0.01 % and 0.01°.
+const MERGE_LENGTH: f64 = 0.005;
+const MERGE_CELL_ANGLE: f64 = 0.5;
+/// A merged lattice must own this share of the training positions its parts
+/// owned; otherwise the parts are separate grains and stay apart.
+const MERGE_KEEP: f64 = 0.85;
+
+/// A lattice after [`merge_domains`]: how many discovered lattices it
+/// replaces (1 when unmerged) and the largest misorientation among them.
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[non_exhaustive]
+pub struct Merged {
+    /// Right-handed direct row basis in ångström.
+    pub direct: M3,
+    /// Discovered lattices this one replaces.
+    pub domains: usize,
+    /// Largest misorientation among them, degrees; 0 when unmerged.
+    pub angle: f64,
+}
+
+/// Lengths (ångström) and angles α, β, γ (degrees) of a direct row basis.
+fn cell(a: M3) -> [f64; 6] {
+    let l = a.map(norm);
+    let angle = |i: usize, j: usize| {
+        (dot(a[i], a[j]) / (l[i] * l[j]))
+            .clamp(-1., 1.)
+            .acos()
+            .to_degrees()
+    };
+    [l[0], l[1], l[2], angle(1, 2), angle(0, 2), angle(0, 1)]
+}
+
+/// Misorientation, degrees, of two lattices of one crystal; None for
+/// different lattices.
+///
+/// An integer unimodular change of basis must map `b` onto `a`, so
+/// equivalent settings compare as one, and the mapped cell must agree with
+/// `a` within 0.5 % in length and 0.5° in angle. The angle is that of the
+/// rotation taking one onto the other (the orthogonal factor of the polar
+/// decomposition, so a small strain does not count); a lattice and its
+/// inverse are alike. The change of basis is read from `a` and the dual of
+/// `b` and rounded within 0.25, which bounds the detectable angle to a few
+/// degrees for elongated cells.
+#[must_use]
+pub fn misorientation(a: M3, b: M3) -> Option<f64> {
+    let dual = inv_t(b).ok()?;
+    let t: M3 = a.map(|r| dual.map(|d| dot(r, d)));
+    if t.iter()
+        .flatten()
+        .any(|v| !v.is_finite() || (v - v.round()).abs() > 0.25)
+    {
+        return None;
+    }
+    let t = t.map(|r| r.map(f64::round));
+    if (det(t).abs() - 1.).abs() > 1e-6 {
+        return None;
+    }
+    let mapped = mul(t, b);
+    let (p, m) = (cell(a), cell(mapped));
+    if (0..3).any(|i| (p[i] - m[i]).abs() > MERGE_LENGTH * p[i])
+        || (3..6).any(|i| (p[i] - m[i]).abs() > MERGE_CELL_ANGLE)
+    {
+        return None;
+    }
+    // Rows: a = mapped · M.
+    let mut m = matrix(mapped).try_inverse()? * matrix(a);
+    if m.determinant() < 0. {
+        m = -m;
+    }
+    let svd = m.svd(true, true);
+    let rotation = svd.u? * svd.v_t?;
+    Some(
+        ((rotation.trace() - 1.) / 2.)
+            .clamp(-1., 1.)
+            .acos()
+            .to_degrees(),
+    )
+}
+
+/// Merges lattices of one crystal on the training positions.
+///
+/// Two lattices are one crystal when [`misorientation`] is at most
+/// [`Options::merge_angle`]. Largest first, the pair is refined as one
+/// lattice on the positions either owns and all lattices are refit with
+/// exclusive ownership. The merge stands when the merged lattice then owns
+/// at least 85 % of the positions its parts owned; otherwise both stay,
+/// since they are separate grains. With `merge_angle` 0, or when nothing
+/// merges, `models` come back unchanged. [`discover`] applies this itself
+/// when `merge_angle` is positive; call it directly to learn which lattices
+/// were merged.
+/// # Errors
+/// Invalid options or positions, singular models or kernel failures.
+pub fn merge_domains(train: &[V3], models: &[M3], options: &Options) -> Result<Vec<Merged>> {
+    options.check()?;
+    let search = Search {
+        e: Engine::new(options.workers).map_err(SpotError)?,
+        o: options,
+    };
+    search.merge(train, models)
 }
 
 fn assignment_models(a: &[M3]) -> Result<Vec<(M3, M3)>> {
@@ -949,7 +1137,7 @@ pub fn discover(
         e: Engine::new(options.workers).map_err(SpotError)?,
         o: options,
     };
-    match method {
+    let models = match method {
         Method::Fft => search.fft(train, controls, progress),
         #[cfg(feature = "row-search")]
         Method::Rows(rows) => {
@@ -967,7 +1155,12 @@ pub fn discover(
             })?);
             search.consolidate(train, &proposals)
         }
+    }?;
+    if options.merge_angle > 0. {
+        let merged = search.merge(train, &models)?;
+        return Ok(merged.into_iter().map(|m| m.direct).collect());
     }
+    Ok(models)
 }
 
 /// Frozen-pool validation: the first use of withheld positions.

@@ -154,7 +154,7 @@ ownership. An exhausted or cancelled row search is an error, as there.
 `Method::Both` consolidates the FFT models and the row proposals in one pool;
 it has no Python counterpart yet.
 
-Two opt-in changes default to the workflow's behaviour:
+Three opt-in changes default to the workflow's behaviour:
 
 - `round_controls = n` replaces the round selection. Among the 16 best distinct
   proposals, the one with the largest support beyond the same cell in `n`
@@ -176,7 +176,25 @@ Two opt-in changes default to the workflow's behaviour:
   Dioptas' multi-grain DAC data, 0.75 rejects a loose cell (40 of 59 tight)
   that passes the rotated-control rules.
 
-Neither is the default. Both change results, and PhaseSmith's existing
+- `merge_angle = θ` (degrees, at most 10) merges discovered lattices of one
+  crystal on the training positions. Two lattices are one crystal when an
+  integer unimodular change of basis maps one onto the other, the mapped cells
+  agree within 0.5 % in length and 0.5° in angle, and the rotation between
+  them (`misorientation`) is at most `θ`. Largest first, the pair is refined
+  as one lattice on the positions either owns and all lattices are refit with
+  exclusive ownership. The merge stands when the merged lattice then owns at
+  least 85 % of the positions its parts owned; otherwise both stay. A crystal
+  with a few tenths of a degree of mosaic spread can come out as two
+  lattices, each owning the positions that sit cleanly on its own nodes. The
+  duplicate checks compare shared support, and after the joint refit each
+  position has one owner, so they cannot see such a pair. On a recorded
+  enstatite scan two lattices 0.27° apart owned 1323 and 1301 of 3547
+  positions; merged, one lattice owns 2832 with the residual of an ordinary
+  single-lattice fit. `merge_domains` runs the step on given models and
+  reports how many lattices each result replaces and their largest
+  misorientation. Without a merge the models are returned bit for bit.
+
+None is the default. All change results, and PhaseSmith's existing
 fixtures and the Python reference do not cover them yet.
 
 ## Opt-in parameter ensemble and consolidated grain assignment
