@@ -96,6 +96,7 @@ nav:
       - Lattice and grain discovery: experimental-grain-search.md
       - Row search: experimental-row-search.md
       - Cell comparison: experimental-cell-comparison.md
+      - Lattice symmetry and constrained cells: lattice-symmetry.md
       - Prediction: experimental-spot-prediction.md
       - Geometry fitting: experimental-crystal-geometry.md
       - Reflection integration: experimental-reflection-integration.md
