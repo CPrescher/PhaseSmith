@@ -39,8 +39,10 @@ development versions.
   literals (grid, maxima, directions, pairs, refinements, five rounds,
   tolerance, ambiguity, length/volume/condition bounds) are options with those
   defaults.
-- `grains::Options`, `grains::Method` and `grains::Grain` are
-  `#[non_exhaustive]`; start from `Options::default()` and assign fields.
+- `grains::Options` and `grains::Method` are `#[non_exhaustive]`; start from
+  `Options::default()` and assign fields. `grains::Grain` stays exhaustive: it
+  is the former `phasesmith_workflows::single_crystal::Grain`, re-exported
+  there unchanged.
   With `Method::Both`, progress counts FFT rounds and then row groups in one
   range.
 - Add opt-in grain discovery options, all off by default:

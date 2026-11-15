@@ -190,8 +190,10 @@ pub enum Method {
 }
 
 /// Position-supported competing lattice, with independently withheld ownership.
+///
+/// Exhaustive: `phasesmith_workflows::single_crystal::Grain` re-exports it,
+/// and callers have built that struct with a literal since 0.8.0.
 #[derive(Clone, Debug)]
-#[non_exhaustive]
 pub struct Grain {
     /// Right-handed direct row basis in angstroms.
     pub direct: M3,
