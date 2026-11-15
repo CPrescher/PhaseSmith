@@ -8,6 +8,9 @@ pub mod grains;
 /// Bravais-lattice search and symmetry-constrained cell refinement.
 #[cfg(feature = "grains")]
 pub mod lattice_symmetry;
+/// Reflection prediction and intensity measurement for refined lattices.
+#[cfg(feature = "grains")]
+pub mod measurement;
 /// Independent published DAFi equidistant-row grouping.
 // Preserve the former row crate's lint policy during the module-only move.
 #[cfg(feature = "row-search")]

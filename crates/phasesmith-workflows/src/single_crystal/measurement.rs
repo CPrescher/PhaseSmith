@@ -1,9 +1,11 @@
 use super::map_frames;
 use super::{
     Error, FrameSource, Indexed, Options, Result, bounds, grains, image,
-    math::{M3, V3, cross, dot, inv_t, norm, row, unit},
+    math::{M3, V3, inv_t, norm},
 };
-use phasesmith_single_crystal::spots::{self as spots, Bounds, frame_input, prediction, profiles};
+use phasesmith_single_crystal::lattice_symmetry::Bravais;
+use phasesmith_single_crystal::measurement;
+use phasesmith_single_crystal::spots::{self as spots, Bounds, frame_input, profiles};
 /// Owned contiguous profile samples and their exact finite group supports.
 pub struct ProfileData {
     /// Signed signal, independent variance and fitted background per pixel.
@@ -125,28 +127,10 @@ pub struct Measurements {
     pub visible: Vec<bool>,
 }
 /// Ray, local angular pixel transform and signed rocking zeta in one declared frame.
+/// The shared [`phasesmith_single_crystal::measurement::ray_geometry`].
 pub fn profile_geometry(xy: [f64; 2], g: spots::reciprocal::Geometry) -> (V3, [f64; 4], f64) {
-    let beam = unit(g.beam);
-    let axis = unit(g.axis);
-    let p = std::array::from_fn(|i| g.origin[i] + xy[0] * g.fast[i] + xy[1] * g.slow[i]);
-    let length = norm(p);
-    let ray = p.map(|v| v / length);
-    let e = cross(ray, beam);
-    let n = norm(e);
-    let zeta = dot(e, axis) / n;
-    let e1 = e.map(|v| v / n);
-    let e2 = cross(ray, e1);
-    let scale = 180. / std::f64::consts::PI / length;
-    (
-        ray,
-        [
-            dot(e1, g.fast) * scale,
-            dot(e1, g.slow) * scale,
-            dot(e2, g.fast) * scale,
-            dot(e2, g.slow) * scale,
-        ],
-        zeta,
-    )
+    let r = phasesmith_single_crystal::measurement::ray_geometry(xy, &g);
+    (r.ray, r.planar, r.zeta)
 }
 fn predictions(
     b: M3,
@@ -159,40 +143,21 @@ fn predictions(
     if limits.iter().map(|n| 2 * n + 1).product::<i64>() > 250_000 {
         return Err(Error("HKL enumeration budget exceeded".into()));
     }
-    let mut h = Vec::new();
-    for x in -limits[0]..=limits[0] {
-        for y in -limits[1]..=limits[1] {
-            for z in -limits[2]..=limits[2] {
-                let hkl = [x, y, z];
-                let n = norm(row(hkl.map(|x| x as f64), b));
-                if n > 0. && n <= 2. {
-                    h.push(hkl);
-                }
-            }
-        }
-    }
     let lo = angles[0][0];
     let hi = angles.last().unwrap()[1];
-    let hints = vec![f64::midpoint(lo, hi); h.len()];
+    // Shared enumeration and prediction: every nonzero hkl with |q| <= 2 1/A
+    // (no centring), both roots unwrapped nearest the scan middle, on the
+    // detector; the rotation range and frames are applied here.
+    let lattice = measurement::Lattice::from_reciprocal(b, Bravais::TriclinicP)?;
     let mut records = Vec::new();
-    for other in [false, true] {
-        let p = prediction::predict(g, b, &h, &hints, other)?;
-        for (h, p) in h.iter().zip(p) {
-            let v = p.values;
-            if p.flags != 0
-                || v[2] < lo
-                || v[2] >= hi
-                || v[0] < -0.5
-                || v[0] >= shape[1] as f64 - 0.5
-                || v[1] < -0.5
-                || v[1] >= shape[0] as f64 - 0.5
-            {
-                continue;
-            }
-            for (frame, a) in angles.iter().enumerate() {
-                if v[2] >= a[0] && v[2] < a[1] {
-                    records.push((frame, v[2], *h, v));
-                }
+    for c in measurement::crossings(&lattice, &g, shape, 0.5, f64::midpoint(lo, hi))? {
+        let v = c.xyz;
+        if v[2] < lo || v[2] >= hi {
+            continue;
+        }
+        for (frame, a) in angles.iter().enumerate() {
+            if v[2] >= a[0] && v[2] < a[1] {
+                records.push((frame, v[2], c.hkl, v));
             }
         }
     }
@@ -581,6 +546,7 @@ mod tests {
 
 #[cfg(test)]
 mod derivative_tests {
+    use super::super::math::{cross, dot, unit};
     use super::*;
     #[test]
     fn local_angular_pixel_jacobian_matches_centered_ray_angle_differences() {
@@ -614,6 +580,145 @@ mod derivative_tests {
                 let actual = (positive - negative) / (2. * step);
                 assert!((actual - jac[2 * i + axis]).abs() < 1e-10);
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod shared_tests {
+    //! The recipe now calls the public measurement functions; these keep the
+    //! former private implementations as references and require identical
+    //! bits.
+    use super::super::math::{cross, dot, row, unit};
+    use super::*;
+    use phasesmith_single_crystal::spots::prediction;
+
+    fn geometry() -> spots::reciprocal::Geometry {
+        spots::reciprocal::Geometry {
+            origin: [-0.0751, -0.0702, 0.15],
+            fast: [0.000_02, 0.000_075, 0.000_001],
+            slow: [0.000_075, -0.000_02, 0.],
+            beam: [0.001, 0., 1.],
+            axis: [-1., 0.002, 0.],
+            wavelength: 0.2846,
+        }
+    }
+    fn basis() -> M3 {
+        // Orientation-rotated reciprocal basis of an 8 x 6 x 10 A cell.
+        let (s, c) = 0.37f64.sin_cos();
+        let (s2, c2) = 1.1f64.sin_cos();
+        let r = [[c, -s * c2, s * s2], [s, c * c2, -c * s2], [0., s2, c2]];
+        let d = [1. / 8., 1. / 6., 1. / 10.];
+        std::array::from_fn(|i| std::array::from_fn(|j| r[j][i] * d[i]))
+    }
+    fn former_predictions(
+        b: M3,
+        g: spots::reciprocal::Geometry,
+        angles: &[[f64; 2]],
+        shape: [usize; 2],
+    ) -> (Vec<[i64; 3]>, Vec<V3>) {
+        let a = inv_t(b).unwrap();
+        let limits = a.map(|a| (2. * norm(a)).ceil() as i64);
+        let mut h = Vec::new();
+        for x in -limits[0]..=limits[0] {
+            for y in -limits[1]..=limits[1] {
+                for z in -limits[2]..=limits[2] {
+                    let hkl = [x, y, z];
+                    let n = norm(row(hkl.map(|x| x as f64), b));
+                    if n > 0. && n <= 2. {
+                        h.push(hkl);
+                    }
+                }
+            }
+        }
+        let lo = angles[0][0];
+        let hi = angles.last().unwrap()[1];
+        let hints = vec![f64::midpoint(lo, hi); h.len()];
+        let mut records = Vec::new();
+        for other in [false, true] {
+            let p = prediction::predict(g, b, &h, &hints, other).unwrap();
+            for (h, p) in h.iter().zip(p) {
+                let v = p.values;
+                if p.flags != 0
+                    || v[2] < lo
+                    || v[2] >= hi
+                    || v[0] < -0.5
+                    || v[0] >= shape[1] as f64 - 0.5
+                    || v[1] < -0.5
+                    || v[1] >= shape[0] as f64 - 0.5
+                {
+                    continue;
+                }
+                for (frame, a) in angles.iter().enumerate() {
+                    if v[2] >= a[0] && v[2] < a[1] {
+                        records.push((frame, v[2], *h, v));
+                    }
+                }
+            }
+        }
+        records.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.total_cmp(&b.1)).then(a.2.cmp(&b.2)));
+        (
+            records.iter().map(|r| r.2).collect(),
+            records.iter().map(|r| r.3).collect(),
+        )
+    }
+
+    #[test]
+    fn shared_crossings_reproduce_the_former_recipe_predictions_bit_for_bit() {
+        let angles: Vec<[f64; 2]> = (0..16)
+            .map(|i| {
+                let low = -40. + f64::from(i) * 5.;
+                [low, low + 4.5]
+            })
+            .collect();
+        let shape = [2000, 1800];
+        let (h0, c0) = former_predictions(basis(), geometry(), &angles, shape);
+        let (h1, c1) = predictions(basis(), geometry(), &angles, shape).unwrap();
+        assert!(h0.len() > 1000, "{}", h0.len());
+        assert_eq!(h0, h1);
+        let bits = |c: &[V3]| c.iter().flatten().map(|v| v.to_bits()).collect::<Vec<_>>();
+        assert_eq!(bits(&c0), bits(&c1));
+    }
+
+    #[test]
+    fn shared_ray_geometry_and_lorentz_polarization_match_the_former_formulas_bit_for_bit() {
+        let g = geometry();
+        let beam = unit(g.beam);
+        let axis = unit(g.axis);
+        let e = [0., 1., 0.];
+        let orth = cross(beam, e);
+        for (x, y) in [(10., 20.), (900.5, 1000.25), (1799., 3.), (450., 1990.)] {
+            // Former profile_geometry.
+            let p: V3 = std::array::from_fn(|i| g.origin[i] + x * g.fast[i] + y * g.slow[i]);
+            let length = norm(p);
+            let ray = p.map(|v| v / length);
+            let ee = cross(ray, beam);
+            let n = norm(ee);
+            let zeta = dot(ee, axis) / n;
+            let e1 = ee.map(|v| v / n);
+            let e2 = cross(ray, e1);
+            let scale = 180. / std::f64::consts::PI / length;
+            let planar = [
+                dot(e1, g.fast) * scale,
+                dot(e1, g.slow) * scale,
+                dot(e2, g.fast) * scale,
+                dot(e2, g.slow) * scale,
+            ];
+            let (r, a, z) = profile_geometry([x, y], g);
+            assert_eq!(r.map(f64::to_bits), ray.map(f64::to_bits));
+            assert_eq!(a.map(f64::to_bits), planar.map(f64::to_bits));
+            assert_eq!(z.to_bits(), zeta.to_bits());
+            // Former physical_factors with its fixed 0.98.
+            let p = 0.98 * (1. - dot(ray, e).powi(2)) + (1. - 0.98) * (1. - dot(ray, orth).powi(2));
+            let former = dot(cross(ray, beam), axis).abs() / p;
+            let shared = measurement::lorentz_polarization(
+                [x, y],
+                &g,
+                &measurement::Polarization::new(0.98, e),
+            )
+            .unwrap()
+            .factor;
+            assert_eq!(former.to_bits(), shared.to_bits());
         }
     }
 }

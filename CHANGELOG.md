@@ -6,6 +6,39 @@ development versions.
 
 ## Unreleased
 
+- Add `measurement` to `phasesmith-single-crystal` (feature `grains`):
+  prediction and intensity measurement for refined lattices with no cell
+  prior, space group or recipe. `predict` lists every centring-allowed
+  reflection to a resolution limit crossing the Ewald sphere inside the scan
+  on the detector, with its rocking window and `AXIAL`/`PARTIAL`/`HIDDEN`
+  flags (optional visibility test); `crossings` is the underlying
+  enumeration. `measure` streams the frames once through a `FrameReader`
+  (parallel, at most `workers` frames held, progress and cancellation through
+  a `Monitor`), sums a shoebox per reflection over its window with a local
+  background plane and counting-statistics σ, flags edge, masked, saturated,
+  overlap (any lattice), background, boundary, model, partial, hidden and
+  no-data reflections, keeps weak and negative intensities, and attaches
+  per-frame sums, the Lorentz–polarisation corrections and crystal-frame beam
+  directions. Several lattices are measured in one pass. With
+  `ProfileOptions` the same shoeboxes are profile fitted (a learned profile
+  bank on a data-derived grid, teachers by I/σ, no space group); summation
+  results do not change. `estimate_shape`, `estimate_shape_from_partials` and
+  `estimate_rocking_from_tracks` derive the rocking width and spot size;
+  `lorentz_polarization`, `polarization_factor` and `ray_geometry` expose the
+  corrections with the polarisation fraction as a parameter;
+  `merging_statistics` and `merge` give R_int, R_meas, redundancy and
+  completeness overall, by resolution shell and by I/σ. See
+  `docs/measurement.md`.
+- Add `LatticeSystem::holohedry`, `Bravais::holohedry`,
+  `LatticeSystem::laue_symbol`, `transform_index` and
+  `equivalent_representative` to `lattice_symmetry`: the point-group
+  operations of each holohedry in the conventional setting.
+- `spots::local_background::extract` no longer allocates two full-image
+  coverage arrays per call; a box-local index gives bit-identical results.
+- The native single-crystal workflow now calls the shared prediction, ray
+  geometry and Lorentz–polarisation code (results bit-identical).
+- `spots::profiles::Grid`, `Execution`, `LearningExecution` and
+  `FitExecution` implement `Debug` and `PartialEq`.
 - Add `lattice_symmetry` to `phasesmith-single-crystal` (feature `grains`):
   - `search` finds every one of the 14 Bravais types whose metric a lattice
     fits, from any primitive basis: Niggli reduction (Křivý & Gruber, with

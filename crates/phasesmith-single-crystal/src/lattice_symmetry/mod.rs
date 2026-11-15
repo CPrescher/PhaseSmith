@@ -104,7 +104,9 @@ use crate::grains::{M3, V3};
 use crate::spots::SpotError;
 use nalgebra::Matrix3;
 
+mod holohedry;
 mod refinement;
+pub use holohedry::{Rotation, equivalent_representative, transform_index};
 pub use refinement::{CellRefinement, Convergence, RefineOptions, index, refine_cell};
 
 /// Exact integer change of basis acting on rows.
