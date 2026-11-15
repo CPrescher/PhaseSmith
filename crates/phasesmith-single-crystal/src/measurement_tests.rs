@@ -879,7 +879,7 @@ fn a_monitor_cancels_between_frames() {
         &monitor,
     )
     .unwrap_err();
-    assert!(e.0.contains("cancelled"));
+    assert_eq!(error_kind(&e), ErrorKind::Cancelled);
     let read = data.reads.load(Ordering::Relaxed);
     assert!(read < 20, "{read}");
     // A failing reader stops the pass with its error.
@@ -900,7 +900,8 @@ fn a_monitor_cancels_between_frames() {
         &NoMonitor,
     )
     .unwrap_err();
-    assert_eq!(e.0, "disk");
+    assert_eq!(e.0, "frame read failed at frame 30: disk");
+    assert_eq!(error_kind(&e), ErrorKind::FrameRead);
 }
 
 // --------------------------------------------------------- bounded memory
@@ -1010,7 +1011,12 @@ fn rocking_width_from_synthetic_tracks() {
     assert!((e.rocking_sigma - sigma).abs() < 0.1 * sigma, "{e:?}");
     assert!((e.rocking_width - 6. * e.rocking_sigma).abs() < 1e-12);
     assert!(e.spot_sigma.is_none());
+    assert!(!e.at_step_floor);
     assert!(estimate_rocking_from_tracks(&tracks[..2], &g, &s).is_err());
+    // Single-frame tracks: σ 0, the step floor, and it says so.
+    let single: Vec<Vec<[f64; 4]>> = tracks.iter().map(|t| vec![t[0]]).collect();
+    let f = estimate_rocking_from_tracks(&single, &g, &s).unwrap();
+    assert!(f.at_step_floor && f.rocking_sigma == 0. && f.rocking_width == s.step);
 }
 
 #[test]
@@ -1478,5 +1484,80 @@ fn block_accumulation_equals_one_pass_and_the_pair_budget_names_its_option() {
     )
     .unwrap_err();
     assert!(e.0.contains("MeasureOptions::max_pairs"), "{}", e.0);
+    assert_eq!(error_kind(&e), ErrorKind::Other);
     assert_eq!(data.reads.load(Ordering::Relaxed), 0);
+}
+
+#[test]
+fn caller_facing_details_from_the_first_dioptas_integration() {
+    let (data, reflections, _) = synthetic_lattice(0.25);
+    // Default workers = 0: the call runs in the caller's rayon pool, so the
+    // pool bounds the frames held.
+    assert_eq!(MeasureOptions::default().workers, 0);
+    let live = AtomicUsize::new(0);
+    let peak = AtomicUsize::new(0);
+    let reader = |f: usize| {
+        let now = live.fetch_add(1, Ordering::SeqCst) + 1;
+        peak.fetch_max(now, Ordering::SeqCst);
+        data.frame(f)
+    };
+    let monitor = |_: Stage, _: usize, _: usize| {
+        live.fetch_sub(1, Ordering::SeqCst);
+        true
+    };
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(2)
+        .build()
+        .unwrap();
+    let mut m = pool
+        .install(|| {
+            measure(
+                &reader,
+                &geometry(),
+                &data.scan,
+                SHAPE,
+                &reflections,
+                &MeasureOptions::default(),
+                &monitor,
+            )
+        })
+        .unwrap();
+    assert!(peak.load(Ordering::SeqCst) <= 2);
+    // usable() needs a finite correction.
+    let i = m
+        .reflections
+        .iter()
+        .position(MeasuredReflection::usable)
+        .unwrap();
+    m.reflections[i].corrections = None;
+    assert!(!m.reflections[i].usable());
+    // Errors name the field.
+    let e = measure(
+        &reader,
+        &geometry(),
+        &data.scan,
+        SHAPE,
+        &reflections,
+        &MeasureOptions {
+            box_size: 8,
+            ..MeasureOptions::default()
+        },
+        &NoMonitor,
+    )
+    .unwrap_err();
+    assert!(e.0.contains("MeasureOptions::box_size"), "{}", e.0);
+    // Profile flag names cover every bit a fit can set.
+    let named: u32 = PROFILE_FLAG_NAMES.iter().map(|f| f.0).fold(0, |a, b| a | b);
+    let bits = crate::spots::profiles::PARTIAL
+        | crate::spots::profiles::FAILED
+        | crate::spots::profiles::NO_PROFILE
+        | crate::spots::profiles::MISMATCH
+        | EDGE
+        | MASKED
+        | SATURATED
+        | OVERLAP
+        | BACKGROUND
+        | PARTIAL
+        | MODEL;
+    assert_eq!(named, bits);
 }

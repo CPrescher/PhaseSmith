@@ -26,6 +26,11 @@ pub struct ShapeEstimate {
     pub box_size: Option<usize>,
     /// Reflections or tracks the rocking estimate rests on.
     pub reflections: usize,
+    /// `rocking_width` is the step floor (`6σ` is below one step): the data
+    /// show only that the rocking curve is narrower than a frame. From
+    /// tracks this usually means single-frame spots (σ often exactly 0);
+    /// [`estimate_shape`] can then resolve sub-frame widths.
+    pub at_step_floor: bool,
 }
 
 /// Fewest reflections or tracks for an estimate.
@@ -35,6 +40,9 @@ const MOST: usize = 2000;
 
 fn suggested(sigma: f64, scan: &Scan) -> f64 {
     (6. * sigma).max(scan.step)
+}
+fn floored(sigma: f64, scan: &Scan) -> bool {
+    6. * sigma < scan.step
 }
 
 /// Standard normal cumulative distribution (erfc approximation with
@@ -199,6 +207,7 @@ pub fn estimate_shape_from_partials(m: &Measurement, scan: &Scan) -> Result<Shap
     Ok(ShapeEstimate {
         rocking_sigma: sigma,
         rocking_width: suggested(sigma, scan),
+        at_step_floor: floored(sigma, scan),
         spot_sigma,
         box_size,
         reflections: candidates.len(),
@@ -246,6 +255,7 @@ pub fn estimate_rocking_from_tracks(
     Ok(ShapeEstimate {
         rocking_sigma: sigma,
         rocking_width: suggested(sigma, scan),
+        at_step_floor: floored(sigma, scan),
         spot_sigma: None,
         box_size: None,
         reflections: count,

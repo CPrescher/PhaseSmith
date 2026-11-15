@@ -36,7 +36,11 @@ development versions.
   `MeasureOptions::max_pairs` sets the reflection–frame pair budget;
   `merging_statistics` leaves out observations beyond `d_min`
   (`MergingStatistics::beyond_d_min`) and starts the shells at the largest
-  possible d when a lattice is given.
+  possible d when a lattice is given. `MeasureOptions::workers` defaults to 0:
+  the caller's rayon pool. `error_kind` tells cancellations and frame-read
+  failures from other errors; `PROFILE_FLAG_NAMES` names the profile flags;
+  `ShapeEstimate::at_step_floor` marks a width at the step floor; `usable()`
+  and `profile_usable()` require a finite Lorentz–polarisation correction.
 - Add `LatticeSystem::holohedry`, `Bravais::holohedry`,
   `LatticeSystem::laue_symbol`, `transform_index` and
   `equivalent_representative` to `lattice_symmetry`: the point-group

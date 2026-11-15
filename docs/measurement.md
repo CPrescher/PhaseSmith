@@ -106,8 +106,9 @@ reflections. `detector_resolution` gives the d of the farthest detector corner.
 ## Summation
 
 `measure` reads each frame that some window covers once, on
-`MeasureOptions::workers` threads (default: available parallelism, at most
-8). On a frame, every reflection whose window covers it gets a square peak box
+`MeasureOptions::workers` threads: 0 (default) runs in the caller's current
+rayon pool (rayon's global pool outside one), so a host's worker pool bounds the
+threads and the frames held; 1–64 builds a private pool for the call. On a frame, every reflection whose window covers it gets a square peak box
 of `box_size` pixels (odd, default 9) centred on the rounded predicted pixel
 and clipped to the detector. `spots::local_background::extract` then fits, per
 box, a background plane to a ring `margin` pixels wide (default 5) outside a
@@ -179,14 +180,28 @@ the extraction used to allocate on every call (`extract` keeps its signature
 and its results bit for bit). Profile fitting keeps the shoebox pixels of all
 (reflection, frame) pairs, 25 bytes per pixel, checked against
 `MeasureOptions::max_samples` (default twenty million) before any frame is
-read. Budgets: one million reflections, and `MeasureOptions::max_pairs`
+read. These pixels are kept for every reflection until the end of the pass,
+because learning needs all teachers before any fit: memory grows with the
+scan (about `25 · box_size² · (window + 2 · margin_frames)` bytes per
+reflection; 9 px boxes and four frames make 8 kB, so 50 000 reflections take
+about 400 MB). Summation alone keeps nothing per pixel. Budgets: one million
+reflections, and `MeasureOptions::max_pairs`
 (default one million, at most twenty million) reflection–frame pairs; the
 error names the option.
 
 Progress and cancellation: the `Monitor` (any `Fn(Stage, usize, usize) -> bool
 + Sync`) is called after each frame and around the profile stages; returning
 `false` stops the measurement with a cancellation error. A frame-read error
-stops it with that error.
+stops it with that error. Errors stay `spots::SpotError`; `error_kind(&e)`
+tells a cancellation (`ErrorKind::Cancelled`, message `"measurement
+cancelled"`) and a reader failure (`ErrorKind::FrameRead`, message
+`"frame read failed at frame N: "` followed by the reader's own text) from
+everything else. A host that needs its reader's typed error can keep it in its
+reader closure.
+
+`usable()` requires no summation flag, a measured intensity and a finite
+Lorentz–polarisation correction (`corrections` is `None` where it is
+singular).
 
 ## Profile fitting
 
@@ -220,8 +235,9 @@ plane covariance and an expected-count noise model, returning
 correlation, profile used). Profile flags: `profiles::PARTIAL` (mass below
 `minimum_mass`, default 0.9), `FAILED`, `NO_PROFILE`, `MISMATCH` (I > 5σ with
 χ² > 4), and overlap, edge, partial, background, masked or saturated where
-they touch the profile's footprint. `profile_usable()` requires no profile
-flag and no `AXIAL`, `HIDDEN` or `NO_DATA`.
+they touch the profile's footprint; `PROFILE_FLAG_NAMES` names them.
+`profile_usable()` requires no profile flag, no `AXIAL`, `HIDDEN` or
+`NO_DATA`, and a finite correction.
 
 If learning or fitting fails (for example too few teachers), `measure` still
 succeeds with the summation and reports `ProfileStatus::Failed(reason)`.
@@ -242,6 +258,17 @@ ray, the local angular pixel Jacobian and ζ at a pixel.
 
 ## Data-derived rocking width and spot size
 
+Recommended path: measure with profile fitting (its `margin_frames` read the
+frames around each window) and call `estimate_shape_from_partials` on that
+measurement; re-measure only when the suggestion differs from the settings
+used. On the enstatite scan this gave σ 0.0235° and spot σ 0.90 px from the
+measuring pass itself, against 0.0248° and 0.88 px from `estimate_shape`'s
+extra pass, with the same suggested width (0.5°) and box (9 px). A rocking
+curve wider than window plus margins is truncated and underestimated; use
+`estimate_shape` (one extra summation pass with a wide window) for a first
+estimate or when in doubt. `ShapeEstimate::at_step_floor` says that `6σ` is
+below one step, so the suggested width is the step itself.
+
 - `estimate_shape(frames, …)` measures the lattices' reflections by summation
   with a generous window (eight steps or 2°, whichever is wider) and calls
   `estimate_shape_from_partials`.
@@ -258,7 +285,8 @@ ray, the local angular pixel Jacobian and ζ at a pixel.
 - `estimate_rocking_from_tracks(tracks, geometry, scan)` uses linked spot
   tracks (`[x, y, ω, weight]` per detection): per track the weighted ω spread
   less `exposure²/12`, times |ζ|; median over tracks. Tracks on one frame count
-  as zero width, so with sub-frame widths it floors at the step.
+  as zero width, so with sub-frame widths it floors at the step
+  (`at_step_floor`).
 
 ## Holohedry operations and merging statistics
 

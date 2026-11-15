@@ -302,11 +302,11 @@ pub(super) fn fit(
         references[k] = true;
     }
     let execution = profiles::Execution {
-        workers: options.workers.min(32),
+        workers: options.threads().clamp(1, 32),
         geometry_cache_bytes: p.geometry_cache_bytes,
     };
     if !monitor.progress(Stage::LearningProfiles, 0, 1) {
-        return Err(invalid("measurement cancelled"));
+        return Err(invalid(super::CANCELLED));
     }
     let bank = match profiles::learn_with_execution(
         &observations,
@@ -334,7 +334,7 @@ pub(super) fn fit(
     if !monitor.progress(Stage::LearningProfiles, 1, 1)
         || !monitor.progress(Stage::FittingProfiles, 0, 1)
     {
-        return Err(invalid("measurement cancelled"));
+        return Err(invalid(super::CANCELLED));
     }
     let size = grid.size();
     let assignments: Vec<usize> = regions
@@ -382,7 +382,7 @@ pub(super) fn fit(
         });
     }
     if !monitor.progress(Stage::FittingProfiles, 1, 1) {
-        return Err(invalid("measurement cancelled"));
+        return Err(invalid(super::CANCELLED));
     }
     Ok(ProfileStatus::Fitted(ProfileModel {
         grid,

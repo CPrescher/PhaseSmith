@@ -106,6 +106,56 @@ pub const FLAG_NAMES: [(u32, &str); 11] = [
     (MODEL, "model"),
 ];
 
+/// Names of the profile-fit flags ([`ProfileIntensity::flags`]), in bit
+/// order: the summation flags that can touch a profile's footprint and the
+/// fit's own ([`crate::spots::profiles`]).
+pub const PROFILE_FLAG_NAMES: [(u32, &str); 11] = [
+    (EDGE, "edge"),
+    (MASKED, "masked"),
+    (SATURATED, "saturated"),
+    (OVERLAP, "overlap"),
+    (BACKGROUND, "background"),
+    (PARTIAL, "partial"),
+    (MODEL, "model"),
+    (crate::spots::profiles::PARTIAL, "low profile mass"),
+    (crate::spots::profiles::FAILED, "failed"),
+    (crate::spots::profiles::NO_PROFILE, "no profile"),
+    (crate::spots::profiles::MISMATCH, "mismatch"),
+];
+
+/// Message of a cancellation by the [`Monitor`].
+const CANCELLED: &str = "measurement cancelled";
+/// Prefix of an error returned by the [`FrameReader`].
+const FRAME_READ: &str = "frame read failed at frame ";
+
+/// What kind of failure a measurement error is ([`error_kind`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum ErrorKind {
+    /// The [`Monitor`] returned `false`.
+    Cancelled,
+    /// The [`FrameReader`] failed; the message ends with its own error text.
+    FrameRead,
+    /// Invalid input or options, an exceeded budget or a numerical failure.
+    Other,
+}
+
+/// Classify an error of [`measure`], [`estimate_shape`] and the other
+/// measurement functions. The messages of cancellations
+/// (`"measurement cancelled"`) and frame-read failures (`"frame read failed
+/// at frame N: …"`) are stable. A host that needs its reader's typed error can
+/// keep it in its reader closure.
+#[must_use]
+pub fn error_kind(error: &SpotError) -> ErrorKind {
+    if error.0 == CANCELLED {
+        ErrorKind::Cancelled
+    } else if error.0.starts_with(FRAME_READ) {
+        ErrorKind::FrameRead
+    } else {
+        ErrorKind::Other
+    }
+}
+
 /// A rotation scan: frame `i` is exposed from `start + i·step` to that plus
 /// `exposure` (degrees). Frames listed in `excluded` are never read; a
 /// rocking window that touches one is [`PARTIAL`].

@@ -175,8 +175,10 @@ pub struct MeasureOptions {
     pub polarization: Polarization,
     /// Profile fitting on the same shoeboxes; `None` (default) sums only.
     pub profile: Option<ProfileOptions>,
-    /// Worker threads (1–64), also the most frames held at a time. Default:
-    /// available parallelism, at most 8.
+    /// Worker threads, also the most frames held at a time. 0 (default) runs
+    /// in the caller's current rayon pool (rayon's global pool outside one),
+    /// so a host's own worker pool bounds the work; 1–64 builds a private
+    /// pool of that size for the call.
     pub workers: usize,
     /// Most shoebox pixels kept for profile fitting (one sample is 25 bytes).
     /// Default twenty million.
@@ -193,19 +195,36 @@ impl Default for MeasureOptions {
             noise: Noise::default(),
             polarization: Polarization::default(),
             profile: None,
-            workers: std::thread::available_parallelism().map_or(1, |n| n.get().min(8)),
+            workers: 0,
             max_samples: 20_000_000,
             max_pairs: 1_000_000,
         }
     }
 }
 impl MeasureOptions {
+    /// Threads the call will use.
+    pub(super) fn threads(&self) -> usize {
+        if self.workers == 0 {
+            rayon::current_num_threads()
+        } else {
+            self.workers
+        }
+    }
     fn check(&self) -> Result<()> {
         let b = &self.background;
-        if self.box_size.is_multiple_of(2)
-            || !(3..=101).contains(&self.box_size)
-            || !(1..=64).contains(&self.workers)
-            || b.gap > 128
+        if self.box_size.is_multiple_of(2) || !(3..=101).contains(&self.box_size) {
+            return Err(invalid(format!(
+                "invalid measurement options: MeasureOptions::box_size must be odd and 3–101, got {}",
+                self.box_size
+            )));
+        }
+        if self.workers > 64 {
+            return Err(invalid(format!(
+                "invalid measurement options: MeasureOptions::workers must be 0–64, got {}",
+                self.workers
+            )));
+        }
+        if b.gap > 128
             || !(1..=128).contains(&b.margin)
             || b.minimum < 3
             || !(2.0..=10.0).contains(&b.clip)
@@ -218,7 +237,11 @@ impl MeasureOptions {
             || self.max_pairs == 0
             || self.max_pairs > 20_000_000
         {
-            return Err(invalid("invalid measurement options"));
+            return Err(invalid(
+                "invalid measurement options: background (gap ≤ 128, margin 1–128, minimum ≥ 3, \
+                 clip 2–10), noise (finite gain > 0, read noise ≥ 0, finite saturation), \
+                 max_samples ≤ 1e8 or max_pairs 1–2e7",
+            ));
         }
         if let Some(p) = &self.profile {
             p.check()?;
@@ -315,17 +338,19 @@ pub struct MeasuredReflection {
     pub profile: Option<ProfileIntensity>,
 }
 impl MeasuredReflection {
-    /// Summation usable: no flag and a measured intensity.
+    /// Summation usable: no flag, a measured intensity and a finite
+    /// Lorentz–polarisation correction.
     #[must_use]
     pub fn usable(&self) -> bool {
-        self.flags == 0 && self.summation.is_measured()
+        self.flags == 0 && self.summation.is_measured() && self.corrections.is_some()
     }
-    /// Profile intensity usable: fitted without profile flags and no
+    /// Profile intensity usable: fitted without profile flags, no
     /// prediction flag ([`super::AXIAL`], [`super::HIDDEN`]) nor
-    /// [`NO_DATA`].
+    /// [`NO_DATA`], and a finite Lorentz–polarisation correction.
     #[must_use]
     pub fn profile_usable(&self) -> bool {
         self.flags & (super::AXIAL | HIDDEN | NO_DATA) == 0
+            && self.corrections.is_some()
             && self
                 .profile
                 .is_some_and(|p| p.flags == 0 && p.intensity.is_measured())
@@ -469,7 +494,8 @@ fn extended(r: &Reflection, margin: usize, scan: &Scan) -> ([usize; 2], bool) {
 /// (every lattice at once) are summed and a background plane is subtracted
 /// ([`crate::spots::local_background::extract`]); the frames are added with
 /// [`crate::spots::integration::accumulate`]. Frames run in parallel on
-/// [`MeasureOptions::workers`] threads, each frame is read once and dropped
+/// [`MeasureOptions::workers`] threads (by default the caller's rayon
+/// pool), each frame is read once and dropped
 /// after use; nothing per pixel of the full image is kept or allocated
 /// besides the frame itself. With [`MeasureOptions::profile`], the shoebox
 /// pixels are kept (bounded by [`MeasureOptions::max_samples`]) and
@@ -547,9 +573,11 @@ pub fn measure(
     let bg = options.background;
     let one = |f: usize| -> Result<FrameRows> {
         if cancelled.load(Ordering::Relaxed) {
-            return Err(invalid("measurement cancelled"));
+            return Err(invalid(super::CANCELLED));
         }
-        let frame = frames.read(f)?;
+        let frame = frames
+            .read(f)
+            .map_err(|e| invalid(format!("{}{f}: {}", super::FRAME_READ, e.0)))?;
         if frame.values.len() != pixels || frame.mask.len() != pixels {
             return Err(invalid(format!("frame {f} has the wrong shape")));
         }
@@ -609,7 +637,7 @@ pub fn measure(
         let current = done.fetch_add(1, Ordering::Relaxed) + 1;
         if !monitor.progress(Stage::Measuring, current, total) {
             cancelled.store(true, Ordering::Relaxed);
-            return Err(invalid("measurement cancelled"));
+            return Err(invalid(super::CANCELLED));
         }
         Ok(FrameRows {
             frame: f,
@@ -623,18 +651,23 @@ pub fn measure(
             hidden,
         })
     };
-    let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(options.workers)
-        .build()
-        .map_err(|e| invalid(format!("measurement thread pool: {e}")))?;
-    let rows = pool.install(|| {
+    let run = || {
         wanted
             .par_iter()
             .map(|&f| one(f))
             .collect::<Result<Vec<_>>>()
-    })?;
+    };
+    let rows = if options.workers == 0 {
+        run()?
+    } else {
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(options.workers)
+            .build()
+            .map_err(|e| invalid(format!("measurement thread pool: {e}")))?
+            .install(run)?
+    };
     if cancelled.load(Ordering::Relaxed) {
-        return Err(invalid("measurement cancelled"));
+        return Err(invalid(super::CANCELLED));
     }
 
     // Summation over the core window.
