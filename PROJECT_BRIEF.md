@@ -2,9 +2,9 @@
 
 ## Purpose and current release
 
-The 0.8.3 source update exposes native multi-grain lattice discovery as
-`phasesmith-single-crystal::grains` and makes spot detection faster with
-bit-identical results; existing results are unchanged. The release tag and
+The 0.8.4 source update adds an opt-in merge of discovered lattices that are
+domains of one crystal (`grains::Options::merge_angle`, `grains::merge_domains`);
+defaults and existing results are unchanged. The release tag and
 registry uploads require a separate publication decision.
 
 The 0.8 public Rust package boundary groups detector/integration, structure-search
@@ -43,7 +43,7 @@ inclusion, superseded work and intentionally separate historical experiments.
 PhaseSmith is a powder and single-crystal diffraction library with native Rust
 numerical kernels and an optional typed Python/NumPy frontend. GUI applications
 own presentation, acquisition configuration and application state. The current
-source version is **0.8.3**. Registry records and the tagged release, rather than
+source version is **0.8.4**. Registry records and the tagged release, rather than
 source-version text, establish publication status.
 
 Powder workflows include profile/background evaluation, crystallography,
