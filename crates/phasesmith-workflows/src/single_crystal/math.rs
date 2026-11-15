@@ -61,10 +61,6 @@ pub fn least(h: &[V3], q: &[V3]) -> Result<M3> {
         .map_err(|e| Error(e.into()))?;
     Ok(std::array::from_fn(|i| std::array::from_fn(|j| x[(i, j)])))
 }
-pub fn condition(a: M3) -> f64 {
-    let s = matrix(a).svd(false, false).singular_values;
-    s.max() / s.min()
-}
 pub fn median(a: &[f64]) -> f64 {
     let mut x = a.to_vec();
     x.sort_by(f64::total_cmp);

@@ -50,12 +50,31 @@ pixels are excluded. Let n be the number of usable background samples:
 
 Strict inequalities define threshold boundaries. A first pass uses all usable
 background pixels; a second pass excludes first-pass strong pixels from the
-background only. Summed-area tables implement these sums. There are exactly
+background only. Summed-area tables implement these sums. When every usable
+value and variance is an integer and both absolute totals are below 2^53
+(integer counts with unit gain and no read noise, or an integer supplied
+variance), every table entry and window difference is the exact integer. The
+second pass can then be evaluated locally: a pixel's background changes only if
+a first-pass strong pixel lies in its annulus. Those pixels get the first-pass
+sums less the strong pixels' contributions; all others keep their first-pass
+classification. The result is bit-identical to rebuilding the tables. The local
+pass costs about one update per strong pixel and annulus pixel, so it runs only
+while that is at most an eighth of the pixels. Otherwise, and whenever the sums
+are not exact, the second pass rebuilds the tables. `detect_two_pass` always rebuilds, for
+verification and timing. There are exactly
 two passes; this is an independently implemented local-mean detector, not a
 claim to reproduce CrysAlisPro or DIALS. Eight-connected components are found
 in row-major order. Components below `min_pixels` are counted separately;
 components above `max_pixels` are returned with a LARGE flag. Exceeding
 `max_spots` fails explicitly, without silent truncation.
+
+In Rust, `detect` is `detect_components` followed by `measure_components`.
+`detect_components` returns every component (tight bounds and pixel count),
+before the size rules and extraction. `measure_components` applies
+`min_pixels`, `max_pixels` and `max_spots`, pads and extracts. A host can
+therefore change the minimum size, padding or background margin without
+detecting again. The result equals a fresh `detect` with the same threshold
+and support options.
 
 Each accepted component's bounding box is padded by `padding` pixels, clipped
 to the detector and used as its finite integration aperture. Every signal box

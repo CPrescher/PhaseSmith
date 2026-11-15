@@ -15,28 +15,29 @@ categories = ["science"]
 [dependencies]
 serde_json = { version = "1", optional = true }
 sha2 = { version = "0.10", optional = true }
-phasesmith-single-crystal = { version = "0.8.2", path = "../phasesmith-single-crystal", default-features = false, optional = true }
-phasesmith-hdf5 = { version = "0.8.2", path = "../phasesmith-hdf5", optional = true }
-phasesmith-core = { version = "0.8.2", path = "../phasesmith-core" }
-phasesmith-crystallography = { version = "0.8.2", path = "../phasesmith-crystallography" }
-phasesmith-engine = { version = "0.8.2", path = "../phasesmith-engine" }
-phasesmith-execution = { version = "0.8.2", path = "../phasesmith-execution" }
-phasesmith-io = { version = "0.8.2", path = "../phasesmith-io" }
-phasesmith-model = { version = "0.8.2", path = "../phasesmith-model" }
-phasesmith-persistence = { version = "0.8.2", path = "../phasesmith-persistence" }
-phasesmith-workflows = { version = "0.8.2", path = "../phasesmith-workflows" }
+phasesmith-single-crystal = { version = "0.8.3", path = "../phasesmith-single-crystal", default-features = false, optional = true }
+phasesmith-hdf5 = { version = "0.8.3", path = "../phasesmith-hdf5", optional = true }
+phasesmith-core = { version = "0.8.3", path = "../phasesmith-core" }
+phasesmith-crystallography = { version = "0.8.3", path = "../phasesmith-crystallography" }
+phasesmith-engine = { version = "0.8.3", path = "../phasesmith-engine" }
+phasesmith-execution = { version = "0.8.3", path = "../phasesmith-execution" }
+phasesmith-io = { version = "0.8.3", path = "../phasesmith-io" }
+phasesmith-model = { version = "0.8.3", path = "../phasesmith-model" }
+phasesmith-persistence = { version = "0.8.3", path = "../phasesmith-persistence" }
+phasesmith-workflows = { version = "0.8.3", path = "../phasesmith-workflows" }
 
 [lints]
 workspace = true
 
 [features]
 default = ["single-crystal"]
-single-crystal = ["spots", "solution", "row-search", "phasesmith-workflows/single-crystal"]
+single-crystal = ["spots", "solution", "row-search", "grains", "phasesmith-workflows/single-crystal"]
 single-crystal-files = ["single-crystal", "hdf5"]
 hdf5 = ["dep:phasesmith-hdf5", "dep:serde_json", "dep:sha2"]
 spots = ["phasesmith-single-crystal/spots"]
 solution = ["phasesmith-single-crystal/solution"]
 row-search = ["phasesmith-single-crystal/row-search"]
+grains = ["phasesmith-single-crystal/grains"]
 
 [dev-dependencies]
 serde_json = "1"

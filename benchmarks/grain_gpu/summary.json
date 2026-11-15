@@ -1,0 +1,297 @@
+{
+  "hardware": "Apple M4 Pro: 14 CPU cores, 20 GPU cores, 48 GB",
+  "conclusion": "No measured speed improvement from this GPU FFT/maxima prototype. Keep CPU production path.",
+  "provenance": {
+    "head": "4c1def58bd23a0d78783b0031530256790183145",
+    "branch": "codex/automatic-structure-recovery",
+    "production_files": {
+      "/Users/clemens/Programming/PhaseSmith/python/phasesmith/_core.abi3.so": "fafc08aa1aad9bed721a1b21a9171a99e16ff0fef09f1966d0ae8f3a7c1b6f1f",
+      "/Users/clemens/Programming/PhaseSmith/python/phasesmith/single_crystal/grains.py": "6c326a84931abb1461759e7eef42a4391111ac3b6b7e85e1e9b9216ab8f99547",
+      "/Users/clemens/Programming/PhaseSmith/crates/phasesmith-single-crystal/src/spots/fft.rs": "ebbb0a5e13acbc3b83bfc5e588fc6c49f9b97c2bedd44655291d733fa28ebd63"
+    },
+    "baseline_worktree": "Contains unrelated uncommitted automatic structure-recovery work; not modified by this experiment."
+  },
+  "single": [
+    {
+      "case": "synthetic-two-grain",
+      "cpu_median": 0.1556329589948291,
+      "gpu_median": 0.16598045799764805,
+      "cpu_over_gpu": 0.9376583296151311,
+      "cpu_fft_median": 0.009500960004515946,
+      "gpu_fft_median": 0.021078958016005345,
+      "gpu_over_cpu": 1.0664865531674608,
+      "cpu_fft_fraction": 0.06104722332518021
+    },
+    {
+      "case": "dataset-1-C",
+      "cpu_median": 0.07912591700733174,
+      "gpu_median": 0.09140604200365487,
+      "cpu_over_gpu": 0.8656530276649315,
+      "cpu_fft_median": 0.00750349898589775,
+      "gpu_fft_median": 0.017511542013380677,
+      "gpu_over_cpu": 1.1551972534509176,
+      "cpu_fft_fraction": 0.09482985183226986
+    },
+    {
+      "case": "dataset-2-A",
+      "cpu_median": 0.07313320798857603,
+      "gpu_median": 0.08101241700933315,
+      "cpu_over_gpu": 0.9027407240565433,
+      "cpu_fft_median": 0.005849499997566454,
+      "gpu_fft_median": 0.013555833007558249,
+      "gpu_over_cpu": 1.1077377738166212,
+      "cpu_fft_fraction": 0.07998418445530504
+    },
+    {
+      "case": "dataset-2-C",
+      "cpu_median": 0.07069366700307,
+      "gpu_median": 0.07689337500778493,
+      "cpu_over_gpu": 0.9193726637166434,
+      "cpu_fft_median": 0.005873916001291946,
+      "gpu_fft_median": 0.013171124010114,
+      "gpu_over_cpu": 1.0876982092956882,
+      "cpu_fft_fraction": 0.08308970591434817
+    }
+  ],
+  "ensemble": [
+    {
+      "case": "synthetic-two-grain",
+      "cpu_median": 2.519788999998127,
+      "gpu_median": 2.6137596249900525,
+      "cpu_over_gpu": 0.9640477172829988,
+      "cpu_fft_median": 0.05570991392596625,
+      "gpu_fft_median": 0.16436600001179613,
+      "gpu_over_cpu": 1.0372930531056352,
+      "cpu_fft_fraction": 0.02210895988751743
+    },
+    {
+      "case": "dataset-1-C",
+      "cpu_median": 1.1214204999996582,
+      "gpu_median": 1.2233343749976484,
+      "cpu_over_gpu": 0.9166917262517158,
+      "cpu_fft_median": 0.06297391789848916,
+      "gpu_fft_median": 0.17108454598928802,
+      "gpu_over_cpu": 1.0908792687471125,
+      "cpu_fft_fraction": 0.05615549020060571
+    },
+    {
+      "case": "dataset-2-A",
+      "cpu_median": 1.1874377919884864,
+      "gpu_median": 1.198420165994321,
+      "cpu_over_gpu": 0.9908359569394241,
+      "cpu_fft_median": 0.06561499900999479,
+      "gpu_fft_median": 0.1570568340976024,
+      "gpu_over_cpu": 1.0092487994570591,
+      "cpu_fft_fraction": 0.05525763071774543
+    },
+    {
+      "case": "dataset-2-C",
+      "cpu_median": 1.1880861670069862,
+      "gpu_median": 1.3909304169937968,
+      "cpu_over_gpu": 0.8541665007044595,
+      "cpu_fft_median": 0.06649266599561088,
+      "gpu_fft_median": 0.1723160429537529,
+      "gpu_over_cpu": 1.170731934787031,
+      "cpu_fft_fraction": 0.055966198279303665
+    }
+  ],
+  "detector": [
+    {
+      "native_refinement": false,
+      "cpu_seconds": 36.8707994580036,
+      "gpu_seconds": 39.563624000002164
+    },
+    {
+      "native_refinement": true,
+      "cpu_seconds": 35.41885183399427,
+      "gpu_seconds": 37.483815334009705
+    }
+  ],
+  "full_receipts": "/Users/clemens/Codex/2026-11-12/phasesmith-grain-gpu",
+  "caveats": [
+    "Alternating paired measurements on a shared host, not idle-host confidence intervals.",
+    "Same serial scheduling and worker budgets for each CPU/GPU pair; no multiprocessing GPU service.",
+    "Measured-coordinate fixtures are exposed historical training populations, not raw example 4/5 detector reruns.",
+    "GPU arithmetic changes raw FFT bits and some tied peak ordering; final labels and acceptance are separately audited.",
+    "Host preparation in this prototype uses NumPy; a native staging implementation may reduce that cost."
+  ],
+  "parity": {
+    "paired_complete_searches": 38,
+    "labels_exact": true,
+    "acceptance_exact": true,
+    "candidate_counts_equal": true,
+    "accepted_models_checked": 93,
+    "fitted_basis_bitwise_equal": 82,
+    "other_fitted_bases_exact_unimodular": 11,
+    "max_lattice_equivalence_error": 0.0,
+    "transformed_hkl_exact": true,
+    "max_residual_difference": 0.0,
+    "all_result_fields_bitwise_equal": false
+  },
+  "kernels": [
+    {
+      "cloud": "synthetic-two-grain",
+      "grid": 128,
+      "cpu_seconds": 0.0030100409931037575,
+      "gpu_seconds": 0.005817208002554253,
+      "cpu_over_gpu": 0.5174374015476311,
+      "gpu_prepare_seconds": 0.0027516249974723905,
+      "gpu_submit_wait_compact_seconds": 0.002524875002563931,
+      "all_peak_sets_equal": true,
+      "all_peak_order_equal": false,
+      "all_maxima_counts_equal": true
+    },
+    {
+      "cloud": "synthetic-two-grain",
+      "grid": 192,
+      "cpu_seconds": 0.00435858299897518,
+      "gpu_seconds": 0.007417625005473383,
+      "cpu_over_gpu": 0.5875981861794078,
+      "gpu_prepare_seconds": 0.0037340419949032366,
+      "gpu_submit_wait_compact_seconds": 0.003042500000447035,
+      "all_peak_sets_equal": true,
+      "all_peak_order_equal": false,
+      "all_maxima_counts_equal": true
+    },
+    {
+      "cloud": "synthetic-two-grain",
+      "grid": 256,
+      "cpu_seconds": 0.005251166992820799,
+      "gpu_seconds": 0.009466999996220693,
+      "cpu_over_gpu": 0.5546812078712485,
+      "gpu_prepare_seconds": 0.005285249993903562,
+      "gpu_submit_wait_compact_seconds": 0.003641333998530172,
+      "all_peak_sets_equal": true,
+      "all_peak_order_equal": false,
+      "all_maxima_counts_equal": true
+    },
+    {
+      "cloud": "diffuse-12000",
+      "grid": 128,
+      "cpu_seconds": 0.0035913330066250637,
+      "gpu_seconds": 0.012914999999338761,
+      "cpu_over_gpu": 0.2780745649871419,
+      "gpu_prepare_seconds": 0.009433874991373159,
+      "gpu_submit_wait_compact_seconds": 0.0024327080027433112,
+      "all_peak_sets_equal": true,
+      "all_peak_order_equal": false,
+      "all_maxima_counts_equal": true
+    },
+    {
+      "cloud": "diffuse-12000",
+      "grid": 192,
+      "cpu_seconds": 0.00618666599621065,
+      "gpu_seconds": 0.015773000006447546,
+      "cpu_over_gpu": 0.39223140770187787,
+      "gpu_prepare_seconds": 0.011270500006503426,
+      "gpu_submit_wait_compact_seconds": 0.0036362499959068373,
+      "all_peak_sets_equal": true,
+      "all_peak_order_equal": false,
+      "all_maxima_counts_equal": true
+    },
+    {
+      "cloud": "diffuse-12000",
+      "grid": 256,
+      "cpu_seconds": 0.008850541998981498,
+      "gpu_seconds": 0.01846175000537187,
+      "cpu_over_gpu": 0.4793988650266757,
+      "gpu_prepare_seconds": 0.01305654201132711,
+      "gpu_submit_wait_compact_seconds": 0.0041086249984800816,
+      "all_peak_sets_equal": true,
+      "all_peak_order_equal": false,
+      "all_maxima_counts_equal": true
+    },
+    {
+      "cloud": "conditioned",
+      "grid": 128,
+      "cpu_seconds": 0.002699458011193201,
+      "gpu_seconds": 0.005488124996190891,
+      "cpu_over_gpu": 0.49187254537146974,
+      "gpu_prepare_seconds": 0.0023426659899996594,
+      "gpu_submit_wait_compact_seconds": 0.00211483400198631,
+      "all_peak_sets_equal": true,
+      "all_peak_order_equal": false,
+      "all_maxima_counts_equal": true
+    },
+    {
+      "cloud": "conditioned",
+      "grid": 192,
+      "cpu_seconds": 0.003419291999307461,
+      "gpu_seconds": 0.006468125007813796,
+      "cpu_over_gpu": 0.5286372782184632,
+      "gpu_prepare_seconds": 0.0030898749973857775,
+      "gpu_submit_wait_compact_seconds": 0.002560458000516519,
+      "all_peak_sets_equal": true,
+      "all_peak_order_equal": false,
+      "all_maxima_counts_equal": true
+    },
+    {
+      "cloud": "conditioned",
+      "grid": 256,
+      "cpu_seconds": 0.004720625001937151,
+      "gpu_seconds": 0.007803417000104673,
+      "cpu_over_gpu": 0.6049433218644895,
+      "gpu_prepare_seconds": 0.004613291006535292,
+      "gpu_submit_wait_compact_seconds": 0.002392082998994738,
+      "all_peak_sets_equal": true,
+      "all_peak_order_equal": false,
+      "all_maxima_counts_equal": true
+    }
+  ],
+  "source_sha256": {
+    "test_metal_fft.py": "5f492814ddc5c9ab4e1a119cd9738ab2a23d0ea2b5d6c01f99ff44c7e4b620c1",
+    "summarize.py": "0de4d27b72e24eba0d85a204256f89478d347e2a607c1820b9383294d90e032a",
+    "metal_fft.py": "638b4219eee7e9cd2738391dfea0432b2604454245065d0ed5c4e06e8c949d51",
+    "kernels.py": "dc87f7db53372de50c7bc493da237837fef30f8e8cac1082180ac1d9f46ad13b",
+    "compare.py": "27d30ccf74b6995baa8cfb90d78e7bf285ae2787266ebd259d3ac0b7785ef9f6",
+    "detector_control.py": "47751da533666ea6fc75d79c341de9e348794c6eb34de5ccdf2a851a21046021"
+  },
+  "checks": [
+    {
+      "check": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features"
+      ],
+      "exit_code": 0,
+      "seconds": 47.293134689331055
+    },
+    {
+      "check": "cargo-test",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--all-features"
+      ],
+      "exit_code": 0,
+      "seconds": 170.7131040096283
+    },
+    {
+      "check": "pytest",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "exit_code": 0,
+      "seconds": 120.34772610664368
+    },
+    {
+      "check": "prototype-tests",
+      "command": [
+        "/Users/clemens/Codex/2026-11-12/phasesmith-grain-gpu/venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "benchmarks/grain_gpu/test_metal_fft.py"
+      ],
+      "exit_code": 0,
+      "seconds": 1.1210498809814453
+    }
+  ]
+}

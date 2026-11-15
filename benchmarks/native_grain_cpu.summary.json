@@ -1,0 +1,165 @@
+{
+  "repeats": 12,
+  "batch_size": 5,
+  "fingerprinted_executions": 1170,
+  "before_after_pairs": 585,
+  "executables": {
+    "baseline": "0a7f30886af2deae48cae629587536cf2ca9dbe71bbce843807a2bea95fef556",
+    "optimized": "c1ae5ff2d6c6b3ef42ca4e3ed4935df2d569ded3f625fcb2321832dd1111b1d2"
+  },
+  "cases": [
+    {
+      "case": "discovery-12000",
+      "baseline": {
+        "median": 0.231298208,
+        "std": 0.007475671107967544,
+        "minimum": 0.22813475,
+        "maximum": 0.248072209
+      },
+      "optimized": {
+        "median": 0.23046437549999998,
+        "std": 0.005062595446123766,
+        "minimum": 0.223610875,
+        "maximum": 0.24173375
+      },
+      "reduction_percent": 0.3605010636312467,
+      "outcome": "grains=5 accepted=2"
+    },
+    {
+      "case": "discovery-2674",
+      "baseline": {
+        "median": 0.0912398755,
+        "std": 0.004221074146883219,
+        "minimum": 0.088461708,
+        "maximum": 0.102639709
+      },
+      "optimized": {
+        "median": 0.0914822085,
+        "std": 0.0048475913344962806,
+        "minimum": 0.086840459,
+        "maximum": 0.103171125
+      },
+      "reduction_percent": -0.26559988017520464,
+      "outcome": "grains=5 accepted=2"
+    },
+    {
+      "case": "discovery-6000",
+      "baseline": {
+        "median": 0.176925958,
+        "std": 0.006833549552975824,
+        "minimum": 0.171770167,
+        "maximum": 0.191288208
+      },
+      "optimized": {
+        "median": 0.17477533350000002,
+        "std": 0.00671609526870343,
+        "minimum": 0.17077675,
+        "maximum": 0.19060225
+      },
+      "reduction_percent": 1.2155505751168416,
+      "outcome": "grains=5 accepted=2"
+    },
+    {
+      "case": "discovery-dataset-1-C",
+      "baseline": {
+        "median": 0.0635696045,
+        "std": 0.001412837711476693,
+        "minimum": 0.061899291,
+        "maximum": 0.066308
+      },
+      "optimized": {
+        "median": 0.063550313,
+        "std": 0.0016190894663877322,
+        "minimum": 0.061576875,
+        "maximum": 0.066134666
+      },
+      "reduction_percent": 0.030347050531054354,
+      "outcome": "grains=4 accepted=2"
+    },
+    {
+      "case": "discovery-dataset-2-A",
+      "baseline": {
+        "median": 0.04684,
+        "std": 0.0015557879578728736,
+        "minimum": 0.044882042,
+        "maximum": 0.049654833
+      },
+      "optimized": {
+        "median": 0.046062604,
+        "std": 0.0013800341886909327,
+        "minimum": 0.044591875,
+        "maximum": 0.04994475
+      },
+      "reduction_percent": 1.6596840307429583,
+      "outcome": "grains=2 accepted=2"
+    },
+    {
+      "case": "discovery-dataset-2-C",
+      "baseline": {
+        "median": 0.050177688,
+        "std": 0.0014915239188968907,
+        "minimum": 0.0482165,
+        "maximum": 0.053175917
+      },
+      "optimized": {
+        "median": 0.05014625,
+        "std": 0.0014962119481315259,
+        "minimum": 0.049152333,
+        "maximum": 0.054023625
+      },
+      "reduction_percent": 0.06265334504849118,
+      "outcome": "grains=3 accepted=3"
+    },
+    {
+      "case": "index-1800",
+      "baseline": {
+        "median": 0.159773688,
+        "std": 0.004179807194941515,
+        "minimum": 0.153801959,
+        "maximum": 0.167914958
+      },
+      "optimized": {
+        "median": 0.1565342915,
+        "std": 0.004816205225317402,
+        "minimum": 0.152958709,
+        "maximum": 0.169077875
+      },
+      "reduction_percent": 2.0274905965743217,
+      "outcome": "grains=5 selected=0 fit_counts=[462, 258] competitors=1"
+    },
+    {
+      "case": "index-5000",
+      "baseline": {
+        "median": 0.222271021,
+        "std": 0.007307430371597025,
+        "minimum": 0.217055333,
+        "maximum": 0.244412792
+      },
+      "optimized": {
+        "median": 0.222538604,
+        "std": 0.005910241400191894,
+        "minimum": 0.215524209,
+        "maximum": 0.234462041
+      },
+      "reduction_percent": -0.12038591391541065,
+      "outcome": "grains=5 selected=1 fit_counts=[1285, 715] competitors=2"
+    },
+    {
+      "case": "index-600",
+      "baseline": {
+        "median": 0.12327199999999999,
+        "std": 0.0028194741782174744,
+        "minimum": 0.119862375,
+        "maximum": 0.128278334
+      },
+      "optimized": {
+        "median": 0.1248973125,
+        "std": 0.002326639198324151,
+        "minimum": 0.121344708,
+        "maximum": 0.1291295
+      },
+      "reduction_percent": -1.3184766208060195,
+      "outcome": "error=no training-supported primitive setting matches the declared cell prior"
+    }
+  ]
+}

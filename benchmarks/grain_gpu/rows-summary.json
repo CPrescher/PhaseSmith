@@ -1,0 +1,421 @@
+{
+  "hardware": "Apple M4 Pro, 14 CPU cores, 20 GPU cores, 48 GB",
+  "conclusion": "The tested GPU row-preparation paths are slower than CPU on all cases; production unchanged.",
+  "timing_scope": "Complete row-based grain finding from an existing position cloud; CPU nomination and phase/spacing remain; per-group CPU FFT, ownership and acceptance included. Three alternating warm pairs plus separately recorded case-first calls.",
+  "panels": {
+    "cpu_keys_gpu_sort_full": [
+      {
+        "case": "synthetic-2674",
+        "cpu_seconds": 0.12725979200331494,
+        "gpu_seconds": 0.1492260829982115,
+        "cpu_over_gpu": 0.8527985821677044,
+        "all_exact": true,
+        "effective_smart": true
+      },
+      {
+        "case": "dataset-1-C",
+        "cpu_seconds": 0.05178979199263267,
+        "gpu_seconds": 0.1481729999941308,
+        "cpu_over_gpu": 0.3495224635708536,
+        "all_exact": true,
+        "effective_smart": false
+      },
+      {
+        "case": "dataset-2-A",
+        "cpu_seconds": 0.08110016700811684,
+        "gpu_seconds": 0.19489170800079592,
+        "cpu_over_gpu": 0.41612938713526815,
+        "all_exact": true,
+        "effective_smart": false
+      },
+      {
+        "case": "dataset-2-C",
+        "cpu_seconds": 0.06987424999533687,
+        "gpu_seconds": 0.16912899998715147,
+        "cpu_over_gpu": 0.41314174387979075,
+        "all_exact": true,
+        "effective_smart": false
+      },
+      {
+        "case": "synthetic-6000",
+        "cpu_seconds": 0.2476434580021305,
+        "gpu_seconds": 0.3189924579928629,
+        "cpu_over_gpu": 0.7763301350769592,
+        "all_exact": true,
+        "effective_smart": true
+      },
+      {
+        "case": "synthetic-12000",
+        "cpu_seconds": 0.6316013339965139,
+        "gpu_seconds": 1.1296082500048215,
+        "cpu_over_gpu": 0.5591330746688669,
+        "all_exact": true,
+        "effective_smart": true
+      }
+    ],
+    "gpu_projection_full": [
+      {
+        "case": "synthetic-2674",
+        "cpu_seconds": 0.12616687500849366,
+        "gpu_seconds": 0.14993245800724253,
+        "cpu_over_gpu": 0.8414914067666331,
+        "all_exact": true,
+        "effective_smart": true
+      },
+      {
+        "case": "dataset-1-C",
+        "cpu_seconds": 0.08508108300156891,
+        "gpu_seconds": 0.24377091700443998,
+        "cpu_over_gpu": 0.349020646298095,
+        "all_exact": true,
+        "effective_smart": false
+      },
+      {
+        "case": "dataset-2-A",
+        "cpu_seconds": 0.12281325001094956,
+        "gpu_seconds": 0.35521704200073145,
+        "cpu_over_gpu": 0.34574143548748054,
+        "all_exact": true,
+        "effective_smart": false
+      },
+      {
+        "case": "dataset-2-C",
+        "cpu_seconds": 0.07461383400368504,
+        "gpu_seconds": 0.17319137499725912,
+        "cpu_over_gpu": 0.4308172621463734,
+        "all_exact": true,
+        "effective_smart": false
+      },
+      {
+        "case": "synthetic-6000",
+        "cpu_seconds": 0.2486845420062309,
+        "gpu_seconds": 0.31509170899516903,
+        "cpu_over_gpu": 0.7892449560138814,
+        "all_exact": true,
+        "effective_smart": true
+      },
+      {
+        "case": "synthetic-12000",
+        "cpu_seconds": 0.6367716669919901,
+        "gpu_seconds": 1.0481027079949854,
+        "cpu_over_gpu": 0.6075470105502644,
+        "all_exact": true,
+        "effective_smart": true
+      }
+    ],
+    "cpu_keys_gpu_sort_grouping": [
+      {
+        "case": "synthetic-2674",
+        "cpu_seconds": 0.027325709001161158,
+        "gpu_seconds": 0.06080024999391753,
+        "cpu_over_gpu": 0.4494341553512498,
+        "all_exact": true,
+        "effective_smart": true
+      },
+      {
+        "case": "dataset-1-C",
+        "cpu_seconds": 0.06381249999685679,
+        "gpu_seconds": 0.1291309160005767,
+        "cpu_over_gpu": 0.4941690338243384,
+        "all_exact": true,
+        "effective_smart": false
+      },
+      {
+        "case": "dataset-2-A",
+        "cpu_seconds": 0.10536716699425597,
+        "gpu_seconds": 0.23224658399703912,
+        "cpu_over_gpu": 0.4536866169605288,
+        "all_exact": true,
+        "effective_smart": false
+      },
+      {
+        "case": "dataset-2-C",
+        "cpu_seconds": 0.06917054200312123,
+        "gpu_seconds": 0.14925150001363363,
+        "cpu_over_gpu": 0.4634495599494995,
+        "all_exact": true,
+        "effective_smart": false
+      },
+      {
+        "case": "synthetic-6000",
+        "cpu_seconds": 0.1274912079970818,
+        "gpu_seconds": 0.2374726669950178,
+        "cpu_over_gpu": 0.5368668723451722,
+        "all_exact": true,
+        "effective_smart": true
+      },
+      {
+        "case": "synthetic-12000",
+        "cpu_seconds": 0.6319025840057293,
+        "gpu_seconds": 1.3910042079951381,
+        "cpu_over_gpu": 0.45427798160042515,
+        "all_exact": true,
+        "effective_smart": true
+      }
+    ],
+    "gpu_projection_grouping": [
+      {
+        "case": "synthetic-2674",
+        "cpu_seconds": 0.027699541009496897,
+        "gpu_seconds": 0.06316237499413546,
+        "cpu_over_gpu": 0.4385449567415532,
+        "all_exact": true,
+        "effective_smart": true
+      },
+      {
+        "case": "dataset-1-C",
+        "cpu_seconds": 0.06488116599211935,
+        "gpu_seconds": 0.14038054199772887,
+        "cpu_over_gpu": 0.4621806203965862,
+        "all_exact": true,
+        "effective_smart": false
+      },
+      {
+        "case": "dataset-2-A",
+        "cpu_seconds": 0.10624191700480878,
+        "gpu_seconds": 0.24573112500365824,
+        "cpu_over_gpu": 0.43235026496227186,
+        "all_exact": true,
+        "effective_smart": false
+      },
+      {
+        "case": "dataset-2-C",
+        "cpu_seconds": 0.07205566699849442,
+        "gpu_seconds": 0.14627108399872668,
+        "cpu_over_gpu": 0.49261730363003037,
+        "all_exact": true,
+        "effective_smart": false
+      },
+      {
+        "case": "synthetic-6000",
+        "cpu_seconds": 0.12611970800207928,
+        "gpu_seconds": 0.23439712499384768,
+        "cpu_over_gpu": 0.5380599612959825,
+        "all_exact": true,
+        "effective_smart": true
+      },
+      {
+        "case": "synthetic-12000",
+        "cpu_seconds": 0.6386378749884898,
+        "gpu_seconds": 1.4310481669963337,
+        "cpu_over_gpu": 0.4462728017946065,
+        "all_exact": true,
+        "effective_smart": true
+      }
+    ]
+  },
+  "parity": {
+    "warm_complete_search_pairs": 36,
+    "warm_grouping_pairs": 36,
+    "scientific_fields_bitwise_equal": true,
+    "raw_ordered_groups_equal": true,
+    "labels_exact": true,
+    "acceptance_exact": true,
+    "accepted_basis_exact": true,
+    "residuals_exact": true,
+    "hkl_exact": true
+  },
+  "artifact_root": "/Users/clemens/Codex/2026-11-12/phasesmith-row-gpu",
+  "projection_audit": {
+    "total_keys": 879333240,
+    "mismatches": 0,
+    "cases": [
+      {
+        "case": "synthetic-2674",
+        "points": 2674,
+        "complete": true,
+        "keys_audited": 8717240,
+        "corrected_pairs": 34808,
+        "mismatches": 0,
+        "seconds_including_expensive_audit": 0.11779575000400655
+      },
+      {
+        "case": "dataset-1-C",
+        "points": 644,
+        "complete": true,
+        "keys_audited": 128800000,
+        "corrected_pairs": 512051,
+        "mismatches": 0,
+        "seconds_including_expensive_audit": 0.6865778750070604
+      },
+      {
+        "case": "dataset-2-A",
+        "points": 1026,
+        "complete": true,
+        "keys_audited": 205200000,
+        "corrected_pairs": 818015,
+        "mismatches": 0,
+        "seconds_including_expensive_audit": 1.0804686659976142
+      },
+      {
+        "case": "dataset-2-C",
+        "points": 696,
+        "complete": true,
+        "keys_audited": 139200000,
+        "corrected_pairs": 554898,
+        "mismatches": 0,
+        "seconds_including_expensive_audit": 0.7140000420040451
+      },
+      {
+        "case": "synthetic-6000",
+        "points": 6000,
+        "complete": true,
+        "keys_audited": 57816000,
+        "corrected_pairs": 230651,
+        "mismatches": 0,
+        "seconds_including_expensive_audit": 0.4518355409963988
+      },
+      {
+        "case": "synthetic-12000",
+        "points": 12000,
+        "complete": true,
+        "keys_audited": 339600000,
+        "corrected_pairs": 1354879,
+        "mismatches": 0,
+        "seconds_including_expensive_audit": 2.598135166001157
+      }
+    ]
+  },
+  "large_synthetic_truth_controls": [
+    {
+      "points": 6000,
+      "accepted": 2,
+      "true_orientations_recovered": 2,
+      "matches": [
+        {
+          "integer_error": 1.9217993237035644e-05,
+          "volume_ratio": 1.0000220426064346
+        },
+        {
+          "integer_error": 1.797182808127573e-05,
+          "volume_ratio": 1.0000080060053314
+        }
+      ]
+    },
+    {
+      "points": 12000,
+      "accepted": 2,
+      "true_orientations_recovered": 2,
+      "matches": [
+        {
+          "integer_error": 3.073649106896339e-05,
+          "volume_ratio": 1.0000099558864282
+        },
+        {
+          "integer_error": 1.1519566653152783e-05,
+          "volume_ratio": 0.9999890061542713
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "check": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.9979500770568848
+    },
+    {
+      "check": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features"
+      ],
+      "exit_code": 0,
+      "seconds": 0.30750489234924316
+    },
+    {
+      "check": "cargo-test",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--all-features"
+      ],
+      "exit_code": 0,
+      "seconds": 76.53651189804077
+    },
+    {
+      "check": "bridge-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--manifest-path",
+        "/Users/clemens/Codex/2026-11-12/phasesmith-row-gpu/bridge/Cargo.toml"
+      ],
+      "exit_code": 0,
+      "seconds": 3.6397039890289307
+    },
+    {
+      "check": "bridge-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--all-features",
+        "--manifest-path",
+        "/Users/clemens/Codex/2026-11-12/phasesmith-row-gpu/bridge/Cargo.toml"
+      ],
+      "exit_code": 0,
+      "seconds": 7.1427857875823975
+    },
+    {
+      "check": "pytest",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "exit_code": 0,
+      "seconds": 114.9499158859253
+    }
+  ],
+  "gpu_tests": ".......................                                                  [100%]\n23 passed in 2.62s",
+  "production_provenance": {
+    "head": "4c1def58bd23a0d78783b0031530256790183145",
+    "branch": "codex/automatic-structure-recovery",
+    "production_files": {
+      "/Users/clemens/Programming/PhaseSmith/python/phasesmith/_core.abi3.so": "fafc08aa1aad9bed721a1b21a9171a99e16ff0fef09f1966d0ae8f3a7c1b6f1f",
+      "/Users/clemens/Programming/PhaseSmith/python/phasesmith/single_crystal/grains.py": "6c326a84931abb1461759e7eef42a4391111ac3b6b7e85e1e9b9216ab8f99547",
+      "/Users/clemens/Programming/PhaseSmith/crates/phasesmith-single-crystal/src/spots/fft.rs": "ebbb0a5e13acbc3b83bfc5e588fc6c49f9b97c2bedd44655291d733fa28ebd63"
+    },
+    "baseline_worktree": "Contains unrelated uncommitted automatic structure-recovery work; not modified by this experiment."
+  },
+  "bridge_provenance": {
+    "source": "/Users/clemens/Programming/PhaseSmith/crates/phasesmith-single-crystal/src/row_search/mod.rs",
+    "source_sha256": "b5a404f6db4711035115159b753a636fdb4e37c65c3afa27f04255b09f86004e",
+    "patch": "Initial full-population preparations only; three exact patch anchors; numerical grouping and CPU baseline inherited unchanged.",
+    "extra_sha256": "375355e12afe8fd353e8ca991fcc4866f2f3fc738e236f1a343a3b404408bbde"
+  },
+  "source_sha256": {
+    "test_metal_rows.py": "6961c418be44e07574ff25cdf8085c2eae4c14b5721fd4f683bdf94fe4b9fa19",
+    "summarize_rows.py": "c86dc10d58f460aef174c3b86a4540120e4c964d05d719a96a7a36e4bce9a977",
+    "rows_compare.py": "4c5767c05955744fe296ac9748ad29ab5bf199fac990d59e94a978c383d646f7",
+    "build_rows_bridge.py": "43db387cf4e3e80dfe53d7a2427bab3c73a4856395cde04f85933df193dcb1e8",
+    "metal_rows.py": "8484c1c18c5f1c0ca7daebaffadc2a6dc3b888968c2612089ee883305a73aa87",
+    "rows_bridge_extra.rs": "375355e12afe8fd353e8ca991fcc4866f2f3fc738e236f1a343a3b404408bbde"
+  },
+  "validation_counts": {
+    "cargo-test.log": {
+      "passed": 577,
+      "failed": 0,
+      "ignored": 34
+    },
+    "bridge-tests-final.log": {
+      "passed": 24,
+      "failed": 0,
+      "ignored": 0
+    },
+    "python": "3444 passed, 28 skipped, 34 deselected"
+  }
+}

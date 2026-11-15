@@ -19,7 +19,11 @@ positional checks use the documented configuration, including with NumPy 1.26.
 Manual runs retain wheel/sdist, Rust archive and rendered documentation artifacts.
 Tag runs additionally attest Python distributions, publish PyPI and Rust packages,
 and attach the distributions plus SHA-256 checksums to a GitHub Release. Registry
-publishing waits for all package/documentation jobs. General CI separately checks
+publishing waits for all package/documentation jobs. The crates.io job skips
+crates that already carry the release version (`scripts/published_crates.py`
+reads the registry index), so after a partial failure, such as a crate without
+a trusted publisher, fix the cause and re-run the failed jobs. The GitHub
+Release job follows once crates.io succeeds. General CI separately checks
 Python 3.11–3.14, minimum NumPy, MSRV, Clippy, Rust tests and API contracts.
 GUI applications are separate consumers, outside this library release.
 
@@ -55,7 +59,8 @@ names. Before tagging 0.8, use this reviewed bootstrap sequence:
    `--dry-run`. This publishes the entire dependency-ordered 0.8 workspace,
    including dependencies needed by the new crate. Do not publish just the new
    crate against unavailable 0.8 dependencies. If interrupted, inspect registry
-   state and explicitly exclude already-published packages before resuming.
+   state (`python scripts/published_crates.py --version <version>`) and
+   explicitly exclude already-published packages before resuming.
 5. Configure the same trusted publisher on all eleven public crates. Tag the
    reviewed commit with the Rust job disabled, verify PyPI/GitHub publication,
    then restore `CRATES_IO_TRUSTED_PUBLISHING=true` for later releases.

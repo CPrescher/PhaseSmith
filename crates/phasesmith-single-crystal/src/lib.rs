@@ -2,6 +2,9 @@
 //! search and reciprocal-lattice row grouping. File adapters and complete workflow
 //! orchestration remain separate. Select capabilities through Cargo features.
 
+/// Position-only multi-grain lattice discovery and frozen-pool validation.
+#[cfg(feature = "grains")]
+pub mod grains;
 /// Independent published DAFi equidistant-row grouping.
 // Preserve the former row crate's lint policy during the module-only move.
 #[cfg(feature = "row-search")]

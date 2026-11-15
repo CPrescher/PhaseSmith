@@ -123,7 +123,20 @@ def assign_observed(engine, points, models, charts, valid, search, options):
     )
 
 
-def _physical_fields(engine, q, models, charts, valid, search, options):
+def _physical_measure(charts, valid, options):
+    """Original model-independent chart measure, reusable on a frozen chart."""
+    det = np.abs(np.linalg.det(charts))
+    measure = np.zeros(len(charts))
+    np.divide(
+        (2 * np.pi) ** 1.5 * options.xy_scale**2 * options.omega_scale,
+        det,
+        out=measure,
+        where=valid,
+    )
+    return measure
+
+
+def _physical_fields(engine, q, models, charts, valid, search, options, *, _measure=None):
     from .grains import _score
 
     if len(q) * len(models) > 8_000_000:
@@ -131,14 +144,7 @@ def _physical_fields(engine, q, models, charts, valid, search, options):
     evidence = []
     core = []
     physical = []
-    det = np.abs(np.linalg.det(charts))
-    measure = np.zeros(len(q))
-    np.divide(
-        (2 * np.pi) ** 1.5 * options.xy_scale**2 * options.omega_scale,
-        det,
-        out=measure,
-        where=valid,
-    )
+    measure = _physical_measure(charts, valid, options) if _measure is None else _measure
     if options.native_fields and len(models):
         rows = np.asarray(models, dtype=np.float64).reshape(-1, 3, 3)
         return engine.physical_fields(

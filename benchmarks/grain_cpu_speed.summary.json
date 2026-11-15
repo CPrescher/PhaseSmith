@@ -1,0 +1,272 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.7 (main, Sep 18 2025, 22:52:34) [Clang 20.1.4 ]",
+  "numpy": "2.5.4",
+  "panels": {
+    "fft": [
+      {
+        "case": "synthetic-2674",
+        "before_seconds": 0.14584516700415406,
+        "after_seconds": 0.14170437499706168,
+        "speedup": 1.029221342016986,
+        "wall_saved_fraction": 0.028391698485109473
+      },
+      {
+        "case": "synthetic-6000",
+        "before_seconds": 0.2115581249963725,
+        "after_seconds": 0.21198904199991375,
+        "speedup": 0.9979672675555493,
+        "wall_saved_fraction": -0.0020368728620026033
+      },
+      {
+        "case": "synthetic-12000",
+        "before_seconds": 0.32791583400103264,
+        "after_seconds": 0.32902591599849984,
+        "speedup": 0.9966261563497257,
+        "wall_saved_fraction": -0.003385265005116267
+      },
+      {
+        "case": "dataset-1-C",
+        "before_seconds": 0.07570808300806675,
+        "after_seconds": 0.07087291700008791,
+        "speedup": 1.0682230422090973,
+        "wall_saved_fraction": 0.06386591518191853
+      },
+      {
+        "case": "dataset-2-A",
+        "before_seconds": 0.06911900000704918,
+        "after_seconds": 0.06377420799981337,
+        "speedup": 1.0838080499133984,
+        "wall_saved_fraction": 0.07732739198615024
+      },
+      {
+        "case": "dataset-2-C",
+        "before_seconds": 0.06562045800092164,
+        "after_seconds": 0.06167549999372568,
+        "speedup": 1.063963129728941,
+        "wall_saved_fraction": 0.06011780666237587
+      }
+    ],
+    "fft_case_first_pairs": 6,
+    "rows": [
+      {
+        "case": "synthetic-2674",
+        "before_seconds": 0.12534458399750292,
+        "after_seconds": 0.09258791600586846,
+        "speedup": 1.353789883223619,
+        "wall_saved_fraction": 0.261332934754381
+      },
+      {
+        "case": "synthetic-6000",
+        "before_seconds": 0.24524391700106207,
+        "after_seconds": 0.2036445419944357,
+        "speedup": 1.2042744411375532,
+        "wall_saved_fraction": 0.16962449269005198
+      },
+      {
+        "case": "synthetic-12000",
+        "before_seconds": 0.5764348749944475,
+        "after_seconds": 0.5470999579993077,
+        "speedup": 1.0536189348330693,
+        "wall_saved_fraction": 0.05089025363953281
+      },
+      {
+        "case": "dataset-1-C",
+        "before_seconds": 0.05257070799416397,
+        "after_seconds": 0.05310283300059382,
+        "speedup": 0.9899793480618275,
+        "wall_saved_fraction": -0.01012208179674734
+      },
+      {
+        "case": "dataset-2-A",
+        "before_seconds": 0.08439745900977869,
+        "after_seconds": 0.08370816599926911,
+        "speedup": 1.008234477512213,
+        "wall_saved_fraction": 0.008167224684213603
+      },
+      {
+        "case": "dataset-2-C",
+        "before_seconds": 0.06888495899329428,
+        "after_seconds": 0.06730824999976903,
+        "speedup": 1.0234251966665402,
+        "wall_saved_fraction": 0.02288901694314327
+      }
+    ],
+    "rows_case_first_pairs": 6,
+    "ensemble": [
+      {
+        "case": "synthetic-2674",
+        "before_seconds": 2.238376417008112,
+        "after_seconds": 2.131991749993176,
+        "speedup": 1.0498991926283376,
+        "wall_saved_fraction": 0.04752760358203434
+      },
+      {
+        "case": "synthetic-6000",
+        "before_seconds": 3.899314750000485,
+        "after_seconds": 3.79393116600113,
+        "speedup": 1.0277768834985037,
+        "wall_saved_fraction": 0.02702618043320104
+      },
+      {
+        "case": "synthetic-12000",
+        "before_seconds": 6.107303500000853,
+        "after_seconds": 6.086051833000965,
+        "speedup": 1.003491864279672,
+        "wall_saved_fraction": 0.0034797135920762168
+      },
+      {
+        "case": "dataset-1-C",
+        "before_seconds": 1.0262720830069156,
+        "after_seconds": 0.9878637919900939,
+        "speedup": 1.038880148587536,
+        "wall_saved_fraction": 0.03742505681757191
+      },
+      {
+        "case": "dataset-2-A",
+        "before_seconds": 0.9282227499934379,
+        "after_seconds": 0.875564583009691,
+        "speedup": 1.060141956407988,
+        "wall_saved_fraction": 0.056730097365227494
+      },
+      {
+        "case": "dataset-2-C",
+        "before_seconds": 0.9437037089955993,
+        "after_seconds": 0.8916129999997793,
+        "speedup": 1.0584230030246675,
+        "wall_saved_fraction": 0.05519816071429995
+      }
+    ],
+    "ensemble_case_first_pairs": 6,
+    "detector": [
+      {
+        "case": "detector",
+        "before_seconds": 74.48579091700958,
+        "after_seconds": 56.869233167002676,
+        "speedup": 1.3097730841257165,
+        "wall_saved_fraction": 0.23650897081343858
+      }
+    ],
+    "detector_case_first_pairs": 0
+  },
+  "parity": {
+    "warm_complete_search_comparisons": 84,
+    "all_scientific_fields_bitwise_equal": true
+  },
+  "checks": [
+    {
+      "check": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.9958398342132568
+    },
+    {
+      "check": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features"
+      ],
+      "exit_code": 0,
+      "seconds": 0.316540002822876
+    },
+    {
+      "check": "cargo-test",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--all-features"
+      ],
+      "exit_code": 0,
+      "seconds": 79.21418976783752
+    },
+    {
+      "check": "pytest",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "exit_code": 0,
+      "seconds": 111.57248520851135
+    }
+  ],
+  "detector_modes": [
+    {
+      "native_fourier_refinement": false,
+      "before_seconds": 39.60516670899233,
+      "after_seconds": 28.467566000006627,
+      "wall_saved_fraction": 0.2812158522351811
+    },
+    {
+      "native_fourier_refinement": true,
+      "before_seconds": 34.87864283300587,
+      "after_seconds": 25.15204874999472,
+      "wall_saved_fraction": 0.2788696260224557
+    }
+  ],
+  "baseline_manifest": {
+    "python/phasesmith/single_crystal/integration_quality.py": "345ac55f4c578aa5efd2b2d79e312ae9c988ca3efba15c6eed0227bfa238f85d",
+    "python/phasesmith/single_crystal/ownership.py": "c2f207ebfb0e97d9f66b336bdb2a7aaac16394c2f8c5747d918ecf3743496bc5",
+    "python/phasesmith/single_crystal/solution_symmetry.py": "c4b194e6c934fc51dffeeb915a5acab87750a3a4a877a25ad449ba35c0e53fdc",
+    "python/phasesmith/single_crystal/orthorhombic.py": "02b596ae9c8ccbb7cb99a5421538cabf8826c11c91ca4d7cf1ca21374af1c906",
+    "python/phasesmith/single_crystal/recovery.py": "122a5216e6c42d8ffca6d7f23a29b47e6e305cb90761d7edca494ee62b7bebc4",
+    "python/phasesmith/single_crystal/cell_metrics.py": "6899b6ce6f2fcb10e7132d0b5a434a9c8730af2457b6a6c5fb292b1ba4871426",
+    "python/phasesmith/single_crystal/scan_scaling.py": "9671022847ac9ee340eeb74c9a21e15e88425b60170b28d4f9a9de30843ee9d6",
+    "python/phasesmith/single_crystal/reduction_io.py": "cae2e98c392b812d0ecfe5c2b78d8df2b20d8fd638300d8871e64f2cecad28f1",
+    "python/phasesmith/single_crystal/reduction.py": "fe51f544fbb254776eec129001470302e07098b2ac533cfb17bc325a6f80fc0e",
+    "python/phasesmith/single_crystal/sensor_offsets.py": "6dd935011edaa646508dfe183fd0e1e48dbb89aec8f61e93501fc8d8c6f6699d",
+    "python/phasesmith/single_crystal/solution.py": "4c4b655cc90bc47cc6eb92decc8484b53c0c65c05c2e1e83929f5bd29a6ce436",
+    "python/phasesmith/single_crystal/empirical_scaling.py": "ebf2f2d01f44e78be166bdf2b46970622306b1f75ec37cbab7625c60af8052ea",
+    "python/phasesmith/single_crystal/spots.py": "efc598d4e4f142351ef33c5cc51566a30c87c98a85798f0dcad1a327f42fdfbe",
+    "python/phasesmith/single_crystal/structure_recovery.py": "6f508b23ea3e11b53997701f00a531cd69f88d9ce97eb89a78c5d4f106b06f9b",
+    "python/phasesmith/single_crystal/reduction_cache.py": "7eceade6156d42493655aa1efa89ef607e45f3fd8bd956e9eb971121ee5778b5",
+    "python/phasesmith/single_crystal/cell_comparison.py": "f798c4f5ffa4749ef0a03de0bb514cef8f80cbac8199b88134f9e43061f46123",
+    "python/phasesmith/single_crystal/geometry_refinement.py": "c8b46c2cc5fc5cbcaf5736a6ba72f3e77bc99967e6cace9757ca5115ad730c87",
+    "python/phasesmith/single_crystal/__init__.py": "a0c936a99cb129aa44de819ac8fabce717e39f2998ba4051d99cdff719747a55",
+    "python/phasesmith/single_crystal/profile_refinement.py": "5b8eb938bf1cc7a7bf66a1da9a76a7e72c87438235be528e43bfc39192c6cac2",
+    "python/phasesmith/single_crystal/prediction.py": "c40d81e216579988463c7d047ea9884e97a1c95b3274f21a16e52aed37988de1",
+    "python/phasesmith/single_crystal/integration.py": "b40abbeb98ebb0cf6649f3b40bc2a2239c7538b73e515dca8738689b29fa9b81",
+    "python/phasesmith/single_crystal/intensity_uncertainty.py": "43258977cf29ffa458088a30ebd8d4249a3e2097cb3279759d4ed70a24393451",
+    "python/phasesmith/single_crystal/fitting_tasks.py": "f5351bda4a584a736c26aaf67a62320ebb4846cbb10bc86c64b002ed96d5a55f",
+    "python/phasesmith/single_crystal/frame_validity.py": "2b179ed89a1b38991e5b38f60e78b10e42797e03887e327fc49bbc2b41faea8d",
+    "python/phasesmith/single_crystal/search_execution.py": "5cde266099b95d17a87ee660aca1fe25f52bcbcacf947d9c96ea5c83aecc6f07",
+    "python/phasesmith/single_crystal/discovery_cache.py": "82e12d3a0ebf40c9a04d1fb1e2abe884bff1770a5b994105df5599d6e76d7ed8",
+    "python/phasesmith/single_crystal/retention.py": "0e39778c03323d8e03af22bf83c46639abc72c0c2635b669e520d078ec7dde20",
+    "python/phasesmith/single_crystal/omega_background.py": "83d53dec665ef3cc7f0980e3c9dc1da27c3d522dc4d6423a196586282e3af107",
+    "python/phasesmith/single_crystal/search.py": "7fcbfb02f9bcd032afc2ba26969766b6c7f59dbed94b232525de74fa4048ea4f",
+    "python/phasesmith/single_crystal/intensity_response.py": "02eac9820f379a922da91e9b1799d351ef421dda24c9a95479c594cd801eb21d",
+    "python/phasesmith/single_crystal/workflow.py": "8ec728239f78617e1b05f54d9c293aa295fddd574686f730c3251b44910ee4cd",
+    "python/phasesmith/single_crystal/frame_input.py": "ed2e5be1671e59dfde6162a7e34b32a829fbcbd27901e902705666783e8ac6d4",
+    "python/phasesmith/single_crystal/indexing.py": "079837b8dde43f7cf1266ff941f9f0875e50029799f6197a854dd71da5a9135f",
+    "python/phasesmith/single_crystal/row_grains.py": "90a80a05b8b4fe126d5e6e4e0fbcf2ef96fb4c90052c58b85d533d5c4e4a0faf",
+    "python/phasesmith/single_crystal/rotation.py": "79d73e20d403f62ed37dcfac6d8f7564d84b86484b785f47456be65246fc9428",
+    "python/phasesmith/single_crystal/rows.py": "ed801683d2bc856c047300f4f0df239af82e4c547d7307315835a7baff178890",
+    "python/phasesmith/single_crystal/profiles.py": "6684e00d2e4e8b00d6590914d67b3c050dc014a7c93366a6976e548055b4f719",
+    "python/phasesmith/single_crystal/grains.py": "6c326a84931abb1461759e7eef42a4391111ac3b6b7e85e1e9b9216ab8f99547",
+    "python/phasesmith/single_crystal/reciprocal.py": "b56cf58f83d98c5cd6d105db756c277ac845b5e44feb0262f83b7197b56b139a",
+    "crates/phasesmith-single-crystal/src/spots/fft.rs": "ebbb0a5e13acbc3b83bfc5e588fc6c49f9b97c2bedd44655291d733fa28ebd63",
+    "crates/phasesmith-single-crystal/src/row_search/mod.rs": "b5a404f6db4711035115159b753a636fdb4e37c65c3afa27f04255b09f86004e",
+    "python/phasesmith/_core.abi3.so": "fafc08aa1aad9bed721a1b21a9171a99e16ff0fef09f1966d0ae8f3a7c1b6f1f"
+  },
+  "current_source_sha256": {
+    "python/phasesmith/single_crystal/grains.py": "91ffcf0f7de5758daafb77911b757d947bfdf0a9c0e4fb701e48898ecbeff67f",
+    "python/phasesmith/single_crystal/ownership.py": "596e74f83c3e324c27f8d83d43bc2d0ca40cbb601fbadf93120eea1f75817597",
+    "python/phasesmith/single_crystal/recovery.py": "1875a91799a8c1ffd7f8b2ecd669aeffdc969915bd7ffaff5a73a9f7153900ff"
+  },
+  "rust_tests": {
+    "passed": 577,
+    "failed": 0,
+    "ignored": 34
+  },
+  "pytest_summary": "3450 passed, 28 skipped, 34 deselected in 111.29s (0:01:51)"
+}
