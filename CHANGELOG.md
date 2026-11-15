@@ -6,6 +6,10 @@ development versions.
 
 ## Unreleased
 
+## 0.8.3
+
+Release date: 2026-11-15.
+
 - Evaluate the second spot-detection pass locally when the first pass's sums
   are exact (integer values and variances, absolute totals below 2^53) and
   strong pixels are few. Each first-pass strong pixel removes its count, value
@@ -29,7 +33,6 @@ development versions.
   rules, padding, extraction, LARGE flag, `max_spots`). `detect` is exactly
   the two in sequence, so a host can change `min_pixels` without detecting
   again; `Bounds::expanded` is now public. `detect`'s output is unchanged.
-
 - Expose native multi-grain lattice discovery as
   `phasesmith_single_crystal::grains` (feature `grains`, in the default
   features and the facade). `discover`, `validate` and `find` need only
