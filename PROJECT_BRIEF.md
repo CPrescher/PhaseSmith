@@ -50,6 +50,9 @@ CW/TOF structural calculation, Le Bail, Pawley, Rietveld and quantitative analys
 Single-crystal workflows cover masks/shadows, spots and rotation positions,
 reciprocal indexing, lattice/grain discovery, geometry fitting, prediction,
 integration, learned profiles, explicit corrections/scaling and structure search.
+Native position-only grain discovery and frozen-pool validation live in
+`phasesmith-single-crystal::grains`, so hosts can call them without the
+coordinator; the coordinator uses them with default options.
 
 The single-crystal endpoint is **structure search and candidate assessment**.
 Positional detector/crystal fitting and internal coordinate/ADP polishing are

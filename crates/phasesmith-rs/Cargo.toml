@@ -31,12 +31,13 @@ workspace = true
 
 [features]
 default = ["single-crystal"]
-single-crystal = ["spots", "solution", "row-search", "phasesmith-workflows/single-crystal"]
+single-crystal = ["spots", "solution", "row-search", "grains", "phasesmith-workflows/single-crystal"]
 single-crystal-files = ["single-crystal", "hdf5"]
 hdf5 = ["dep:phasesmith-hdf5", "dep:serde_json", "dep:sha2"]
 spots = ["phasesmith-single-crystal/spots"]
 solution = ["phasesmith-single-crystal/solution"]
 row-search = ["phasesmith-single-crystal/row-search"]
+grains = ["phasesmith-single-crystal/grains"]
 
 [dev-dependencies]
 serde_json = "1"

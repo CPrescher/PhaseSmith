@@ -124,6 +124,61 @@ diagnostics. Compact FFT cell search remains available for comparison and now
 returns up to a declared `max_candidates` (default 40), rather than silently
 showing only five. This list is bounded search output, not all possible cells.
 
+## Native Rust grain discovery
+
+`phasesmith_single_crystal::grains` (feature `grains`, re-exported by the
+`phasesmith` facade) exposes the native discovery and frozen-pool validation to
+Rust hosts. It needs only reciprocal positions, a training partition and the
+rotated controls; no cell prior, elements or structure search. The native
+single-crystal workflow calls the same functions with `Options::default()`, so
+its results are unchanged (checked bit for bit on synthetic one-, two- and
+three-grain clouds before and after the move).
+
+- `discover(train, options, controls, method, progress)` returns the frozen
+  model pool from training positions only. `progress(done, total)` runs before
+  each round; returning an error cancels.
+- `validate(q, training, models, controls, options)` is the first use of
+  withheld positions and applies the acceptance rules above.
+- `find(...)` is both, for a caller-supplied partition.
+
+`Options` defaults are the workflow's values (256 grid, 192 maxima, 64
+directions, 96 pairs, 32 refinements, 5 rounds, 0.015 Å⁻¹, ambiguity 0.8,
+volume 15–20000 Å³, lengths 1.5–30 Å). Every one of them was previously a
+literal in the workflow. `max_grains` bounds the rounds, as in `find_grains`.
+
+`Method::Fft` is the default search. `Method::Rows(row_search::Options)` follows
+`find_grains(method="rows")`: one lattice inferred per row group (one FFT round
+on the group), then the training-only consolidation of `_consolidate`
+(volume-normalised local evidence, symmetric overlap, novelty) and joint
+ownership. An exhausted or cancelled row search is an error, as there.
+`Method::Both` consolidates the FFT models and the row proposals in one pool;
+it has no Python counterpart yet.
+
+Two opt-in changes default to the workflow's behaviour:
+
+- `round_controls = n` replaces the round selection. Among the 16 best distinct
+  proposals, the one with the largest support beyond the same cell in `n`
+  rotated controls of the round's positions wins. A smaller cell on the same
+  positions (≥ 80 % shared, volume below two thirds) that keeps 90 % of that
+  margin replaces it. The uniform expectation `N V 4π tolerance³/3` is far
+  below what a large cell catches on a structured cloud. A supercell of a
+  weaker grain then wins its round, because it holds that grain's positions
+  plus chance matches. The sublattice check keeps it, since the chance matches
+  exceed a tenth of its support. Validation can then reject it, or accept it
+  with the wrong cell; either way the grain's own lattice is lost, because
+  its positions are explained. On the three-grain test cloud, the defaults
+  report two of three grains as supercells; with 16 controls all three cells
+  are found. Rotated controls keep the cloud's radial structure (shells,
+  leftover rows of other grains) and use training positions only.
+- `min_tight_fraction = f` adds an acceptance rule: at least `f` of a model's
+  withheld matches lie within half the tolerance. A real lattice's matches
+  cluster at its nodes, while chance matches fill the tolerance sphere. On
+  Dioptas' multi-grain DAC data, 0.75 rejects a loose cell (40 of 59 tight)
+  that passes the rotated-control rules.
+
+Neither is the default. Both change results, and PhaseSmith's existing
+fixtures and the Python reference do not cover them yet.
+
 ## Opt-in parameter ensemble and consolidated grain assignment
 
 `find_grains_ensemble(q, training=mask, options=GrainSearchOptions(...))`

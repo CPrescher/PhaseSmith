@@ -78,7 +78,10 @@ pub struct Bounds {
     pub y1: usize,
 }
 impl Bounds {
-    fn expanded(self, radius: usize, width: usize, height: usize) -> Self {
+    /// Padded by `radius` on every side, clipped to a `width` × `height`
+    /// detector: the aperture [`detect`] measures for a component.
+    #[must_use]
+    pub fn expanded(self, radius: usize, width: usize, height: usize) -> Self {
         Self {
             x0: self.x0.saturating_sub(radius),
             y0: self.y0.saturating_sub(radius),
@@ -257,6 +260,11 @@ struct Integral {
     count: Vec<u32>,
 }
 
+/// Window sum from four summed-area table corners.
+fn window(values: &[f64], [a, c, d, e]: [usize; 4]) -> f64 {
+    values[e] - values[c] - values[d] + values[a]
+}
+
 // Interior columns have fixed window widths. Slice each corner stream once per
 // row, so iteration proves its bounds without checking 24 unrelated indices at
 // every pixel. Corner subtraction order matches the clipped scalar path.
@@ -336,16 +344,34 @@ impl Integral {
             count: vec![0; n],
         }
     }
-    fn rebuild(&mut self, image: &Image<'_>, exclude: &[bool]) -> Result<(), SpotError> {
+    /// Prefix sums of the included pixels. Returns whether they are exact:
+    /// every included value and variance an integer, each absolute total
+    /// below 2^53. Then every prefix entry and every window difference is the
+    /// exact integer, whatever the summation order.
+    #[allow(clippy::float_cmp)] // Exact integer test.
+    fn rebuild(
+        &mut self,
+        image: &Image<'_>,
+        exclude: &[bool],
+        exactness: bool,
+    ) -> Result<bool, SpotError> {
+        const EXACT: f64 = 9_007_199_254_740_992.0; // 2^53
+        let (mut integers, mut total_value, mut total_variance) = (true, 0.0_f64, 0.0_f64);
         // Each interior entry is overwritten; the zero first row/column stay zero.
         for y in 0..image.height {
             let (mut s, mut v, mut c) = (0.0, 0.0, 0);
             for x in 0..image.width {
                 let i = y * image.width + x;
                 if !image.mask[i] && !exclude[i] && !image.saturated(i) {
-                    s += image.values[i];
-                    v += image.pixel_variance(i);
+                    let (value, variance) = (image.values[i], image.pixel_variance(i));
+                    s += value;
+                    v += variance;
                     c += 1;
+                    if exactness {
+                        integers &= value.trunc() == value && variance.trunc() == variance;
+                        total_value += value.abs();
+                        total_variance += variance;
+                    }
                 }
                 let j = (y + 1) * self.width + x + 1;
                 self.sum[j] = self.sum[j - self.width] + s;
@@ -356,7 +382,101 @@ impl Integral {
                 }
             }
         }
-        Ok(())
+        Ok(exactness && integers && total_value < EXACT && total_variance < EXACT)
+    }
+    /// Pass two from exact pass-one sums. Excluding a pass-one strong pixel
+    /// changes the annulus sums only of the pixels whose annulus holds it,
+    /// that is, the pixels in its own annulus (square windows: Chebyshev
+    /// distance above the inner and at most the outer radius). Elsewhere the
+    /// exact sums, and so the classification, are those of pass one. Each
+    /// strong pixel scatters its contribution to its annulus; the annulus
+    /// sums less those are exactly the sums a rebuild gives. Bit-identical to
+    /// `rebuild(strong)` then `classify` whenever `rebuild` reported exact.
+    fn reclassify_near(&self, image: &Image<'_>, options: Options, strong: &mut [bool]) {
+        let (w, h) = (image.width, image.height);
+        let (ro, ri) = (options.outer_radius, options.inner_radius);
+        // Removed (count, value, variance) per affected pixel, in first-touch order.
+        let mut slot = vec![u32::MAX; w * h];
+        let mut affected: Vec<(usize, i64, f64, f64)> = Vec::new();
+        for (p, _) in strong.iter().enumerate().filter(|(_, s)| **s) {
+            if image.mask[p] || image.saturated(p) {
+                continue;
+            }
+            let (value, variance) = (image.values[p], image.pixel_variance(p));
+            let (px, py) = (p % w, p / w);
+            for y in py.saturating_sub(ro)..=(py + ro).min(h - 1) {
+                let near_row = y.abs_diff(py) <= ri;
+                for x in px.saturating_sub(ro)..=(px + ro).min(w - 1) {
+                    if near_row && x.abs_diff(px) <= ri {
+                        continue; // Inner window: excluded from both sums.
+                    }
+                    let i = y * w + x;
+                    if slot[i] == u32::MAX {
+                        slot[i] = u32::try_from(affected.len()).unwrap_or(u32::MAX);
+                        affected.push((i, 0, 0.0, 0.0));
+                    }
+                    let entry = &mut affected[slot[i] as usize];
+                    entry.1 += 1;
+                    entry.2 += value;
+                    entry.3 += variance;
+                }
+            }
+        }
+        for (i, removed, removed_sum, removed_variance) in affected {
+            if !image.mask[i] {
+                strong[i] =
+                    self.reclassify(image, options, i, (removed, removed_sum, removed_variance));
+            }
+        }
+    }
+    /// Clipped window corner indices of `(x, y)` with radius `r`.
+    fn corners(&self, image: &Image<'_>, x: usize, y: usize, r: usize) -> [usize; 4] {
+        let (x0, x1) = (
+            x.saturating_sub(r),
+            (x + 1).saturating_add(r).min(image.width),
+        );
+        let (y0, y1) = (
+            y.saturating_sub(r),
+            (y + 1).saturating_add(r).min(image.height),
+        );
+        [
+            y0 * self.width + x0,
+            y0 * self.width + x1,
+            y1 * self.width + x0,
+            y1 * self.width + x1,
+        ]
+    }
+    fn window_count(&self, [a, c, d, e]: [usize; 4]) -> i64 {
+        i64::from(self.count[e]) - i64::from(self.count[c]) - i64::from(self.count[d])
+            + i64::from(self.count[a])
+    }
+    /// Pass-two classification of unmasked pixel `i` from the pass-one sums
+    /// less the removed (count, value, variance) of its annulus; the
+    /// arithmetic of `classify`.
+    fn reclassify(
+        &self,
+        image: &Image<'_>,
+        options: Options,
+        i: usize,
+        (removed, removed_sum, removed_variance): (i64, f64, f64),
+    ) -> bool {
+        let (x, y) = (i % image.width, i / image.width);
+        let (outer, inner) = (
+            self.corners(image, x, y, options.outer_radius),
+            self.corners(image, x, y, options.inner_radius),
+        );
+        let n = self.window_count(outer) - self.window_count(inner) - removed;
+        if n < i64::try_from(options.min_background).unwrap_or(i64::MAX) {
+            return false;
+        }
+        let s = (window(&self.sum, outer) - window(&self.sum, inner)) - removed_sum;
+        let v = (window(&self.variance, outer) - window(&self.variance, inner)) - removed_variance;
+        let nf = n as f64;
+        let excess = image.values[i] - s / nf;
+        excess > options.threshold_absolute
+            && excess
+                > options.threshold_sigma
+                    * (image.pixel_variance(i) + v.max(0.0) / (nf * nf)).sqrt()
     }
     fn classify_clipped(
         &self,
@@ -504,15 +624,169 @@ impl Integral {
 pub fn detect(image: &Image<'_>, options: Options) -> Result<Detection, SpotError> {
     image.validate()?;
     options.validate()?;
+    let strong = strong_pixels(image, options, Pass::Auto)?;
+    measure(image, &components(image, strong), options)
+}
+
+/// One 8-connected component of strong pixels.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Component {
+    /// Tight bounds of its pixels, without padding.
+    pub bounds: Bounds,
+    /// Strong pixels in it.
+    pub pixels: usize,
+}
+
+/// Both threshold passes and every 8-connected component, in [`detect`]'s
+/// row-major discovery order, before the `min_pixels`, `max_pixels` and
+/// `max_spots` rules and extraction. With [`measure_components`], a host can
+/// change `min_pixels` (or padding, background margin, `max_pixels`) without
+/// detecting again.
+///
+/// # Errors
+/// Returns an error for invalid image/options or numerical overflow.
+pub fn detect_components(image: &Image<'_>, options: Options) -> Result<Vec<Component>, SpotError> {
+    image.validate()?;
+    options.validate()?;
+    let strong = strong_pixels(image, options, Pass::Auto)?;
+    Ok(components(image, strong))
+}
+
+/// The rest of [`detect`] on components from [`detect_components`]: drop
+/// those below `min_pixels` (counted as `rejected_small`), pad the rest,
+/// extract them with every kept box excluded from every background, and flag
+/// those above `max_pixels`. `detect` is exactly `detect_components` then
+/// this, so the result equals a fresh `detect` with these options whenever
+/// the threshold and support options match those of the detection.
+///
+/// # Errors
+/// Returns an error for invalid image/options, or above `max_spots` kept
+/// components.
+pub fn measure_components(
+    image: &Image<'_>,
+    components: &[Component],
+    options: Options,
+) -> Result<Detection, SpotError> {
+    image.validate()?;
+    options.validate()?;
+    for c in components {
+        let b = c.bounds;
+        if c.pixels == 0
+            || b.x0 >= b.x1
+            || b.y0 >= b.y1
+            || b.x1 > image.width
+            || b.y1 > image.height
+            || c.pixels > (b.x1 - b.x0) * (b.y1 - b.y0)
+        {
+            return Err(invalid("invalid component"));
+        }
+    }
+    measure(image, components, options)
+}
+
+/// `measure_components` on validated input.
+fn measure(
+    image: &Image<'_>,
+    components: &[Component],
+    options: Options,
+) -> Result<Detection, SpotError> {
+    let (mut boxes, mut flags, mut rejected_small) = (Vec::new(), Vec::new(), 0);
+    for c in components {
+        let b = c.bounds;
+        if c.pixels < options.min_pixels {
+            rejected_small += 1;
+            continue;
+        }
+        if boxes.len() >= options.max_spots {
+            return Err(invalid(
+                "max_spots exceeded; no candidates silently truncated",
+            ));
+        }
+        boxes.push(b.expanded(options.padding, image.width, image.height));
+        flags.push(if c.pixels > options.max_pixels {
+            LARGE
+        } else {
+            0
+        });
+    }
+    let mut spots = extract_validated(image, &boxes, options)?;
+    for (spot, flag) in spots.iter_mut().zip(flags) {
+        spot.flags |= flag;
+    }
+    Ok(Detection {
+        spots,
+        rejected_small,
+    })
+}
+
+/// [`detect`] with pass two always rebuilt over the whole frame, as before
+/// the local pass two. The same result; for verification and timing only.
+///
+/// # Errors
+/// As [`detect`].
+#[doc(hidden)]
+pub fn detect_two_pass(image: &Image<'_>, options: Options) -> Result<Detection, SpotError> {
+    image.validate()?;
+    options.validate()?;
+    let strong = strong_pixels(image, options, Pass::Full)?;
+    measure(image, &components(image, strong), options)
+}
+
+/// How pass two is evaluated.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Pass {
+    /// Scatter when pass one's sums are exact and that is cheaper,
+    /// otherwise rebuild.
+    Auto,
+    /// Rebuild the whole frame's tables (always valid).
+    Full,
+    /// Scatter whenever the sums are exact, however dense.
+    #[cfg(test)]
+    Scatter,
+}
+
+/// Both threshold passes. Pass two scatters the strong pixels
+/// (`Integral::reclassify_near`) when pass one's sums are exact and
+/// `strong × annulus` is at most an eighth of the pixels; otherwise it
+/// rebuilds the tables. Scattering costs about 20 ns per annulus update on
+/// top of pass one and the rebuild about as much as pass one, so the bound
+/// keeps the local pass below the rebuild. A summed-area table of the strong
+/// pixels was measured too: about 2.5× slower than the rebuild, which
+/// classifies interior rows in vectorised lanes.
+fn strong_pixels(image: &Image<'_>, options: Options, pass: Pass) -> Result<Vec<bool>, SpotError> {
     let mut strong = vec![false; image.values.len()];
     let mut integral = Integral::new(image);
-    integral.rebuild(image, &strong)?;
+    let exact = integral.rebuild(image, &strong, true)?;
     integral.classify(image, options, &mut strong);
-    integral.rebuild(image, &strong)?;
-    integral.classify(image, options, &mut strong);
-    drop(integral);
-    let (mut boxes, mut flags, mut queue, mut rejected_small) =
-        (Vec::new(), Vec::new(), Vec::new(), 0);
+    let local = exact && pass != Pass::Full;
+    if !local {
+        integral.rebuild(image, &strong, false)?;
+        integral.classify(image, options, &mut strong);
+        return Ok(strong);
+    }
+    #[cfg(test)]
+    let forced = pass == Pass::Scatter;
+    #[cfg(not(test))]
+    let forced = false;
+    if forced || scatter_is_cheaper(&strong, options) {
+        integral.reclassify_near(image, options, &mut strong);
+    } else {
+        integral.rebuild(image, &strong, false)?;
+        integral.classify(image, options, &mut strong);
+    }
+    Ok(strong)
+}
+/// Scatter while `strong × annulus` is at most this fraction of the pixels.
+const SCATTER_SHARE: usize = 8;
+fn scatter_is_cheaper(strong: &[bool], options: Options) -> bool {
+    let count = strong.iter().filter(|&&s| s).count();
+    let (outer, inner) = (2 * options.outer_radius + 1, 2 * options.inner_radius + 1);
+    count.saturating_mul(outer * outer - inner * inner) <= strong.len() / SCATTER_SHARE
+}
+
+/// 8-connected components of the strong pixels, in row-major discovery order.
+fn components(image: &Image<'_>, mut strong: Vec<bool>) -> Vec<Component> {
+    let (mut found, mut queue) = (Vec::new(), Vec::new());
     for i in 0..strong.len() {
         if !strong[i] {
             continue;
@@ -546,30 +820,12 @@ pub fn detect(image: &Image<'_>, options: Options) -> Result<Detection, SpotErro
                 }
             }
         }
-        if queue.len() < options.min_pixels {
-            rejected_small += 1;
-            continue;
-        }
-        if boxes.len() >= options.max_spots {
-            return Err(invalid(
-                "max_spots exceeded; no candidates silently truncated",
-            ));
-        }
-        boxes.push(bounds.expanded(options.padding, image.width, image.height));
-        flags.push(if queue.len() > options.max_pixels {
-            LARGE
-        } else {
-            0
+        found.push(Component {
+            bounds,
+            pixels: queue.len(),
         });
     }
-    let mut spots = extract_validated(image, &boxes, options)?;
-    for (spot, flag) in spots.iter_mut().zip(flags) {
-        spot.flags |= flag;
-    }
-    Ok(Detection {
-        spots,
-        rejected_small,
-    })
+    found
 }
 
 /// Sum caller-supplied boxes, including weak/negative observations without
@@ -765,6 +1021,303 @@ mod tests {
         assert!((s[0].values[2] + 3.0).abs() < 1e-14);
         let expected = (4.0_f64 + 4.0 / 80.0).sqrt();
         assert!((s[0].values[3] - expected).abs() < 1e-14);
+    }
+    /// Deterministic integer frames: Poisson-like background, spots of
+    /// several sizes and brightnesses, masked and saturated pixels.
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_possible_wrap,
+        clippy::cast_sign_loss
+    )] // Small synthetic coordinates.
+    fn frame(seed: u64, width: usize, height: usize, spots: usize) -> (Vec<f64>, Vec<bool>) {
+        let mut state = seed;
+        let mut next = move || {
+            state = state
+                .wrapping_mul(6_364_136_223_846_793_005)
+                .wrapping_add(1_442_695_040_888_963_407);
+            (state >> 11) as f64 / (1_u64 << 53) as f64
+        };
+        let mut values: Vec<f64> = (0..width * height)
+            .map(|_| (3.0 + 4.0 * next() + 3.0 * next()).floor())
+            .collect();
+        for _ in 0..spots {
+            let (cx, cy) = (next() * width as f64, next() * height as f64);
+            let (peak, sigma) = (20.0 + 3000.0 * next() * next(), 0.6 + 2.0 * next());
+            let r = (4.0 * sigma).ceil() as isize;
+            for dy in -r..=r {
+                for dx in -r..=r {
+                    let (x, y) = (cx as isize + dx, cy as isize + dy);
+                    if x < 0 || y < 0 || x >= width as isize || y >= height as isize {
+                        continue;
+                    }
+                    let d2 = (dx * dx + dy * dy) as f64;
+                    values[y as usize * width + x as usize] +=
+                        (peak * (-d2 / (2.0 * sigma * sigma)).exp()).floor();
+                }
+            }
+        }
+        let mask = (0..width * height).map(|_| next() < 0.03).collect();
+        (values, mask)
+    }
+    fn same(a: &Detection, b: &Detection) {
+        assert_eq!(a.rejected_small, b.rejected_small);
+        assert_eq!(a.spots.len(), b.spots.len());
+        for (x, y) in a.spots.iter().zip(&b.spots) {
+            assert_eq!(x.bounds, y.bounds);
+            assert_eq!(x.flags, y.flags);
+            assert_eq!(x.values.map(f64::to_bits), y.values.map(f64::to_bits));
+        }
+    }
+    /// Forced scattering and the automatic choice against the full rebuild, on integer frames with
+    /// sparse and dense strong pixels, negative counts, masks, saturation and
+    /// supplied variances; non-exact frames take the rebuild.
+    #[test]
+    #[allow(clippy::too_many_lines)] // One matrix of frames, noise models and supports.
+    fn local_second_pass_is_bit_identical_to_the_full_rebuild() {
+        let (mut scatter, mut auto_scatter, mut auto_full) = (0, 0, 0);
+        for (seed, (width, height, spots, zingers, offset)) in [
+            (32, 32, 2, 0.0, 0.0),
+            (200, 150, 40, 0.0, 0.0),
+            (17, 300, 12, 0.0, 0.0),
+            (300, 9, 6, 0.0, 0.0),
+            (129, 130, 60, 0.0, 0.0),
+            (64, 64, 0, 0.0, 0.0),
+            (1, 1, 0, 0.0, 0.0),
+            // Dense strong pixels: zingers on 2 % and 10 % of the pixels.
+            (160, 140, 20, 0.02, 0.0),
+            (90, 120, 10, 0.1, 0.0),
+            // Signed integer counts (an integer background subtracted).
+            (150, 110, 30, 0.0, -9.0),
+            (120, 100, 15, 0.03, -9.0),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let (mut values, mask) = frame(seed as u64 + 1, width, height, spots);
+            let mut state = seed as u64 + 77;
+            for v in &mut values {
+                state = state
+                    .wrapping_mul(6_364_136_223_846_793_005)
+                    .wrapping_add(1_442_695_040_888_963_407);
+                if ((state >> 11) as f64 / (1_u64 << 53) as f64) < zingers {
+                    *v += 400.0;
+                }
+                *v += offset;
+            }
+            let supplied: Vec<f64> = values.iter().map(|v| v.abs().max(1.0)).collect();
+            let fractional: Vec<f64> = values.iter().map(|v| v.abs().max(1.0) + 0.25).collect();
+            for (variance, gain, read_noise, saturation) in [
+                (None, 1.0, 0.0, None),
+                (None, 1.0, 0.0, Some(800.0)),
+                (Some(&supplied[..]), 1.0, 0.0, None),
+                // Not exact: pass two is the full rebuild.
+                (Some(&fractional[..]), 1.0, 0.0, None),
+                (None, 1.7, 1.3, None),
+            ] {
+                for options in [
+                    Options::default(),
+                    Options {
+                        inner_radius: 0,
+                        outer_radius: 1,
+                        min_background: 3,
+                        ..Options::default()
+                    },
+                    Options {
+                        inner_radius: 3,
+                        outer_radius: 70,
+                        threshold_sigma: 3.0,
+                        min_pixels: 1,
+                        ..Options::default()
+                    },
+                    Options {
+                        threshold_absolute: 15.0,
+                        min_pixels: 1,
+                        ..Options::default()
+                    },
+                ] {
+                    let image = Image {
+                        values: &values,
+                        height,
+                        width,
+                        mask: &mask,
+                        variance,
+                        gain,
+                        read_noise,
+                        saturation,
+                    };
+                    let full = strong_pixels(&image, options, Pass::Full).unwrap();
+                    for pass in [Pass::Scatter, Pass::Auto] {
+                        let local = strong_pixels(&image, options, pass).unwrap();
+                        assert_eq!(
+                            local, full,
+                            "{pass:?} {width}x{height} {options:?} {variance:?}"
+                        );
+                    }
+                    match (detect(&image, options), detect_two_pass(&image, options)) {
+                        (Ok(a), Ok(b)) => same(&a, &b),
+                        (Err(a), Err(b)) => assert_eq!(a.0, b.0),
+                        (a, b) => panic!("{a:?} {b:?}"),
+                    }
+                    let mut first = vec![false; values.len()];
+                    let mut probe = Integral::new(&image);
+                    if probe.rebuild(&image, &first, true).unwrap() {
+                        probe.classify(&image, options, &mut first);
+                        if first.iter().any(|&s| s) {
+                            scatter += 1;
+                            if scatter_is_cheaper(&first, options) {
+                                auto_scatter += 1;
+                            } else {
+                                auto_full += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Scattering ran with strong pixels present many times, and the
+        // automatic choice took both ways.
+        assert!(scatter > 60, "{scatter}");
+        assert!(
+            auto_scatter > 10 && auto_full > 20,
+            "{auto_scatter} {auto_full}"
+        );
+    }
+    /// Pass-two timing by strong-pixel density and radius (run with
+    /// `--release --ignored --nocapture`): 2068×2162 integer frame,
+    /// `min_pixels` 1, isolated single-pixel zingers at the given share.
+    #[test]
+    #[ignore = "timing table"]
+    fn pass_two_timing_by_density_and_radius() {
+        let (width, height) = (2068, 2162);
+        for (share, outer) in [
+            (0.0001, 8),
+            (0.001, 8),
+            (0.01, 8),
+            (0.05, 8),
+            (0.01, 64),
+            (0.002, 128),
+        ] {
+            let (mut values, _) = frame(91, width, height, 0);
+            let mask = vec![false; values.len()];
+            let mut state = 5_u64;
+            for v in &mut values {
+                state = state
+                    .wrapping_mul(6_364_136_223_846_793_005)
+                    .wrapping_add(1_442_695_040_888_963_407);
+                if ((state >> 11) as f64 / (1_u64 << 53) as f64) < share {
+                    *v += 400.0;
+                }
+            }
+            let image = Image {
+                values: &values,
+                height,
+                width,
+                mask: &mask,
+                variance: None,
+                gain: 1.0,
+                read_noise: 0.0,
+                saturation: None,
+            };
+            let options = Options {
+                outer_radius: outer,
+                min_pixels: 1,
+                max_spots: 1_000_000,
+                ..Options::default()
+            };
+            let mut line = format!("{:>6.2} % ro {outer:>3}:", share * 100.0);
+            for pass in [Pass::Full, Pass::Scatter, Pass::Auto] {
+                let mut best = f64::INFINITY;
+                for _ in 0..5 {
+                    let start = std::time::Instant::now();
+                    std::hint::black_box(strong_pixels(&image, options, pass).unwrap());
+                    best = best.min(start.elapsed().as_secs_f64() * 1e3);
+                }
+                std::fmt::Write::write_fmt(&mut line, format_args!(" {pass:?} {best:7.1} ms"))
+                    .unwrap();
+            }
+            eprintln!("{line}");
+        }
+    }
+    #[test]
+    fn remeasured_components_equal_a_fresh_detection_at_each_minimum() {
+        let (values, mask) = frame(5, 240, 200, 50);
+        let image = Image {
+            values: &values,
+            height: 200,
+            width: 240,
+            mask: &mask,
+            variance: None,
+            gain: 1.0,
+            read_noise: 0.0,
+            saturation: Some(2500.0),
+        };
+        let base = Options {
+            min_pixels: 1,
+            max_pixels: 40,
+            ..Options::default()
+        };
+        let found = detect_components(&image, base).unwrap();
+        assert!(found.iter().any(|c| c.pixels == 1) && found.iter().any(|c| c.pixels > 40));
+        for min_pixels in [1, 2, 3, 5, 9, 25] {
+            let options = Options { min_pixels, ..base };
+            let remeasured = measure_components(&image, &found, options).unwrap();
+            same(&remeasured, &detect(&image, options).unwrap());
+            // The same by hand: filter, pad, public `extract`, LARGE flag.
+            let kept: Vec<_> = found.iter().filter(|c| c.pixels >= min_pixels).collect();
+            let boxes: Vec<_> = kept
+                .iter()
+                .map(|c| c.bounds.expanded(options.padding, 240, 200))
+                .collect();
+            let mut spots = extract(&image, &boxes, options).unwrap();
+            for (spot, c) in spots.iter_mut().zip(&kept) {
+                if c.pixels > options.max_pixels {
+                    spot.flags |= LARGE;
+                }
+            }
+            same(
+                &Detection {
+                    spots,
+                    rejected_small: found.len() - kept.len(),
+                },
+                &remeasured,
+            );
+        }
+        // The budget still applies to the kept components.
+        let tight = Options {
+            min_pixels: 1,
+            max_spots: 3,
+            ..base
+        };
+        assert!(measure_components(&image, &found, tight).is_err());
+        assert!(detect(&image, tight).is_err());
+    }
+    #[test]
+    fn exactness_needs_integers_and_bounded_totals() {
+        let values = vec![3.0, 4.0, 5.0, 6.0];
+        let mask = vec![false; 4];
+        let image = |values: &[f64], gain, read_noise| Image {
+            values: &values.to_vec().leak()[..],
+            height: 2,
+            width: 2,
+            mask: &mask.clone().leak()[..],
+            variance: None,
+            gain,
+            read_noise,
+            saturation: None,
+        };
+        let exact = |image: &Image<'_>| {
+            Integral::new(image)
+                .rebuild(image, &[false; 4], true)
+                .unwrap()
+        };
+        assert!(exact(&image(&values, 1.0, 0.0)));
+        assert!(!exact(&image(&[3.5, 4.0, 5.0, 6.0], 1.0, 0.0)));
+        assert!(!exact(&image(&values, 2.0, 0.0)), "variance v/2");
+        assert!(!exact(&image(&values, 1.0, 0.5)), "variance + 0.25");
+        assert!(
+            !exact(&image(&[4.0e15, 4.0e15, 4.0e15, 4.0e15], 1.0, 0.0)),
+            "beyond 2^53"
+        );
     }
     #[test]
     fn detects_unknown_spot_and_preserves_mask_flag() {
