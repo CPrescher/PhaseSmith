@@ -7,14 +7,23 @@ development versions.
 ## Unreleased
 
 - Evaluate the second spot-detection pass locally when the first pass's sums
-  are exact: integer values and variances, absolute totals below 2^53. Only
-  pixels with a first-pass strong pixel in their annulus are reclassified,
-  from the first-pass sums less those pixels' contributions. Results are
-  bit-identical to the full rebuild, which still runs otherwise and remains
-  available as `spots::detect_two_pass`. On a 2068×2162 frame with 150 spots
-  (new `detect` benchmark), detection takes 43 ms instead of 78 ms. On the 144
-  unmasked frames of a recorded Eiger scan it takes 7.1 s instead of 10.1 s,
-  with identical spots.
+  are exact (integer values and variances, absolute totals below 2^53) and
+  strong pixels are few. Each first-pass strong pixel removes its count, value
+  and variance from the pixels in its annulus; only those pixels are
+  reclassified. Results are bit-identical to the full rebuild.
+  - The local pass runs while `strong × annulus` is at most an eighth of the
+    pixels; otherwise the full rebuild runs, as it does for non-exact sums.
+    So frames with many strong pixels or large radii are not slower: on a
+    2068×2162 frame, 1 % or 5 % zingers or radius 64 cost the same as the
+    rebuild (about 41–49 ms for both passes).
+  - At 0.01 % strong pixels both passes take 26 ms instead of 41 ms. On the
+    144 unmasked frames of a recorded Eiger scan, detection takes 4.6 s
+    instead of 6.5 s, with identical spots.
+  - A summed-area table of the strong pixels was measured as an alternative
+    and was about 2.5× slower than the rebuild.
+  - The rebuild stays available as `spots::detect_two_pass` (hidden from the
+    docs, for verification and timing). The new `detect` benchmark covers
+    sparse spots, dense zingers and a 64-pixel radius.
 - Add `spots::detect_components` (both passes and every 8-connected component,
   with tight bounds and pixel count) and `spots::measure_components` (size
   rules, padding, extraction, LARGE flag, `max_spots`). `detect` is exactly

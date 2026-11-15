@@ -54,11 +54,13 @@ background only. Summed-area tables implement these sums. When every usable
 value and variance is an integer and both absolute totals are below 2^53
 (integer counts with unit gain and no read noise, or an integer supplied
 variance), every table entry and window difference is the exact integer. The
-second pass is then evaluated locally: a pixel's background changes only if a
-first-pass strong pixel lies in its annulus. Those pixels get the first-pass
+second pass can then be evaluated locally: a pixel's background changes only if
+a first-pass strong pixel lies in its annulus. Those pixels get the first-pass
 sums less the strong pixels' contributions; all others keep their first-pass
-classification. The result is bit-identical to rebuilding the tables. Otherwise
-the second pass rebuilds them. `detect_two_pass` always rebuilds, for
+classification. The result is bit-identical to rebuilding the tables. The local
+pass costs about one update per strong pixel and annulus pixel, so it runs only
+while that is at most an eighth of the pixels. Otherwise, and whenever the sums
+are not exact, the second pass rebuilds the tables. `detect_two_pass` always rebuilds, for
 verification and timing. There are exactly
 two passes; this is an independently implemented local-mean detector, not a
 claim to reproduce CrysAlisPro or DIALS. Eight-connected components are found
