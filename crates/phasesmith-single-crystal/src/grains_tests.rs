@@ -509,7 +509,6 @@ fn domains_of_one_crystal_merge_and_separate_grains_stay_apart() {
     q.extend(grain(other, turn, 0.7, &mut Lcg(9)));
     let third = mul(other, turn);
     let merged = merge_domains(&q, &[a, third, b], &with(0.5)).unwrap();
-    // The merged lattice takes the place of its larger part.
     assert_eq!(merged.len(), 2);
     let joined = merged.iter().find(|m| m.domains == 2).unwrap();
     let single = merged.iter().find(|m| m.domains == 1).unwrap();
@@ -550,4 +549,113 @@ fn merging_leaves_distinct_grains_untouched_and_checks_its_angle() {
         assert!(merge_domains(&q, &[], &o).is_err());
     }
     assert_eq!(merge_domains(&q, &[], &controlled(0.5)).unwrap(), vec![]);
+}
+
+#[test]
+fn discovery_splits_two_domains_and_the_merge_joins_them() {
+    // 0.6° apart at a 0.005 Å⁻¹ tolerance: beyond q ≈ 0.5 Å⁻¹ the two
+    // orientations no longer share nodes, and discovery returns both.
+    let (q, a, b) = two_domains(0.6);
+    let found = |merge_angle: f64| {
+        let o = Options {
+            reciprocal_tolerance: 0.005,
+            round_controls: 16,
+            merge_angle,
+            ..Options::default()
+        };
+        discover(&q, &o, &controls(), &Method::Fft, &mut |_, _| Ok(())).unwrap()
+    };
+    let apart = found(0.);
+    assert_eq!(apart.len(), 2);
+    let split = misorientation(apart[0], apart[1]).unwrap();
+    assert!((split - 0.6).abs() < 0.02, "{split}");
+    // A limit below the angle changes nothing, bit for bit.
+    assert_eq!(found(0.5), apart);
+    let joined = found(1.);
+    assert_eq!(joined.len(), 1);
+    // Between the two orientations.
+    let (from_a, from_b) = (
+        misorientation(joined[0], a).unwrap(),
+        misorientation(joined[0], b).unwrap(),
+    );
+    assert!(from_a < 0.45 && from_b < 0.45, "{from_a} {from_b}");
+}
+
+#[test]
+fn chains_stay_within_the_limit_and_order_does_not_matter() {
+    let direct = monoclinic(ENSTATITE.0, ENSTATITE.1);
+    let first = rotation(0.4, 1.1, -0.7);
+    let rng = &mut Lcg(17);
+    let reciprocal = inv_t(direct).unwrap();
+    // Three orientations 0°, 0.3° and 0.6° about one axis.
+    let turns = [0., 0.3, 0.6].map(|d| mul(first, tilt(d)));
+    let mut q = vec![];
+    for h in -14..=14 {
+        for k in -14..=14 {
+            for l in -14..=14 {
+                let node = row([f64::from(h), f64::from(k), f64::from(l)], reciprocal);
+                if (h, k, l) == (0, 0, 0) || norm(node) > 0.9 || rng.next() > 0.9 {
+                    continue;
+                }
+                let p = row(node, turns[(rng.next() * 3.) as usize % 3]);
+                q.push(std::array::from_fn(|j| p[j] + 0.002 * (rng.next() - 0.5)));
+            }
+        }
+    }
+    let [a, b, c] = turns.map(|r| mul(direct, r));
+    let o = Options {
+        merge_angle: 0.5,
+        ..Options::default()
+    };
+    // a and c are 0.6° apart: all three never merge at 0.5°.
+    for models in [[a, b, c], [c, b, a], [b, c, a]] {
+        let merged = merge_domains(&q, &models, &o).unwrap();
+        assert_eq!(merged.len(), 2, "{models:?}");
+        let joined = merged.iter().find(|m| m.domains == 2).unwrap();
+        assert!((joined.angle - 0.3).abs() < 1e-6, "{}", joined.angle);
+        assert!(merged.iter().any(|m| m.domains == 1 && m.angle == 0.));
+    }
+    // At 1° they do, and the angle is the largest between any two.
+    let wide = Options {
+        merge_angle: 1.,
+        ..Options::default()
+    };
+    let merged = merge_domains(&q, &[a, b, c], &wide).unwrap();
+    assert_eq!(merged.len(), 1);
+    assert_eq!(merged[0].domains, 3);
+    assert!((merged[0].angle - 0.6).abs() < 1e-6, "{}", merged[0].angle);
+    // A left-handed copy and a duplicate are the same lattice.
+    let left = a.map(|r| r.map(|x| -x));
+    assert!((misorientation(left, b).unwrap() - 0.3).abs() < 1e-6);
+    let twice = merge_domains(&q, &[a, a], &o).unwrap();
+    assert_eq!(twice.len(), 1);
+    assert_eq!((twice[0].domains, twice[0].angle), (2, 0.));
+}
+
+#[test]
+fn misorientation_is_symmetric_near_its_rounding_limit() {
+    let rng = &mut Lcg(29);
+    let (mut some, mut none) = (0, 0);
+    for _ in 0..4000 {
+        let cell = [
+            4. + 6. * rng.next(),
+            4. + 10. * rng.next(),
+            5. + 20. * rng.next(),
+        ];
+        let a = mul(
+            monoclinic(cell, 90. + 20. * rng.next()),
+            rotation(6. * rng.next(), 6. * rng.next(), 6. * rng.next()),
+        );
+        let b = mul(a, tilt(10. * rng.next()));
+        let (ab, ba) = (misorientation(a, b), misorientation(b, a));
+        match (ab, ba) {
+            (Some(x), Some(y)) => {
+                assert!((x - y).abs() < 1e-6, "{x} {y}");
+                some += 1;
+            }
+            (None, None) => none += 1,
+            _ => panic!("asymmetric: {ab:?} {ba:?}"),
+        }
+    }
+    assert!(some > 500 && none > 500, "{some} {none}");
 }

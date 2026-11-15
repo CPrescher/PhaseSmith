@@ -8,15 +8,18 @@ development versions.
 
 - Add `grains::Options::merge_angle` (degrees, default 0: off),
   `grains::merge_domains` and `grains::misorientation`. Discovered lattices
-  with the same cell whose orientations differ by at most `merge_angle` are
-  merged on the training positions: refined as one lattice, refit jointly, and
-  kept merged when that lattice owns at least 85 % of the positions its parts
-  owned. A crystal with a few tenths of a degree of mosaic spread could
-  otherwise come out as two lattices, which the shared-support duplicate
-  checks cannot see. `discover` and `find` apply the merge when `merge_angle`
-  is positive; `merge_domains` also reports how many lattices each result
-  replaces and their largest misorientation. Defaults and the single-crystal
-  workflow are unchanged.
+  with the same cell (in any setting) whose orientations all differ by at most
+  `merge_angle` are merged on the training positions: refined as one lattice,
+  refit jointly, and kept merged when that lattice explains at least 85 % of
+  the positions its parts explain. A crystal with a few tenths of a degree of
+  mosaic spread could otherwise come out as two lattices, which the
+  shared-support duplicate checks cannot see. The 85 % rule only requires one
+  lattice to hold both within the reciprocal tolerance, so `merge_angle` is
+  what separates mosaic domains from close grains of one phase. `discover` and
+  `find` apply the merge when `merge_angle` is positive; `merge_domains` also
+  reports how many lattices each result replaces and the largest
+  misorientation between them. Defaults and the single-crystal workflow are
+  unchanged.
 
 ## 0.8.3
 

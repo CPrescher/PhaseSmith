@@ -176,23 +176,37 @@ Three opt-in changes default to the workflow's behaviour:
   Dioptas' multi-grain DAC data, 0.75 rejects a loose cell (40 of 59 tight)
   that passes the rotated-control rules.
 
-- `merge_angle = θ` (degrees, at most 10) merges discovered lattices of one
-  crystal on the training positions. Two lattices are one crystal when an
-  integer unimodular change of basis maps one onto the other, the mapped cells
-  agree within 0.5 % in length and 0.5° in angle, and the rotation between
-  them (`misorientation`) is at most `θ`. Largest first, the pair is refined
-  as one lattice on the positions either owns and all lattices are refit with
-  exclusive ownership. The merge stands when the merged lattice then owns at
-  least 85 % of the positions its parts owned; otherwise both stay. A crystal
-  with a few tenths of a degree of mosaic spread can come out as two
-  lattices, each owning the positions that sit cleanly on its own nodes. The
-  duplicate checks compare shared support, and after the joint refit each
-  position has one owner, so they cannot see such a pair. On a recorded
-  enstatite scan two lattices 0.27° apart owned 1323 and 1301 of 3547
-  positions; merged, one lattice owns 2832 with the residual of an ordinary
-  single-lattice fit. `merge_domains` runs the step on given models and
-  reports how many lattices each result replaces and their largest
-  misorientation. Without a merge the models are returned bit for bit.
+- `merge_angle = θ` (degrees, at most 10) merges discovered lattices with the
+  same cell and nearly the same orientation, on the training positions, once
+  after the rounds. Two lattices have the same cell when an integer unimodular
+  change of basis maps one onto the other and the mapped cells agree within
+  0.5 % in length and 0.5° in angle; `misorientation` is then the rotation
+  between them. Entries are candidates when every pair of the discovered
+  lattices behind them is within `θ`, so chains stay within the limit.
+  Largest first, a pair is refined as one lattice on the positions either
+  explains and all lattices are refit with exclusive ownership. The merge
+  stands when the merged lattice then explains at least 85 % of those
+  positions; otherwise both stay.
+  - Why: a crystal with a few tenths of a degree of mosaic spread can come out
+    as two lattices, each owning the positions that sit cleanly on its own
+    nodes. The duplicate checks compare shared support, and after the joint
+    refit each position has one owner, so they cannot see such a pair. On a
+    recorded enstatite scan two lattices 0.27° apart owned 1323 and 1301 of
+    3547 positions; merged, one lattice owns 2832 with the residual of an
+    ordinary single-lattice fit.
+  - Limit: the 85 % rule only asks whether one lattice holds both within the
+    reciprocal tolerance. A lattice midway between orientations `θ` apart
+    reaches every position with `q θ/2` below the tolerance, so at the default
+    0.015 Å⁻¹ and q ≤ 0.9 Å⁻¹ two full grains of one phase up to about 1.5°
+    apart merge as readily as mosaic domains. Only `merge_angle` separates
+    the two cases; keep it near the mosaic spread expected.
+  - `misorientation` compares lattices, not structures (nearly coincident
+    twin lattices count as close), and its rounded change of basis reaches
+    about 14° for a cubic cell but only a few degrees for elongated ones.
+  - Merged lattices do not free rounds for further grains. `merge_domains`
+    runs the step on given models and reports how many lattices each result
+    replaces and the largest misorientation between any two of them. Without
+    a merge the models are returned bit for bit.
 
 None is the default. All change results, and PhaseSmith's existing
 fixtures and the Python reference do not cover them yet.
