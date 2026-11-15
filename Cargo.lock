@@ -949,6 +949,7 @@ name = "phasesmith-single-crystal"
 version = "0.8.2"
 dependencies = [
  "criterion",
+ "nalgebra",
  "ndarray",
  "phasesmith-crystallography",
  "phasesmith-execution",

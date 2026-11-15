@@ -30,6 +30,10 @@ pub use phasesmith_workflows as workflows;
 #[cfg(feature = "hdf5")]
 pub use phasesmith_hdf5 as hdf5;
 
+/// Position-only multi-grain lattice discovery and frozen-pool validation.
+#[cfg(feature = "grains")]
+pub use phasesmith_single_crystal::grains;
+
 /// Independent equidistant-row grouping for lattice discovery.
 #[cfg(feature = "row-search")]
 pub use phasesmith_single_crystal::row_search;

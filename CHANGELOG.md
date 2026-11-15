@@ -6,6 +6,28 @@ development versions.
 
 ## Unreleased
 
+- Expose native multi-grain lattice discovery as
+  `phasesmith_single_crystal::grains` (feature `grains`, in the default
+  features and the facade). `discover`, `validate` and `find` need only
+  reciprocal positions, a training partition and rotated controls; no cell
+  prior, elements or structure search. The single-crystal workflow now calls
+  them with `Options::default()`. Its results are bit-identical; the former
+  literals (grid, maxima, directions, pairs, refinements, five rounds,
+  tolerance, ambiguity, length/volume/condition bounds) are options with those
+  defaults.
+- Add opt-in grain discovery options, all off by default:
+  - `max_grains` bounds the rounds, as in `find_grains`; five rounds cap a
+    multi-grain cloud at five grains.
+  - `round_controls` ranks each round's proposals by support beyond rotated
+    controls and prefers a smaller cell on the same positions. The uniform
+    expectation lets a supercell of a weaker grain win its round and hide
+    that grain; in the new test, the defaults report two of three grains as
+    supercells and the option finds all three.
+  - `min_tight_fraction` requires withheld matches near the nodes. It rejects
+    loose cells that pass the rotated-control rules on multi-grain DAC data.
+  - `Method::Rows` follows `find_grains(method="rows")` (per-group inference,
+    `_consolidate`); `Method::Both` pools FFT and row proposals.
+
 ## 0.8.2
 
 - Upgrade the `zip` dependency of `phasesmith-persistence` and
