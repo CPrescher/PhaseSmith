@@ -30,6 +30,10 @@ development versions.
   literals (grid, maxima, directions, pairs, refinements, five rounds,
   tolerance, ambiguity, length/volume/condition bounds) are options with those
   defaults.
+- `grains::Options`, `grains::Method` and `grains::Grain` are
+  `#[non_exhaustive]`; start from `Options::default()` and assign fields.
+  With `Method::Both`, progress counts FFT rounds and then row groups in one
+  range.
 - Add opt-in grain discovery options, all off by default:
   - `max_grains` bounds the rounds, as in `find_grains`; five rounds cap a
     multi-grain cloud at five grains.

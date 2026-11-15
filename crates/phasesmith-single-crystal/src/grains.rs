@@ -40,10 +40,12 @@ pub type M3 = [V3; 3];
 type Result<T> = std::result::Result<T, SpotError>;
 
 /// Bounded discovery and validation settings. Defaults are the native
-/// workflow's values.
+/// workflow's values. Non-exhaustive so settings can be added: start from
+/// [`Options::default`] and assign fields.
 #[derive(Clone, Debug, PartialEq)]
+#[non_exhaustive]
 pub struct Options {
-    /// Shortest and longest direct basis vector, ångström.
+    /// Shortest direct basis vector, ångström.
     pub min_length: f64,
     /// Longest direct basis vector, ångström.
     pub max_length: f64,
@@ -65,7 +67,7 @@ pub struct Options {
     pub reciprocal_tolerance: f64,
     /// Fewest training positions a model must own.
     pub min_indexed: usize,
-    /// Direct cell volume bounds, cubic ångström.
+    /// Lower direct cell volume bound, cubic ångström.
     pub min_volume: f64,
     /// Upper direct cell volume bound, cubic ångström.
     pub max_volume: f64,
@@ -170,8 +172,10 @@ impl Options {
     }
 }
 
-/// How discovery proposes lattices.
+/// How discovery proposes lattices. Non-exhaustive: the row variants exist
+/// only with the `row-search` feature, and methods may be added.
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub enum Method {
     /// Fourier triplets on the whole remaining training cloud, per round.
     Fft,
@@ -186,6 +190,8 @@ pub enum Method {
 }
 
 /// Position-supported competing lattice, with independently withheld ownership.
+#[derive(Clone, Debug)]
+#[non_exhaustive]
 pub struct Grain {
     /// Right-handed direct row basis in angstroms.
     pub direct: M3,
@@ -857,7 +863,9 @@ impl Search<'_> {
         }
         Ok(self.joint(fit, chosen)?.0)
     }
-    /// One lattice per row-search group (`row_grains.discover_rows`).
+    /// One lattice per row-search group (`row_grains.discover_rows`). The
+    /// grouping itself runs to completion or its own deadline
+    /// (`row_search::Options::seconds`); `progress` can cancel between groups.
     #[cfg(feature = "row-search")]
     fn rows(
         &self,
@@ -948,8 +956,13 @@ pub fn discover(
         }
         #[cfg(feature = "row-search")]
         Method::Both(rows) => {
-            let mut proposals = search.fft(train, controls, progress)?;
-            proposals.extend(search.rows(train, rows, progress)?);
+            // One progress range: FFT rounds, then row groups.
+            let mut proposals = search.fft(train, controls, &mut |done, total| {
+                progress(done, 2 * total)
+            })?;
+            proposals.extend(search.rows(train, rows, &mut |done, total| {
+                progress(total + done, 2 * total)
+            })?);
             search.consolidate(train, &proposals)
         }
     }
