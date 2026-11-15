@@ -44,6 +44,11 @@ name = "candidate_fitting"
 harness = false
 required-features = ["solution"]
 
+[[bench]]
+name = "detect"
+harness = false
+required-features = ["spots"]
+
 [[example]]
 name = "frame_validity"
 required-features = ["spots"]

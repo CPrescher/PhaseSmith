@@ -6,6 +6,21 @@ development versions.
 
 ## Unreleased
 
+- Evaluate the second spot-detection pass locally when the first pass's sums
+  are exact: integer values and variances, absolute totals below 2^53. Only
+  pixels with a first-pass strong pixel in their annulus are reclassified,
+  from the first-pass sums less those pixels' contributions. Results are
+  bit-identical to the full rebuild, which still runs otherwise and remains
+  available as `spots::detect_two_pass`. On a 2068×2162 frame with 150 spots
+  (new `detect` benchmark), detection takes 43 ms instead of 78 ms. On the 144
+  unmasked frames of a recorded Eiger scan it takes 7.1 s instead of 10.1 s,
+  with identical spots.
+- Add `spots::detect_components` (both passes and every 8-connected component,
+  with tight bounds and pixel count) and `spots::measure_components` (size
+  rules, padding, extraction, LARGE flag, `max_spots`). `detect` is exactly
+  the two in sequence, so a host can change `min_pixels` without detecting
+  again; `Bounds::expanded` is now public. `detect`'s output is unchanged.
+
 - Expose native multi-grain lattice discovery as
   `phasesmith_single_crystal::grains` (feature `grains`, in the default
   features and the facade). `discover`, `validate` and `find` need only

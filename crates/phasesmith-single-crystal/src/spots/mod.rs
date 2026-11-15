@@ -78,7 +78,10 @@ pub struct Bounds {
     pub y1: usize,
 }
 impl Bounds {
-    fn expanded(self, radius: usize, width: usize, height: usize) -> Self {
+    /// Padded by `radius` on every side, clipped to a `width` × `height`
+    /// detector: the aperture [`detect`] measures for a component.
+    #[must_use]
+    pub fn expanded(self, radius: usize, width: usize, height: usize) -> Self {
         Self {
             x0: self.x0.saturating_sub(radius),
             y0: self.y0.saturating_sub(radius),
@@ -336,16 +339,27 @@ impl Integral {
             count: vec![0; n],
         }
     }
-    fn rebuild(&mut self, image: &Image<'_>, exclude: &[bool]) -> Result<(), SpotError> {
+    /// Prefix sums of the included pixels. Returns whether they are exact:
+    /// every included value and variance an integer, each absolute total
+    /// below 2^53. Then every prefix entry and every window difference is the
+    /// exact integer, whatever the summation order.
+    #[allow(clippy::float_cmp)] // Exact integer test.
+    fn rebuild(&mut self, image: &Image<'_>, exclude: &[bool]) -> Result<bool, SpotError> {
+        const EXACT: f64 = 9_007_199_254_740_992.0; // 2^53
+        let (mut integers, mut total_value, mut total_variance) = (true, 0.0_f64, 0.0_f64);
         // Each interior entry is overwritten; the zero first row/column stay zero.
         for y in 0..image.height {
             let (mut s, mut v, mut c) = (0.0, 0.0, 0);
             for x in 0..image.width {
                 let i = y * image.width + x;
                 if !image.mask[i] && !exclude[i] && !image.saturated(i) {
-                    s += image.values[i];
-                    v += image.pixel_variance(i);
+                    let (value, variance) = (image.values[i], image.pixel_variance(i));
+                    s += value;
+                    v += variance;
                     c += 1;
+                    integers &= value.trunc() == value && variance.trunc() == variance;
+                    total_value += value.abs();
+                    total_variance += variance;
                 }
                 let j = (y + 1) * self.width + x + 1;
                 self.sum[j] = self.sum[j - self.width] + s;
@@ -356,7 +370,85 @@ impl Integral {
                 }
             }
         }
-        Ok(())
+        Ok(integers && total_value < EXACT && total_variance < EXACT)
+    }
+    /// Pass two from exact pass-one sums. Excluding a pass-one strong pixel
+    /// changes the annulus sums only of the pixels whose annulus holds it,
+    /// that is, the pixels in its own annulus (square windows: Chebyshev
+    /// distance above the inner and at most the outer radius). Elsewhere the
+    /// exact sums, and so the classification, are those of pass one. Each
+    /// strong pixel scatters its contribution to its annulus; the annulus
+    /// sums less those are exactly the sums a rebuild gives. Bit-identical to
+    /// `rebuild(strong)` then `classify` whenever `rebuild` reported exact.
+    fn reclassify_near(&self, image: &Image<'_>, options: Options, strong: &mut [bool]) {
+        let (w, h) = (image.width, image.height);
+        let (ro, ri) = (options.outer_radius, options.inner_radius);
+        // Removed (count, value, variance) per affected pixel, in first-touch order.
+        let mut slot = vec![u32::MAX; w * h];
+        let mut affected: Vec<(usize, i64, f64, f64)> = Vec::new();
+        for (p, _) in strong.iter().enumerate().filter(|(_, s)| **s) {
+            if image.mask[p] || image.saturated(p) {
+                continue;
+            }
+            let (value, variance) = (image.values[p], image.pixel_variance(p));
+            let (px, py) = (p % w, p / w);
+            for y in py.saturating_sub(ro)..=(py + ro).min(h - 1) {
+                let near_row = y.abs_diff(py) <= ri;
+                for x in px.saturating_sub(ro)..=(px + ro).min(w - 1) {
+                    if near_row && x.abs_diff(px) <= ri {
+                        continue; // Inner window: excluded from both sums.
+                    }
+                    let i = y * w + x;
+                    if slot[i] == u32::MAX {
+                        slot[i] = u32::try_from(affected.len()).unwrap_or(u32::MAX);
+                        affected.push((i, 0, 0.0, 0.0));
+                    }
+                    let entry = &mut affected[slot[i] as usize];
+                    entry.1 += 1;
+                    entry.2 += value;
+                    entry.3 += variance;
+                }
+            }
+        }
+        let minimum = i64::try_from(options.min_background).unwrap_or(i64::MAX);
+        for (i, removed, removed_sum, removed_variance) in affected {
+            if image.mask[i] {
+                continue;
+            }
+            let (x, y) = (i % w, i / w);
+            let corners = |r: usize| {
+                let (x0, x1) = (x.saturating_sub(r), (x + 1).saturating_add(r).min(w));
+                let (y0, y1) = (y.saturating_sub(r), (y + 1).saturating_add(r).min(h));
+                [
+                    y0 * self.width + x0,
+                    y0 * self.width + x1,
+                    y1 * self.width + x0,
+                    y1 * self.width + x1,
+                ]
+            };
+            let (outer, inner) = (corners(ro), corners(ri));
+            let count = |[a, c, d, e]: [usize; 4]| {
+                i64::from(self.count[e]) - i64::from(self.count[c]) - i64::from(self.count[d])
+                    + i64::from(self.count[a])
+            };
+            let n = count(outer) - count(inner) - removed;
+            if n < minimum {
+                strong[i] = false;
+                continue;
+            }
+            let window = |values: &[f64], [a, c, d, e]: [usize; 4]| {
+                values[e] - values[c] - values[d] + values[a]
+            };
+            let s = (window(&self.sum, outer) - window(&self.sum, inner)) - removed_sum;
+            let v =
+                (window(&self.variance, outer) - window(&self.variance, inner)) - removed_variance;
+            let nf = n as f64;
+            let excess = image.values[i] - s / nf;
+            strong[i] = excess > options.threshold_absolute
+                && excess
+                    > options.threshold_sigma
+                        * (image.pixel_variance(i) + v.max(0.0) / (nf * nf)).sqrt();
+        }
     }
     fn classify_clipped(
         &self,
@@ -504,15 +596,119 @@ impl Integral {
 pub fn detect(image: &Image<'_>, options: Options) -> Result<Detection, SpotError> {
     image.validate()?;
     options.validate()?;
+    let strong = strong_pixels(image, options, true)?;
+    measure_components(image, &components(image, strong), options)
+}
+
+/// One 8-connected component of strong pixels.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Component {
+    /// Tight bounds of its pixels, without padding.
+    pub bounds: Bounds,
+    /// Strong pixels in it.
+    pub pixels: usize,
+}
+
+/// Both threshold passes and every 8-connected component, in [`detect`]'s
+/// row-major discovery order, before the `min_pixels`, `max_pixels` and
+/// `max_spots` rules and extraction. With [`measure_components`], a host can
+/// change `min_pixels` (or padding, background margin, `max_pixels`) without
+/// detecting again.
+///
+/// # Errors
+/// Returns an error for invalid image/options or numerical overflow.
+pub fn detect_components(image: &Image<'_>, options: Options) -> Result<Vec<Component>, SpotError> {
+    image.validate()?;
+    options.validate()?;
+    let strong = strong_pixels(image, options, true)?;
+    Ok(components(image, strong))
+}
+
+/// The rest of [`detect`] on components from [`detect_components`]: drop
+/// those below `min_pixels` (counted as `rejected_small`), pad the rest,
+/// extract them with every kept box excluded from every background, and flag
+/// those above `max_pixels`. `detect` is exactly `detect_components` then
+/// this, so the result equals a fresh `detect` with these options whenever
+/// the threshold and support options match those of the detection.
+///
+/// # Errors
+/// Returns an error for invalid image/options, or above `max_spots` kept
+/// components.
+pub fn measure_components(
+    image: &Image<'_>,
+    components: &[Component],
+    options: Options,
+) -> Result<Detection, SpotError> {
+    image.validate()?;
+    options.validate()?;
+    let (mut boxes, mut flags, mut rejected_small) = (Vec::new(), Vec::new(), 0);
+    for c in components {
+        let b = c.bounds;
+        if c.pixels == 0
+            || b.x0 >= b.x1
+            || b.y0 >= b.y1
+            || b.x1 > image.width
+            || b.y1 > image.height
+        {
+            return Err(invalid("invalid component"));
+        }
+        if c.pixels < options.min_pixels {
+            rejected_small += 1;
+            continue;
+        }
+        if boxes.len() >= options.max_spots {
+            return Err(invalid(
+                "max_spots exceeded; no candidates silently truncated",
+            ));
+        }
+        boxes.push(b.expanded(options.padding, image.width, image.height));
+        flags.push(if c.pixels > options.max_pixels {
+            LARGE
+        } else {
+            0
+        });
+    }
+    let mut spots = extract_validated(image, &boxes, options)?;
+    for (spot, flag) in spots.iter_mut().zip(flags) {
+        spot.flags |= flag;
+    }
+    Ok(Detection {
+        spots,
+        rejected_small,
+    })
+}
+
+/// [`detect`] with pass two always rebuilt over the whole frame, as before
+/// the local pass two. The same result; for verification and timing.
+///
+/// # Errors
+/// As [`detect`].
+pub fn detect_two_pass(image: &Image<'_>, options: Options) -> Result<Detection, SpotError> {
+    image.validate()?;
+    options.validate()?;
+    let strong = strong_pixels(image, options, false)?;
+    measure_components(image, &components(image, strong), options)
+}
+
+/// Both threshold passes. Pass two is local (`Integral::reclassify_near`)
+/// when `local` and pass one's sums are exact; otherwise a full rebuild.
+fn strong_pixels(image: &Image<'_>, options: Options, local: bool) -> Result<Vec<bool>, SpotError> {
     let mut strong = vec![false; image.values.len()];
     let mut integral = Integral::new(image);
-    integral.rebuild(image, &strong)?;
+    let exact = integral.rebuild(image, &strong)?;
     integral.classify(image, options, &mut strong);
-    integral.rebuild(image, &strong)?;
-    integral.classify(image, options, &mut strong);
-    drop(integral);
-    let (mut boxes, mut flags, mut queue, mut rejected_small) =
-        (Vec::new(), Vec::new(), Vec::new(), 0);
+    if local && exact {
+        integral.reclassify_near(image, options, &mut strong);
+    } else {
+        integral.rebuild(image, &strong)?;
+        integral.classify(image, options, &mut strong);
+    }
+    Ok(strong)
+}
+
+/// 8-connected components of the strong pixels, in row-major discovery order.
+fn components(image: &Image<'_>, mut strong: Vec<bool>) -> Vec<Component> {
+    let (mut found, mut queue) = (Vec::new(), Vec::new());
     for i in 0..strong.len() {
         if !strong[i] {
             continue;
@@ -546,30 +742,12 @@ pub fn detect(image: &Image<'_>, options: Options) -> Result<Detection, SpotErro
                 }
             }
         }
-        if queue.len() < options.min_pixels {
-            rejected_small += 1;
-            continue;
-        }
-        if boxes.len() >= options.max_spots {
-            return Err(invalid(
-                "max_spots exceeded; no candidates silently truncated",
-            ));
-        }
-        boxes.push(bounds.expanded(options.padding, image.width, image.height));
-        flags.push(if queue.len() > options.max_pixels {
-            LARGE
-        } else {
-            0
+        found.push(Component {
+            bounds,
+            pixels: queue.len(),
         });
     }
-    let mut spots = extract_validated(image, &boxes, options)?;
-    for (spot, flag) in spots.iter_mut().zip(flags) {
-        spot.flags |= flag;
-    }
-    Ok(Detection {
-        spots,
-        rejected_small,
-    })
+    found
 }
 
 /// Sum caller-supplied boxes, including weak/negative observations without
@@ -765,6 +943,205 @@ mod tests {
         assert!((s[0].values[2] + 3.0).abs() < 1e-14);
         let expected = (4.0_f64 + 4.0 / 80.0).sqrt();
         assert!((s[0].values[3] - expected).abs() < 1e-14);
+    }
+    /// Deterministic integer frames: Poisson-like background, spots of
+    /// several sizes and brightnesses, masked and saturated pixels.
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_possible_wrap,
+        clippy::cast_sign_loss
+    )] // Small synthetic coordinates.
+    fn frame(seed: u64, width: usize, height: usize, spots: usize) -> (Vec<f64>, Vec<bool>) {
+        let mut state = seed;
+        let mut next = move || {
+            state = state
+                .wrapping_mul(6_364_136_223_846_793_005)
+                .wrapping_add(1_442_695_040_888_963_407);
+            (state >> 11) as f64 / (1_u64 << 53) as f64
+        };
+        let mut values: Vec<f64> = (0..width * height)
+            .map(|_| (3.0 + 4.0 * next() + 3.0 * next()).floor())
+            .collect();
+        for _ in 0..spots {
+            let (cx, cy) = (next() * width as f64, next() * height as f64);
+            let (peak, sigma) = (20.0 + 3000.0 * next() * next(), 0.6 + 2.0 * next());
+            let r = (4.0 * sigma).ceil() as isize;
+            for dy in -r..=r {
+                for dx in -r..=r {
+                    let (x, y) = (cx as isize + dx, cy as isize + dy);
+                    if x < 0 || y < 0 || x >= width as isize || y >= height as isize {
+                        continue;
+                    }
+                    let d2 = (dx * dx + dy * dy) as f64;
+                    values[y as usize * width + x as usize] +=
+                        (peak * (-d2 / (2.0 * sigma * sigma)).exp()).floor();
+                }
+            }
+        }
+        let mask = (0..width * height).map(|_| next() < 0.03).collect();
+        (values, mask)
+    }
+    fn same(a: &Detection, b: &Detection) {
+        assert_eq!(a.rejected_small, b.rejected_small);
+        assert_eq!(a.spots.len(), b.spots.len());
+        for (x, y) in a.spots.iter().zip(&b.spots) {
+            assert_eq!(x.bounds, y.bounds);
+            assert_eq!(x.flags, y.flags);
+            assert_eq!(x.values.map(f64::to_bits), y.values.map(f64::to_bits));
+        }
+    }
+    #[test]
+    fn local_second_pass_is_bit_identical_to_the_full_rebuild() {
+        let mut checked_local = 0;
+        for (seed, (width, height, spots)) in [
+            (32, 32, 2),
+            (200, 150, 40),
+            (17, 300, 12),
+            (300, 9, 6),
+            (129, 130, 60),
+            (64, 64, 0),
+            (1, 1, 0),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let (values, mask) = frame(seed as u64 + 1, width, height, spots);
+            let supplied: Vec<f64> = values.iter().map(|v| v.max(1.0)).collect();
+            let fractional: Vec<f64> = values.iter().map(|v| v.max(1.0) + 0.25).collect();
+            for (variance, gain, read_noise, saturation) in [
+                (None, 1.0, 0.0, None),
+                (None, 1.0, 0.0, Some(800.0)),
+                (Some(&supplied[..]), 1.0, 0.0, None),
+                // Not exact: pass two is the full rebuild.
+                (Some(&fractional[..]), 1.0, 0.0, None),
+                (None, 1.7, 1.3, None),
+            ] {
+                for options in [
+                    Options::default(),
+                    Options {
+                        inner_radius: 0,
+                        outer_radius: 1,
+                        min_background: 3,
+                        ..Options::default()
+                    },
+                    Options {
+                        inner_radius: 3,
+                        outer_radius: 70,
+                        threshold_sigma: 3.0,
+                        min_pixels: 1,
+                        ..Options::default()
+                    },
+                    Options {
+                        threshold_absolute: 15.0,
+                        ..Options::default()
+                    },
+                ] {
+                    let image = Image {
+                        values: &values,
+                        height,
+                        width,
+                        mask: &mask,
+                        variance,
+                        gain,
+                        read_noise,
+                        saturation,
+                    };
+                    let local = strong_pixels(&image, options, true).unwrap();
+                    let full = strong_pixels(&image, options, false).unwrap();
+                    assert_eq!(local, full, "{width}x{height} {options:?} {variance:?}");
+                    match (detect(&image, options), detect_two_pass(&image, options)) {
+                        (Ok(a), Ok(b)) => same(&a, &b),
+                        (Err(a), Err(b)) => assert_eq!(a.0, b.0),
+                        (a, b) => panic!("{a:?} {b:?}"),
+                    }
+                    let mut probe = Integral::new(&image);
+                    if probe.rebuild(&image, &vec![false; values.len()]).unwrap()
+                        && local.iter().any(|&s| s)
+                    {
+                        checked_local += 1;
+                    }
+                }
+            }
+        }
+        // The exact path ran with strong pixels present in many cases.
+        assert!(checked_local > 40, "{checked_local}");
+    }
+    #[test]
+    fn remeasured_components_equal_a_fresh_detection_at_each_minimum() {
+        let (values, mask) = frame(5, 240, 200, 50);
+        let image = Image {
+            values: &values,
+            height: 200,
+            width: 240,
+            mask: &mask,
+            variance: None,
+            gain: 1.0,
+            read_noise: 0.0,
+            saturation: Some(2500.0),
+        };
+        let base = Options {
+            min_pixels: 1,
+            max_pixels: 40,
+            ..Options::default()
+        };
+        let found = detect_components(&image, base).unwrap();
+        assert!(found.iter().any(|c| c.pixels == 1) && found.iter().any(|c| c.pixels > 40));
+        for min_pixels in [1, 2, 3, 5, 9, 25] {
+            let options = Options { min_pixels, ..base };
+            let remeasured = measure_components(&image, &found, options).unwrap();
+            same(&remeasured, &detect(&image, options).unwrap());
+            // The same by hand: filter, pad, public `extract`, LARGE flag.
+            let kept: Vec<_> = found.iter().filter(|c| c.pixels >= min_pixels).collect();
+            let boxes: Vec<_> = kept
+                .iter()
+                .map(|c| c.bounds.expanded(options.padding, 240, 200))
+                .collect();
+            let mut spots = extract(&image, &boxes, options).unwrap();
+            for (spot, c) in spots.iter_mut().zip(&kept) {
+                if c.pixels > options.max_pixels {
+                    spot.flags |= LARGE;
+                }
+            }
+            same(
+                &Detection {
+                    spots,
+                    rejected_small: found.len() - kept.len(),
+                },
+                &remeasured,
+            );
+        }
+        // The budget still applies to the kept components.
+        let tight = Options {
+            min_pixels: 1,
+            max_spots: 3,
+            ..base
+        };
+        assert!(measure_components(&image, &found, tight).is_err());
+        assert!(detect(&image, tight).is_err());
+    }
+    #[test]
+    fn exactness_needs_integers_and_bounded_totals() {
+        let values = vec![3.0, 4.0, 5.0, 6.0];
+        let mask = vec![false; 4];
+        let image = |values: &[f64], gain, read_noise| Image {
+            values: &values.to_vec().leak()[..],
+            height: 2,
+            width: 2,
+            mask: &mask.clone().leak()[..],
+            variance: None,
+            gain,
+            read_noise,
+            saturation: None,
+        };
+        let exact = |image: &Image<'_>| Integral::new(image).rebuild(image, &[false; 4]).unwrap();
+        assert!(exact(&image(&values, 1.0, 0.0)));
+        assert!(!exact(&image(&[3.5, 4.0, 5.0, 6.0], 1.0, 0.0)));
+        assert!(!exact(&image(&values, 2.0, 0.0)), "variance v/2");
+        assert!(!exact(&image(&values, 1.0, 0.5)), "variance + 0.25");
+        assert!(
+            !exact(&image(&[4.0e15, 4.0e15, 4.0e15, 4.0e15], 1.0, 0.0)),
+            "beyond 2^53"
+        );
     }
     #[test]
     fn detects_unknown_spot_and_preserves_mask_flag() {
