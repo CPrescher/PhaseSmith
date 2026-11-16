@@ -98,6 +98,18 @@ pub fn extract(
     Ok((spots, diagnostics))
 }
 
+/// Pixel variance entering the σ of sums (peak, plane covariance, border).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum SumVariance {
+    /// `max(max(counts, 0)/gain + read², 1)`: the former rule, kept for
+    /// [`extract`] and the native workflow.
+    Floored,
+    /// `max(counts, 0)/gain + read²` per pixel (unbiased for Poisson counts);
+    /// a peak or border sum's variance is at least that of its fitted
+    /// background and at least one count², so σ stays positive.
+    CountsOrBackground,
+}
+
 /// Internal profile-collection variant retaining the full fitted-plane covariance.
 #[allow(
     clippy::too_many_arguments,
@@ -112,6 +124,34 @@ pub(crate) fn extract_full(
     minimum: usize,
     clip: f64,
 ) -> Result<(Vec<Spot>, Vec<[f64; 12]>, Vec<[f64; 9]>), SpotError> {
+    extract_full_with(
+        image,
+        boxes,
+        gap,
+        margin,
+        minimum,
+        clip,
+        SumVariance::Floored,
+    )
+}
+
+/// [`extract_full`] with a choice of the variance of sums. Clipping, the
+/// residual RMS and all flags except [`BOUNDARY`] use the floored pixel
+/// variance in either case.
+#[allow(
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    clippy::type_complexity
+)]
+pub(crate) fn extract_full_with(
+    image: &Image<'_>,
+    boxes: &[Bounds],
+    gap: usize,
+    margin: usize,
+    minimum: usize,
+    clip: f64,
+    sum: SumVariance,
+) -> Result<(Vec<Spot>, Vec<[f64; 12]>, Vec<[f64; 9]>), SpotError> {
     image.validate()?;
     if boxes.len() > 1_000_000
         || gap > 128
@@ -122,24 +162,125 @@ pub(crate) fn extract_full(
     {
         return Err(invalid("invalid guarded plane background options"));
     }
-    let mut signal = vec![0_u32; image.values.len()];
-    let mut guard = vec![0_u32; image.values.len()];
     for &b in boxes {
         if b.x0 >= b.x1 || b.y0 >= b.y1 || b.x1 > image.width || b.y1 > image.height {
             return Err(invalid("invalid signal box"));
         }
-        for y in b.y0..b.y1 {
-            for x in b.x0..b.x1 {
-                signal[y * image.width + x] += 1;
+    }
+    let coverage = SparseCoverage::new(boxes, gap, image.width, image.height);
+    extract_boxes(image, boxes, gap, margin, minimum, clip, &coverage, sum)
+}
+
+/// How many signal boxes and guarded boxes cover each pixel near one box.
+pub(crate) trait Coverage {
+    /// Signal-box and guard counts of every pixel of `region`, row-major.
+    fn counts(&self, region: Bounds) -> (Vec<u32>, Vec<u32>);
+}
+
+/// Box-local coverage from a bucket index of the guarded boxes; no
+/// full-image array. Counts equal those of a dense per-pixel accumulation.
+pub(crate) struct SparseCoverage<'a> {
+    boxes: &'a [Bounds],
+    guards: Vec<Bounds>,
+    cells: std::collections::HashMap<usize, Vec<u32>>,
+    columns: usize,
+}
+/// Bucket side, pixels.
+const CELL: usize = 32;
+impl<'a> SparseCoverage<'a> {
+    /// Heap bytes of the index (guards and bucket lists), excluding the
+    /// hash table's control bytes.
+    #[cfg(test)]
+    pub(crate) fn heap_bytes(&self) -> usize {
+        self.guards.capacity() * std::mem::size_of::<Bounds>()
+            + self
+                .cells
+                .values()
+                .map(|v| v.capacity() * 4 + 32)
+                .sum::<usize>()
+    }
+    pub(crate) fn new(boxes: &'a [Bounds], gap: usize, width: usize, height: usize) -> Self {
+        let columns = width.div_ceil(CELL);
+        let guards: Vec<Bounds> = boxes
+            .iter()
+            .map(|b| b.expanded(gap, width, height))
+            .collect();
+        let mut cells: std::collections::HashMap<usize, Vec<u32>> =
+            std::collections::HashMap::new();
+        for (i, g) in guards.iter().enumerate() {
+            for cy in g.y0 / CELL..=(g.y1 - 1) / CELL {
+                for cx in g.x0 / CELL..=(g.x1 - 1) / CELL {
+                    #[allow(clippy::cast_possible_truncation)] // At most 1e6 boxes.
+                    cells.entry(cy * columns + cx).or_default().push(i as u32);
+                }
             }
         }
-        let g = b.expanded(gap, image.width, image.height);
-        for y in g.y0..g.y1 {
-            for x in g.x0..g.x1 {
-                guard[y * image.width + x] += 1;
-            }
+        Self {
+            boxes,
+            guards,
+            cells,
+            columns,
         }
     }
+}
+fn add(counts: &mut [u32], region: Bounds, rect: Bounds) {
+    let (x0, x1) = (rect.x0.max(region.x0), rect.x1.min(region.x1));
+    let (y0, y1) = (rect.y0.max(region.y0), rect.y1.min(region.y1));
+    let w = region.x1 - region.x0;
+    for y in y0..y1 {
+        for x in x0..x1 {
+            counts[(y - region.y0) * w + x - region.x0] += 1;
+        }
+    }
+}
+impl Coverage for SparseCoverage<'_> {
+    fn counts(&self, region: Bounds) -> (Vec<u32>, Vec<u32>) {
+        let mut candidates = Vec::new();
+        for cy in region.y0 / CELL..=(region.y1 - 1) / CELL {
+            for cx in region.x0 / CELL..=(region.x1 - 1) / CELL {
+                if let Some(list) = self.cells.get(&(cy * self.columns + cx)) {
+                    candidates.extend_from_slice(list);
+                }
+            }
+        }
+        candidates.sort_unstable();
+        candidates.dedup();
+        let n = (region.x1 - region.x0) * (region.y1 - region.y0);
+        let (mut signal, mut guard) = (vec![0; n], vec![0; n]);
+        for &i in &candidates {
+            add(&mut signal, region, self.boxes[i as usize]);
+            add(&mut guard, region, self.guards[i as usize]);
+        }
+        (signal, guard)
+    }
+}
+
+#[allow(
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    clippy::type_complexity
+)]
+fn extract_boxes(
+    image: &Image<'_>,
+    boxes: &[Bounds],
+    gap: usize,
+    margin: usize,
+    minimum: usize,
+    clip: f64,
+    coverage: &impl Coverage,
+    sum: SumVariance,
+) -> Result<(Vec<Spot>, Vec<[f64; 12]>, Vec<[f64; 9]>), SpotError> {
+    // Variance of a pixel in a sum, given its floored variance and fitted
+    // background. A supplied variance image is always used as given.
+    let counts = sum == SumVariance::CountsOrBackground && image.variance.is_none();
+    let read = image.read_noise.powi(2);
+    let sum_variance = |value: f64, floored: f64| {
+        if counts {
+            value.max(0.0) / image.gain + read
+        } else {
+            floored
+        }
+    };
     let mut out = Vec::with_capacity(boxes.len());
     let mut diagnostics = Vec::with_capacity(boxes.len());
     let mut covariances = Vec::with_capacity(boxes.len());
@@ -150,11 +291,13 @@ pub(crate) fn extract_full(
         let sy = ((b.y1 - b.y0) as f64 / 2.0).max(1.0);
         let basis = |x: usize, y: usize| [1.0, (x as f64 - cx) / sx, (y as f64 - cy) / sy];
         let outer = b.expanded(gap + margin, image.width, image.height);
+        let (signal, guard) = coverage.counts(outer);
+        let local = |x: usize, y: usize| (y - outer.y0) * (outer.x1 - outer.x0) + x - outer.x0;
         let mut samples = Vec::new();
         for y in outer.y0..outer.y1 {
             for x in outer.x0..outer.x1 {
                 let i = y * image.width + x;
-                if guard[i] == 0 && !image.mask[i] && !image.saturated(i) {
+                if guard[local(x, y)] == 0 && !image.mask[i] && !image.saturated(i) {
                     samples.push(Sample {
                         x: basis(x, y),
                         value: image.values[i],
@@ -220,10 +363,11 @@ pub(crate) fn extract_full(
         let mut residual = 0.0;
         for (s, &yes) in samples.iter().zip(&keep) {
             if yes {
+                let var = sum_variance(s.value, s.variance);
                 let v = mv(inv, s.x);
                 for i in 0..3 {
                     for j in 0..3 {
-                        cov[i][j] += s.variance * v[i] * v[j];
+                        cov[i][j] += var * v[i] * v[j];
                     }
                 }
                 residual += ((s.value - dot(s.x, coeff)) / s.variance.sqrt()).powi(2);
@@ -237,11 +381,12 @@ pub(crate) fn extract_full(
             (0_usize, 0.0, 0.0, f64::NEG_INFINITY);
         let (mut q, mut eq) = ([0.0; 3], [0.0; 3]);
         let (mut edge, mut edge_var) = (0.0, 0.0);
+        let (mut background_variance, mut edge_background) = (0.0, 0.0);
         let (mut weight, mut wx, mut wy, mut wxx, mut wyy) = (0.0, 0.0, 0.0, 0.0, 0.0);
         for y in b.y0..b.y1 {
             for x in b.x0..b.x1 {
                 let i = y * image.width + x;
-                if signal[i] > 1 {
+                if signal[local(x, y)] > 1 {
                     flags |= OVERLAP;
                 }
                 if image.mask[i] {
@@ -253,10 +398,12 @@ pub(crate) fn extract_full(
                 }
                 let p = basis(x, y);
                 let d = image.values[i];
-                let v = image.pixel_variance(i);
+                let v = sum_variance(d, image.pixel_variance(i));
+                let expected = dot(p, coeff).max(0.0) / image.gain + read;
                 count += 1;
                 sum += d;
                 variance += v;
+                background_variance += expected;
                 maximum = maximum.max(d);
                 for j in 0..3 {
                     q[j] += p[j];
@@ -270,11 +417,17 @@ pub(crate) fn extract_full(
                 if x == b.x0 || x + 1 == b.x1 || y == b.y0 || y + 1 == b.y1 {
                     edge += d;
                     edge_var += v;
+                    edge_background += expected;
                     for j in 0..3 {
                         eq[j] += p[j];
                     }
                 }
             }
+        }
+        if counts && count > 0 {
+            // NaN backgrounds (no plane) leave the counts' variance.
+            variance = variance.max(background_variance).max(1.0);
+            edge_var = edge_var.max(edge_background);
         }
         let intensity = sum - dot(q, coeff);
         let bg_var = if model.is_some() {
@@ -347,4 +500,145 @@ pub(crate) fn extract_full(
         covariances.push(std::array::from_fn(|i| cov[i / 3][i % 3]));
     }
     Ok((out, diagnostics, covariances))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The former full-image accumulation, kept as the reference.
+    struct DenseCoverage {
+        signal: Vec<u32>,
+        guard: Vec<u32>,
+        width: usize,
+    }
+    impl DenseCoverage {
+        fn new(boxes: &[Bounds], gap: usize, width: usize, height: usize) -> Self {
+            let mut signal = vec![0_u32; width * height];
+            let mut guard = vec![0_u32; width * height];
+            for &b in boxes {
+                for y in b.y0..b.y1 {
+                    for x in b.x0..b.x1 {
+                        signal[y * width + x] += 1;
+                    }
+                }
+                let g = b.expanded(gap, width, height);
+                for y in g.y0..g.y1 {
+                    for x in g.x0..g.x1 {
+                        guard[y * width + x] += 1;
+                    }
+                }
+            }
+            Self {
+                signal,
+                guard,
+                width,
+            }
+        }
+    }
+    impl Coverage for DenseCoverage {
+        fn counts(&self, r: Bounds) -> (Vec<u32>, Vec<u32>) {
+            let mut s = Vec::new();
+            let mut g = Vec::new();
+            for y in r.y0..r.y1 {
+                for x in r.x0..r.x1 {
+                    s.push(self.signal[y * self.width + x]);
+                    g.push(self.guard[y * self.width + x]);
+                }
+            }
+            (s, g)
+        }
+    }
+
+    #[test]
+    fn box_local_coverage_reproduces_the_full_image_accumulation_bit_for_bit() {
+        let (width, height) = (157, 101);
+        let mut state = 12_345_u64;
+        let mut next = |n: usize| {
+            state = state
+                .wrapping_mul(6_364_136_223_846_793_005)
+                .wrapping_add(1_442_695_040_888_963_407);
+            #[allow(clippy::cast_possible_truncation)]
+            let v = (state >> 33) as usize % n;
+            v
+        };
+        let mut values = vec![0.; width * height];
+        let mut mask = vec![false; width * height];
+        for i in 0..values.len() {
+            #[allow(clippy::cast_precision_loss)]
+            let v = 20. + (next(1000) as f64) * 0.01 + (i % width) as f64 * 0.05;
+            values[i] = v;
+            mask[i] = next(97) == 0;
+        }
+        for _ in 0..40 {
+            let (x, y) = (next(width), next(height));
+            for dy in 0..3 {
+                for dx in 0..3 {
+                    if x + dx < width && y + dy < height {
+                        values[(y + dy) * width + x + dx] += 400.;
+                    }
+                }
+            }
+        }
+        let image = Image {
+            values: &values,
+            height,
+            width,
+            mask: &mask,
+            variance: None,
+            gain: 1.,
+            read_noise: 0.,
+            saturation: Some(1e9),
+        };
+        for gap in [0, 2, 3] {
+            // Clustered, overlapping and edge boxes of several sizes.
+            let boxes: Vec<Bounds> = (0..120)
+                .map(|i| {
+                    let s = 3 + next(9);
+                    let (x, y) = if i % 3 == 0 {
+                        (60 + next(20), 40 + next(15))
+                    } else {
+                        (next(width - 1), next(height - 1))
+                    };
+                    Bounds {
+                        x0: x,
+                        y0: y,
+                        x1: (x + s).min(width),
+                        y1: (y + s).min(height),
+                    }
+                })
+                .collect();
+            let dense = DenseCoverage::new(&boxes, gap, width, height);
+            let sparse = SparseCoverage::new(&boxes, gap, width, height);
+            let a = extract_boxes(&image, &boxes, gap, 5, 20, 4., &dense, SumVariance::Floored)
+                .unwrap();
+            let b = extract_boxes(
+                &image,
+                &boxes,
+                gap,
+                5,
+                20,
+                4.,
+                &sparse,
+                SumVariance::Floored,
+            )
+            .unwrap();
+            let bits = |r: &(Vec<Spot>, Vec<[f64; 12]>, Vec<[f64; 9]>)| {
+                r.0.iter()
+                    .flat_map(|s| {
+                        s.values
+                            .iter()
+                            .map(|v| v.to_bits())
+                            .chain([u64::from(s.flags)])
+                    })
+                    .chain(r.1.iter().flatten().map(|v| v.to_bits()))
+                    .chain(r.2.iter().flatten().map(|v| v.to_bits()))
+                    .collect::<Vec<_>>()
+            };
+            assert_eq!(bits(&a), bits(&b));
+            assert!(a.0.iter().any(|s| s.flags & OVERLAP != 0));
+            let full = extract_full(&image, &boxes, gap, 5, 20, 4.).unwrap();
+            assert_eq!(bits(&a), bits(&full));
+        }
+    }
 }

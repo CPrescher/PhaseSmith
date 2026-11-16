@@ -10,7 +10,7 @@ from phasesmith._numpy_compat import trapezoid
 
 
 def test_package_exposes_installed_version() -> None:
-    assert phasesmith.__version__ == "0.8.4"
+    assert phasesmith.__version__ == "0.8.5"
 
 
 def test_native_profile_matches_independent_numpy_reference() -> None:
