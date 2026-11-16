@@ -6,6 +6,10 @@ development versions.
 
 ## Unreleased
 
+## 0.8.5
+
+Release date: 2026-11-16.
+
 - Add `measurement` to `phasesmith-single-crystal` (feature `grains`):
   prediction and intensity measurement for refined lattices with no cell
   prior, space group or recipe. `predict` lists every centring-allowed
