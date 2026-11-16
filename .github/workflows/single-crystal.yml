@@ -1,6 +1,7 @@
 name: Single-crystal installed wheels
 on:
   push:
+    branches: [main, develop]
   pull_request:
   workflow_dispatch:
 permissions:
