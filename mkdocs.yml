@@ -97,6 +97,7 @@ nav:
       - Row search: experimental-row-search.md
       - Cell comparison: experimental-cell-comparison.md
       - Lattice symmetry and constrained cells: lattice-symmetry.md
+      - Reflection measurement for refined lattices: measurement.md
       - Prediction: experimental-spot-prediction.md
       - Geometry fitting: experimental-crystal-geometry.md
       - Reflection integration: experimental-reflection-integration.md

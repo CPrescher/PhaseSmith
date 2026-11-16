@@ -12,7 +12,7 @@ pub const NO_PROFILE: u32 = 32768;
 pub const MISMATCH: u32 = 131_072;
 type Matrix = [[f64; 3]; 3];
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 /// Odd finite voxel dimensions in x, y, omega order.
 pub struct Grid {
     /// Dimensions; storage index is (omega * ny + y) * nx + x.
@@ -393,7 +393,7 @@ pub fn extract_frame(
 }
 
 /// Performance controls only; scientific equations and traversal order are unchanged.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Execution {
     /// Requested native worker count, in 1..32.
     pub workers: usize,
@@ -420,7 +420,7 @@ impl Execution {
     }
 }
 /// Actual admitted learning cache; independent of the learned numerical arrays.
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct LearningExecution {
     /// Actual native pool size; one on streaming/cache-admission fallback.
     pub workers: usize,
@@ -807,7 +807,7 @@ pub fn learn_with_execution(
 }
 
 /// Actual bounded fixed-profile execution, separate from numerical outputs.
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct FitExecution {
     /// Actual pool size.
     pub workers: usize,

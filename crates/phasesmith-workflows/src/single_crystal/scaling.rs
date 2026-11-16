@@ -3,6 +3,7 @@ use super::{
     Error, Measurements, Options, Result, bounds, grains,
     math::{V3, cross, dot, median, unit},
 };
+use phasesmith_single_crystal::measurement;
 use phasesmith_single_crystal::spots::{
     empirical_fit, intensity_model, profile_refinement as refinement, profiles,
 };
@@ -346,28 +347,23 @@ pub(super) fn physical_factors(
     g: &phasesmith_single_crystal::spots::reciprocal::Geometry,
 ) -> Result<Vec<f64>> {
     let beam = unit(g.beam);
-    let axis = unit(g.axis);
     let e = [0., 1., 0.];
     if dot(e, beam).abs() > 1e-8 {
         return Err(Error(
             "polarization vector must be perpendicular to beam".into(),
         ));
     }
-    let orth = cross(beam, e);
-    let physical: Vec<_> = m
-        .data
+    // The shared correction with the native workflow's fixed 0.98 along y.
+    let polarization = measurement::Polarization::new(0.98, e);
+    m.data
         .centres
         .iter()
         .map(|c| {
-            let ray = profile_geometry([c[0], c[1]], *g).0;
-            let p = 0.98 * (1. - dot(ray, e).powi(2)) + (1. - 0.98) * (1. - dot(ray, orth).powi(2));
-            dot(cross(ray, beam), axis).abs() / p
+            measurement::lorentz_polarization([c[0], c[1]], g, &polarization)
+                .map(|c| c.factor)
+                .map_err(|_| Error("singular physical intensity correction".into()))
         })
-        .collect();
-    if physical.iter().any(|v| !v.is_finite() || *v <= 0.) {
-        return Err(Error("singular physical intensity correction".into()));
-    }
-    Ok(physical)
+        .collect()
 }
 
 fn penalty_matrix(width: usize, nf: usize, rays: &[f64], n: usize) -> Result<Vec<f64>> {
