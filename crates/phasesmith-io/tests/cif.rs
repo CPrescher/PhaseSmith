@@ -186,6 +186,56 @@ fn selection_conflicts_and_limits_follow_strict_policy() {
 }
 
 #[test]
+fn number_validates_the_declared_setting_without_replacing_its_operations() {
+    // COD 7127147: P 21/n has the same IT number as standard P 21/c.
+    let n_glide = P21_CIF
+        .replace("P 1 21/c 1", "P 1 21/n 1")
+        .replace("'-x,y+1/2,-z+1/2'", "'-X+1/2,Y+1/2,-Z+1/2'")
+        .replace("'x,-y+1/2,z+1/2'", "'X+1/2,-Y+1/2,+Z+1/2'");
+    let expected = phasesmith_io::space_group_from_hall_symbol("-P 2yn").unwrap();
+    let imported = parse(&n_glide);
+    assert_eq!(imported.structure.space_group, expected);
+    assert_eq!(
+        imported.structure.metadata["symmetry_source"],
+        "explicit_operations"
+    );
+    assert!(
+        !imported
+            .diagnostics
+            .iter()
+            .any(|d| d.code == "conflicting_space_group_definition")
+    );
+
+    // Even with only the operation loop and IT number, preserve the setting.
+    assert_eq!(
+        parse(&n_glide.replace("_space_group_name_H-M_alt 'P 1 21/n 1'", ""))
+            .structure
+            .space_group,
+        expected
+    );
+    // A different group with the same point group and operation count conflicts.
+    let wrong_number = n_glide.replace("_space_group_IT_number 14", "_space_group_IT_number 13");
+    // Different exact settings supplied by setting-specific identifiers still conflict.
+    let wrong_setting = n_glide.replace("P 1 21/n 1", "P 1 21/c 1");
+    for wrong in [wrong_number, wrong_setting] {
+        assert!(
+            parse_cif_text(&wrong, None, true, CifReadLimits::default())
+                .unwrap_err()
+                .to_string()
+                .contains("definitions disagree")
+        );
+        let permissive = parse_cif_text(&wrong, None, false, CifReadLimits::default()).unwrap();
+        assert_eq!(permissive.structure.space_group, expected);
+        assert!(
+            permissive
+                .diagnostics
+                .iter()
+                .any(|d| d.code == "conflicting_space_group_definition")
+        );
+    }
+}
+
+#[test]
 fn accepts_a_single_explicit_operation_stored_as_a_tag_value() {
     let text = CELL_ONLY_CIF.replace(
         "_space_group_name_H-M_alt 'I m -3 m'",

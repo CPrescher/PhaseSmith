@@ -56,6 +56,36 @@ fn symbols_preserve_explicit_settings_and_choose_standard_short_setting() {
 }
 
 #[test]
+fn hm_origin_choices_and_legacy_double_glides_resolve_exact_settings() {
+    for (hm, hall) in [
+        ("I 41/a :2", "-I 4ad"),
+        ("I 41/a m d :2", "-I 4bd 2"),
+        ("F d -3 m :2", "-F 4vw 2vw 3"),
+        ("I 41/a:1", "I 4bw -1bw"),
+        ("A b a 2", "A 2 -2ab"),
+    ] {
+        assert_eq!(
+            space_group_by_symbol(hm).unwrap(),
+            space_group_by_hall_symbol(hall).unwrap()
+        );
+    }
+    for (legacy, modern) in [
+        ("Abm2", "Aem2"),
+        ("Cmca", "Cmce"),
+        ("Cmma", "Cmme"),
+        ("Ccca:2", "Ccce:2"),
+    ] {
+        assert_eq!(
+            space_group_by_symbol(legacy).unwrap(),
+            space_group_by_symbol(modern).unwrap()
+        );
+    }
+    for invalid in ["I 41/a:3", "P 1:2"] {
+        assert!(space_group_by_symbol(invalid).is_err());
+    }
+}
+
+#[test]
 fn hall_symbols_and_invalid_inputs_are_explicit() {
     let hall = space_group_by_symbol("-F 4 2 3").expect("Hall symbol must resolve");
     assert_eq!(hall.number, 225);

@@ -109,6 +109,29 @@ pub fn space_group_by_number(number: i32) -> Result<SpaceGroupInfo, SpaceGroupLo
     info_from_hall_number(hall_number)
 }
 
+/// A CIF number specifies a type. Prefer the declared setting when its exact
+/// operations match a tabulated setting of that type. Otherwise return the
+/// standard group so the importer's normal conflict policy still applies.
+pub(crate) fn space_group_for_cif_number(
+    number: i32,
+    declared: Option<&SpaceGroup>,
+) -> Result<SpaceGroup, SpaceGroupLookupError> {
+    let standard = space_group_by_number(number)?;
+    if let Some(group) = declared
+        && *group != standard.space_group
+    {
+        for entry in
+            entries().filter(|entry| entry.number == number && entry.setting != standard.setting)
+        {
+            let alternative = info_from_hall_number(entry.hall_number)?.space_group;
+            if alternative == *group {
+                return Ok(alternative);
+            }
+        }
+    }
+    Ok(standard.space_group)
+}
+
 /// Resolve an exact Hall symbol, preserving its setting and origin choice.
 ///
 /// Both the conventional CIF quote operator (`"`) and Moyo's internal (`=`)
@@ -159,7 +182,7 @@ pub fn space_group_from_hall_symbol(symbol: &str) -> Result<SpaceGroup, SpaceGro
 /// Resolve a Hermann--Mauguin, full-setting, or Hall symbol.
 ///
 /// Short Hermann--Mauguin symbols select the conventional standard setting.
-/// A full symbol, explicit `:H`/`:R` qualifier, or Hall symbol preserves the
+/// A full symbol, origin choice (`:1`/`:2`), rhombohedral axis qualifier, or Hall symbol preserves the
 /// requested setting.
 ///
 /// # Errors
@@ -177,7 +200,18 @@ pub fn space_group_by_symbol(symbol: &str) -> Result<SpaceGroupInfo, SpaceGroupL
     }
 
     let (hm, qualifier) = hm_and_qualifier(requested);
-    let hm_key = symbol_key(hm);
+    let key = symbol_key(hm);
+    // Conventional H-M names replaced by the IUCr double-glide nomenclature
+    // (de Wolff et al., Acta Cryst. A48, 727–732, §3). Preserve the basis.
+    let hm_key = match key.as_str() {
+        "abm2" => "aem2",
+        "aba2" => "aea2",
+        "cmca" => "cmce",
+        "cmma" => "cmme",
+        "ccca" => "ccce",
+        other => other,
+    };
+
     let full_matches = entries()
         .filter(|entry| symbol_key(entry.hm_full) == hm_key)
         .filter(|entry| qualifier.is_none_or(|value| entry.setting.eq_ignore_ascii_case(value)))
@@ -336,7 +370,10 @@ fn normalize_hall_expression(value: &str) -> String {
 fn hm_and_qualifier(value: &str) -> (&str, Option<&str>) {
     if let Some((base, qualifier)) = value.rsplit_once(':') {
         let qualifier = qualifier.trim();
-        if matches!(qualifier.to_ascii_lowercase().as_str(), "h" | "r") {
+        if matches!(
+            qualifier.to_ascii_lowercase().as_str(),
+            "h" | "r" | "1" | "2"
+        ) {
             return (base.trim(), Some(qualifier));
         }
     }

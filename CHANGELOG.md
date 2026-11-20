@@ -6,6 +6,11 @@ development versions.
 
 ## Unreleased
 
+- CIF import preserves a declared conventional setting when its International
+  Tables number agrees. The reader also accepts explicit origin choices
+  (`:1` and `:2`), historical double-glide names such as `Aba2`, and uppercase
+  coordinates in symmetry operations.
+
 ## 0.8.5
 
 Release date: 2026-11-16.

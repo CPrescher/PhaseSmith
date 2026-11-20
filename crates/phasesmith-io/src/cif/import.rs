@@ -6,7 +6,8 @@ use std::path::{Path, PathBuf};
 
 use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
 
-use crate::{space_group_by_number, space_group_by_symbol, space_group_from_hall_symbol};
+use crate::space_groups::space_group_for_cif_number;
+use crate::{space_group_by_symbol, space_group_from_hall_symbol};
 
 use super::syntax::{CifBlock, CifValue, parse_document};
 use super::{
@@ -522,7 +523,7 @@ fn parse_space_group(
 
     let number_text = first_tag_text(block, &NUMBER_TAGS);
     if let Some((tag, value)) = &number_text {
-        let result = parse_space_group_number(value);
+        let result = parse_space_group_number(value, candidates.first().map(|(_, _, group)| group));
         collect_space_group_candidate(
             result,
             "international_number",
@@ -613,7 +614,10 @@ fn collect_space_group_candidate(
     Ok(())
 }
 
-fn parse_space_group_number(value: &str) -> Result<SpaceGroup, CifIoError> {
+fn parse_space_group_number(
+    value: &str,
+    declared: Option<&SpaceGroup>,
+) -> Result<SpaceGroup, CifIoError> {
     let parsed = value
         .parse::<f64>()
         .map_err(|_| import_error(format!("invalid space-group number {value:?}")))?;
@@ -624,9 +628,7 @@ fn parse_space_group_number(value: &str) -> Result<SpaceGroup, CifIoError> {
     }
     #[allow(clippy::cast_possible_truncation)]
     let number = parsed as i32;
-    space_group_by_number(number)
-        .map(|info| info.space_group)
-        .map_err(CifIoError::SpaceGroup)
+    space_group_for_cif_number(number, declared).map_err(CifIoError::SpaceGroup)
 }
 
 fn parse_symmetry_operation(text: &str) -> Result<SymmetryOperation, CifIoError> {
@@ -677,6 +679,7 @@ fn parse_affine_expression(expression: &str) -> Result<([i32; 3], Rational), Cif
         if let Some(variable) = body
             .chars()
             .last()
+            .map(|value| value.to_ascii_lowercase())
             .filter(|value| matches!(value, 'x' | 'y' | 'z'))
         {
             let coefficient_text = &body[..body.len() - 1];

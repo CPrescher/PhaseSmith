@@ -54,6 +54,15 @@ Definitions are resolved in this order:
 4. International Tables number;
 5. P1 with a visible warning when no definition exists.
 
+An International Tables number identifies the space-group type. When supplied
+alone it selects the standard setting. With higher-priority symmetry, the reader
+also checks the other settings tabulated for that number and retains the exact
+deposited operations. This check covers the 530 conventional Hall settings.
+Operation coordinates accept uppercase and lowercase X, Y and Z. Conventional
+Hermann–Mauguin names accept explicit origin choices such as `I 41/a:2` and
+the five historical double-glide names, including `Aba2` for `Aea2`.
+See the [IUCr nomenclature report, section 3](https://www.iucr.org/who-we-are/commissions/commission-on-crystallographic-nomenclature/published-reports/symsym).
+
 Lower-priority definitions are also resolved. A disagreement is an error in
 strict mode and a structured warning in permissive mode. An invalid supplied
 definition is always an error in strict mode. In permissive mode it is ignored
