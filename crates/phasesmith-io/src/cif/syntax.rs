@@ -1,6 +1,6 @@
 //! Small CIF 1.1 tokenizer and block/loop representation.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use super::{CifIoError, CifReadLimits};
 
@@ -103,12 +103,54 @@ impl CifBlock {
         })
     }
 
+    /// A proof about linked rows must use one actual loop. Reject split tables,
+    /// scalar items and duplicate aliases rather than aligning independent columns.
+    pub(super) fn proof_table(&self, category: &str) -> Option<BTreeMap<String, &[CifValue]>> {
+        let prefix = format!("{category}_");
+        let belongs = |tag: &str| {
+            (tag == category || tag.starts_with(&prefix))
+                && !(category == "_atom_site" && tag.starts_with("_atom_site_aniso_"))
+        };
+        if self
+            .pairs
+            .iter()
+            .any(|(tag, _)| belongs(&tag.replace('.', "_")))
+        {
+            return None;
+        }
+        let mut found = false;
+        let mut columns = BTreeMap::new();
+        for table in &self.loops {
+            if !table
+                .columns
+                .iter()
+                .any(|(tag, _)| belongs(&tag.replace('.', "_")))
+            {
+                continue;
+            }
+            if found {
+                return None;
+            }
+            found = true;
+            for (tag, values) in &table.columns {
+                if columns
+                    .insert(tag.replace('.', "_"), values.as_slice())
+                    .is_some()
+                {
+                    return None;
+                }
+            }
+        }
+        found.then_some(columns)
+    }
+
     /// Look for references in both scalar items and loops, including
     /// compound labels in geometry, restraint, and displacement tables.
     pub(super) fn referenced_atom_labels<'a>(
         &self,
         defining_tag: &str,
         repeated: &BTreeSet<&'a str>,
+        verified: &BTreeSet<String>,
     ) -> BTreeSet<&'a str> {
         let mut found = BTreeSet::new();
         let mut inspect = |tag: &str, value: &CifValue| {
@@ -120,6 +162,9 @@ impl CifBlock {
                 return;
             }
             if let Some(text) = value.text() {
+                if repeated.contains(text) && verified.contains(&tag.replace('.', "_")) {
+                    return;
+                }
                 for token in std::iter::once(text)
                     .chain(text.split(|c: char| c.is_whitespace() || matches!(c, '/' | ',' | ';')))
                 {

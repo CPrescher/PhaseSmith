@@ -170,14 +170,14 @@ pub struct CifAnisotropicDisplacement {
 /// One independent atom site imported from CIF.
 ///
 /// Sites remain in source order and are not expanded by symmetry. `site_id` is
-/// unique within the returned structure. In permissive mode duplicate source
+/// unique within the returned structure. Repeated source
 /// labels become IDs such as `C1#2` while [`Self::source_label`] preserves the
 /// original text.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CifAtomSite {
     /// Unique stable site identifier within the structure.
     pub site_id: String,
-    /// Original CIF label before permissive duplicate renaming.
+    /// Original CIF label before assigning a unique internal site identifier.
     pub source_label: String,
     /// Original atom type symbol, including isotope or charge decorations.
     pub type_symbol: String,

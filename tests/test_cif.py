@@ -714,3 +714,136 @@ _atom_site_aniso_U_12
     if tensor_label == "M1":
         with pytest.raises(ValueError, match="no matching atom sites"):
             read_cif(source.replace("M1(Mg) Mg", "M1(Mg) Fe"))
+
+
+_LABEL_CELL = CELL_ONLY_CIF.replace("'I m -3 m'", "'P 1'")
+_SITE_XYZ = """loop_
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+"""
+_U_TENSORS = """loop_
+_atom_site_aniso_label
+_atom_site_aniso_U_11
+_atom_site_aniso_U_22
+_atom_site_aniso_U_33
+_atom_site_aniso_U_23
+_atom_site_aniso_U_13
+_atom_site_aniso_U_12
+"""
+
+
+def test_strict_repeated_geometry_requires_a_unique_measured_bond_and_angle() -> None:
+    source = (
+        _LABEL_CELL
+        + _SITE_XYZ
+        + """C1 0 0 0
+H1 .25 0 0
+H1 0 .5 0
+N1 0 .25 0
+loop_
+_geom_bond_atom_site_label_1
+_geom_bond_atom_site_label_2
+_geom_bond_distance
+_geom_bond_site_symmetry_2
+C1 H1 1.00(2) .
+C1 N1 1.00(2) .
+loop_
+_geom_angle_atom_site_label_1
+_geom_angle_atom_site_label_2
+_geom_angle_atom_site_label_3
+_geom_angle
+H1 C1 N1 90.0(2)
+"""
+    )
+    result = read_cif(source)
+    assert [s.site_id for s in result.structure.sites] == ["C1", "H1", "H1#2", "N1"]
+    assert any(d.code == "resolved_geometry_labels" for d in result.diagnostics)
+    for inconsistent in (
+        source.replace("0 .5 0", "0 -.25 0"),  # equal distances
+        source.replace("0 .5 0", "0 -.26 0"),  # alternative within three uncertainties
+        source.replace("90.0(2)", "60.0(2)"),
+        source.replace("C1 H1 1.00(2) .", "C1 H1 1.00(2) ?"),
+        source.replace("C1 H1 1.00(2) .", "C1 H1 1.00(2) 2_555"),
+        source.replace("C1 H1 1.00(2)", "C1 H1 1.00"),
+        source.replace("C1 N1 1.00(2) .", ""),
+        source.replace("C1 N1 1.00(2)", "C1 N1 1.50(2)"),
+        source + "_restr_special 'H1/N1'\n",
+        source + "loop_\n_atom_site.fract_x\n0 .25 0 0\n",
+        source + "_geom_bond.distance 2.0\n",  # alias outside the verified loop
+    ):
+        with pytest.raises(ValueError, match="duplicate atom label"):
+            read_cif(inconsistent)
+
+
+def test_strict_tensor_assignment_is_independent_of_row_order() -> None:
+    sites = (
+        _LABEL_CELL
+        + _SITE_XYZ
+        + """_atom_site_U_iso_or_equiv
+_atom_site_adp_type
+O1 0 0 0 .020(2) Uani
+O1 .3 .3 .3 .040(2) Uani
+"""
+    )
+    first = "O1 .010(1) .020 .030 0 0 0\n"
+    second = "O1 .030(2) .040 .050 0 0 0\n"
+    for rows in [second + first, first + second]:
+        result = read_cif(sites + _U_TENSORS + rows)
+        tensors = [s.anisotropic_displacement for s in result.structure.sites]
+        assert [t.u_cif_angstrom2[0] for t in tensors] == [0.010, 0.030]
+        assert [t.standard_uncertainty[0] for t in tensors] == [0.001, 0.002]
+        assert sum(d.code == "matched_tensor_by_u_equiv" for d in result.diagnostics) == 2
+    # At beta=120 degrees the metric gives (4/3 * (U11+U33-U13) + U22) / 3.
+    oblique = sites.replace("_cell_angle_beta 90", "_cell_angle_beta 120")
+    oblique = oblique.replace(".020(2) Uani", ".023(2) Uani").replace(
+        ".040(2) Uani", ".045(2) Uani"
+    )
+    oblique_rows = second.replace(" 0 0 0\n", " 0 .009 0\n") + first.replace(
+        " 0 0 0\n", " 0 .003 0\n"
+    )
+    matched = read_cif(oblique + _U_TENSORS + oblique_rows).structure.sites
+    assert [s.anisotropic_displacement.u_cif_angstrom2[4] for s in matched] == [0.003, 0.009]
+    assert read_cif(sites.replace(".040(2) Uani", ".040(2) Uiso") + _U_TENSORS + first)
+    for source in (
+        sites + _U_TENSORS + first,
+        sites + _U_TENSORS + first + first,
+        sites.replace(".040(2)", ".020(2)") + _U_TENSORS + first + second,
+        sites.replace(".020(2)", ".021(2)") + _U_TENSORS + first + second,
+    ):
+        with pytest.raises(ValueError, match="ambiguous displacement tensor"):
+            read_cif(source)
+
+
+def test_strict_redundant_orphan_requires_exact_rows_and_disorder_evidence() -> None:
+    sites = (
+        _LABEL_CELL
+        + _SITE_XYZ
+        + """_atom_site_adp_type
+_atom_site_occupancy
+_atom_site_disorder_assembly
+_atom_site_disorder_group
+C1 0 0 0 Uani 1 A 1
+C2 .25 .25 .25 Uiso .40 A 2
+"""
+    )
+    tensor = ".010(1) .020 .030 0 0 0"
+    source = sites + _U_TENSORS + f"C1 {tensor}\nC1A {tensor}\n"
+    result = read_cif(source)
+    assert [s.source_label for s in result.structure.sites] == ["C1", "C2"]
+    assert result.structure.sites[0].anisotropic_displacement.standard_uncertainty[0] == 0.001
+    assert any(d.code == "redundant_disorder_tensor" for d in result.diagnostics)
+    for inconsistent in (
+        source.replace("C1A .010(1)", "C1A .010(2)"),
+        source.replace("Uani 1", "Uani .40"),
+        source.replace("A 2", "A 1"),
+        source.replace("C1A ", "C3A "),
+        source + "_geom_bond_atom_site_label_1 C1A\n",
+        source.replace("C1 .010", "_vendor_note\nC1 .010")
+        .replace("0 0 0\nC1A", "0 0 0 yes\nC1A")
+        .rstrip()
+        + " no\n",
+    ):
+        with pytest.raises(ValueError, match="no matching atom sites"):
+            read_cif(inconsistent)

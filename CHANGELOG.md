@@ -6,6 +6,10 @@ development versions.
 
 ## Unreleased
 
+- Strict CIF import resolves repeated atom labels when deposited bonds, angles
+  and equivalent isotropic displacements uniquely identify the sites. It also
+  recognizes exact redundant tensor rows on fully occupied disorder sites.
+
 - Strict CIF import recognizes the C-centered, unique-c setting of space
   group 4 deposited in COD 1556109 and checks it against the listed operations.
 

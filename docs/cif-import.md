@@ -131,18 +131,34 @@ facade for the same operation.
   of case. If the type is missing, the longest valid element prefix of the
   label is used (`FE1` gives Fe and `CL1` gives Cl). D and T denote
   hydrogen isotopes when they are the element prefix.
-- Stable site IDs preserve the original source label. For an unreferenced
-  repeated label, strict import assigns a distinct ID such as `C1#2` and
-  emits a diagnostic. Literal labels elsewhere in the table are reserved.
-  References from another label or restraint field, indistinguishable atoms on
-  symmetry-equivalent positions, and shared positions exceeding unit occupancy
-  remain strict errors. Position and occupancy comparisons use a tolerance
-  of 1e-10. Permissive import retains repeated rows with a warning.
-- Anisotropic CIF U tensors are preserved in component order
-  `(11,22,33,23,13,12)`, including component standard uncertainties. Duplicate
-  anisotropic labels are errors in strict mode and retain the first row with a
-  warning in permissive mode. The initial isotropic structure-factor conversion
-  raises `NotImplementedError` rather than silently replacing the tensor.
+- Repeated atom labels retain their source spelling and receive distinct IDs such
+  as `C1#2`. Literal labels elsewhere in the site table are reserved. Strict
+  import checks for indistinguishable symmetry-equivalent positions and for
+  shared positions exceeding unit occupancy (tolerance `1e-10`).
+- For geometry references to a pair of like-named sites, strict import uses the
+  deposited coordinates in their listed cell image. One assignment must
+  reproduce the bond length within one reported standard uncertainty, and every
+  other assignment must differ by more than three. An affected angle needs a
+  unique pair of verified bond legs and must agree within one reported standard
+  uncertainty. Unknown symmetry codes, unsupported images and unresolved label
+  references still raise an error. A diagnostic counts the resolved geometry rows.
+- Anisotropic CIF U tensors retain all six components in the order
+  `(11,22,33,23,13,12)` and their uncertainties. For two sites with a repeated
+  label and explicit `Uani` or `Uiso` declarations, strict import can attach
+  tensor rows to the `Uani` sites if each has exactly one owner. It computes
+  $U_{\rm eq}=\tfrac13\sum_{ij}U_{ij}a_i^*a_j^*G_{ij}$, where $G$ is the
+  direct-cell metric and $a_i^*$ are reciprocal-axis lengths without $2\pi$.
+  Each calculated value must fall strictly within half a unit of the site's
+  last reported decimal place. The assignment is independent of row order.
+  [IUCr definition of equivalent isotropic displacement](https://www.iucr.org/__data/iucr/cifdic_html/3/CORE_DIC/Iatom_site.U_iso_or_equiv.html)
+- An unmatched tensor label such as `C9A` can be redundant when `C9` is a
+  fully occupied anisotropic site in a multigroup disorder assembly. Every
+  other field in the two tensor rows must be identical, including uncertainties,
+  and the extra label must have no other atom reference. A diagnostic names both
+  rows. The imported structure contains the deposited coordinate sites.
+- Permissive import retains repeated sites with a warning and keeps the first
+  row for a repeated anisotropic label. The initial isotropic structure-factor
+  conversion raises `NotImplementedError` for anisotropic tensors.
 
 Both current dot-style core dictionary names and common underscore-style legacy
 aliases are accepted. Conflicting duplicate cell, coordinate, displacement, or

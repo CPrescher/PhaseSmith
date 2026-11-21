@@ -1,8 +1,10 @@
 //! CIF-to-domain import policy independent of presentation adapters.
 
 mod cell_precision;
+mod geometry_links;
 mod repeated_labels;
 mod shared_tensors;
+mod tensor_links;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -142,7 +144,7 @@ impl<'a> SiteColumns<'a> {
 /// permissive mode selects the first block and returns a diagnostic.
 ///
 /// Strict mode rejects conflicting duplicate definitions, ambiguous block
-/// selection, duplicate site labels, invalid secondary symmetry identifiers,
+/// selection, unresolved site-label references, invalid secondary symmetry identifiers,
 /// and deliberately unsupported feature families. Permissive mode can retain
 /// a valid higher-precedence definition or skip an invalid site row, but
 /// records every such decision in [`CifReadResult::diagnostics`].
@@ -826,7 +828,8 @@ fn parse_sites(
                 "atom-site coordinates require an atom-site label column",
             ));
         }
-        if !parse_anisotropic(block, diagnostics, strict, limits)?.is_empty() {
+        if !parse_anisotropic(block, diagnostics, strict, limits, &mut BTreeMap::new())?.is_empty()
+        {
             return Err(import_error(
                 "anisotropic displacement rows require atom-site rows",
             ));
@@ -846,7 +849,19 @@ fn parse_sites(
             )));
         }
     }
-    let mut anisotropic = parse_anisotropic(block, diagnostics, strict, limits)?;
+    let mut repeated_tensors = BTreeMap::new();
+    if strict {
+        let mut seen = BTreeSet::new();
+        for label in labels.iter().filter_map(CifValue::text) {
+            if !seen.insert(label) {
+                repeated_tensors
+                    .entry(label.to_owned())
+                    .or_insert_with(Vec::new);
+            }
+        }
+    }
+    let mut anisotropic =
+        parse_anisotropic(block, diagnostics, strict, limits, &mut repeated_tensors)?;
     if labels.len() == 1
         && labels[0].text().is_none()
         && columns
@@ -979,21 +994,44 @@ fn parse_sites(
             .filter_map(|(label, n)| (n > 1).then_some(label))
             .collect();
         if !repeated.is_empty() {
-            let linked = block
-                .referenced_atom_labels(columns.label.tag.unwrap_or("_atom_site_label"), &repeated);
+            repeated_labels::validate(&sites, &repeated, group)?;
+            let mut verified = BTreeSet::new();
+            tensor_links::attach_repeated(
+                block,
+                cell,
+                &mut sites,
+                repeated_tensors,
+                &mut verified,
+                diagnostics,
+            )?;
+            let label_tag = columns.label.tag.unwrap_or("_atom_site_label");
+            let mut linked = block.referenced_atom_labels(label_tag, &repeated, &verified);
+            if !linked.is_empty() {
+                geometry_links::verify(
+                    block,
+                    &sites,
+                    &repeated,
+                    direct_basis,
+                    &mut verified,
+                    diagnostics,
+                );
+                linked = block.referenced_atom_labels(label_tag, &repeated, &verified);
+            }
             if let Some(label) = linked.first() {
                 return Err(import_error(format!(
                     "duplicate atom label {label:?} is referenced by another CIF item"
                 )));
             }
-            repeated_labels::validate(&sites, &repeated, group)?;
         }
     }
-    let orphan_labels = anisotropic
+    let mut orphan_labels = anisotropic
         .keys()
         .filter(|label| !attached_anisotropic.contains(*label))
         .cloned()
         .collect::<Vec<_>>();
+    if strict && !orphan_labels.is_empty() {
+        tensor_links::remove_redundant(block, &sites, &mut orphan_labels, diagnostics);
+    }
     if !orphan_labels.is_empty() {
         let message = format!(
             "anisotropic rows have no matching atom sites: {}",
@@ -1233,6 +1271,7 @@ fn parse_anisotropic(
     diagnostics: &mut Vec<CifDiagnostic>,
     strict: bool,
     limits: CifReadLimits,
+    repeated: &mut BTreeMap<String, Vec<CifAnisotropicDisplacement>>,
 ) -> Result<BTreeMap<String, CifAnisotropicDisplacement>, CifIoError> {
     let labels = column(block, &ANISO_LABEL_TAGS);
     if labels.values.is_empty() {
@@ -1365,14 +1404,16 @@ fn parse_anisotropic(
                 );
             }
         }
-        result.insert(
-            label.to_owned(),
-            CifAnisotropicDisplacement {
-                u_cif_angstrom2: components,
-                source_convention: convention,
-                standard_uncertainty: uncertainties,
-            },
-        );
+        let tensor = CifAnisotropicDisplacement {
+            u_cif_angstrom2: components,
+            source_convention: convention,
+            standard_uncertainty: uncertainties,
+        };
+        if let Some(group) = repeated.get_mut(label) {
+            group.push(tensor);
+        } else {
+            result.insert(label.to_owned(), tensor);
+        }
     }
     Ok(result)
 }
