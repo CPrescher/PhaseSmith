@@ -1,5 +1,7 @@
 # PhaseSmith versus XRD-Rust
 
+The [full comparison](#full-speed-comparison-21-november-2026) measures both libraries. A subsequent [PhaseSmith-only benchmark](#faster-systematic-absence-checks) measures the additional extinction optimization.
+
 ## Full speed comparison, 21 November 2026
 
 PhaseSmith 0.8.5 at `311b7b9` calculated powder sticks **10.75× faster with
@@ -95,6 +97,27 @@ These timings compare PhaseSmith strict CIF import with the pymatgen reader used
 |---|---:|---:|---:|---:|---:|
 | Corrected inorganic | 5,552 | 5,218 | 0.686 | 1.305 | 1.82× |
 | Original mixed COD | 100 | 98 | 1.028 | 5.393 | 5.31× |
+
+## Faster systematic-absence checks
+
+A subsequent paired benchmark compared the build used above (`311b7b9`) with `1fe00d7` on the same M4 Pro. The generator prepares fractional translations once and tests for systematically absent reflections with exact integer arithmetic. The [symmetry documentation](symmetry-reflections.md) gives the derivation and fallback for other origins.
+
+| Crystal system | Qualifying structures | Median improvement at 1 thread | Median improvement at 8 threads |
+|---|---:|---:|---:|
+| Triclinic | 306 | 1.17× | 1.24× |
+| Monoclinic | 1,228 | 1.36× | 1.48× |
+| Orthorhombic | 1,286 | 1.53× | 1.64× |
+| Tetragonal | 583 | 1.79× | 1.82× |
+| Trigonal | 484 | 2.34× | 2.43× |
+| Hexagonal | 453 | 1.48× | 1.47× |
+| Cubic | 892 | 2.61× | 2.55× |
+| All | 5,232 | 1.57× | 1.66× |
+
+At eight threads, the sum of the per-file median times fell from 14.90 to 9.06 seconds (1.64×). Within the new build, going from one to eight threads gave a median paired speedup of 1.08× and reduced the summed time from 14.89 to 9.06 seconds. The old and new builds took turns on each file with order reversed between files, one warm-up and three timed repetitions at one and eight threads. This run measured PhaseSmith only. The cross-library table above remains the measurement at `311b7b9`.
+
+Both builds attempted every one of the 5,552 files. All 5,319 computed patterns matched bitwise at each thread count, including reflection identifiers, indices, multiplicities, spacings and their derivatives, integrated intensities and powder sticks. The same 233 inputs could not be computed. Timing summaries use the same 5,232 cross-library qualifying structures. A separate check against Gemmi covered 564 settings of all 230 space groups, comparing the full signed reflection sets and family multiplicities with Friedel mates merged and separate.
+
+[Download the paired measurements, build identifiers and setting checks](downloads/2026-11-21-powder-extinctions.zip).
 
 ## Corrected inorganic COD collection, November 2026
 
