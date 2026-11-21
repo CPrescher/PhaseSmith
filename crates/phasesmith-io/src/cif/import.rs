@@ -1,5 +1,8 @@
 //! CIF-to-domain import policy independent of presentation adapters.
 
+mod cell_precision;
+mod shared_tensors;
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -7,7 +10,9 @@ use std::path::{Path, PathBuf};
 use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
 
 use crate::space_group_from_hall_symbol;
-use crate::space_groups::{space_group_for_cif_number, space_group_for_hm};
+use crate::space_groups::{
+    corroborated_cif_hm, space_group_for_cif_hm, space_group_for_cif_number,
+};
 
 use super::syntax::{CifBlock, CifValue, parse_document};
 use super::{
@@ -254,7 +259,13 @@ fn parse_cif_text_inner(
     check_unsupported_features(selected, &mut diagnostics, strict)?;
     let (cell, cell_standard_uncertainties) = parse_cell(selected, &mut diagnostics, strict)?;
     let (space_group, symmetry_metadata) = parse_space_group(selected, &mut diagnostics, strict)?;
-    validate_cell_metric(cell, &space_group)?;
+    let cell = cell_precision::checked_cell(
+        selected,
+        cell,
+        &cell_standard_uncertainties,
+        &space_group,
+        &mut diagnostics,
+    )?;
     let sites = parse_sites(selected, cell, &mut diagnostics, strict, limits)?;
     let name = first_text(
         selected,
@@ -508,9 +519,20 @@ fn parse_space_group(
 
     let hm = first_tag_text(block, &HM_TAGS);
     if let Some((tag, value)) = &hm {
-        let result = space_group_for_hm(value, candidates.first().map(|(_, _, group)| group))
-            .map(|info| info.space_group)
-            .map_err(CifIoError::SpaceGroup);
+        let declared = candidates.first().map(|(_, _, group)| group);
+        let result = if let Some(group) = declared
+            && let Some(name) = corroborated_cif_hm(value, group)
+        {
+            let message = format!(
+                "read {value:?} as {name:?} after verifying the deposited symmetry operations"
+            );
+            diagnostics.push(
+                CifDiagnostic::warning("corroborated_space_group_spelling", message).with_tag(*tag),
+            );
+            Ok(group.clone())
+        } else {
+            space_group_for_cif_hm(value, declared).map_err(CifIoError::SpaceGroup)
+        };
         collect_space_group_candidate(
             result,
             "hermann_mauguin",
@@ -732,6 +754,27 @@ fn parse_rational_term(body: &str, sign: i32) -> Result<(i64, i64), CifIoError> 
                 .parse::<i64>()
                 .map_err(|_| import_error(format!("invalid symmetry fraction {body:?}")))?,
         )
+    } else if let Some((whole, fractional)) = body.split_once('.') {
+        let fraction = fractional.trim_end_matches('0');
+        if (whole.is_empty() && fractional.is_empty())
+            || !whole
+                .bytes()
+                .chain(fractional.bytes())
+                .all(|b| b.is_ascii_digit())
+        {
+            return Err(import_error(format!("invalid symmetry offset {body:?}")));
+        }
+        let places = u32::try_from(fraction.len())
+            .map_err(|_| import_error("symmetry translation overflow"))?;
+        let denominator = 10_i64
+            .checked_pow(places)
+            .ok_or_else(|| import_error("symmetry translation overflow"))?;
+        let digits = format!("0{whole}{fraction}");
+        let numerator = digits
+            .parse::<i64>()
+            .map_err(|_| import_error("symmetry translation overflow"))?;
+        let reduced = Rational::new(numerator, denominator).map_err(CifIoError::Symmetry)?;
+        (reduced.numerator(), reduced.denominator())
     } else {
         (
             body.parse::<i64>()
@@ -775,7 +818,7 @@ fn parse_sites(
                 "atom-site coordinates require an atom-site label column",
             ));
         }
-        if !column(block, &ANISO_LABEL_TAGS).values.is_empty() {
+        if !parse_anisotropic(block, diagnostics, strict, limits)?.is_empty() {
             return Err(import_error(
                 "anisotropic displacement rows require atom-site rows",
             ));
@@ -795,6 +838,29 @@ fn parse_sites(
             )));
         }
     }
+    let mut anisotropic = parse_anisotropic(block, diagnostics, strict, limits)?;
+    if labels.len() == 1
+        && labels[0].text().is_none()
+        && columns
+            .label
+            .tag
+            .is_some_and(|tag| block.placeholder_loop(tag))
+        && columns
+            .all()
+            .iter()
+            .all(|column| column.values.iter().all(|v| v.text().is_none()))
+    {
+        if !anisotropic.is_empty() {
+            return Err(import_error(
+                "anisotropic displacement rows require atom-site rows",
+            ));
+        }
+        diagnostics.push(CifDiagnostic::warning(
+            "empty_atom_site_table",
+            "atom-site table contains only missing markers; imported cell and symmetry without atom sites",
+        ));
+        return Ok(Vec::new());
+    }
     let fractional_complete = [columns.fract_x, columns.fract_y, columns.fract_z]
         .iter()
         .all(|column| !column.values.is_empty());
@@ -806,7 +872,8 @@ fn parse_sites(
             "atom sites require complete fractional or Cartesian coordinates",
         ));
     }
-    let anisotropic = parse_anisotropic(block, diagnostics, strict, limits)?;
+    match_numbered_anisotropic_labels(&mut anisotropic, labels, diagnostics);
+    shared_tensors::attach(&mut anisotropic, block, &columns, diagnostics);
     let direct_basis = cell.geometry().map_err(CifIoError::Cell)?.direct_basis;
     let mut sites = Vec::new();
     let mut attached_anisotropic = BTreeSet::new();
@@ -912,6 +979,49 @@ fn parse_sites(
     Ok(sites)
 }
 
+// Older tables sometimes print C(1) in the tensor table and C1 in the site
+// table. Only link this exact notation when both ends are unique and unclaimed.
+fn match_numbered_anisotropic_labels(
+    tensors: &mut BTreeMap<String, CifAnisotropicDisplacement>,
+    labels: &[CifValue],
+    diagnostics: &mut Vec<CifDiagnostic>,
+) {
+    if !tensors.keys().any(|label| label.ends_with(')')) {
+        return;
+    }
+    let mut counts = BTreeMap::new();
+    for label in labels.iter().filter_map(CifValue::text) {
+        *counts.entry(label).or_insert(0_usize) += 1;
+    }
+    let replacements: Vec<_> = tensors
+        .keys()
+        .filter_map(|source| {
+            if counts.contains_key(source.as_str()) {
+                return None;
+            }
+            let (symbol, number) = source.strip_suffix(')')?.split_once('(')?;
+            if element_prefix(symbol)? != symbol
+                || number.is_empty()
+                || !number.bytes().all(|b| b.is_ascii_digit())
+            {
+                return None;
+            }
+            let target = format!("{symbol}{number}");
+            (counts.get(target.as_str()) == Some(&1) && !tensors.contains_key(&target))
+                .then(|| (source.clone(), target))
+        })
+        .collect();
+    for (source, target) in replacements {
+        if let Some(tensor) = tensors.remove(&source) {
+            diagnostics.push(CifDiagnostic::warning(
+                "matched_numbered_anisotropic_label",
+                format!("matched anisotropic label {source:?} to atom-site label {target:?}"),
+            ));
+            tensors.insert(target, tensor);
+        }
+    }
+}
+
 #[allow(clippy::type_complexity)]
 fn parse_site_row(
     columns: &SiteColumns<'_>,
@@ -945,7 +1055,7 @@ fn parse_site_row(
             "cannot infer type symbol from atom label {label:?}"
         )));
     }
-    let (element_symbol, isotope, charge) = chemical_identity(&type_symbol)?;
+    let (element_symbol, isotope, charge) = chemical_identity(&type_symbol, row, diagnostics)?;
     let occupancy = optional_site_number(columns.occupancy, row, diagnostics)?;
     if occupancy.is_some_and(|value| value.value < 0.0) {
         return Err(import_error("occupancy is negative"));
@@ -1123,6 +1233,20 @@ fn parse_anisotropic(
             ],
         )
     });
+    if labels.values.len() == 1
+        && labels.values[0].text().is_none()
+        && labels.tag.is_some_and(|tag| block.placeholder_loop(tag))
+        && u_columns
+            .iter()
+            .chain(&b_columns)
+            .all(|column| column.values.iter().all(|v| v.text().is_none()))
+    {
+        diagnostics.push(CifDiagnostic::warning(
+            "empty_anisotropic_table",
+            "anisotropic table contains only missing markers",
+        ));
+        return Ok(BTreeMap::new());
+    }
     let u_complete = u_columns.iter().all(|column| !column.values.is_empty());
     let b_complete = b_columns.iter().all(|column| !column.values.is_empty());
     let u_present = u_columns.iter().any(|column| !column.values.is_empty());
@@ -1287,7 +1411,18 @@ fn parse_number(
         .parse::<f64>()
         .map_err(|_| import_error(format!("CIF value for {tag} is not a number: {text:?}")))?
         * 10.0_f64.powi(exponent);
-    let uncertainty = if let Some(digits) = uncertainty_digits {
+    if uncertainty_digits == Some("") {
+        let mut warning = CifDiagnostic::warning(
+            "empty_standard_uncertainty",
+            format!("empty standard uncertainty in {text:?}; retained the nominal value"),
+        )
+        .with_tag(tag);
+        if let Some(index) = row {
+            warning = warning.with_row(index);
+        }
+        diagnostics.push(warning);
+    }
+    let uncertainty = if let Some(digits) = uncertainty_digits.filter(|s| !s.is_empty()) {
         if !digits.bytes().all(|byte| byte.is_ascii_digit()) {
             return Err(import_error(format!(
                 "CIF value for {tag} is not a number: {text:?}"
@@ -1380,7 +1515,11 @@ fn element_prefix(value: &str) -> Option<&'static str> {
     })
 }
 
-fn chemical_identity(type_symbol: &str) -> Result<(String, Option<u32>, Option<i32>), CifIoError> {
+fn chemical_identity(
+    type_symbol: &str,
+    row: usize,
+    diagnostics: &mut Vec<CifDiagnostic>,
+) -> Result<(String, Option<u32>, Option<i32>), CifIoError> {
     let bytes = type_symbol.as_bytes();
     let isotope_end = bytes
         .iter()
@@ -1408,11 +1547,16 @@ fn chemical_identity(type_symbol: &str) -> Result<(String, Option<u32>, Option<i
         isotope = Some(3);
     }
     let suffix = &rest[symbol.len()..];
-    let charge = parse_charge(suffix)?;
+    let charge = parse_charge(suffix, type_symbol, row, diagnostics)?;
     Ok((element, isotope, charge))
 }
 
-fn parse_charge(suffix: &str) -> Result<Option<i32>, CifIoError> {
+fn parse_charge(
+    suffix: &str,
+    type_symbol: &str,
+    row: usize,
+    diagnostics: &mut Vec<CifDiagnostic>,
+) -> Result<Option<i32>, CifIoError> {
     if suffix.is_empty() {
         return Ok(None);
     }
@@ -1427,6 +1571,28 @@ fn parse_charge(suffix: &str) -> Result<Option<i32>, CifIoError> {
     } else {
         return Ok(None);
     };
+    // A deposited average oxidation state is a valid type identifier. Keep its
+    // exact spelling as the scattering key; the optional ionic charge is integral.
+    if let Some((whole, fraction)) = magnitude.split_once('.')
+        && whole.bytes().all(|b| b.is_ascii_digit())
+        && !fraction.is_empty()
+        && fraction.bytes().all(|b| b.is_ascii_digit())
+    {
+        if fraction.bytes().all(|b| b == b'0') {
+            let integer = if whole.is_empty() {
+                0
+            } else {
+                whole
+                    .parse::<i32>()
+                    .map_err(|_| import_error(format!("invalid atom charge {suffix:?}")))?
+            };
+            return Ok((integer != 0).then_some(sign * integer));
+        }
+        diagnostics.push(CifDiagnostic::warning("fractional_oxidation_state",
+            format!("retained fractional oxidation state in {type_symbol:?} without assigning an integer ionic charge"))
+            .with_row(row));
+        return Ok(None);
+    }
     let magnitude = if magnitude.is_empty() {
         1
     } else {

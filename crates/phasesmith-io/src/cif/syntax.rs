@@ -89,6 +89,20 @@ impl CifBlock {
         })
     }
 
+    /// Some refinement templates emit a single row of bare '?' / '.' markers.
+    /// Inspect every column, including extensions that the site model does not use.
+    pub(super) fn placeholder_loop(&self, label_tag: &str) -> bool {
+        self.loops.iter().any(|table| {
+            table.columns.iter().any(|(tag, _)| tag == label_tag)
+                && table.columns.iter().all(|(_, values)| {
+                    matches!(
+                        values.as_slice(),
+                        [CifValue::Unknown | CifValue::Inapplicable]
+                    )
+                })
+        })
+    }
+
     pub(super) fn all_tags(&self) -> BTreeSet<&str> {
         self.pairs
             .iter()
@@ -320,10 +334,7 @@ fn tokenize(text: &str) -> Result<Vec<Token>, CifIoError> {
             _ => {
                 let token_line = line;
                 let start = index;
-                while index < bytes.len()
-                    && !bytes[index].is_ascii_whitespace()
-                    && bytes[index] != b'#'
-                {
+                while index < bytes.len() && !bytes[index].is_ascii_whitespace() {
                     index += 1;
                 }
                 tokens.push(Token {

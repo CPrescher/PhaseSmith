@@ -6,6 +6,11 @@ development versions.
 
 ## Unreleased
 
+- Strict CIF import reads centered and shifted-origin settings, exact decimal
+  symmetry translations, and fractional oxidation-state identifiers. It
+  distinguishes empty atom tables from resolved structures and recognizes
+  symmetry-equivalent cell parameters printed at different precisions.
+
 - Preserve the axes and origin specified by CIF Hermann–Mauguin symbols,
   including short alternate settings such as `P b n m`. Resolve uppercase
   and lowercase atom types and label prefixes to canonical elements and

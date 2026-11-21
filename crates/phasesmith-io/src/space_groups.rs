@@ -1,5 +1,7 @@
 //! Native lookup of exact conventional space-group operation sets.
 
+mod cif_settings;
+
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
@@ -120,12 +122,20 @@ pub(crate) fn space_group_for_cif_number(
     if let Some(group) = declared
         && *group != standard.space_group
     {
+        if cif_settings::same_up_to_origin(&standard.space_group, group) {
+            return Ok(group.clone());
+        }
+        for setting in cif_settings::SETTINGS.iter().filter(|s| s.number == number) {
+            if cif_settings::same_up_to_origin(&setting.info()?.space_group, group) {
+                return Ok(group.clone());
+            }
+        }
         for entry in
             entries().filter(|entry| entry.number == number && entry.setting != standard.setting)
         {
             let alternative = info_from_hall_number(entry.hall_number)?.space_group;
-            if alternative == *group {
-                return Ok(alternative);
+            if cif_settings::same_up_to_origin(&alternative, group) {
+                return Ok(group.clone());
             }
         }
     }
@@ -165,6 +175,13 @@ pub fn space_group_from_hall_symbol(symbol: &str) -> Result<SpaceGroup, SpaceGro
     if let Ok(info) = space_group_by_hall_symbol(symbol) {
         return Ok(info.space_group);
     }
+    if let Some(setting) = cif_settings::by_transformed_hall(symbol) {
+        return Ok(setting.info()?.space_group);
+    }
+    general_hall_group(symbol)
+}
+
+fn general_hall_group(symbol: &str) -> Result<SpaceGroup, SpaceGroupLookupError> {
     let requested = normalize_hall_expression(symbol);
     if requested.is_empty() {
         return Err(unknown_symbol(symbol));
@@ -199,6 +216,34 @@ pub fn space_group_by_symbol(symbol: &str) -> Result<SpaceGroupInfo, SpaceGroupL
     })
 }
 
+/// Only interpret these incomplete archive spellings when independent Hall or
+/// explicit operators prove the full conventional name and origin.
+pub(crate) fn corroborated_cif_hm(symbol: &str, declared: &SpaceGroup) -> Option<&'static str> {
+    let name = match symbol_key(symbol).as_str() {
+        "p42mnm" => "P 42/m n m",
+        "p42/nmcs" => "P 42/n m c",
+        _ => return None,
+    };
+    let info = space_group_for_hm(name, Some(declared)).ok()?;
+    (info.space_group == *declared).then_some(name)
+}
+
+pub(crate) fn space_group_for_cif_hm(
+    symbol: &str,
+    declared: Option<&SpaceGroup>,
+) -> Result<SpaceGroup, SpaceGroupLookupError> {
+    let info = space_group_for_hm(symbol, declared)?;
+    let (_, qualifier) = hm_and_qualifier(symbol);
+    if !matches!(qualifier, Some("1" | "2"))
+        && !symbol.contains('(')
+        && let Some(group) = declared
+        && cif_settings::same_up_to_origin(&info.space_group, group)
+    {
+        return Ok(group.clone());
+    }
+    Ok(info.space_group)
+}
+
 pub(crate) fn space_group_for_hm(
     symbol: &str,
     declared: Option<&SpaceGroup>,
@@ -206,6 +251,11 @@ pub(crate) fn space_group_for_hm(
     let requested = symbol.trim();
     let (hm, qualifier) = hm_and_qualifier(requested);
     let hm_key = symbol_key(hm);
+    if qualifier.is_none()
+        && let Some(entry) = cif_settings::by_hm(&hm_key)
+    {
+        return entry.info();
+    }
     let mut matches = Vec::new();
     for entry in entries() {
         if qualifier.is_some_and(|q| {
@@ -227,6 +277,9 @@ pub(crate) fn space_group_for_hm(
         };
         if symbol_key(entry.hm_full) == hm_key
             || symbol_key(&short) == hm_key
+            || (matches!(entry.number, 200..=206 | 221..=230)
+                && hm_key.contains('3')
+                && symbol_key(&short).replace("-3", "3") == hm_key)
             || legacy_glide_key(&entry).as_ref() == Some(&hm_key)
         {
             matches.push(entry);

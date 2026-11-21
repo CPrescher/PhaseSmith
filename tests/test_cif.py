@@ -11,6 +11,7 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith.io.cif import CifReadLimits, CifReadResult, read_cif
+from phasesmith.io.space_groups import space_group_by_number, space_group_from_hall_symbol
 from phasesmith.refinement import lebail
 from phasesmith.refinement.lebail import LeBailInput, LeBailPhase
 
@@ -278,10 +279,10 @@ def test_general_hall_expression_is_parsed_without_a_legacy_backend() -> None:
 def test_permissive_symmetry_precedence_does_not_repair_invalid_hm() -> None:
     text = CELL_ONLY_CIF.replace(
         "_space_group_name_H-M_alt 'I m -3 m'",
-        """_space_group_name_H-M_alt 'F m 3 m'
+        """_space_group_name_H-M_alt 'F m 5 m'
 _space_group_symop_operation_xyz 'x,y,z'""",
     )
-    with pytest.raises(ValueError, match="F m 3 m"):
+    with pytest.raises(ValueError, match="F m 5 m"):
         read_cif(text)
 
     result = read_cif(text, strict=False)
@@ -291,7 +292,7 @@ _space_group_symop_operation_xyz 'x,y,z'""",
         item for item in result.diagnostics if item.code == "invalid_space_group_definition_ignored"
     )
     assert diagnostic.tag == "_space_group_name_h-m_alt"
-    assert "F m 3 m" in diagnostic.message
+    assert "F m 5 m" in diagnostic.message
 
 
 def test_missing_required_values_and_conflicting_anisotropic_definitions_fail() -> None:
@@ -475,3 +476,183 @@ def test_native_cif_matches_optional_gemmi_oracle(relative_path: str) -> None:
         assert actual.element_symbol == expected.element_symbol
         assert actual.fractional_xyz == pytest.approx(expected.fractional_xyz, abs=1e-12)
         assert actual.occupancy == pytest.approx(expected.occupancy, abs=1e-12)
+
+
+def test_empty_site_table_is_cell_only_when_every_field_is_missing() -> None:
+    table = """loop_
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_description
+? . ? . ?
+"""
+    result = read_cif(CELL_ONLY_CIF + table)
+    assert not result.structure.sites
+    assert any(d.code == "empty_atom_site_table" for d in result.diagnostics)
+    for row in ["? 0 ? . ?", "? . ? . Fe", "? . ? . '.'", "? . ? . ?\n? . ? . ?"]:
+        with pytest.raises(ValueError, match="label is missing"):
+            read_cif(CELL_ONLY_CIF + table.replace("? . ? . ?", row))
+
+
+def test_hash_labels_and_displacement_table_placeholders() -> None:
+    source = P21_CIF.replace("C1 ", "C#1 ").replace("Fe1 Fe3+", "# genuine comment\nFe1 Fe3+")
+    assert read_cif(source).structure.sites[0].source_label == "C#1"
+    row = "C#1 0.7895683521(8) 1.5791367042 2.3687050563 0 0 0"
+    result = read_cif(source.replace(row, "? . ? . ? . ?"))
+    assert result.structure.sites[0].anisotropic_displacement is None
+    assert any(d.code == "empty_anisotropic_table" for d in result.diagnostics)
+    with pytest.raises(ValueError, match="anisotropic label"):
+        read_cif(source.replace(row, "? . ? . ? . 0"))
+
+
+def test_numbered_tensor_labels_require_a_unique_unclaimed_site() -> None:
+    raw = P21_CIF.replace("C1 0.7895683521(8)", "C(1) 0.7895683521(8)")
+    result = read_cif(raw)
+    assert (
+        result.structure.sites[0].anisotropic_displacement
+        == read_cif(P21_CIF).structure.sites[0].anisotropic_displacement
+    )
+    assert any(d.code == "matched_numbered_anisotropic_label" for d in result.diagnostics)
+    with pytest.raises(ValueError, match="no matching atom sites"):
+        read_cif(raw + "C1 0.1 0.2 0.3 0 0 0\n")
+
+
+def test_empty_uncertainty_preserves_nominal_and_truncation_is_rejected() -> None:
+    result = read_cif(P21_CIF.replace("0.100(2)", "0.100()"))
+    site = result.structure.sites[0]
+    assert site.fractional_xyz[0] == pytest.approx(0.1)
+    assert site.fractional_xyz_standard_uncertainty[0] is None
+    assert any(d.code == "empty_standard_uncertainty" and d.row == 0 for d in result.diagnostics)
+    with pytest.raises(ValueError):
+        read_cif(P21_CIF.replace("0.100(2)", "0.100(2"))
+
+
+def test_fractional_oxidation_state_retains_exact_scattering_identity() -> None:
+    result = read_cif(P21_CIF.replace("Fe3+", "Fe3.5+"))
+    site = result.structure.sites[1]
+    assert (site.type_symbol, site.element_symbol, site.charge) == ("Fe3.5+", "Fe", None)
+    assert any(d.code == "fractional_oxidation_state" for d in result.diagnostics)
+    species = phasesmith.ScatteringSpecies.from_atom_site(site)
+    assert (species.xray_key, species.neutron_key) == ("Fe3.5+", "Fe")
+    with pytest.raises(ValueError, match="unknown X-ray"):
+        phasesmith.XrayNonResonant().prepare([species])
+    integral = read_cif(P21_CIF.replace("Fe3+", "Fe+3.00")).structure.sites[1]
+    assert integral.charge == 3
+    assert phasesmith.ScatteringSpecies.from_atom_site(integral).xray_key == "Fe3+"
+
+
+def test_deposited_origin_is_verified_with_one_shift_for_every_operation() -> None:
+    base = CELL_ONLY_CIF.replace("I m -3 m", "P 1 21 1")
+    shifted = (
+        base
+        + """_space_group_IT_number 4
+loop_
+_space_group_symop_operation_xyz
+x,y,z
+-x,y+.500,-z+0.50
+"""
+    )
+    result = read_cif(shifted)
+    shifted_group = space_group_from_hall_symbol("P 2ybc")
+    assert result.structure.space_group == shifted_group
+    assert result.structure.space_group != read_cif(base).structure.space_group
+    for other in [shifted.replace("y+.500", "y"), shifted + "_space_group_name_Hall 'P 2yb'"]:
+        with pytest.raises(ValueError, match="disagree"):
+            read_cif(other)
+    with pytest.raises(ValueError):
+        read_cif(shifted.replace(".500", ".4999"))
+    cubic = CELL_ONLY_CIF.replace("I m -3 m", "Fm3m")
+    assert read_cif(cubic).structure.space_group == space_group_by_number(225).space_group
+
+
+def test_centered_triclinic_setting_checks_each_declaration() -> None:
+    text = (
+        CELL_ONLY_CIF.replace("I m -3 m", "C -1")
+        + """_space_group_IT_number 2
+_space_group_name_Hall '-P 1 (1/2*x+1/2*y,1/2*x-1/2*y,-z)'
+"""
+    )
+    group = read_cif(text).structure.space_group
+    assert group == space_group_from_hall_symbol("-C 1")
+    assert len(group.operations) == 4
+    for conflict in [text.replace("C -1", "I -1"), text.replace("number 2", "number 1")]:
+        with pytest.raises(ValueError, match="disagree"):
+            read_cif(conflict)
+
+
+def test_rounded_symmetry_equivalent_cell_keeps_the_reported_uncertainty() -> None:
+    text = (
+        CELL_ONLY_CIF.replace("length_a 4", "length_a 3.540(2)")
+        .replace("length_b 4", "length_b 3.5398")
+        .replace("length_c 4", "length_c 3.5398")
+    )
+    result = read_cif(text)
+    assert result.structure.cell.as_tuple()[:3] == (3.5398,) * 3
+    assert result.structure.cell_standard_uncertainties[:3] == (0.002, None, None)
+    assert any("3.540(2)" in d.message and "3.5398" in d.message for d in result.diagnostics)
+    for conflict in [
+        text.replace("3.540(2)", "3.541(9)"),
+        text.replace("length_c 3.5398", "length_c 3.5399"),
+        text.replace("3.540(2)", "3.540"),
+    ]:
+        with pytest.raises(ValueError, match="metric"):
+            read_cif(conflict)
+
+
+@pytest.mark.parametrize(
+    ("spelling", "hall"), [("P42 mnm", "-P 4n 2n"), ("P 42/n m c S", "P 4n 2n -1n")]
+)
+def test_incomplete_archive_spelling_requires_exact_corroboration(spelling: str, hall: str) -> None:
+    base = CELL_ONLY_CIF.replace("I m -3 m", spelling)
+    with pytest.raises(ValueError, match="unknown"):
+        read_cif(base)
+    with pytest.raises(ValueError):
+        read_cif(base + "_space_group_name_Hall 'P 1'\n")
+    result = read_cif(base + f"_space_group_name_Hall '{hall}'\n")
+    assert result.structure.space_group == space_group_from_hall_symbol(hall)
+    assert any(d.code == "corroborated_space_group_spelling" for d in result.diagnostics)
+
+
+@pytest.mark.parametrize(
+    ("labels", "tensor_label"), [(("Ti1", "Mg1"), "Ti1/Mg1"), (("M1(Ti)", "M1(Mg)"), "M1")]
+)
+def test_mixed_site_tensor_needs_explicit_membership_and_identical_coordinates(
+    labels, tensor_label
+) -> None:
+    table = f"""loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_adp_type
+_atom_site_occupancy
+{labels[0]} Ti 0.2 0.1 0.4 Uani .5
+{labels[1]} Mg 0.2 0.1 0.4 Uani .5
+loop_
+_atom_site_aniso_label
+_atom_site_aniso_U_11
+_atom_site_aniso_U_22
+_atom_site_aniso_U_33
+_atom_site_aniso_U_23
+_atom_site_aniso_U_13
+_atom_site_aniso_U_12
+{tensor_label} .01 .02 .03 0 0 0
+"""
+    source = CELL_ONLY_CIF + table
+    result = read_cif(source)
+    first, second = result.structure.sites
+    assert first.anisotropic_displacement == second.anisotropic_displacement
+    assert first.anisotropic_displacement.u_cif_angstrom2[:3] == (0.01, 0.02, 0.03)
+    assert sum(d.code == "matched_mixed_site_tensor" for d in result.diagnostics) == 2
+    for conflict in [
+        source.replace("Mg 0.2", "Mg 0.3"),
+        source.replace("Uani", "Uiso", 1),
+        source + f"{labels[0]} .01 .02 .03 0 0 0\n",
+    ]:
+        with pytest.raises(ValueError, match="no matching atom sites"):
+            read_cif(conflict)
+    if tensor_label == "M1":
+        with pytest.raises(ValueError, match="no matching atom sites"):
+            read_cif(source.replace("M1(Mg) Mg", "M1(Mg) Fe"))

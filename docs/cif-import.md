@@ -57,7 +57,10 @@ Definitions are resolved in this order:
 An International Tables number identifies the space-group type. When supplied
 alone it selects the standard setting. With higher-priority symmetry, the reader
 also checks the other settings tabulated for that number and retains the exact
-deposited operations. This check covers the 530 conventional Hall settings.
+deposited operations. The native tables also recognize centered triclinic cells, F-centered
+settings of groups 9 and 139, and selected explicitly transformed settings of
+groups 4 and 12. The reader matches their deposited basis expressions to Hall
+generators in that same cell. The coordinates stay in the deposited basis.
 Operation coordinates accept uppercase and lowercase X, Y and Z. Conventional
 Hermann–Mauguin names accept explicit origin choices such as `I 41/a:2` and
 the five historical double-glide names, including `Aba2` for `Aea2`, in
@@ -65,6 +68,20 @@ their tabulated axis permutations. A short H–M symbol such as `P b n m`
 selects its own basis. When the symbol permits several origins or settings,
 matching deposited operations or a Hall symbol disambiguate the choice.
 See the [IUCr nomenclature report, section 3](https://www.iucr.org/who-we-are/commissions/commission-on-crystallographic-nomenclature/published-reports/symsym).
+
+Historical cubic H–M names such as `Fd3m` and `Fm3m` are accepted.
+An H–M name with no specified origin can agree with an explicit operation
+list in the same axes at a different origin. The reader checks for one origin
+shift on a grid of 24ths that gives exact equality of every rotation and
+translation, using `t' = t + (I - R)s`. It retains the deposited operations.
+Explicit origin choices, basis expressions and Hall declarations still require
+the specified origin. Decimal translations in operation lists are exact
+rationals, so `0.500` equals `1/2`. [IUCr H–M definition](https://www.iucr.org/__data/iucr/cifdic_html/1/cif_core.dic/Ispace_group_name_H-M_alt.html).
+
+Two incomplete archive spellings, `P42 mnm` and `P 42/n m c S`, require
+independent Hall or explicit operations that exactly match the corresponding
+complete symbol. A diagnostic records the interpretation. The latter spelling
+also appears in the [VESTA manual, ICSD file formats](https://www.jp-minerals.org/vesta/archives/VESTA_Manual.pdf).
 
 Lower-priority definitions are also resolved. A disagreement is an error in
 strict mode and a structured warning in permissive mode. An invalid supplied
@@ -140,6 +157,35 @@ cell values, exact rational operations, sites, displacement records,
 diagnostics, metadata, and provenance. `structure_from_record()` restores it
 without importing a CIF parser. This is the persistence boundary future project
 bundles will embed.
+
+## Deposited values and empty tables
+
+A single site row containing only bare missing markers (`?` or `.`) imports
+as a cell-only record with an `empty_atom_site_table` diagnostic. This can
+supply a Le Bail phase. A wholly empty anisotropic table likewise supplies no
+displacement tensors. A populated row still requires its labels and coordinates.
+A literal `#` inside an unquoted value belongs to that value.
+
+An empty uncertainty suffix such as `.02554()` preserves the nominal value
+and records a warning. The uncertainty remains unspecified. An unclosed suffix
+is rejected because digits may have been truncated. For anisotropic labels,
+the reader can match `C(1)` to an unclaimed, unique `C1` site and records
+both spellings. A tensor labeled `Ti1/Mg1` can serve both named sites, or
+a tensor labeled `M1` can serve sites such as `M1(Na)` and `M1(Ca)`
+when each suffix matches its deposited species. The sites must declare
+anisotropic displacement, share identical deposited fractional coordinates,
+and have no competing tensor. Every link is recorded. Fractional average oxidation states such as `Mn3.5+` retain
+their exact type string. The integer ionic charge is unset and X-ray lookup
+requires that exact scattering state.
+
+If the initial cell metric fails validation, the reader checks whether a
+rotation makes two lengths or two angles equivalent. A finer deposited value
+can supply their common value if it rounds to the coarser printed value, lies
+within its reported uncertainty, and agrees with every other finer candidate.
+This applies to fixed-decimal entries with uncertainty on the coarser
+measurement and none on the finer one. The diagnostic records both original
+literals, the reported uncertainty is retained, and the resulting cell must
+pass the original metric check.
 
 ## CIF-to-Le Bail
 

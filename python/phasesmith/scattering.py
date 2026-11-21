@@ -88,6 +88,8 @@ class ScatteringSpecies:
             alias = "d" if site.isotope == 2 else "t"
             if raw.startswith(alias):
                 raw = symbol + raw[1:]
+        # Decimal padding of an integral oxidation state denotes the same ion.
+        raw = re.sub(r"(?<=\d)\.0+(?=[+-]?$)", "", raw)
         ordinary = {symbol}
         if site.charge is not None:
             magnitude = abs(site.charge)

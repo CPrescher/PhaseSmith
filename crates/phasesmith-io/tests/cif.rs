@@ -289,7 +289,7 @@ fn imports_general_hall_expressions_outside_canonical_database_spellings() {
 fn permissive_import_uses_valid_operations_without_guessing_malformed_hm() {
     let text = CELL_ONLY_CIF.replace(
         "_space_group_name_H-M_alt 'I m -3 m'",
-        "_space_group_name_H-M_alt 'F m 3 m'\n\
+        "_space_group_name_H-M_alt 'F m 5 m'\n\
          _space_group_symop_operation_xyz 'x,y,z'",
     );
     assert!(parse_cif_text(&text, None, true, CifReadLimits::default()).is_err());
@@ -306,7 +306,7 @@ fn permissive_import_uses_valid_operations_without_guessing_malformed_hm() {
         .find(|item| item.code == "invalid_space_group_definition_ignored")
         .expect("malformed secondary HM tag must remain visible");
     assert_eq!(diagnostic.tag.as_deref(), Some("_space_group_name_h-m_alt"));
-    assert!(diagnostic.message.contains("F m 3 m"));
+    assert!(diagnostic.message.contains("F m 5 m"));
 }
 
 #[test]
