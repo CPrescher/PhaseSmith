@@ -6,6 +6,10 @@ development versions.
 
 ## Unreleased
 
+- Strict CIF import resolves rounded riding-hydrogen geometry, preserves
+  explicitly vacant duplicate site rows and verifies the abbreviated Fdd2
+  name against independently declared symmetry.
+
 - Strict CIF import resolves repeated atom labels when deposited bonds, angles
   and equivalent isotropic displacements uniquely identify the sites. It also
   recognizes exact redundant tensor rows on fully occupied disorder sites.

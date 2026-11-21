@@ -994,7 +994,7 @@ fn parse_sites(
             .filter_map(|(label, n)| (n > 1).then_some(label))
             .collect();
         if !repeated.is_empty() {
-            repeated_labels::validate(&sites, &repeated, group)?;
+            repeated_labels::validate(block, &sites, &repeated, group)?;
             let mut verified = BTreeSet::new();
             tensor_links::attach_repeated(
                 block,

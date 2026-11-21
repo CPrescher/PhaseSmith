@@ -3,14 +3,49 @@
 use super::{BTreeMap, BTreeSet, CifAtomSite, CifBlock, CifDiagnostic, CifValue, parse_number};
 
 type Edge = [usize; 2];
-type Positions = [[f64; 3]];
+// A coarse fractional coordinate cannot establish a riding-hydrogen bond.
+// Require sub-percent resolution on each vector used as rounding evidence.
+const MAX_RELATIVE_ROUNDING: f64 = 0.01;
+
+struct Positions {
+    cartesian: Vec<[f64; 3]>,
+    // Cartesian radius enclosing the rounding box of the printed fractional coordinates.
+    rounding: Vec<Option<f64>>,
+    riding_h: Vec<bool>,
+}
+
+fn half_decimal(literal: &str) -> Option<f64> {
+    if literal.contains(['e', 'E']) {
+        return None;
+    }
+    let nominal = literal.split('(').next()?;
+    let (_, digits) = nominal.split_once('.')?;
+    if digits.is_empty() || digits.len() > 15 || !digits.bytes().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    Some(0.5 * 10_f64.powi(-i32::try_from(digits.len()).ok()?))
+}
+
+enum Precision {
+    Measured(f64),
+    Calculated(f64),
+}
+
+impl Precision {
+    fn tolerance(&self, rounding: impl FnOnce() -> Option<f64>) -> Option<f64> {
+        match self {
+            Self::Measured(su) => Some(*su),
+            Self::Calculated(half_unit) => Some(half_unit + rounding()?),
+        }
+    }
+}
 
 fn edge(i: usize, j: usize) -> Edge {
     [i.min(j), i.max(j)]
 }
 
 fn vector(points: &Positions, i: usize, j: usize) -> [f64; 3] {
-    std::array::from_fn(|k| points[i][k] - points[j][k])
+    std::array::from_fn(|k| points.cartesian[i][k] - points.cartesian[j][k])
 }
 
 fn dot(x: [f64; 3], y: [f64; 3]) -> f64 {
@@ -72,7 +107,7 @@ impl<'a, const N: usize> GeometryTable<'a, N> {
             .any(|c| c[row].text().is_some_and(|s| repeated.contains(s)))
     }
 
-    fn measurement(&self, row: usize) -> Option<(f64, f64)> {
+    fn measurement(&self, row: usize) -> Option<(f64, Precision)> {
         let n = parse_number(
             &self.values[row],
             "geometry",
@@ -81,9 +116,28 @@ impl<'a, const N: usize> GeometryTable<'a, N> {
             Some(row),
         )
         .ok()??;
-        let su = n.standard_uncertainty?;
-        (su > 0.0).then_some((n.value, su))
+        let precision = match n.standard_uncertainty {
+            Some(su) if su > 0.0 => Precision::Measured(su),
+            None => {
+                let raw = self.values[row].text()?;
+                if raw.contains('(') {
+                    return None;
+                }
+                Precision::Calculated(half_decimal(raw)?)
+            }
+            _ => return None,
+        };
+        Some((n.value, precision))
     }
+}
+
+// Only use geometry without a reported uncertainty for explicitly calculated
+// riding hydrogens. Every alternative for the repeated label must qualify.
+fn riding_pair(groups: &[&[usize]], points: &Positions) -> bool {
+    groups
+        .iter()
+        .filter(|g| g.len() > 1)
+        .all(|g| g.iter().all(|&i| points.riding_h[i]))
 }
 
 fn bond_edges(
@@ -102,34 +156,45 @@ fn bond_edges(
             }
             continue;
         };
-        let Some((length, su)) = bonds.measurement(row) else {
+        let Some((length, precision)) = bonds.measurement(row) else {
             if affected {
                 return None;
             }
             continue;
         };
         if !affected {
-            // An angle may depend on this uniquely labelled leg. Verify the
-            // measured length in the same image before using it as evidence.
             let delta = vector(points, a[0], b[0]);
-            if (dot(delta, delta).sqrt() - length).abs() <= su {
+            if let Precision::Measured(su) = precision
+                && (dot(delta, delta).sqrt() - length).abs() <= su
+            {
                 edges.insert(edge(a[0], b[0]));
             }
             continue;
         }
-        let mut plausible = a
-            .iter()
-            .flat_map(|&i| b.iter().map(move |&j| (i, j)))
-            .filter(|(i, j)| i != j)
-            .filter_map(|(i, j)| {
-                let delta = vector(points, i, j);
-                let residual = (dot(delta, delta).sqrt() - length).abs();
-                (residual <= 3.0 * su).then_some((edge(i, j), residual))
-            });
-        let (pair, residual) = plausible.next()?;
-        if residual > su || plausible.next().is_some() {
+        if matches!(precision, Precision::Calculated(_)) && !riding_pair(&[a, b], points) {
             return None;
         }
+        let mut plausible = None;
+        for &i in a {
+            for &j in b.iter().filter(|&&j| j != i) {
+                let tolerance =
+                    precision.tolerance(|| Some(points.rounding[i]? + points.rounding[j]?))?;
+                if matches!(precision, Precision::Calculated(_))
+                    && tolerance >= MAX_RELATIVE_ROUNDING * length
+                {
+                    return None;
+                }
+                let delta = vector(points, i, j);
+                let residual = (dot(delta, delta).sqrt() - length).abs();
+                if residual <= 3.0 * tolerance {
+                    if plausible.is_some() || residual > tolerance {
+                        return None;
+                    }
+                    plausible = Some(edge(i, j));
+                }
+            }
+        }
+        let pair = plausible?;
         edges.insert(pair);
         count += 1;
     }
@@ -145,8 +210,13 @@ fn angles_match(
 ) -> Option<usize> {
     let mut count = 0;
     for row in (0..angles.values.len()).filter(|&r| angles.touches(r, repeated)) {
-        let (angle, su) = angles.measurement(row)?;
+        let (angle, precision) = angles.measurement(row)?;
         let [first, middle, last] = angles.candidates(row, indices)?;
+        if matches!(precision, Precision::Calculated(_))
+            && !riding_pair(&[first, middle, last], points)
+        {
+            return None;
+        }
         let mut supported = 0;
         for &j in middle {
             for &i in first.iter().filter(|&&i| edges.contains(&edge(i, j))) {
@@ -158,7 +228,15 @@ fn angles_match(
                     let w = vector(points, k, j);
                     let cosine = dot(v, w) / (dot(v, v) * dot(w, w)).sqrt();
                     let calculated = cosine.clamp(-1.0, 1.0).acos().to_degrees();
-                    if !calculated.is_finite() || (calculated - angle).abs() > su {
+                    let tolerance = precision.tolerance(|| {
+                        // A vector of length L with endpoint error at most e can
+                        // change direction by at most asin(e/L), provided e < L.
+                        let left = (points.rounding[i]? + points.rounding[j]?) / dot(v, v).sqrt();
+                        let right = (points.rounding[k]? + points.rounding[j]?) / dot(w, w).sqrt();
+                        (left < MAX_RELATIVE_ROUNDING && right < MAX_RELATIVE_ROUNDING)
+                            .then(|| (left.asin() + right.asin()).to_degrees())
+                    })?;
+                    if !calculated.is_finite() || (calculated - angle).abs() > tolerance {
                         return None;
                     }
                     supported += 1;
@@ -181,14 +259,14 @@ pub(super) fn verify(
     verified: &mut BTreeSet<String>,
     diagnostics: &mut Vec<CifDiagnostic>,
 ) {
-    if block.proof_table("_atom_site").is_none() {
+    let Some(columns) = block.proof_table("_atom_site") else {
         return;
-    }
+    };
     let Some(bonds) = GeometryTable::read(block, "_geom_bond", "_geom_bond_distance") else {
         return;
     };
     let mut indices = BTreeMap::<&str, Vec<usize>>::new();
-    let points: Vec<_> = sites
+    let cartesian: Vec<_> = sites
         .iter()
         .enumerate()
         .map(|(row, site)| {
@@ -196,6 +274,41 @@ pub(super) fn verify(
             basis.map(|axis| dot(axis, site.fractional_xyz))
         })
         .collect();
+    let axes = [0, 1, 2].map(|k| {
+        basis
+            .iter()
+            .map(|axis| axis[k] * axis[k])
+            .sum::<f64>()
+            .sqrt()
+    });
+    let value = |tag: &str, row: usize| columns.get(tag)?.get(row)?.text();
+    let rounding = (0..sites.len())
+        .map(|row| {
+            [
+                "_atom_site_fract_x",
+                "_atom_site_fract_y",
+                "_atom_site_fract_z",
+            ]
+            .iter()
+            .zip(axes)
+            .map(|(tag, length)| Some(half_decimal(value(tag, row)?)? * length))
+            .sum::<Option<f64>>()
+        })
+        .collect();
+    let riding_h = sites
+        .iter()
+        .enumerate()
+        .map(|(row, site)| {
+            site.element_symbol == "H"
+                && value("_atom_site_calc_flag", row) == Some("calc")
+                && value("_atom_site_refinement_flags", row) == Some("R")
+        })
+        .collect();
+    let points = Positions {
+        cartesian,
+        rounding,
+        riding_h,
+    };
     let Some((edges, n_bonds)) = bond_edges(&bonds, &points, &indices, repeated) else {
         return;
     };

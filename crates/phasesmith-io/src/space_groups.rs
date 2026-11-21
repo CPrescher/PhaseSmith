@@ -220,6 +220,11 @@ pub fn space_group_by_symbol(symbol: &str) -> Result<SpaceGroupInfo, SpaceGroupL
 /// explicit operators prove the full conventional name and origin.
 pub(crate) fn corroborated_cif_hm(symbol: &str, declared: &SpaceGroup) -> Option<&'static str> {
     let name = match symbol_key(symbol).as_str() {
+        "fdd" => {
+            let reference = space_group_for_hm("F d d 2", None).ok()?;
+            return cif_settings::same_up_to_origin(&reference.space_group, declared)
+                .then_some("F d d 2");
+        }
         "p42mnm" => "P 42/m n m",
         "p42/nmcs" => "P 42/n m c",
         _ => return None,

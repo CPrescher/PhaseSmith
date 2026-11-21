@@ -1,7 +1,8 @@
 //! Check that repeated source labels identify distinct atoms.
 
 use super::{
-    BTreeMap, BTreeSet, CifAtomSite, CifIoError, SpaceGroup, import_error, periodic_max_difference,
+    BTreeMap, BTreeSet, CifAtomSite, CifBlock, CifIoError, SpaceGroup, import_error,
+    periodic_max_difference,
 };
 
 const POSITION_TOLERANCE: f64 = 1.0e-10;
@@ -14,7 +15,57 @@ fn bin(wrapped: f64) -> i32 {
     (wrapped * f64::from(BINS)).floor() as i32
 }
 
+// Some refinements list an occupied row and its explicitly vacant copy.
+fn vacancy_pairs(
+    block: &CifBlock,
+    sites: &[CifAtomSite],
+    repeated: &BTreeSet<&str>,
+) -> BTreeSet<(usize, usize)> {
+    let mut pairs = BTreeSet::new();
+    if !sites
+        .iter()
+        .any(|s| s.occupancy == 0.0 && repeated.contains(s.source_label.as_str()))
+    {
+        return pairs;
+    }
+    let Some(table) = block.proof_table("_atom_site") else {
+        return pairs;
+    };
+    let Some(occupancies) = table.get("_atom_site_occupancy") else {
+        return pairs;
+    };
+    let mut by_label = BTreeMap::<&str, Vec<usize>>::new();
+    for (i, site) in sites
+        .iter()
+        .enumerate()
+        .filter(|(_, s)| repeated.contains(s.source_label.as_str()))
+    {
+        by_label.entry(&site.source_label).or_default().push(i);
+    }
+    for rows in by_label.values() {
+        let &[i, j] = rows.as_slice() else { continue };
+        let (vacant, occupied) = if sites[i].occupancy == 0.0 {
+            (i, j)
+        } else {
+            (j, i)
+        };
+        if sites[vacant].occupancy == 0.0
+            && sites[vacant].occupancy_standard_uncertainty.is_none()
+            && sites[occupied].occupancy > 0.0
+            && sites[occupied].occupancy <= 1.0
+            && [i, j].iter().all(|&r| occupancies[r].text().is_some())
+            && table
+                .iter()
+                .all(|(tag, v)| tag == "_atom_site_occupancy" || v[i] == v[j])
+        {
+            pairs.insert((i, j));
+        }
+    }
+    pairs
+}
+
 pub(super) fn validate(
+    block: &CifBlock,
     sites: &[CifAtomSite],
     repeated: &BTreeSet<&str>,
     group: &SpaceGroup,
@@ -22,6 +73,7 @@ pub(super) fn validate(
     // Index deposited positions so that many independent atoms sharing a
     // label do not require all-pairs comparisons. The final test is periodic
     // distance, independent of which spatial bin contains a position.
+    let vacancies = vacancy_pairs(block, sites, repeated);
     let mut bins = BTreeMap::<(&str, [i32; 3]), Vec<usize>>::new();
     for (index, site) in sites
         .iter()
@@ -57,7 +109,9 @@ pub(super) fn validate(
         for i in coincident {
             let other = &sites[i];
             occupancy += other.occupancy;
-            if (site.element_symbol == other.element_symbol && site.isotope == other.isotope)
+            if (site.element_symbol == other.element_symbol
+                && site.isotope == other.isotope
+                && !vacancies.contains(&(i, index)))
                 || occupancy > 1.0 + OCCUPANCY_TOLERANCE
             {
                 return Err(import_error(format!(

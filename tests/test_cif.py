@@ -847,3 +847,70 @@ C2 .25 .25 .25 Uiso .40 A 2
     ):
         with pytest.raises(ValueError, match="no matching atom sites"):
             read_cif(inconsistent)
+
+
+def test_strict_riding_hydrogen_geometry_uses_printed_coordinate_precision() -> None:
+    source = (
+        _LABEL_CELL
+        + _SITE_XYZ
+        + """_atom_site_calc_flag
+_atom_site_refinement_flags
+H1 .2501 .0000 .0000 calc R
+H1 .0000 .6000 .0000 calc R
+C1 .0000 .0000 .0000 d .
+N1 .0000 .2500 .0000 d .
+loop_
+_geom_bond_atom_site_label_1
+_geom_bond_atom_site_label_2
+_geom_bond_distance
+C1 H1 1.0000
+C1 N1 1.00(2)
+loop_
+_geom_angle_atom_site_label_1
+_geom_angle_atom_site_label_2
+_geom_angle_atom_site_label_3
+_geom_angle
+H1 C1 N1 90.0
+"""
+    )
+    assert [s.site_id for s in read_cif(source).structure.sites][:2] == ["H1", "H1#2"]
+    for bad in (
+        source.replace("calc R", "d R"),
+        source.replace(".0000 .6000", ".0000 .2500"),
+        source.replace("1.0000", "1.0100"),
+        source.replace("90.0\n", "89.0\n"),
+        source.replace(".2501", ".2"),
+    ):
+        with pytest.raises(ValueError, match="duplicate atom label"):
+            read_cif(bad)
+
+
+def test_strict_coincident_vacant_copy_retains_both_rows() -> None:
+    header = _LABEL_CELL + _SITE_XYZ + "_atom_site_occupancy\n"
+    occupied = "Si1 .2 .3 .4 1.0\n"
+    vacant = "Si1 .2 .3 .4 .0\n"
+    for rows in (occupied + vacant, vacant + occupied):
+        sites = read_cif(header + rows).structure.sites
+        assert [s.site_id for s in sites] == ["Si1", "Si1#2"]
+        assert [s.occupancy for s in sites] == [
+            float(line.split()[-1]) for line in rows.splitlines()
+        ]
+    for rows in (
+        occupied + occupied,
+        occupied + vacant.replace(".0\n", ".0(1)\n"),
+        occupied + vacant.replace(".2 ", "1.2 "),
+        occupied + vacant + vacant,
+    ):
+        with pytest.raises(ValueError, match="duplicate atom label"):
+            read_cif(header + rows)
+
+
+def test_strict_fdd_abbreviation_requires_corroborating_symmetry() -> None:
+    source = _LABEL_CELL.replace("'P 1'", "'F d d'")
+    with pytest.raises(ValueError):
+        read_cif(source)
+    with pytest.raises(ValueError):
+        read_cif(source + "_space_group_symop_operation_xyz 'x,y,z'\n")
+    result = read_cif(source + "_space_group_name_Hall 'F 2 -2d'\n")
+    assert len(result.structure.space_group.operations) == 16
+    assert any(d.code == "corroborated_space_group_spelling" for d in result.diagnostics)

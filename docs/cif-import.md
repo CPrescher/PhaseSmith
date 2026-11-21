@@ -142,6 +142,21 @@ facade for the same operation.
   unique pair of verified bond legs and must agree within one reported standard
   uncertainty. Unknown symmetry codes, unsupported images and unresolved label
   references still raise an error. A diagnostic counts the resolved geometry rows.
+- A calculated riding hydrogen (`calc` and `R`) can have a printed bond length
+  or angle without a standard uncertainty. For these rows the reader bounds
+  positional rounding by the sum of the three cell-edge lengths times the
+  half-units of the corresponding printed fractional coordinates. For a bond
+  the two endpoint bounds add. For an angle each leg contributes at most
+  `asin(endpoint bound / leg length)` to the angular error. The checks include
+  the printed geometry's half-unit, require sub-percent resolution of the
+  bond vectors and retain the unique-partner and verified-leg checks above.
+- For two coincident, identically labelled rows, one explicit positive
+  occupancy and one explicit zero without an uncertainty can distinguish
+  an occupied site and its vacant copy. All other site-loop fields must match
+  exactly. Both rows and occupancies are retained.
+- The incomplete H–M name `F d d` can identify Fdd2 when an independent Hall
+  declaration or the listed operators reproduce the full group up to an origin
+  shift. The reader keeps the deposited operators and coordinates.
 - Anisotropic CIF U tensors retain all six components in the order
   `(11,22,33,23,13,12)` and their uncertainties. For two sites with a repeated
   label and explicit `Uani` or `Uiso` declarations, strict import can attach
