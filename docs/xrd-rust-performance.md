@@ -1,13 +1,8 @@
 # PhaseSmith versus XRD-Rust
 
-The [full comparison](#full-speed-comparison-21-november-2026) measures both libraries. A subsequent [PhaseSmith-only benchmark](#faster-systematic-absence-checks) measures the additional extinction optimization.
-
 ## Full speed comparison, 21 November 2026
 
-PhaseSmith 0.8.5 at `311b7b9` calculated powder sticks **10.75× faster with
-one thread each and 5.13× faster with eight threads each** than XRD-Rust
-0.3.5 on the median qualifying inorganic COD structure. The benchmark uses
-the standard XRD-Rust SIMD calculator described in the [XRD-Rust paper](https://journals.iucr.org/j/issues/2026/04/00/hat5023/index.html).
+PhaseSmith 0.8.5 at `47a238b` calculated powder sticks **17.59× faster with one thread each and 8.22× faster with eight threads each** than XRD-Rust 0.3.5 on the median qualifying inorganic COD structure. This release build from `develop` includes the faster systematic-absence checks. XRD-Rust used its standard SIMD calculator. [XRD-Rust paper](https://journals.iucr.org/j/issues/2026/04/00/hat5023/index.html)
 
 Both release builds ran on an Apple M4 Pro with Python 3.13.7 and macOS 26.6.2.
 The real-structure timings cover reflection generation, structure factors and
@@ -18,55 +13,59 @@ separately. The comparison matches peaks within 0.00001° and requires
 intensity correlation ≥0.999 and matching of all peaks reaching 0.1% of either
 pattern’s maximum. The tables use medians of per-file timing ratios.
 
-[Download the per-file results, raw timing repetitions, input checksums and environment](downloads/2026-11-21-xrd-rust-benchmark.zip).
+[Download the full per-file results, timing repetitions, batch measurements, input checksums and build information](downloads/2026-11-21-xrd-rust-47a238b.zip).
 
 ### Corrected inorganic collection
 
 | Threads PS / XR | PhaseSmith median (ms) | XRD-Rust median (ms) | Median paired speedup | PhaseSmith faster | Summed PS / XR time (s) | Summed-time speedup |
 |---|---:|---:|---:|---:|---:|---:|
-| 1 / 1 | 1.772 | 20.247 | 10.75× | 5,223 / 5,232 | 21.0 / 385.4 | 18.32× |
-| 8 / 8 | 1.661 | 8.593 | 5.13× | 5,215 / 5,232 | 15.4 / 109.9 | 7.14× |
-| 2 / 8 | 1.769 | 8.593 | 4.92× | 5,231 / 5,232 | 18.0 / 109.9 | 6.12× |
-| 1 / 8 | 1.772 | 8.593 | 4.71× | 5,231 / 5,232 | 21.0 / 109.9 | 5.23× |
+| 1 / 1 | 1.004 | 20.296 | 17.59× | 5,232 / 5,232 | 15.3 / 391.2 | 25.65× |
+| 8 / 8 | 1.005 | 8.525 | 8.22× | 5,232 / 5,232 | 9.5 / 109.9 | 11.57× |
+| 2 / 8 | 1.067 | 8.525 | 7.84× | 5,231 / 5,232 | 12.1 / 109.9 | 9.10× |
+| 1 / 8 | 1.004 | 8.525 | 8.08× | 5,232 / 5,232 | 15.3 / 109.9 | 7.20× |
 
-Both calculators produced patterns for 5,319 of 5,552 structures. The primary comparison covers the 5,232 that passed the original cross-library agreement criteria. The 87 excluded timed pairs are exactly the previously investigated entries. Including them gives median speedups of 10.76× at one thread each and 5.12× at eight. The remaining 233 files comprised 91 strict reader rejections, 104 cell-only inputs and 38 shared-model construction failures. Of the 87 disagreements, 82 were traced to omitted reciprocal points in XRD-Rust and five to the neutral-tin scattering factor.
+Both calculators produced patterns for 5,319 of 5,552 structures. The primary comparison covers the 5,232 that passed the original cross-library agreement criteria. The 87 excluded timed pairs are exactly the previously investigated entries. Including them gives median speedups of 17.59× at one thread each and 8.22× at eight. The remaining 233 files comprised 91 strict reader rejections, 104 cell-only inputs and 38 shared-model construction failures. The earlier investigation traced 82 disagreements to omitted reciprocal points in XRD-Rust and five to the neutral-tin scattering factor.
 
 | Crystal system | Qualifying structures | One thread each | Eight threads each | PhaseSmith faster at eight |
 |---|---:|---:|---:|---:|
-| Triclinic | 306 | 5.69× | 3.62× | 306 / 306 |
-| Monoclinic | 1,228 | 10.80× | 5.53× | 1,228 / 1,228 |
-| Orthorhombic | 1,286 | 13.43× | 6.24× | 1,285 / 1,286 |
-| Tetragonal | 583 | 9.60× | 4.50× | 583 / 583 |
-| Trigonal | 484 | 12.11× | 4.87× | 484 / 484 |
-| Hexagonal | 453 | 15.35× | 6.54× | 453 / 453 |
-| Cubic | 892 | 8.32× | 2.67× | 876 / 892 |
+| Triclinic | 306 | 6.71× | 4.46× | 306 / 306 |
+| Monoclinic | 1,228 | 14.62× | 7.85× | 1,228 / 1,228 |
+| Orthorhombic | 1,286 | 20.85× | 10.18× | 1,286 / 1,286 |
+| Tetragonal | 583 | 17.59× | 7.93× | 583 / 583 |
+| Trigonal | 484 | 22.47× | 8.98× | 484 / 484 |
+| Hexagonal | 453 | 22.35× | 9.40× | 453 / 453 |
+| Cubic | 892 | 25.95× | 7.70× | 892 / 892 |
 
 ![Per-structure speedup by crystal system](figures/xrd-rust-2026-11-cod.png)
 
 Dots mark median paired speedups and horizontal lines span the middle 50% of structures. The dotted line marks equal speed.
 
-The earlier full run at 98bd223 measured 5.64× and 2.77× at one and eight threads each. Cross-run timing ratios can vary with machine conditions. The separate alternating old/new build benchmark tested the optimization directly. All per-file errors and numerical agreement metrics reproduced the original full comparison to its verification tolerance. [Paired optimization measurements](#corrected-inorganic-cod-collection-november-2026)
+The previous full run at `311b7b9` measured 10.75× at one thread each and 5.13× at eight. All per-file outcomes reproduced that run, and its agreement metrics matched within the verification tolerance (relative 1e−11, absolute 1e−12). The alternating-build experiment below isolates the effect of the faster systematic-absence checks. [Previous full-run measurements](downloads/2026-11-21-xrd-rust-benchmark.zip) · [Paired PhaseSmith measurements](#faster-systematic-absence-checks)
 
-### How much does threading help PhaseSmith?
+<a id="how-much-does-threading-help-phasesmith"></a>
 
-For each structure, divide its one-thread median calculation time by its
-two- or eight-thread median. This isolates PhaseSmith’s threading gain.
-The last two columns sum one median-timed calculation per file, so expensive
-structures contribute their full cost.
+### One pattern or many patterns in parallel?
 
-| Qualifying structures | Files | Median 1 / 2 threads | Median 1 / 8 threads | Total at 1 thread (s) | Total at 8 threads (s) |
+On this M4 Pro, the median inorganic pattern ran **1.02× faster** with eight PhaseSmith threads than with one. Eight threads finished first on 2,793 of 5,232 files. Larger structures benefited more. Summing the per-file medians gives 15.25 s at one thread and 9.49 s at eight.
+
+| Qualifying structures | Files | Median 1 / 2 threads | Median 1 / 8 threads | Summed 1 thread (s) | Summed 8 threads (s) |
 |---|---:|---:|---:|---:|---:|
-| Inorganic, 1–32 expanded sites | 1,985 | 0.98× | 0.91× | 1.75 | 1.83 |
-| Inorganic, 33–128 sites | 2,577 | 1.03× | 1.09× | 8.11 | 6.87 |
-| Inorganic, 129+ sites | 670 | 1.17× | 1.33× | 11.17 | 6.69 |
-| All qualifying inorganic | 5,232 | 1.01× | 1.02× | 21.03 | 15.39 |
-| Original mixed COD | 97 | 1.35× | 1.81× | 5.77 | 2.32 |
+| Inorganic, 1–32 expanded sites | 1,985 | 0.96× | 0.86× | 1.06 | 1.13 |
+| Inorganic, 33–128 sites | 2,577 | 1.04× | 1.15× | 5.17 | 3.92 |
+| Inorganic, 129+ sites | 670 | 1.26× | 1.63× | 9.02 | 4.45 |
+| All qualifying inorganic | 5,232 | 1.01× | 1.02× | 15.25 | 9.49 |
+| Original mixed COD | 97 | 1.42× | 2.07× | 5.48 | 2.11 |
 
-Eight threads saved a median 0.034 ms per inorganic structure and were faster
-on 2,857 of 5,232. The total fell by 26.8% (1.37× speedup). The smallest
-structures tended to take longer with eight threads. Structure factors use the
-thread policy, while reflection generation and stick preparation still contribute
-serial work. These size bins describe this dataset and machine.
+For batch throughput, we measured elapsed time to finish the same 5,232 prepared patterns. Each configuration completed one warm-up and four timed batches with rotating order. Each parallel worker processed a fixed share of the shuffled collection. Timing includes dispatch, calculation and waiting for the last worker. Workers, structures and reflection generators were prepared before timing. All four configurations produced bitwise-identical stick positions and intensities on every warm-up pattern.
+
+| PhaseSmith scheduling | Median batch time (s) | Patterns/s | Speedup over one calculation thread |
+|---|---:|---:|---:|
+| One pattern at a time, one calculation thread | 16.45 | 318 | 1.00× |
+| One pattern at a time, eight calculation threads | 10.31 | 507 | 1.59× |
+| Eight Python threads, one calculation thread per pattern | 3.97 | 1,317 | 4.14× |
+| Eight Python processes, one calculation thread per pattern | 2.94 | 1,781 | 5.60× |
+
+For a collection of prepared structures, give each worker one calculation thread. Against processing one pattern at a time with eight threads, the batch ran 2.60× faster with eight Python threads and 3.51× faster with eight persistent Python processes.
 
 ### Original mixed COD sample
 
@@ -74,10 +73,10 @@ The separately frozen 100-file panel produced 100 timed patterns and 97 passing 
 
 | Threads PS / XR | PhaseSmith median (ms) | XRD-Rust median (ms) | Median paired speedup | PhaseSmith faster | Summed PS / XR time (s) | Summed-time speedup |
 |---|---:|---:|---:|---:|---:|---:|
-| 1 / 1 | 16.939 | 213.644 | 14.28× | 97 / 97 | 5.8 / 113.9 | 19.73× |
-| 8 / 8 | 8.992 | 58.615 | 7.78× | 97 / 97 | 2.3 / 25.8 | 11.12× |
-| 2 / 8 | 12.494 | 58.615 | 5.85× | 97 / 97 | 3.8 / 25.8 | 6.77× |
-| 1 / 8 | 16.939 | 58.615 | 4.31× | 97 / 97 | 5.8 / 25.8 | 4.48× |
+| 1 / 1 | 13.920 | 204.812 | 16.84× | 97 / 97 | 5.5 / 114.5 | 20.92× |
+| 8 / 8 | 6.418 | 52.102 | 9.02× | 97 / 97 | 2.1 / 22.7 | 10.73× |
+| 2 / 8 | 9.739 | 52.102 | 6.06× | 97 / 97 | 3.5 / 22.7 | 6.43× |
+| 1 / 8 | 13.920 | 52.102 | 4.61× | 97 / 97 | 5.5 / 22.7 | 4.14× |
 
 ### Synthetic controls
 
@@ -85,9 +84,9 @@ The three P1 controls use the original public-API synthetic driver, its original
 
 | Case | Atoms | One thread each | Eight threads each |
 |---|---:|---:|---:|
-| Small | 8 | 4.73× | 4.54× |
-| Medium | 64 | 5.93× | 3.51× |
-| Large | 256 | 5.57× | 2.49× |
+| Small | 8 | 5.95× | 5.86× |
+| Medium | 64 | 6.30× | 3.77× |
+| Large | 256 | 5.74× | 2.57× |
 
 ### CIF reading
 
@@ -95,12 +94,12 @@ These timings compare PhaseSmith strict CIF import with the pymatgen reader used
 
 | Collection | Attempted | Both had atoms | PhaseSmith median (ms) | pymatgen median (ms) | Median paired speedup |
 |---|---:|---:|---:|---:|---:|
-| Corrected inorganic | 5,552 | 5,218 | 0.686 | 1.305 | 1.82× |
-| Original mixed COD | 100 | 98 | 1.028 | 5.393 | 5.31× |
+| Corrected inorganic | 5,552 | 5,218 | 0.682 | 1.310 | 1.84× |
+| Original mixed COD | 100 | 98 | 1.094 | 5.122 | 5.27× |
 
 ## Faster systematic-absence checks
 
-A subsequent paired benchmark compared the build used above (`311b7b9`) with `1fe00d7` on the same M4 Pro. The generator prepares fractional translations once and tests for systematically absent reflections with exact integer arithmetic. The [symmetry documentation](symmetry-reflections.md) gives the derivation and fallback for other origins.
+A paired benchmark compared PhaseSmith `311b7b9` with the optimized kernel at `1fe00d7` on the same M4 Pro. The generator prepares fractional translations once and tests for systematically absent reflections with exact integer arithmetic. The [symmetry documentation](symmetry-reflections.md) gives the derivation and fallback for other origins.
 
 | Crystal system | Qualifying structures | Median improvement at 1 thread | Median improvement at 8 threads |
 |---|---:|---:|---:|
@@ -113,7 +112,7 @@ A subsequent paired benchmark compared the build used above (`311b7b9`) with `1f
 | Cubic | 892 | 2.61× | 2.55× |
 | All | 5,232 | 1.57× | 1.66× |
 
-At eight threads, the sum of the per-file median times fell from 14.90 to 9.06 seconds (1.64×). Within the new build, going from one to eight threads gave a median paired speedup of 1.08× and reduced the summed time from 14.89 to 9.06 seconds. The old and new builds took turns on each file with order reversed between files, one warm-up and three timed repetitions at one and eight threads. This run measured PhaseSmith only. The cross-library table above remains the measurement at `311b7b9`.
+At eight threads, the sum of the per-file median times fell from 14.90 to 9.06 seconds (1.64×). Within the new build, going from one to eight threads gave a median paired speedup of 1.08× and reduced the summed time from 14.89 to 9.06 seconds. The old and new builds took turns on each file with order reversed between files, one warm-up and three timed repetitions at one and eight threads. This run measured PhaseSmith only.
 
 Both builds attempted every one of the 5,552 files. All 5,319 computed patterns matched bitwise at each thread count, including reflection identifiers, indices, multiplicities, spacings and their derivatives, integrated intensities and powder sticks. The same 233 inputs could not be computed. Timing summaries use the same 5,232 cross-library qualifying structures. A separate check against Gemmi covered 564 settings of all 230 space groups, comparing the full signed reflection sets and family multiplicities with Friedel mates merged and separate.
 
