@@ -6,6 +6,11 @@ development versions.
 
 ## Unreleased
 
+- Preserve the axes and origin specified by CIF Hermann–Mauguin symbols,
+  including short alternate settings such as `P b n m`. Resolve uppercase
+  and lowercase atom types and label prefixes to canonical elements and
+  scattering identities while preserving explicit source type strings.
+
 - CIF import preserves a declared conventional setting when its International
   Tables number agrees. The reader also accepts explicit origin choices
   (`:1` and `:2`), historical double-glide names such as `Aba2`, and uppercase

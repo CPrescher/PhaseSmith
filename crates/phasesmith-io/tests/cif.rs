@@ -236,6 +236,30 @@ fn number_validates_the_declared_setting_without_replacing_its_operations() {
 }
 
 #[test]
+fn cif_name_tags_resolve_in_their_own_notation_and_basis() {
+    let with_symmetry = |tags| CELL_ONLY_CIF.replace("_space_group_name_H-M_alt 'I m -3 m'", tags);
+    for (tags, hall) in [
+        ("_space_group_name_H-M_alt 'P 2'", "P 2y"),
+        ("_space_group_name_Hall 'P 2'", "P 2"),
+        ("_space_group_name_H-M_alt 'P b n m'", "-P 2c 2ab"),
+        (
+            "_space_group_name_H-M_alt 'P m n m'\n_space_group_name_Hall '-P 2c 2a'",
+            "-P 2c 2a",
+        ),
+    ] {
+        assert_eq!(
+            parse(&with_symmetry(tags)).structure.space_group,
+            phasesmith_io::space_group_by_hall_symbol(hall)
+                .unwrap()
+                .space_group
+        );
+    }
+    let conflict =
+        with_symmetry("_space_group_name_H-M_alt 'P m n m:1'\n_space_group_name_Hall '-P 2c 2a'");
+    assert!(parse_cif_text(&conflict, None, true, CifReadLimits::default()).is_err());
+}
+
+#[test]
 fn accepts_a_single_explicit_operation_stored_as_a_tag_value() {
     let text = CELL_ONLY_CIF.replace(
         "_space_group_name_H-M_alt 'I m -3 m'",

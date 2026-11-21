@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 
 use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
 
-use crate::space_groups::space_group_for_cif_number;
-use crate::{space_group_by_symbol, space_group_from_hall_symbol};
+use crate::space_group_from_hall_symbol;
+use crate::space_groups::{space_group_for_cif_number, space_group_for_hm};
 
 use super::syntax::{CifBlock, CifValue, parse_document};
 use super::{
@@ -508,7 +508,7 @@ fn parse_space_group(
 
     let hm = first_tag_text(block, &HM_TAGS);
     if let Some((tag, value)) = &hm {
-        let result = space_group_by_symbol(value)
+        let result = space_group_for_hm(value, candidates.first().map(|(_, _, group)| group))
             .map(|info| info.space_group)
             .map_err(CifIoError::SpaceGroup);
         collect_space_group_candidate(
@@ -1365,16 +1365,19 @@ fn site_text(column: SiteColumn<'_>, row: usize) -> Option<&str> {
 }
 
 fn symbol_from_label(label: &str) -> Option<String> {
-    let mut characters = label.chars();
-    let first = characters.next()?;
-    if !first.is_ascii_uppercase() {
-        return None;
-    }
-    let mut symbol = first.to_string();
-    if let Some(second) = characters.next().filter(char::is_ascii_lowercase) {
-        symbol.push(second);
-    }
-    Some(symbol)
+    element_prefix(label).map(str::to_owned)
+}
+
+// CIF atom labels may append site identifiers. Prefer a real two-letter
+// symbol over a one-letter prefix, including before considering D and T.
+fn element_prefix(value: &str) -> Option<&'static str> {
+    const SYMBOLS: &str = "H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc Lv Ts Og D T";
+    [2, 1].into_iter().find_map(|length| {
+        let prefix = value.get(..length)?;
+        SYMBOLS
+            .split_ascii_whitespace()
+            .find(|symbol| symbol.eq_ignore_ascii_case(prefix))
+    })
 }
 
 fn chemical_identity(type_symbol: &str) -> Result<(String, Option<u32>, Option<i32>), CifIoError> {
@@ -1393,19 +1396,9 @@ fn chemical_identity(type_symbol: &str) -> Result<(String, Option<u32>, Option<i
         )
     };
     let rest = &type_symbol[isotope_end..];
-    let mut characters = rest.char_indices();
-    let (_, first) = characters
-        .next()
-        .filter(|(_, value)| value.is_ascii_uppercase())
+    let symbol = element_prefix(rest)
         .ok_or_else(|| import_error(format!("invalid atom type symbol {type_symbol:?}")))?;
-    let mut element = first.to_string();
-    let mut element_end = first.len_utf8();
-    if let Some((index, second)) = characters.next()
-        && second.is_ascii_lowercase()
-    {
-        element.push(second);
-        element_end = index + second.len_utf8();
-    }
+    let mut element = symbol.to_owned();
     let mut isotope = isotope;
     if element == "D" {
         "H".clone_into(&mut element);
@@ -1414,7 +1407,7 @@ fn chemical_identity(type_symbol: &str) -> Result<(String, Option<u32>, Option<i
         "H".clone_into(&mut element);
         isotope = Some(3);
     }
-    let suffix = &rest[element_end..];
+    let suffix = &rest[symbol.len()..];
     let charge = parse_charge(suffix)?;
     Ok((element, isotope, charge))
 }

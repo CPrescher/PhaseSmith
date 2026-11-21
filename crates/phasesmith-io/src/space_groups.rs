@@ -141,9 +141,9 @@ pub(crate) fn space_group_for_cif_number(
 ///
 /// Returns [`SpaceGroupLookupError::UnknownSymbol`] if no Hall entry matches.
 pub fn space_group_by_hall_symbol(symbol: &str) -> Result<SpaceGroupInfo, SpaceGroupLookupError> {
-    let requested = symbol.trim();
+    let requested = hall_key(symbol);
     let entry = entries()
-        .find(|entry| symbol_key(entry.hall_symbol) == symbol_key(requested))
+        .find(|entry| hall_key(entry.hall_symbol) == requested)
         .ok_or_else(|| unknown_symbol(symbol))?;
     info_from_hall_number(entry.hall_number)
 }
@@ -162,6 +162,9 @@ pub fn space_group_by_hall_symbol(symbol: &str) -> Result<SpaceGroupInfo, SpaceG
 /// is invalid, or a structured database/symmetry error when its generated
 /// operations cannot be represented and validated exactly.
 pub fn space_group_from_hall_symbol(symbol: &str) -> Result<SpaceGroup, SpaceGroupLookupError> {
+    if let Ok(info) = space_group_by_hall_symbol(symbol) {
+        return Ok(info.space_group);
+    }
     let requested = normalize_hall_expression(symbol);
     if requested.is_empty() {
         return Err(unknown_symbol(symbol));
@@ -190,58 +193,86 @@ pub fn space_group_from_hall_symbol(symbol: &str) -> Result<SpaceGroup, SpaceGro
 /// Returns [`SpaceGroupLookupError::UnknownSymbol`] when the value cannot be
 /// resolved uniquely, or a structured database/symmetry error.
 pub fn space_group_by_symbol(symbol: &str) -> Result<SpaceGroupInfo, SpaceGroupLookupError> {
+    space_group_for_hm(symbol, None).or_else(|error| match error {
+        SpaceGroupLookupError::UnknownSymbol { .. } => space_group_by_hall_symbol(symbol),
+        other => Err(other),
+    })
+}
+
+pub(crate) fn space_group_for_hm(
+    symbol: &str,
+    declared: Option<&SpaceGroup>,
+) -> Result<SpaceGroupInfo, SpaceGroupLookupError> {
     let requested = symbol.trim();
-    if requested.is_empty() {
-        return Err(unknown_symbol(symbol));
-    }
-
-    if let Ok(info) = space_group_by_hall_symbol(requested) {
-        return Ok(info);
-    }
-
     let (hm, qualifier) = hm_and_qualifier(requested);
-    let key = symbol_key(hm);
-    // Conventional H-M names replaced by the IUCr double-glide nomenclature
-    // (de Wolff et al., Acta Cryst. A48, 727–732, §3). Preserve the basis.
-    let hm_key = match key.as_str() {
-        "abm2" => "aem2",
-        "aba2" => "aea2",
-        "cmca" => "cmce",
-        "cmma" => "cmme",
-        "ccca" => "ccce",
-        other => other,
-    };
-
-    let full_matches = entries()
-        .filter(|entry| symbol_key(entry.hm_full) == hm_key)
-        .filter(|entry| qualifier.is_none_or(|value| entry.setting.eq_ignore_ascii_case(value)))
-        .collect::<Vec<_>>();
-    if full_matches.len() == 1 {
-        return info_from_hall_number(full_matches[0].hall_number);
+    let hm_key = symbol_key(hm);
+    let mut matches = Vec::new();
+    for entry in entries() {
+        if qualifier.is_some_and(|q| {
+            !(entry.setting.eq_ignore_ascii_case(q)
+                || matches!(q, "1" | "2") && entry.setting.starts_with(q))
+        }) {
+            continue;
+        }
+        // Moyo's monoclinic short name can describe the reference basis
+        // even on another setting's row. Shorten the actual full symbol.
+        let short = if (3..=15).contains(&entry.number) {
+            entry
+                .hm_full
+                .split_whitespace()
+                .filter(|word| *word != "1")
+                .collect::<String>()
+        } else {
+            entry.hm_short.to_owned()
+        };
+        if symbol_key(entry.hm_full) == hm_key
+            || symbol_key(&short) == hm_key
+            || legacy_glide_key(&entry).as_ref() == Some(&hm_key)
+        {
+            matches.push(entry);
+        }
     }
-
-    let short_numbers = entries()
-        .filter(|entry| symbol_key(entry.hm_short) == hm_key)
-        .filter(|entry| qualifier.is_none_or(|value| entry.setting.eq_ignore_ascii_case(value)))
-        .map(|entry| entry.number)
-        .collect::<std::collections::BTreeSet<_>>();
-    if short_numbers.len() != 1 {
+    let first = matches.first().ok_or_else(|| unknown_symbol(symbol))?;
+    if matches.iter().any(|m| m.number != first.number) {
         return Err(unknown_symbol(symbol));
     }
-    let number = *short_numbers
-        .first()
-        .ok_or_else(|| unknown_symbol(symbol))?;
-    if qualifier.is_none() {
-        return space_group_by_number(number);
+    if matches.len() > 1
+        && let Some(group) = declared
+    {
+        for entry in &matches {
+            let info = info_from_hall_number(entry.hall_number)?;
+            if info.space_group == *group {
+                return Ok(info);
+            }
+        }
     }
-    let matched = entries()
-        .find(|entry| {
-            entry.number == number
-                && symbol_key(entry.hm_short) == hm_key
-                && qualifier.is_some_and(|value| entry.setting.eq_ignore_ascii_case(value))
-        })
-        .ok_or_else(|| unknown_symbol(symbol))?;
-    info_from_hall_number(matched.hall_number)
+    // Use the database default only if it actually matches the spelling.
+    // Within an alternate basis the table lists conventional choices first.
+    let default = Setting::Standard.hall_number(first.number);
+    let chosen = matches
+        .iter()
+        .find(|entry| Some(entry.hall_number) == default)
+        .unwrap_or(first);
+    info_from_hall_number(chosen.hall_number)
+}
+
+// The five pre-double-glide H-M names (de Wolff et al., Acta Cryst. A48,
+// §3) identify a particular glide direction. Carry that direction along
+// with the database's axis permutation, including on origin-qualified rows.
+fn legacy_glide_key(entry: &HallSymbolEntry) -> Option<String> {
+    let old_direction = match entry.number {
+        39 | 41 => 'b',      // Abm2, Aba2
+        64 | 67 | 68 => 'a', // Cmca, Cmma, Ccca
+        _ => return None,
+    };
+    let axes = entry.setting.trim_start_matches(['1', '2']);
+    let axes = if axes.is_empty() { "abc" } else { axes };
+    let position = axes
+        .chars()
+        .filter(char::is_ascii_alphabetic)
+        .position(|c| c == old_direction)?;
+    let direction = ["a", "b", "c"].get(position)?;
+    Some(symbol_key(entry.hm_short).replace('e', direction))
 }
 
 /// Enumerate every canonical Hall setting compatible with the supplied cell metric.
@@ -348,11 +379,17 @@ fn symbol_key(value: &str) -> String {
     value
         .chars()
         .filter(|character| !character.is_whitespace() && *character != '_')
-        // Moyo stores the Hall-symbol quote operator as `=` internally while
-        // conventional CIF files use `"`.
-        .map(|character| if character == '"' { '=' } else { character })
         .flat_map(char::to_lowercase)
         .collect()
+}
+
+fn hall_key(value: &str) -> String {
+    // Generator boundaries are meaningful, e.g. P 32 versus P 3 2.
+    normalize_hall_expression(value)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_ascii_lowercase()
 }
 
 fn normalize_hall_expression(value: &str) -> String {

@@ -97,6 +97,31 @@ def test_script_first_cif_lebail_input_builds_bounded_lattice_parameters() -> No
     assert result.checkpoint.completed_iterations == 1
 
 
+def test_cif_element_identity_reaches_scattering_tables() -> None:
+    from phasesmith.scattering import species_from_structure
+
+    header = CELL_ONLY_CIF + "\nloop_\n_atom_site_label\n"
+    xyz = "_atom_site_fract_x\n_atom_site_fract_y\n_atom_site_fract_z\n"
+    inferred = read_cif(header + xyz + "FE1 0 0 0\nCL1 .1 .2 .3\nD1 .3 .2 .1").structure
+    species = species_from_structure(inferred)
+    assert [s.element_symbol for s in species] == ["Fe", "Cl", "H"]
+    assert [s.xray_key for s in species] == ["Fe", "Cl", "H"]
+    assert species[2].neutron_key == "H-2"
+    phasesmith.XrayNonResonant().prepare(species)
+
+    typed = read_cif(
+        header
+        + "_atom_site_type_symbol\n"
+        + xyz
+        + "C1 TI+4 0 0 0\nC2 57FE3+ 0 0 0\nC3 n 0 0 0\nC4 Cval 0 0 0"
+        + "\nD2 D1+ 0 0 0\nT1 TA 0 0 0"
+    ).structure
+    species = species_from_structure(typed)
+    assert [s.type_symbol for s in typed.sites] == ["TI+4", "57FE3+", "n", "Cval", "D1+", "TA"]
+    assert [s.xray_key for s in species] == ["Ti4+", "Fe3+", "N", "Cval", "H1+", "Ta"]
+    assert [s.neutron_key for s in species] == ["Ti", "Fe-57", "N", "C", "H-2", "Ta"]
+
+
 def test_native_adapter_extracts_plain_typed_values_and_uncertainties() -> None:
     result = read_cif(P21_CIF)
     structure = result.structure

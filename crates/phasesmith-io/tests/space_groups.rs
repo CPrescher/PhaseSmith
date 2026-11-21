@@ -86,6 +86,34 @@ fn hm_origin_choices_and_legacy_double_glides_resolve_exact_settings() {
 }
 
 #[test]
+fn hm_names_preserve_axis_order_and_origin_in_alternate_settings() {
+    for (hm, hall) in [
+        ("P b n m", "-P 2c 2ab"),
+        ("P n m a", "-P 2ac 2n"),
+        ("P n c a", "-P 2a 2n"),
+        ("P m n m:1", "P 2ac 2ac -1ac"),
+        ("P m n m:2", "-P 2c 2a"),
+        ("B m a b", "-B 2ab 2"),
+        ("C c c b:2", "-C 2a 2c"),
+        ("I2/a", "-I 2ya"),
+    ] {
+        assert_eq!(
+            space_group_by_symbol(hm).unwrap().space_group,
+            space_group_by_hall_symbol(hall).unwrap().space_group,
+            "{hm}"
+        );
+    }
+    assert_ne!(
+        space_group_by_hall_symbol("P 3 2").unwrap().number,
+        space_group_by_hall_symbol("P 32").unwrap().number
+    );
+    assert_eq!(
+        space_group_from_hall_symbol("-P 6C 2C").unwrap(),
+        space_group_from_hall_symbol("-P 6c 2c").unwrap()
+    );
+}
+
+#[test]
 fn hall_symbols_and_invalid_inputs_are_explicit() {
     let hall = space_group_by_symbol("-F 4 2 3").expect("Hall symbol must resolve");
     assert_eq!(hall.number, 225);

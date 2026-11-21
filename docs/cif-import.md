@@ -60,7 +60,10 @@ also checks the other settings tabulated for that number and retains the exact
 deposited operations. This check covers the 530 conventional Hall settings.
 Operation coordinates accept uppercase and lowercase X, Y and Z. Conventional
 Hermann–Mauguin names accept explicit origin choices such as `I 41/a:2` and
-the five historical double-glide names, including `Aba2` for `Aea2`.
+the five historical double-glide names, including `Aba2` for `Aea2`, in
+their tabulated axis permutations. A short H–M symbol such as `P b n m`
+selects its own basis. When the symbol permits several origins or settings,
+matching deposited operations or a Hall symbol disambiguate the choice.
 See the [IUCr nomenclature report, section 3](https://www.iucr.org/who-we-are/commissions/commission-on-crystallographic-nomenclature/published-reports/symsym).
 
 Lower-priority definitions are also resolved. A disagreement is an error in
@@ -102,7 +105,12 @@ facade for the same operation.
 - `B_iso` and anisotropic `B_ij` are converted by `U = B / (8 pi^2)`.
   Simultaneous U/B definitions must agree within local tolerances.
 - Type symbols, element symbols, isotope mass numbers, charges, source labels,
-  stable site IDs, and disorder groups are separate fields.
+  stable site IDs, and disorder groups are separate fields. An explicit type
+  takes precedence over the site label and retains its source spelling.
+  Element and scattering identities recognize chemical symbols regardless
+  of case. If the type is missing, the longest valid element prefix of the
+  label is used (`FE1` gives Fe and `CL1` gives Cl). D and T denote
+  hydrogen isotopes when they are the element prefix.
 - Duplicate site labels are errors in strict mode. Permissive mode retains the
   source label and creates stable IDs such as `C1#2` with a warning.
 - Anisotropic CIF U tensors are preserved in component order

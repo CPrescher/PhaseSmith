@@ -82,13 +82,20 @@ class ScatteringSpecies:
 
         if not isinstance(site, AtomSite):
             raise TypeError("site must be an AtomSite")
-        ordinary = site.element_symbol
+        raw = re.sub(r"^\d+", "", site.type_symbol).casefold()
+        symbol = site.element_symbol.casefold()
+        if symbol == "h" and site.isotope in (2, 3):
+            alias = "d" if site.isotope == 2 else "t"
+            if raw.startswith(alias):
+                raw = symbol + raw[1:]
+        ordinary = {symbol}
         if site.charge is not None:
-            ordinary += f"{abs(site.charge)}{'+' if site.charge > 0 else '-'}"
-        raw_without_isotope = re.sub(r"^\d+", "", site.type_symbol)
-        special_key = None
-        if site.type_symbol not in ("D", "T") and raw_without_isotope != ordinary:
-            special_key = site.type_symbol
+            magnitude = abs(site.charge)
+            sign = "+" if site.charge > 0 else "-"
+            ordinary = {f"{symbol}{magnitude}{sign}", f"{symbol}{sign}{magnitude}"}
+            if magnitude == 1:
+                ordinary.add(f"{symbol}{sign}")
+        special_key = None if raw in ordinary else site.type_symbol
         return cls(site.element_symbol, site.isotope, site.charge, special_key)
 
 
