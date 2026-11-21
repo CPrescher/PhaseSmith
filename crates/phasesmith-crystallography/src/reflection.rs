@@ -4,7 +4,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 use crate::cell::{CELL_PARAMETER_COUNT, CellError, CellGeometry, UnitCell};
-use crate::symmetry::{SpaceGroup, SymmetryError};
+use crate::symmetry::{CrystalSystem, SpaceGroup, SymmetryError};
 
 const TWO_PI: f64 = 2.0 * std::f64::consts::PI;
 const DEFAULT_METRIC_TOLERANCE: f64 = 1.0e-10;
@@ -227,6 +227,7 @@ pub struct PreparedReflectionGenerator {
     merge_friedel: bool,
     max_candidates: usize,
     metric_tolerance: f64,
+    prefilter_cubic_orbits: bool,
 }
 
 impl PreparedReflectionGenerator {
@@ -246,7 +247,18 @@ impl PreparedReflectionGenerator {
         if max_candidates == 0 {
             return Err(ReflectionGenerationError::InvalidCandidateLimit);
         }
+        // Signed permutations preserve absolute index bounds in i32, including
+        // for Friedel negation (safe_index_bounds excludes i32::MIN). Other
+        // bases retain the complete, checked orbit traversal.
+        let prefilter_cubic_orbits = space_group.crystal_system() == CrystalSystem::Cubic
+            && space_group.rotations().iter().all(|rotation| {
+                rotation.iter().all(|row| {
+                    row.iter().all(|&v| (-1..=1).contains(&v))
+                        && row.iter().filter(|&&v| v != 0).count() == 1
+                })
+            });
         Ok(Self {
+            prefilter_cubic_orbits,
             space_group,
             merge_friedel,
             max_candidates,
@@ -318,6 +330,13 @@ impl PreparedReflectionGenerator {
                     let reciprocal_squared = geometry.q_squared(hkl);
                     if reciprocal_squared + boundary_tolerance < min_squared
                         || reciprocal_squared - boundary_tolerance > max_squared
+                    {
+                        continue;
+                    }
+                    if self.prefilter_cubic_orbits
+                        && !self
+                            .space_group
+                            .is_canonical_index(hkl, self.merge_friedel)?
                     {
                         continue;
                     }

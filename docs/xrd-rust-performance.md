@@ -92,3 +92,38 @@ experiments. The driver records all individual samples, package versions,
 platform information, calculation scope, thread counts, numerical checks, and
 derived ratios in JSON. It exits without writing a timing report if numerical
 agreement fails.
+
+## Corrected inorganic COD collection, November 2026
+
+A paired release-wheel run on an Apple M4 Pro compared PhaseSmith 0.8.5 at
+`98bd223`, the cubic reflection-generation optimization, and XRD-Rust 0.3.5.
+All 5,552 files were attempted. Both PhaseSmith builds produced bitwise-identical
+reflection lists, d-spacing derivatives, and powder sticks on all 5,319 computed
+structures at both one and eight threads. The original peak-position and intensity
+agreement criteria admitted 5,232 structures, including 892 cubic structures.
+
+| Eight threads, qualifying cubic structures | Previous PhaseSmith | Optimized PhaseSmith | XRD-Rust |
+|---|---:|---:|---:|
+| Median powder calculation (ms) | 16.675 | 2.159 | 7.989 |
+| Cubic files faster than XRD-Rust | 186 / 892 | 885 / 892 | — |
+
+Median paired speedup over previous PhaseSmith was 7.35× on cubic structures
+and 1.0005×–1.0070× across the six other crystal-system medians. Optimized
+PhaseSmith was 2.92× faster than XRD-Rust on the median cubic pair. Each
+ratio was calculated per file before taking the median. Summing one
+median-timed calculation per qualifying file across all seven systems gave
+a 1.70× speedup over previous PhaseSmith at eight threads.
+
+Profiling 32 cubic entries attributed a median 96.9% of the previous
+eight-thread time to serial reflection generation. Cubic point groups map
+many candidate indices to one family. Discarding noncanonical indices before
+building their full orbits reduced median generation time on those entries
+from 16.67 to 2.73 ms. The exact representative and extinction rules are
+described in [symmetry and reflection generation](symmetry-reflections.md).
+
+Each library received the same physical model with neutral atoms and zero
+displacements. Timings covered Mo Kα powder sticks over 2–60° in 2θ from
+prepared structures. The release builds took turns on each file with alternating
+order, one warm-up and three timed repetitions per mode. The native
+`reflection_generation` benchmark includes an Fm-3m case and a C-centred
+orthorhombic control for repeating the generator measurements.

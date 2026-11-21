@@ -143,6 +143,25 @@ def test_reflection_family_topology_matches_independent_reference() -> None:
     assert native.reflection_ids == tuple(f"hkl:{h},{k},{ell}" for (h, k, ell), _ in expected)
 
 
+@pytest.mark.parametrize("number", [198, 225])
+@pytest.mark.parametrize("merge_friedel", [False, True])
+def test_cubic_family_enumeration_matches_exhaustive_reference(
+    number: int, merge_friedel: bool
+) -> None:
+    # P2₁3 and Fm-3m exercise different permutation groups, extinctions,
+    # stabilizers, and the distinction between merging and retaining Friedel mates.
+    group = space_group_by_number(number).space_group
+    cell = phasesmith.UnitCell(4, 4, 4, 90, 90, 90)
+    generated = phasesmith.PreparedReflectionGenerator(group, merge_friedel=merge_friedel).generate(
+        cell, phasesmith.DSpacingRange(1.01, 4.01)
+    )
+    expected = reference_generate_d_spacing(cell, group, 1.01, 4.01, merge_friedel=merge_friedel)
+    # Accidental metric degeneracies may sort differently in NumPy and Rust.
+    assert sorted(zip(map(tuple, generated.hkl), generated.multiplicity, strict=True)) == sorted(
+        (hkl, multiplicity) for hkl, multiplicity, _ in expected
+    )
+
+
 def test_fcc_conventional_hkl_uses_powder_display_convention() -> None:
     group = space_group_by_number(225).space_group
     generator = phasesmith.PreparedReflectionGenerator(group)

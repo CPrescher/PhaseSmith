@@ -205,16 +205,7 @@ impl SymmetryOperation {
     ///
     /// Returns an arithmetic error if an index does not fit signed 32-bit.
     pub fn reciprocal_index(self, hkl: [i32; 3]) -> Result<[i32; 3], SymmetryError> {
-        let mut result = [0; 3];
-        for (column, value) in result.iter_mut().enumerate() {
-            let sum = (0..3).try_fold(0_i64, |accumulator, row| {
-                accumulator
-                    .checked_add(i64::from(self.rotation[row][column]) * i64::from(hkl[row]))
-                    .ok_or(SymmetryError::ArithmeticOverflow)
-            })?;
-            *value = i32::try_from(sum).map_err(|_| SymmetryError::ArithmeticOverflow)?;
-        }
-        Ok(result)
+        reciprocal_index(self.rotation, hkl)
     }
 
     fn phase(self, hkl: [i32; 3]) -> Result<Rational, SymmetryError> {
@@ -418,6 +409,31 @@ impl SpaceGroup {
         Ok(true)
     }
 
+    /// A cheaper canonicality check before constructing a full reciprocal family.
+    /// The caller establishes that every rotation and Friedel negation is
+    /// representable, so an early exit cannot mask an arithmetic error.
+    pub(crate) fn is_canonical_index(
+        &self,
+        hkl: [i32; 3],
+        merge_friedel: bool,
+    ) -> Result<bool, SymmetryError> {
+        if merge_friedel && canonical_friedel_sign(hkl) != hkl {
+            return Ok(false);
+        }
+        for &rotation in &self.rotations {
+            let member = reciprocal_index(rotation, hkl)?;
+            let representative = if merge_friedel {
+                canonical_friedel_sign(member)
+            } else {
+                member
+            };
+            if representative < hkl {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
     /// Return the exact reciprocal orbit, optionally merging Friedel mates.
     ///
     /// # Errors
@@ -563,6 +579,19 @@ impl Error for SymmetryError {}
 
 fn reflection_id(hkl: [i32; 3]) -> String {
     format!("hkl:{},{},{}", hkl[0], hkl[1], hkl[2])
+}
+
+fn reciprocal_index(rotation: [[i32; 3]; 3], hkl: [i32; 3]) -> Result<[i32; 3], SymmetryError> {
+    let mut result = [0; 3];
+    for (column, value) in result.iter_mut().enumerate() {
+        let sum = (0..3).try_fold(0_i64, |accumulator, row| {
+            accumulator
+                .checked_add(i64::from(rotation[row][column]) * i64::from(hkl[row]))
+                .ok_or(SymmetryError::ArithmeticOverflow)
+        })?;
+        *value = i32::try_from(sum).map_err(|_| SymmetryError::ArithmeticOverflow)?;
+    }
+    Ok(result)
 }
 
 fn canonical_friedel_sign(hkl: [i32; 3]) -> [i32; 3] {

@@ -55,6 +55,15 @@ mates are merged by default for ordinary non-resonant powder work. Set
 `merge_friedel=False` when anomalous or other physics makes `h` and `-h`
 distinct. Accidental equal-d families retain separate IDs and rows.
 
+For cubic groups whose rotations are signed permutations of the supplied axes,
+the generator first checks whether a smaller representative exists among the
+distinct rotations. It applies the same Friedel sign convention as the full
+orbit. A smaller representative lets the generator skip that index before
+allocating an orbit or formatting a family ID. Surviving representatives go
+through the full orbit and translation-phase calculations for multiplicity and
+systematic absences. The signed-permutation condition ensures that an early exit
+cannot hide an out-of-range transformed index in another setting.
+
 ## Metric constraints
 
 Every rotation requires
