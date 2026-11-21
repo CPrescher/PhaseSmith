@@ -2,6 +2,11 @@
 
 ## Purpose and current release
 
+The 0.9.0 Python frontend schedules independent powder-stick calculations across
+structures with one native thread per calculation. The existing reflection and
+intensity kernels own the physics. The batch API returns ordered discrete
+patterns and transfers plain structure records when process workers are requested.
+
 The 0.8.5 source update adds the Bravais-lattice search with symmetry-constrained
 cell refinement (`lattice_symmetry`) and public reflection prediction and intensity
 measurement for refined lattices (`measurement`) to `phasesmith-single-crystal`;
@@ -44,7 +49,7 @@ inclusion, superseded work and intentionally separate historical experiments.
 PhaseSmith is a powder and single-crystal diffraction library with native Rust
 numerical kernels and an optional typed Python/NumPy frontend. GUI applications
 own presentation, acquisition configuration and application state. The current
-source version is **0.8.5**. Registry records and the tagged release, rather than
+source version is **0.9.0**. Registry records and the tagged release, rather than
 source-version text, establish publication status.
 
 Powder workflows include profile/background evaluation, crystallography,

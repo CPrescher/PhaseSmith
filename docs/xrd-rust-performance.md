@@ -65,7 +65,7 @@ For batch throughput, we measured elapsed time to finish the same 5,232 prepared
 | Eight Python threads, one calculation thread per pattern | 3.97 | 1,317 | 4.14× |
 | Eight Python processes, one calculation thread per pattern | 2.94 | 1,781 | 5.60× |
 
-For a collection of prepared structures, give each worker one calculation thread. Against processing one pattern at a time with eight threads, the batch ran 2.60× faster with eight Python threads and 3.51× faster with eight persistent Python processes.
+For a collection of prepared structures, give each worker one calculation thread. Against processing one pattern at a time with eight threads, the batch ran 2.60× faster with eight Python threads and 3.51× faster with eight persistent Python processes. For one-shot calls, the 0.9.0 batch API also measures startup and model transfer. [Small-batch timings and default worker count](batch-powder-sticks.md#end-to-end-timings-for-small-batches)
 
 ### Original mixed COD sample
 

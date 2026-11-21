@@ -6,6 +6,14 @@ development versions.
 
 ## Unreleased
 
+## 0.9.0
+
+- Calculate ordered batches of monochromatic X-ray powder sticks with
+  `calculate_powder_sticks_batch`. Each worker evaluates one structure at a time.
+  The default uses up to four threads. [Usage and timings](docs/batch-powder-sticks.md)
+- Powder reflection generation skips equivalent indices earlier and prepares
+  systematic-absence checks once per generator.
+
 - Strict CIF import resolves rounded riding-hydrogen geometry, preserves
   explicitly vacant duplicate site rows and verifies the abbreviated Fdd2
   name against independently declared symmetry.

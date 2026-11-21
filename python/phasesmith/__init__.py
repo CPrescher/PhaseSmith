@@ -160,6 +160,7 @@ from .phase import (
     RietveldPhase,
     StructuralReflectionBatch,
 )
+from .powder_sticks import PowderSticks, calculate_powder_sticks_batch
 from .profile_estimation import (
     ProfileEstimationMode,
     ProfileEstimationOptions,
@@ -344,6 +345,7 @@ __all__ = [
     "PhysicsContext",
     "PhysicsContribution",
     "PowderPattern",
+    "PowderSticks",
     "PreparedNeutronNuclear",
     "PreparedPattern",
     "PreparedReflectionGenerator",
@@ -433,6 +435,7 @@ __all__ = [
     "calculate_neutron_pattern",
     "calculate_p1_structure_factors",
     "calculate_pattern",
+    "calculate_powder_sticks_batch",
     "calculate_structural_pattern",
     "calculate_structure_factor_values",
     "calculate_structure_factors",

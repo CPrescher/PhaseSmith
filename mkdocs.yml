@@ -134,6 +134,7 @@ nav:
       - Sample physics: sample-physics.md
   - Crystallography:
       - Foundation: crystallography-foundation.md
+      - Batch X-ray powder sticks: batch-powder-sticks.md
       - Symmetry and reflections: symmetry-reflections.md
       - Scattering models: scattering-models.md
       - Structural intensities: structural-intensities.md
