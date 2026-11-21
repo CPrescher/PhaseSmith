@@ -6,6 +6,9 @@ development versions.
 
 ## Unreleased
 
+- Strict CIF import recognizes the C-centered, unique-c setting of space
+  group 4 deposited in COD 1556109 and checks it against the listed operations.
+
 - Strict CIF import preserves unreferenced repeated atom labels on distinct
   sites and mixed-occupancy positions, with collision-free IDs and a warning.
 

@@ -60,7 +60,10 @@ also checks the other settings tabulated for that number and retains the exact
 deposited operations. The native tables also recognize centered triclinic cells, F-centered
 settings of groups 9 and 139, and selected explicitly transformed settings of
 groups 4 and 12. The reader matches their deposited basis expressions to Hall
-generators in that same cell. The coordinates stay in the deposited basis.
+generators in that same cell. For example, transforming group 4 to the
+basis `(c,2*a+c,b)` places the screw axis along the deposited c axis and
+adds the centering translation `(1/2,1/2,0)`. Its Hall symbol is `C 2c`.
+The coordinates stay in the deposited basis.
 Operation coordinates accept uppercase and lowercase X, Y and Z. Conventional
 Hermann–Mauguin names accept explicit origin choices such as `I 41/a:2` and
 the five historical double-glide names, including `Aba2` for `Aea2`, in

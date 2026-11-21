@@ -587,6 +587,43 @@ x,y,z
     assert read_cif(cubic).structure.space_group == space_group_by_number(225).space_group
 
 
+def test_group_four_centered_c_axis_supercell_preserves_deposited_frame() -> None:
+    cell = CELL_ONLY_CIF.replace("_space_group_name_H-M_alt 'I m -3 m'", "").replace(
+        "_cell_angle_gamma 90", "_cell_angle_gamma 89.58"
+    )
+    hm = "_space_group_name_H-M_alt 'P 1 21 1 (c,2*a+c,b)'\n"
+    hall = "_space_group_name_Hall 'P 2yb (-1/2*x+z,1/2*x,y)'\n"
+    number = "_space_group_IT_number 4\n"
+    operators = """loop_
+_space_group_symop_operation_xyz
+'x,y,z'
+'-x,-y,z+1/2'
+'x+1/2,y+1/2,z'
+'-x+1/2,-y+1/2,z+1/2'
+"""
+    site = """loop_
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+Ru1 .57 .98 .30
+"""
+    expected = read_cif(cell + operators).structure.space_group
+    for declaration in (
+        hm,
+        hall,
+        hm.replace("P 1 21 1 (c,2*a+c,b)", "C 1 1 21"),
+        hall + hm + number + operators,
+    ):
+        structure = read_cif(cell + declaration + site).structure
+        assert structure.space_group == expected
+        assert structure.cell.gamma_deg == 89.58
+        assert tuple(structure.sites[0].fractional_xyz) == (0.57, 0.98, 0.30)
+    for conflict in (number.replace("4", "3") + hm + hall, hm + operators.replace("z+1/2", "z")):
+        with pytest.raises(ValueError, match="disagree"):
+            read_cif(cell + conflict)
+
+
 def test_centered_triclinic_setting_checks_each_declaration() -> None:
     text = (
         CELL_ONLY_CIF.replace("I m -3 m", "C -1")

@@ -47,6 +47,9 @@ pub(super) const SETTINGS: &[CellSetting] = &[
         "-P 1 (1/2*y+1/2*z,1/2*x+1/2*z,1/2*x+1/2*y)",
     ),
     setting(4, "P 1 21 1 (a,b,c-1/4)", "P 2ybc", "P 2yb (x,y,z+1/4)"),
+    // In (c, 2a+c, b), a primitive a translation becomes (-1/2,1/2,0)
+    // and the original b-axis screw acts along the deposited c axis.
+    setting(4, "C 1 1 21", "C 2c", "P 2yb (-1/2*x+z,1/2*x,y)"),
     setting(9, "F 1 d 1", "F -2yuw", "C -2yc (x+1/2*z,y,1/2*z)"),
     setting(
         12,
@@ -75,10 +78,10 @@ impl CellSetting {
 }
 
 pub(super) fn by_hm(key: &str) -> Option<&'static CellSetting> {
-    let key = if key == "i4/mmm(a+b,-a+b,c)" {
-        "f4/mmm"
-    } else {
-        key
+    let key = match key {
+        "p1211(c,2*a+c,b)" => "c1121",
+        "i4/mmm(a+b,-a+b,c)" => "f4/mmm",
+        _ => key,
     };
     SETTINGS.iter().find(|entry| symbol_key(entry.hm) == key)
 }
