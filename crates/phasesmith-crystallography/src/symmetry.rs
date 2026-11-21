@@ -526,6 +526,50 @@ pub struct ReflectionFamily {
     pub orbit: Vec<[i32; 3]>,
 }
 
+/// Nonzero translations in conventional crystallographic settings, expressed
+/// in twenty-fourths of a cell. Other origins use the general rational sum.
+#[derive(Clone, Debug)]
+pub(crate) struct PreparedExtinctions {
+    operations: Vec<([[i32; 3]; 3], [i64; 3])>,
+}
+
+impl PreparedExtinctions {
+    const DENOMINATOR: i64 = 24;
+
+    pub(crate) fn new(group: &SpaceGroup) -> Option<Self> {
+        let mut operations = Vec::new();
+        for operation in group.operations() {
+            let translation = operation.translation();
+            if translation
+                .iter()
+                .any(|t| Self::DENOMINATOR % t.denominator() != 0)
+            {
+                return None;
+            }
+            let shift = translation.map(|t| t.numerator() * (Self::DENOMINATOR / t.denominator()));
+            if shift != [0; 3] {
+                operations.push((operation.rotation(), shift));
+            }
+        }
+        Some(Self { operations })
+    }
+
+    /// Called after the full family has checked every reciprocal rotation.
+    /// On the stabilizer of h, exp(2πi h·t) is a character. Its sum vanishes
+    /// exactly when some stabilizing operation has a nonintegral h·t.
+    pub(crate) fn is_absent(&self, hkl: [i32; 3]) -> Result<bool, SymmetryError> {
+        let [h, k, l] = hkl.map(i64::from);
+        for &(rotation, [x, y, z]) in &self.operations {
+            if (h * x + k * y + l * z) % Self::DENOMINATOR != 0
+                && reciprocal_index(rotation, hkl)? == hkl
+            {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+}
+
 /// Exact symmetry validation or evaluation error.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SymmetryError {
@@ -1085,6 +1129,35 @@ mod tests {
             operation([[-1, 0, 0], [0, -1, 0], [0, 0, -1]], [Rational::zero(); 3]),
         ])
         .expect("P -1")
+    }
+
+    #[test]
+    fn prepared_extinctions_agree_with_phase_sums_for_an_offset_glide() {
+        for denominator in [24, 5] {
+            let glide = SymmetryOperation::new(
+                [[-1, 0, 0], [0, 1, 0], [0, 0, 1]],
+                [
+                    Rational::new(1, denominator).expect("origin shift"),
+                    Rational::new(1, 2).expect("half translation"),
+                    Rational::zero(),
+                ],
+            )
+            .expect("valid glide");
+            let group =
+                SpaceGroup::new(vec![SymmetryOperation::identity(), glide]).expect("valid glide");
+            let prepared = PreparedExtinctions::new(&group);
+            assert_eq!(prepared.is_some(), denominator == 24);
+            for h in -3..=3 {
+                for k in -3..=3 {
+                    let hkl = [h, k, 1];
+                    let reference = group.is_systematically_absent(hkl).expect("exact sum");
+                    assert_eq!(reference, h == 0 && k % 2 != 0);
+                    if let Some(test) = &prepared {
+                        assert_eq!(test.is_absent(hkl).expect("stabilizer"), reference);
+                    }
+                }
+            }
+        }
     }
 
     #[test]

@@ -45,7 +45,7 @@ For a candidate `h`, operations are grouped by common transformed index
 sum_g exp(2 pi i h.t_g).
 ```
 
-The implementation converts rational phases to an integer polynomial and
+The general absence test converts rational phases to an integer polynomial and
 reduces it modulo the relevant cyclotomic polynomial. A general-position
 systematic absence is reported only when every grouped sum is exactly zero;
 there is no floating extinction tolerance.
@@ -58,8 +58,18 @@ distinct. Accidental equal-d families retain separate IDs and rows.
 Before building a family, the generator checks the distinct rotations for a
 smaller representative under the selected Friedel convention. This skips
 duplicate indices without allocating an orbit or formatting a family ID.
-Surviving representatives go through the full orbit and translation-phase
-calculations for multiplicity and systematic absences.
+For surviving representatives, the full orbit supplies the multiplicity.
+
+The prepared generator also caches translations expressible in twenty-fourths
+of a cell. An operation that fixes the signed index (`Rᵀh = h`) imposes
+`F(h) = exp(2πi h·t) F(h)`. A nonintegral `h·t` therefore forces an
+extinction. Conversely, the phases form a character on the subgroup fixing
+`h`. Each set of operations taking `h` to the same index is a coset of that
+subgroup, so its phase sum is a constant times the subgroup character sum.
+It vanishes exactly when the character is nontrivial. The generator tests this
+with an integer dot product modulo 24. A translation outside that grid selects
+the general rational sum for the whole group. Both paths use the deposited
+origin and setting.
 
 For an index box with maximum absolute component `B`, every component of
 `Rᵀh` has absolute value at most `B` times the largest absolute column sum of

@@ -97,6 +97,11 @@ fn reflection_generation(criterion: &mut Criterion) {
     };
     for (name, group, cell) in [
         (
+            "prepared_p1",
+            SpaceGroup::new(vec![SymmetryOperation::identity()]).expect("P1"),
+            cell,
+        ),
+        (
             "prepared_c_orthorhombic",
             c_centred_orthorhombic_group(),
             cell,

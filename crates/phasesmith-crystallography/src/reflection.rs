@@ -4,7 +4,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 use crate::cell::{CELL_PARAMETER_COUNT, CellError, CellGeometry, UnitCell};
-use crate::symmetry::{SpaceGroup, SymmetryError};
+use crate::symmetry::{PreparedExtinctions, SpaceGroup, SymmetryError};
 
 const TWO_PI: f64 = 2.0 * std::f64::consts::PI;
 const DEFAULT_METRIC_TOLERANCE: f64 = 1.0e-10;
@@ -228,6 +228,7 @@ pub struct PreparedReflectionGenerator {
     max_candidates: usize,
     metric_tolerance: f64,
     max_prefilter_index: u64,
+    extinctions: Option<PreparedExtinctions>,
 }
 
 impl PreparedReflectionGenerator {
@@ -262,6 +263,7 @@ impl PreparedReflectionGenerator {
             })
             .fold(1, u64::max);
         Ok(Self {
+            extinctions: PreparedExtinctions::new(&space_group),
             max_prefilter_index: u64::from(i32::MAX.unsigned_abs()) / max_column_sum,
             space_group,
             merge_friedel,
@@ -356,7 +358,11 @@ impl PreparedReflectionGenerator {
                     if family.canonical_hkl != hkl {
                         continue;
                     }
-                    if self.space_group.is_systematically_absent(hkl)? {
+                    let absent = match &self.extinctions {
+                        Some(test) => test.is_absent(hkl)?,
+                        None => self.space_group.is_systematically_absent(hkl)?,
+                    };
+                    if absent {
                         continue;
                     }
                     let (d_spacing, derivatives) = geometry.d_spacing_and_derivatives(hkl)?;
