@@ -143,15 +143,26 @@ def test_reflection_family_topology_matches_independent_reference() -> None:
     assert native.reflection_ids == tuple(f"hkl:{h},{k},{ell}" for (h, k, ell), _ in expected)
 
 
-@pytest.mark.parametrize("number", [198, 225])
+@pytest.mark.parametrize(
+    ("number", "parameters"),
+    [
+        (1, (4, 4.2, 4.4, 75, 82, 93)),
+        (2, (4, 4.2, 4.4, 75, 82, 93)),
+        (4, (4, 4.2, 4.4, 90, 101, 90)),
+        (19, (4, 4.2, 4.4, 90, 90, 90)),
+        (76, (4, 4, 4.4, 90, 90, 90)),
+        (144, (4, 4, 4.4, 90, 90, 120)),
+        (169, (4, 4, 4.4, 90, 90, 120)),
+        (198, (4, 4, 4, 90, 90, 90)),
+        (225, (4, 4, 4, 90, 90, 90)),
+    ],
+)
 @pytest.mark.parametrize("merge_friedel", [False, True])
-def test_cubic_family_enumeration_matches_exhaustive_reference(
-    number: int, merge_friedel: bool
+def test_family_enumeration_matches_exhaustive_reference(
+    number: int, parameters: tuple[float, ...], merge_friedel: bool
 ) -> None:
-    # P2₁3 and Fm-3m exercise different permutation groups, extinctions,
-    # stabilizers, and the distinction between merging and retaining Friedel mates.
     group = space_group_by_number(number).space_group
-    cell = phasesmith.UnitCell(4, 4, 4, 90, 90, 90)
+    cell = phasesmith.UnitCell(*parameters)
     generated = phasesmith.PreparedReflectionGenerator(group, merge_friedel=merge_friedel).generate(
         cell, phasesmith.DSpacingRange(1.01, 4.01)
     )

@@ -4,7 +4,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 use crate::cell::{CELL_PARAMETER_COUNT, CellError, CellGeometry, UnitCell};
-use crate::symmetry::{CrystalSystem, SpaceGroup, SymmetryError};
+use crate::symmetry::{SpaceGroup, SymmetryError};
 
 const TWO_PI: f64 = 2.0 * std::f64::consts::PI;
 const DEFAULT_METRIC_TOLERANCE: f64 = 1.0e-10;
@@ -227,7 +227,7 @@ pub struct PreparedReflectionGenerator {
     merge_friedel: bool,
     max_candidates: usize,
     metric_tolerance: f64,
-    prefilter_cubic_orbits: bool,
+    max_prefilter_index: u64,
 }
 
 impl PreparedReflectionGenerator {
@@ -247,18 +247,22 @@ impl PreparedReflectionGenerator {
         if max_candidates == 0 {
             return Err(ReflectionGenerationError::InvalidCandidateLimit);
         }
-        // Signed permutations preserve absolute index bounds in i32, including
-        // for Friedel negation (safe_index_bounds excludes i32::MIN). Other
-        // bases retain the complete, checked orbit traversal.
-        let prefilter_cubic_orbits = space_group.crystal_system() == CrystalSystem::Cubic
-            && space_group.rotations().iter().all(|rotation| {
-                rotation.iter().all(|row| {
-                    row.iter().all(|&v| (-1..=1).contains(&v))
-                        && row.iter().filter(|&&v| v != 0).count() == 1
+        // For |h_i| <= B, each component of Rᵀh is bounded by B times
+        // the absolute column sum. The identity guarantees a positive norm.
+        let max_column_sum = space_group
+            .rotations()
+            .iter()
+            .flat_map(|rotation| {
+                (0..3).map(move |col| {
+                    rotation
+                        .iter()
+                        .map(|row| u64::from(row[col].unsigned_abs()))
+                        .sum::<u64>()
                 })
-            });
+            })
+            .fold(1, u64::max);
         Ok(Self {
-            prefilter_cubic_orbits,
+            max_prefilter_index: u64::from(i32::MAX.unsigned_abs()) / max_column_sum,
             space_group,
             merge_friedel,
             max_candidates,
@@ -316,6 +320,12 @@ impl PreparedReflectionGenerator {
             return Err(ReflectionGenerationError::CandidateLimitExceeded);
         }
 
+        // Otherwise traverse the full checked orbit: an early exit must never
+        // hide an unrepresentable transformed index or its Friedel mate.
+        let prefilter = (self.merge_friedel || self.space_group.rotations().len() > 1)
+            && bounds
+                .iter()
+                .all(|bound| u64::from(bound.unsigned_abs()) <= self.max_prefilter_index);
         let min_squared = min_reciprocal * min_reciprocal;
         let max_squared = max_reciprocal * max_reciprocal;
         let boundary_tolerance = 64.0 * f64::EPSILON * max_squared.max(1.0);
@@ -333,7 +343,7 @@ impl PreparedReflectionGenerator {
                     {
                         continue;
                     }
-                    if self.prefilter_cubic_orbits
+                    if prefilter
                         && !self
                             .space_group
                             .is_canonical_index(hkl, self.merge_friedel)?
@@ -530,6 +540,27 @@ mod tests {
                 .expect("centring operation"),
         ])
         .expect("I centring group")
+    }
+
+    #[test]
+    fn mixed_axis_rotation_bounds_exclude_overflowing_friedel_orbits() {
+        // Rᵀ maps (h,k,l) to (-h,h+k,l). An early sign check on the
+        // negative input alone would miss the unrepresentable Friedel mate.
+        let mirror =
+            SymmetryOperation::new([[-1, 1, 0], [0, 1, 0], [0, 0, 1]], [Rational::zero(); 3])
+                .expect("mirror");
+        let group = SpaceGroup::new(vec![SymmetryOperation::identity(), mirror]).expect("group");
+        let generator = PreparedReflectionGenerator::new(group, true, 1_000).expect("generator");
+        assert_eq!(
+            generator.max_prefilter_index,
+            u64::from(i32::MAX.unsigned_abs()) / 2
+        );
+        let hkl: [i32; 3] = [-(1 << 30), -(1 << 30), 0];
+        assert!(u64::from(hkl[0].unsigned_abs()) > generator.max_prefilter_index);
+        assert_eq!(
+            generator.space_group.reflection_family(hkl, true),
+            Err(SymmetryError::ArithmeticOverflow)
+        );
     }
 
     #[test]

@@ -27,6 +27,24 @@ fn c_centred_orthorhombic_group() -> SpaceGroup {
     SpaceGroup::new(operations).expect("benchmark group")
 }
 
+fn trigonal_screw_group() -> SpaceGroup {
+    let screw = SymmetryOperation::new(
+        [[0, -1, 0], [1, -1, 0], [0, 0, 1]],
+        [
+            Rational::zero(),
+            Rational::zero(),
+            Rational::new(1, 3).expect("third"),
+        ],
+    )
+    .expect("threefold screw");
+    SpaceGroup::new(vec![
+        SymmetryOperation::identity(),
+        screw,
+        screw.compose(screw).expect("screw squared"),
+    ])
+    .expect("P3₁")
+}
+
 fn face_centred_cubic_group() -> SpaceGroup {
     let zero = Rational::zero();
     let half = Rational::new(1, 2).expect("half");
@@ -84,6 +102,15 @@ fn reflection_generation(criterion: &mut Criterion) {
             cell,
         ),
         ("prepared_f_cubic", face_centred_cubic_group(), cubic_cell),
+        (
+            "prepared_trigonal_screw",
+            trigonal_screw_group(),
+            UnitCell {
+                b_angstrom: cell.a_angstrom,
+                gamma_deg: 120.0,
+                ..cell
+            },
+        ),
     ] {
         let generator =
             PreparedReflectionGenerator::new(group, true, 5_000_000).expect("benchmark generator");

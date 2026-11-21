@@ -127,3 +127,28 @@ prepared structures. The release builds took turns on each file with alternating
 order, one warm-up and three timed repetitions per mode. The native
 `reflection_generation` benchmark includes an Fm-3m case and a C-centred
 orthorhombic control for repeating the generator measurements.
+
+### Extending the early symmetry check to all crystal systems
+
+A second paired release-wheel run used the cubic-optimized commit `6acbffc`
+as its baseline and repeated the full corrected collection on the same M4 Pro.
+The new generator checks equivalent indices early whenever the rotation and
+search-box bounds guarantee representable indices. Both builds used the same
+common inputs, scan limits, alternating order and three timed repetitions.
+
+| Crystal system | Qualifying structures | Median speedup over cubic-only build, 1 thread | Median speedup over cubic-only build, 8 threads |
+|---|---:|---:|---:|
+| Triclinic | 306 | 1.09× | 1.13× |
+| Monoclinic | 1,228 | 1.36× | 1.46× |
+| Orthorhombic | 1,286 | 1.88× | 2.03× |
+| Tetragonal | 583 | 2.85× | 2.80× |
+| Trigonal | 484 | 2.34× | 2.35× |
+| Hexagonal | 453 | 3.23× | 3.13× |
+| Cubic | 892 | 1.00× | 1.00× |
+| All | 5,232 | 1.65× | 1.74× |
+
+The paired eight-thread median over XRD-Rust 0.3.5 rose from 3.15× to 5.52×.
+Across all 5,552 CIFs, both builds produced identical per-file outcomes. All
+5,319 computed structures had identical reflection lists, d-spacing
+derivatives, integrated intensities and powder sticks at each PhaseSmith thread
+setting. The same 87 timed pairs missed the cross-library agreement criteria.
