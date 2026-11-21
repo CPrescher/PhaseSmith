@@ -1,6 +1,7 @@
 //! CIF-to-domain import policy independent of presentation adapters.
 
 mod cell_precision;
+mod repeated_labels;
 mod shared_tensors;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -258,7 +259,7 @@ fn parse_cif_text_inner(
     let selected = &document.blocks[selected_index];
     check_unsupported_features(selected, &mut diagnostics, strict)?;
     let (cell, cell_standard_uncertainties) = parse_cell(selected, &mut diagnostics, strict)?;
-    let (space_group, symmetry_metadata) = parse_space_group(selected, &mut diagnostics, strict)?;
+    let (space_group, mut metadata) = parse_space_group(selected, &mut diagnostics, strict)?;
     let cell = cell_precision::checked_cell(
         selected,
         cell,
@@ -266,7 +267,14 @@ fn parse_cif_text_inner(
         &space_group,
         &mut diagnostics,
     )?;
-    let sites = parse_sites(selected, cell, &mut diagnostics, strict, limits)?;
+    let sites = parse_sites(
+        selected,
+        cell,
+        &space_group,
+        &mut diagnostics,
+        strict,
+        limits,
+    )?;
     let name = first_text(
         selected,
         &[
@@ -278,7 +286,6 @@ fn parse_cif_text_inner(
         ],
     )
     .unwrap_or_else(|| selected.name.clone());
-    let mut metadata = symmetry_metadata;
     for (key, tags) in [
         (
             "chemical_formula_sum",
@@ -796,6 +803,7 @@ fn parse_rational_term(body: &str, sign: i32) -> Result<(i64, i64), CifIoError> 
 fn parse_sites(
     block: &CifBlock,
     cell: UnitCell,
+    group: &SpaceGroup,
     diagnostics: &mut Vec<CifDiagnostic>,
     strict: bool,
     limits: CifReadLimits,
@@ -877,7 +885,10 @@ fn parse_sites(
     let direct_basis = cell.geometry().map_err(CifIoError::Cell)?.direct_basis;
     let mut sites = Vec::new();
     let mut attached_anisotropic = BTreeSet::new();
-    let mut used_ids = BTreeMap::<String, usize>::new();
+    // Reserve literal labels before generating IDs: a later atom can itself
+    // be named C1#2. The counter is independent for each deposited label.
+    let reserved: BTreeSet<_> = labels.iter().filter_map(CifValue::text).collect();
+    let mut used_ids = BTreeMap::<&str, usize>::new();
     for (row, raw_label) in labels.iter().enumerate() {
         let Some(label) = raw_label.text().filter(|value| !value.trim().is_empty()) else {
             if strict {
@@ -924,22 +935,23 @@ fn parse_sites(
                 continue;
             }
         };
-        let occurrence = used_ids.entry(label.to_owned()).or_default();
-        *occurrence += 1;
-        let site_id = if *occurrence == 1 {
+        let serial = used_ids.entry(label).or_default();
+        *serial += 1;
+        let site_id = if *serial == 1 {
             label.to_owned()
         } else {
-            format!("{label}#{occurrence}")
-        };
-        if *occurrence > 1 {
-            let message = format!("duplicate atom label {label:?} was renamed to {site_id:?}");
-            if strict {
-                return Err(import_error(message));
+            let mut id = format!("{label}#{serial}");
+            while reserved.contains(id.as_str()) {
+                *serial += 1;
+                id = format!("{label}#{serial}");
             }
+            let message =
+                format!("retained duplicate atom label {label:?} with internal site ID {id:?}");
             diagnostics.push(
                 CifDiagnostic::warning("duplicate_atom_label_renamed", message).with_row(row),
             );
-        }
+            id
+        };
         let occupancy_value = occupancy.map_or(1.0, |value| value.value);
         sites.push(CifAtomSite {
             site_id,
@@ -959,6 +971,22 @@ fn parse_sites(
         });
         if anisotropic.contains_key(label) {
             attached_anisotropic.insert(label.to_owned());
+        }
+    }
+    if strict {
+        let repeated: BTreeSet<_> = used_ids
+            .into_iter()
+            .filter_map(|(label, n)| (n > 1).then_some(label))
+            .collect();
+        if !repeated.is_empty() {
+            let linked = block
+                .referenced_atom_labels(columns.label.tag.unwrap_or("_atom_site_label"), &repeated);
+            if let Some(label) = linked.first() {
+                return Err(import_error(format!(
+                    "duplicate atom label {label:?} is referenced by another CIF item"
+                )));
+            }
+            repeated_labels::validate(&sites, &repeated, group)?;
         }
     }
     let orphan_labels = anisotropic

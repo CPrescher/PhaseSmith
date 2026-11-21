@@ -103,6 +103,45 @@ impl CifBlock {
         })
     }
 
+    /// Look for references in both scalar items and loops, including
+    /// compound labels in geometry, restraint, and displacement tables.
+    pub(super) fn referenced_atom_labels<'a>(
+        &self,
+        defining_tag: &str,
+        repeated: &BTreeSet<&'a str>,
+    ) -> BTreeSet<&'a str> {
+        let mut found = BTreeSet::new();
+        let mut inspect = |tag: &str, value: &CifValue| {
+            if tag == defining_tag
+                || !(tag.contains("label")
+                    || tag.contains("atom_site_id")
+                    || tag.starts_with("_restr"))
+            {
+                return;
+            }
+            if let Some(text) = value.text() {
+                for token in std::iter::once(text)
+                    .chain(text.split(|c: char| c.is_whitespace() || matches!(c, '/' | ',' | ';')))
+                {
+                    if let Some(label) = repeated.get(token) {
+                        found.insert(*label);
+                    }
+                }
+            }
+        };
+        for (tag, value) in &self.pairs {
+            inspect(tag, value);
+        }
+        for table in &self.loops {
+            for (tag, values) in &table.columns {
+                for value in values {
+                    inspect(tag, value);
+                }
+            }
+        }
+        found
+    }
+
     pub(super) fn all_tags(&self) -> BTreeSet<&str> {
         self.pairs
             .iter()

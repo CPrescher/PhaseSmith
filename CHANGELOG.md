@@ -6,6 +6,9 @@ development versions.
 
 ## Unreleased
 
+- Strict CIF import preserves unreferenced repeated atom labels on distinct
+  sites and mixed-occupancy positions, with collision-free IDs and a warning.
+
 - Strict CIF import reads centered and shifted-origin settings, exact decimal
   symmetry translations, and fractional oxidation-state identifiers. It
   distinguishes empty atom tables from resolved structures and recognizes

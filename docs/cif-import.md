@@ -128,8 +128,13 @@ facade for the same operation.
   of case. If the type is missing, the longest valid element prefix of the
   label is used (`FE1` gives Fe and `CL1` gives Cl). D and T denote
   hydrogen isotopes when they are the element prefix.
-- Duplicate site labels are errors in strict mode. Permissive mode retains the
-  source label and creates stable IDs such as `C1#2` with a warning.
+- Stable site IDs preserve the original source label. For an unreferenced
+  repeated label, strict import assigns a distinct ID such as `C1#2` and
+  emits a diagnostic. Literal labels elsewhere in the table are reserved.
+  References from another label or restraint field, indistinguishable atoms on
+  symmetry-equivalent positions, and shared positions exceeding unit occupancy
+  remain strict errors. Position and occupancy comparisons use a tolerance
+  of 1e-10. Permissive import retains repeated rows with a warning.
 - Anisotropic CIF U tensors are preserved in component order
   `(11,22,33,23,13,12)`, including component standard uncertainties. Duplicate
   anisotropic labels are errors in strict mode and retain the first row with a

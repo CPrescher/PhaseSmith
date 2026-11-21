@@ -339,7 +339,7 @@ _atom_site_fract_z
 C1 C 0 0 0
 C1 D 0.5 0.5 0.5
 ";
-    assert!(parse_cif_text(duplicate, None, true, CifReadLimits::default()).is_err());
+    assert!(parse_cif_text(duplicate, None, true, CifReadLimits::default()).is_ok());
     let imported = parse_cif_text(duplicate, None, false, CifReadLimits::default()).unwrap();
     assert_eq!(imported.structure.sites[0].site_id, "C1");
     assert_eq!(imported.structure.sites[1].site_id, "C1#2");

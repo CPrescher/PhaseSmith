@@ -256,8 +256,29 @@ _atom_site_disorder_group
 C1 C 0 0 0 A
 C1 D 0.5 0.5 0.5 B
 """
-    with pytest.raises(ValueError, match="duplicate atom"):
-        read_cif(duplicate)
+    recovered = read_cif(duplicate)
+    assert [s.source_label for s in recovered.structure.sites] == ["C1", "C1"]
+    assert [s.site_id for s in recovered.structure.sites] == ["C1", "C1#2"]
+    assert any(d.code == "duplicate_atom_label_renamed" for d in recovered.diagnostics)
+    reserved = read_cif(duplicate + "C1#2 O 0.25 0 0 .\n").structure
+    assert [s.site_id for s in reserved.sites] == ["C1", "C1#3", "C1#2"]
+    for source in (
+        duplicate + "_geom_bond_atom_site_label_1 C1\n",
+        duplicate + "loop_\n_vendor_atom_label\n'C1/M2'\n",
+        duplicate.replace("D 0.5 0.5 0.5", "C 1 0 0"),
+        duplicate.replace("0.5 0.5 0.5", "0 0 0"),
+    ):
+        with pytest.raises(ValueError, match="duplicate atom label"):
+            read_cif(source)
+    inverse = duplicate.replace("loop_", "_space_group_name_H-M_alt 'P -1'\nloop_")
+    inverse = inverse.replace("C 0 0 0", "C 0.25 0 0").replace("D 0.5 0.5 0.5", "C -0.25 0 0")
+    with pytest.raises(ValueError, match="symmetry-equivalent"):
+        read_cif(inverse)
+    mixed = duplicate.replace(
+        "_atom_site_disorder_group", "_atom_site_disorder_group\n_atom_site_occupancy"
+    )
+    mixed = mixed.replace("0 0 0 A", "0 0 0 A .65").replace("0.5 0.5 0.5 B", "0 0 0 B .35")
+    assert [s.occupancy for s in read_cif(mixed).structure.sites] == [0.65, 0.35]
     permissive = read_cif(duplicate, strict=False).structure
     assert tuple(site.site_id for site in permissive.sites) == ("C1", "C1#2")
     assert tuple(site.disorder_group for site in permissive.sites) == ("A", "B")
