@@ -29,7 +29,9 @@ Sticks are sorted by angle. Reflections less than \(10^{-5}\) degrees from the l
 
 The default runs a single structure inline. For two or more it uses up to four Python threads, capped by batch size and available CPUs. Each structure uses one native calculation thread. Threads share input structures in memory. Set `workers=1` when your application already schedules structures, or set an explicit worker count to tune for your machine.
 
-`backend="processes"` starts a fresh pool for one call. Structures are transferred as portable records and the calculated arrays return to the parent. For scripts using this backend, put the call inside `if __name__ == "__main__":` in an importable file. All workers finish or shut down before the call returns. The earlier 5,232-pattern test measured persistent workers with models already resident in memory. [Full-collection comparison](xrd-rust-performance.md#one-pattern-or-many-patterns-in-parallel)
+`backend="processes"` starts a fresh pool for one call. Structures are transferred as portable records and the calculated arrays return to the parent. For scripts using this backend, put the call inside `if __name__ == "__main__":` in an importable file. All workers finish or shut down before the call returns. The earlier 5,232-pattern test measured persistent workers with models already resident in memory. [Persistent-worker timings](xrd-rust-performance.md#one-pattern-or-many-patterns-in-parallel)
+
+For the full 5,319-pattern collection, the released API took 8.18 s with its default four threads and 6.07 s with eight fresh processes. [Matched thread and process comparisons with XRD-Rust](xrd-rust-performance.md#phasesmith-090-batch-throughput-with-matched-workers)
 
 ## End-to-end timings for small batches
 

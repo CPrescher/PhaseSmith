@@ -1,6 +1,34 @@
 # PhaseSmith versus XRD-Rust
 
-## Full speed comparison, 21 November 2026
+## PhaseSmith 0.9.0 batch throughput with matched workers
+
+Eight processes gave both libraries their shortest time for the 5,319 computable patterns in the corrected inorganic COD collection. **PhaseSmith 0.9.0 took 6.07 s and XRD-Rust 0.3.5 took 74.03 s**, a 12.19× throughput advantage for PhaseSmith on an Apple M4 Pro. With four threads, the PhaseSmith batch API’s default, the same collection took **8.18 s versus 504.93 s** (61.74×).
+
+| Workers across structures | PhaseSmith (s) | XRD-Rust (s) | PhaseSmith speedup | Completed pairs |
+|---|---:|---:|---:|---:|
+| 1 worker (inline) | 21.04 | 493.48 | 23.45× | 3 |
+| 2 threads | 12.07 | 500.17 | 41.43× | 2 |
+| 4 threads | 8.18 | 504.93 | 61.74× | 2 |
+| 8 threads | 7.35 | 504.06 | 68.59× | 2 |
+| 2 processes | 15.93 | 217.11 | 13.63× | 2 |
+| 4 processes | 8.96 | 116.92 | 13.04× | 2 |
+| 8 processes | 6.07 | 74.03 | 12.19× | 3 |
+
+Each pair comprises one full batch per library at the same worker count and with the same backend. Times are median elapsed seconds across completed pairs. Speedup divides the XRD-Rust median by the PhaseSmith median. Timing stopped partway through the third pass, so some settings have two completed pairs.
+
+![Elapsed time for all 5,319 patterns with one, two, four and eight workers](figures/xrd-rust-0.9.0-matched-workers.png)
+
+Lines show medians and shaded bands span the observed minima and maxima. Both backends use the same inline call at one worker.
+
+**Collection and agreement.** All 5,552 CIFs were checked against their frozen checksums. The common input builder encountered 91 strict CIF rejections, 104 cell-only inputs and 38 failures to construct a shared model. The timings above include all 5,319 computed pairs, including the same 87 cross-library disagreements seen previously. A separate four-thread run on the **5,232 agreement-qualified structures** gave **8.12 s for PhaseSmith and 497.80 s for XRD-Rust (61.28×, three completed pairs)**. Every timed stick position and intensity matched its own library’s reference output bit for bit.
+
+**Measurement scope.** The benchmark used the published PyPI wheels on macOS 26.6.2 with Python 3.13.7. Both libraries used the same neutral-atom models, deposited occupancies, zero displacements and 2–60° scan in 2θ at 0.71073 Å. PhaseSmith calculated the collection in one call to `calculate_powder_sticks_batch`. For XRD-Rust, workers called `get_pattern` with its single-threaded SIMD kernel and returned the angle and intensity arrays. Each worker calculated one structure at a time with one internal calculation thread. Timings include fresh pool startup, dispatch, calculation, result collection, process transfers and pool shutdown. CIF reading, shared-model preparation and agreement checks took place outside the timer.
+
+[Download the raw batch timings, per-file agreement results and benchmark scripts](downloads/xrd-rust-0.9.0-matched-workers.zip) · [Input archive and CIF checksums](downloads/2026-11-21-xrd-rust-47a238b.zip) · [Small-batch timings and default worker count](batch-powder-sticks.md#end-to-end-timings-for-small-batches)
+
+<a id="full-speed-comparison-21-november-2026"></a>
+
+## PhaseSmith 0.8.5 per-structure speed comparison, 21 November 2026
 
 PhaseSmith 0.8.5 at `47a238b` calculated powder sticks **17.59× faster with one thread each and 8.22× faster with eight threads each** than XRD-Rust 0.3.5 on the median qualifying inorganic COD structure. This release build from `develop` includes the faster systematic-absence checks. XRD-Rust used its standard SIMD calculator. [XRD-Rust paper](https://journals.iucr.org/j/issues/2026/04/00/hat5023/index.html)
 
