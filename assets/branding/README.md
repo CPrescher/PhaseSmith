@@ -1,25 +1,28 @@
 # PhaseSmith branding
 
 Two candidate marks live here until a final decision is made: the **lit phase
-scale** (the default file names below) and the **plain three-plane mark**
-(files suffixed `-n1`), which is the same geometry reduced to three flat,
-single-hue planes with no gradients.
+scale** (the default file names below) and the **plain mark** (files suffixed
+`-n1`), which is the same three-plane geometry in a single hue with no
+gradients or shadows.
 
-The phase-scale PhaseSmith mark is a stack of four inclined lattice planes, stacked along a
-normal that points to the upper left. Each plane advances in phase, and the
-phase is encoded as color — deep teal at the back through teal and mint to hot
-amber in front, the way structure-factor phases are drawn on a color scale.
-Depth comes from lighting: every plane is lit from the direction of the plane
-normal, and the stack fades into the background with distance (the fade is
-opacity-based, so it adapts to light and dark backgrounds alike). The amber
-front plane carries the "smith": freshly forged, still hot.
+The phase-scale PhaseSmith mark is a stack of three inclined lattice planes,
+stacked along a normal that points to the upper left. Each plane advances in
+phase, and the phase is encoded as color — deep teal at the back through mint
+to hot amber in front, the way structure-factor phases are drawn on a color
+scale. Depth comes from lighting: every plane is lit from the direction of the
+plane normal, the stack fades into the background with distance (the fade is
+opacity-based, so it adapts to light and dark backgrounds alike), and in
+`logo.svg` and `viewer-icon.svg` each plane casts a soft shadow onto the one
+behind it. The solid, mono and favicon cuts stay shadow-free, since the blur
+filter does not survive 16 px rendering. The amber front plane carries the
+"smith": freshly forged, still hot.
 
 ## Files
 
 | File | Use |
 | --- | --- |
 | `logo.svg` | Primary mark. Transparent background, works on light and dark. Use at 32 px and above. |
-| `logo-solid.svg` | Small-size cut: gradients flattened to solid phase colors. Use below 32 px when not using `favicon.svg`. |
+| `logo-solid.svg` | Small-size cut: gradients and shadows flattened to solid phase colors. Use below 32 px when not using `favicon.svg`. |
 | `logo-mono.svg` | Single-color version (`currentColor` with opacity steps). For plots, papers, stamps, and any one-ink context. |
 | `viewer-icon.svg` | PhaseSmith Viewer app tile: the mark at 82% on the dark rounded square. |
 | `favicon.svg` | Browser-tab icon: solid cut on the dark rounded square. |
@@ -35,9 +38,8 @@ Phase scale (back to front):
 | Role | Hex |
 | --- | --- |
 | Phase 0 (back) | `#0A5D4F` → `#2DB49B` (lit edge) |
-| Phase 1 | `#189380` → `#4ADEB4` |
-| Phase 2 | `#34D399` → `#A7F3D0` |
-| Phase 3 (front, forge-hot) | `#F59E0B` → `#FDE68A` |
+| Phase 1 | `#34D399` → `#A7F3D0` |
+| Phase 2 (front, forge-hot) | `#F59E0B` → `#FDE68A` |
 
 Supporting colors: ink `#0A110E` (tile background), accent teal for text
 `#0E8F7E` (AA on white), light surface `#F1F5F3`.
