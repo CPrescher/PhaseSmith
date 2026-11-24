@@ -7,7 +7,6 @@ mod shared_tensors;
 mod tensor_links;
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
@@ -179,14 +178,13 @@ pub fn read_cif_file(
 ) -> Result<CifReadResult, CifIoError> {
     limits.validate()?;
     let path = path.as_ref();
-    let size = fs::metadata(path).map_err(CifIoError::Io)?.len();
-    if size > u64::try_from(limits.max_bytes).unwrap_or(u64::MAX) {
-        return Err(CifIoError::ByteLimitExceeded {
-            actual: size,
-            maximum: limits.max_bytes,
-        });
-    }
-    let text = fs::read_to_string(path).map_err(CifIoError::Io)?;
+    let text = match crate::read_bounded_utf8(path, limits.max_bytes) {
+        Ok(text) => text,
+        Err(crate::BoundedReadError::Io(error)) => return Err(CifIoError::Io(error)),
+        Err(crate::BoundedReadError::ByteLimitExceeded { actual, maximum }) => {
+            return Err(CifIoError::ByteLimitExceeded { actual, maximum });
+        }
+    };
     parse_cif_text_inner(&text, Some(path.to_owned()), block, strict, limits)
 }
 

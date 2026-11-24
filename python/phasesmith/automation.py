@@ -9,6 +9,7 @@ physical models or parameter authorization.
 from __future__ import annotations
 
 import csv
+import errno
 import hashlib
 import json
 import os
@@ -2986,7 +2987,25 @@ def _write_json(path: Path, record: object, *, overwrite: bool) -> None:
                     "refusing to overwrite output",
                     path=str(path),
                 ) from error
+            except OSError as error:
+                if error.errno not in {
+                    errno.EPERM,
+                    errno.EXDEV,
+                    errno.ENOTSUP,
+                    errno.EOPNOTSUPP,
+                }:
+                    raise
+                try:
+                    exclusive_fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o666)
+                except FileExistsError as exists_error:
+                    raise AutomationError(
+                        "output.exists",
+                        "refusing to overwrite output",
+                        path=str(path),
+                    ) from exists_error
+                with os.fdopen(exclusive_fd, "w", encoding="utf-8") as stream:
+                    stream.write(encoded)
             temporary.unlink()
-    except Exception:
+    except BaseException:
         temporary.unlink(missing_ok=True)
         raise

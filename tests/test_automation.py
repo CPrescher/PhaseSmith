@@ -655,3 +655,21 @@ def test_every_automation_contract_has_a_versioned_schema() -> None:
         assert schema["additionalProperties"] is False
         stored = Path(__file__).parents[1] / "schemas" / "automation" / f"{name}-v1.schema.json"
         assert json.loads(stored.read_text(encoding="utf-8")) == schema
+
+
+def test_write_json_exclusive_fallback_when_hard_links_unsupported(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import errno
+    import os
+
+    def unsupported_link(_src: object, _dst: object) -> None:
+        raise OSError(errno.EOPNOTSUPP, "hard links unsupported")
+
+    monkeypatch.setattr(os, "link", unsupported_link)
+    target = tmp_path / "record.json"
+    automation._write_json(target, {"ok": True}, overwrite=False)
+    assert json.loads(target.read_text(encoding="utf-8")) == {"ok": True}
+    with pytest.raises(automation.AutomationError) as error:
+        automation._write_json(target, {"ok": False}, overwrite=False)
+    assert error.value.code == "output.exists"

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -1622,6 +1623,9 @@ def save_bundle(
     }
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=f".{destination.name}-", dir=destination.parent))
+    manifest_backup: Path | None = None
+    archive_backup: Path | None = None
+    existed_before = destination.exists()
     try:
         archive_path = temporary / ARCHIVE_NAME
         np.savez_compressed(archive_path, **writer.arrays)
@@ -1635,16 +1639,36 @@ def save_bundle(
             json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n",
             encoding="utf-8",
         )
-        destination.mkdir(parents=True, exist_ok=True)
-        os.replace(temporary / ARCHIVE_NAME, destination / ARCHIVE_NAME)
-        os.replace(temporary / MANIFEST_NAME, destination / MANIFEST_NAME)
-        temporary.rmdir()
-    except Exception:
-        for name in (ARCHIVE_NAME, MANIFEST_NAME):
-            candidate = temporary / name
-            if candidate.exists():
-                candidate.unlink()
-        temporary.rmdir()
+        if not existed_before:
+            os.replace(temporary, destination)
+        else:
+            destination.mkdir(parents=True, exist_ok=True)
+            existing_manifest = destination / MANIFEST_NAME
+            existing_archive = destination / ARCHIVE_NAME
+            if existing_manifest.exists():
+                manifest_backup = destination / f".{MANIFEST_NAME}.bak"
+                os.replace(existing_manifest, manifest_backup)
+            if existing_archive.exists():
+                archive_backup = destination / f".{ARCHIVE_NAME}.bak"
+                os.replace(existing_archive, archive_backup)
+            os.replace(temporary / ARCHIVE_NAME, existing_archive)
+            os.replace(temporary / MANIFEST_NAME, existing_manifest)
+            if manifest_backup is not None and manifest_backup.exists():
+                manifest_backup.unlink()
+            if archive_backup is not None and archive_backup.exists():
+                archive_backup.unlink()
+            temporary.rmdir()
+    except BaseException:
+        if existed_before and destination.is_dir():
+            if archive_backup is not None and archive_backup.exists():
+                os.replace(archive_backup, destination / ARCHIVE_NAME)
+            elif manifest_backup is None:
+                (destination / ARCHIVE_NAME).unlink(missing_ok=True)
+            if manifest_backup is not None and manifest_backup.exists():
+                os.replace(manifest_backup, destination / MANIFEST_NAME)
+            elif archive_backup is None:
+                (destination / MANIFEST_NAME).unlink(missing_ok=True)
+        shutil.rmtree(temporary, ignore_errors=True)
         raise
     return destination
 

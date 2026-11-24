@@ -16,6 +16,8 @@ pub struct NumericArray<'a> {
     pub bytes: &'a [u8],
 }
 
+static TEMP_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
 fn invalid(message: &str) -> PersistenceError {
     PersistenceError::InvalidArray {
         message: message.into(),
@@ -100,7 +102,28 @@ pub fn write_numeric_npz(
         }
         headers.push(header(array)?);
     }
-    let file = OpenOptions::new().write(true).create_new(true).open(path)?;
+    let parent = path
+        .parent()
+        .filter(|dir| !dir.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("archive.npz");
+    let temp_path = loop {
+        let id = TEMP_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let candidate = parent.join(format!(".{file_name}.tmp-{}-{id}", std::process::id()));
+        match OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&candidate)
+        {
+            Ok(file) => break (candidate, file),
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(error) => return Err(PersistenceError::Io(error)),
+        }
+    };
+    let (temp_path, file) = temp_path;
     let result = (|| {
         let mut archive = ZipWriter::new(file);
         let options = SimpleFileOptions::default()
@@ -122,11 +145,30 @@ pub fn write_numeric_npz(
             archive.write_all(&header)?;
             archive.write_all(array.bytes)?;
         }
-        archive.finish().map_err(|e| invalid(&e.to_string()))?;
-        Ok(())
+        let file = archive.finish().map_err(|e| invalid(&e.to_string()))?;
+        file.sync_all()?;
+        drop(file);
+        match std::fs::hard_link(&temp_path, path) {
+            Ok(()) => {
+                let _ = std::fs::remove_file(&temp_path);
+                Ok(())
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::Unsupported => {
+                // Filesystems without hard links: check non-existence and rename atomically.
+                if path.exists() {
+                    return Err(PersistenceError::Io(std::io::Error::new(
+                        std::io::ErrorKind::AlreadyExists,
+                        "destination numeric archive already exists",
+                    )));
+                }
+                std::fs::rename(&temp_path, path)?;
+                Ok(())
+            }
+            Err(error) => Err(PersistenceError::Io(error)),
+        }
     })();
     if result.is_err() {
-        let _ = std::fs::remove_file(path);
+        let _ = std::fs::remove_file(&temp_path);
     }
     result
 }

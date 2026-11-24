@@ -64,7 +64,10 @@ def _read_zip_text(archive: zipfile.ZipFile, member: str, *, limit: int) -> str:
         raise ValueError(f"Bath archive is missing reviewed member {member!r}") from error
     if info.file_size <= 0 or info.file_size > limit:
         raise ValueError(f"Bath archive member {member!r} has an invalid expanded size")
-    payload = archive.read(info)
+    with archive.open(info) as stream:
+        payload = stream.read(limit + 1)
+    if len(payload) > limit:
+        raise ValueError(f"Bath archive member {member!r} exceeds the {limit}-byte expanded limit")
     if len(payload) != info.file_size:
         raise ValueError(f"Bath archive member {member!r} is truncated")
     return payload.decode("utf-8-sig")

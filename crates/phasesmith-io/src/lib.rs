@@ -94,6 +94,39 @@ mod powder;
 mod space_groups;
 mod tof_instrument;
 
+pub(crate) enum BoundedReadError {
+    Io(std::io::Error),
+    ByteLimitExceeded { actual: u64, maximum: usize },
+}
+
+pub(crate) fn read_bounded_utf8(
+    path: &std::path::Path,
+    max_bytes: usize,
+) -> Result<String, BoundedReadError> {
+    use std::io::Read as _;
+
+    let file = std::fs::File::open(path).map_err(BoundedReadError::Io)?;
+    let max_u64 = u64::try_from(max_bytes).unwrap_or(u64::MAX);
+    let mut bytes = Vec::new();
+    file.take(max_u64.saturating_add(1))
+        .read_to_end(&mut bytes)
+        .map_err(BoundedReadError::Io)?;
+    if bytes.len() > max_bytes {
+        let actual = std::fs::metadata(path)
+            .ok()
+            .map(|meta| meta.len())
+            .filter(|&len| len > max_u64)
+            .unwrap_or_else(|| u64::try_from(bytes.len()).unwrap_or(u64::MAX));
+        return Err(BoundedReadError::ByteLimitExceeded {
+            actual,
+            maximum: max_bytes,
+        });
+    }
+    String::from_utf8(bytes).map_err(|error| {
+        BoundedReadError::Io(std::io::Error::new(std::io::ErrorKind::InvalidData, error))
+    })
+}
+
 pub use cif::{
     CifAnisotropicDisplacement, CifAtomSite, CifDiagnostic, CifDiagnosticSeverity, CifIoError,
     CifReadLimits, CifReadResult, CifStructure, CifStructureSource, DisplacementConvention,

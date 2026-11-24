@@ -46,6 +46,22 @@ CaseRole = Literal[
     "robustness_only",
 ]
 
+_MAX_OPXRD_MEMBER_BYTES = 64 * 1024 * 1024
+
+
+def _read_bounded_zip_member(
+    source: zipfile.ZipFile, member_path: str, *, limit: int = _MAX_OPXRD_MEMBER_BYTES
+) -> bytes:
+    info = source.getinfo(member_path)
+    if info.file_size > limit:
+        raise ValueError(f"opXRD member {member_path!r} exceeds the {limit}-byte expanded limit")
+    with source.open(info) as stream:
+        payload = stream.read(limit + 1)
+    if len(payload) > limit:
+        raise ValueError(f"opXRD member {member_path!r} exceeds the {limit}-byte expanded limit")
+    return payload
+
+
 _EXPECTED_ARCHIVE_KEYS = {
     "filename",
     "member_count",
@@ -906,7 +922,7 @@ def write_opxrd_common_model_bundle(
     if selected.role != "structural_common_model":
         raise ValueError("only structural_common_model cases can produce a bundle")
     with zipfile.ZipFile(archive) as source:
-        payload = source.read(selected.member_path)
+        payload = _read_bounded_zip_member(source, selected.member_path)
     if hashlib.sha256(payload).hexdigest() != selected.member_sha256:
         raise ValueError("selected opXRD member digest mismatch")
     pattern = _decode_pattern(payload)
@@ -1217,7 +1233,7 @@ def run_opxrd_robustness_campaign(
         for spec in specs:
             if spec.member_path not in available:
                 raise ValueError(f"selected opXRD member is missing: {spec.member_path}")
-            payload = source.read(spec.member_path)
+            payload = _read_bounded_zip_member(source, spec.member_path)
             if hashlib.sha256(payload).hexdigest() != spec.member_sha256:
                 raise ValueError(f"selected opXRD member digest mismatch: {spec.case_id}")
             pattern = _decode_pattern(payload)

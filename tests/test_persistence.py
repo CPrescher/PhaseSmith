@@ -857,3 +857,44 @@ def test_format_five_flat_monochromatic_experiment_still_loads(tmp_path) -> None
     manifest_path.write_text(json.dumps(manifest))
     restored = persistence.load_bundle(destination)
     assert restored.experiment == experiment
+
+
+def test_save_bundle_overwrite_rolls_back_on_interrupted_replace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import os
+
+    original = phasesmith.ConstantWavelengthExperiment.neutron(instrument())
+    updated = phasesmith.ConstantWavelengthExperiment(
+        phasesmith.MonochromaticRadiation.neutron(instrument().wavelength_angstrom),
+        instrument(),
+        zero_shift_deg=0.25,
+    )
+    destination = persistence.save_bundle(
+        tmp_path / "rollback-bundle",
+        persistence.PersistenceBundle(experiment=original),
+    )
+
+    real_replace = os.replace
+    manifest_target = destination / persistence.MANIFEST_NAME
+    failed_once = False
+
+    def failing_replace(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
+        nonlocal failed_once
+        if not failed_once and Path(dst) == manifest_target:
+            failed_once = True
+            raise OSError("simulated interruption between archive and manifest replace")
+        real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", failing_replace)
+    with pytest.raises(OSError, match="simulated interruption"):
+        persistence.save_bundle(
+            destination,
+            persistence.PersistenceBundle(experiment=updated),
+            overwrite=True,
+        )
+    monkeypatch.undo()
+    restored = persistence.load_bundle(destination)
+    assert restored.experiment == original
+    assert not (destination / f".{persistence.MANIFEST_NAME}.bak").exists()
+    assert not (destination / f".{persistence.ARCHIVE_NAME}.bak").exists()

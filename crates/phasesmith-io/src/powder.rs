@@ -3,7 +3,6 @@
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use phasesmith_model::{DomainError, PatternRecord, TofPatternRecord};
@@ -201,14 +200,13 @@ pub fn read_powder_file(
         return Err(PowderIoError::InvalidBank);
     }
     let path = path.as_ref();
-    let size = fs::metadata(path).map_err(PowderIoError::Io)?.len();
-    if size > u64::try_from(limits.max_bytes).unwrap_or(u64::MAX) {
-        return Err(PowderIoError::ByteLimitExceeded {
-            actual: size,
-            maximum: limits.max_bytes,
-        });
-    }
-    let text = fs::read_to_string(path).map_err(PowderIoError::Io)?;
+    let text = match crate::read_bounded_utf8(path, limits.max_bytes) {
+        Ok(text) => text,
+        Err(crate::BoundedReadError::Io(error)) => return Err(PowderIoError::Io(error)),
+        Err(crate::BoundedReadError::ByteLimitExceeded { actual, maximum }) => {
+            return Err(PowderIoError::ByteLimitExceeded { actual, maximum });
+        }
+    };
     parse_powder_text_inner(&text, format, bank, limits, Some(path.to_owned()))
 }
 
@@ -258,14 +256,13 @@ pub fn read_tof_powder_file_as(
         return Err(PowderIoError::InvalidBank);
     }
     let path = path.as_ref();
-    let size = fs::metadata(path).map_err(PowderIoError::Io)?.len();
-    if size > u64::try_from(limits.max_bytes).unwrap_or(u64::MAX) {
-        return Err(PowderIoError::ByteLimitExceeded {
-            actual: size,
-            maximum: limits.max_bytes,
-        });
-    }
-    let text = fs::read_to_string(path).map_err(PowderIoError::Io)?;
+    let text = match crate::read_bounded_utf8(path, limits.max_bytes) {
+        Ok(text) => text,
+        Err(crate::BoundedReadError::Io(error)) => return Err(PowderIoError::Io(error)),
+        Err(crate::BoundedReadError::ByteLimitExceeded { actual, maximum }) => {
+            return Err(PowderIoError::ByteLimitExceeded { actual, maximum });
+        }
+    };
     parse_tof_powder_text_inner(&text, format, bank, limits, Some(path.to_owned()))
 }
 
