@@ -14,7 +14,7 @@ members = [
   "crates/phasesmith-validation",
   "crates/phasesmith-workflows",
 ]
-resolver = "2"
+resolver = "3"
 
 [workspace.package]
 version = "0.9.0"
@@ -53,7 +53,8 @@ flate2 = { version = "1.1", default-features = false, features = ["rust_backend"
 hdf5 = { package = "hdf5-metno", version = "0.15.1", features = ["static", "zlib", "lzf"] }
 hdf5-bitshuffle = "1.0.0"
 libz-sys = { version = "1.1", features = ["static"] }
-moyo = "0.15.0"
+# Intentionally pinned: SPACE_GROUP_DATABASE_PROVENANCE records exact Moyo 0.15.0 Hall tables.
+moyo = "=0.15.0"
 nalgebra = "0.35"
 ndarray = { version = "0.17.2", default-features = false, features = ["std"] }
 npy = { package = "numpy", version = "0.27" }

@@ -49,7 +49,11 @@ def validate_api_snapshot(root: Path, version: str) -> None:
 def _citation_version(root: Path) -> str:
     citation_path = root / "CITATION.cff"
     text = citation_path.read_text(encoding="utf-8")
-    match = re.search(r"^version:\s*[\"']?([^\"'\s]+)[\"']?\s*$", text, re.MULTILINE)
+    match = re.search(
+        r"^version:\s*[\"']?([^\"'\s#]+)[\"']?(?:\s+#.*)?\s*$",
+        text,
+        re.MULTILINE,
+    )
     if match is None:
         raise ValueError(f"CITATION.cff has no version field: {citation_path}")
     return match.group(1)
@@ -57,6 +61,24 @@ def _citation_version(root: Path) -> str:
 
 def _is_internal_dependency(name: str) -> bool:
     return name == "phasesmith" or name.startswith("phasesmith-")
+
+
+def _iter_dependency_tables(record: dict[str, object]) -> list[tuple[str, dict[str, object]]]:
+    tables: list[tuple[str, dict[str, object]]] = []
+    for table_name in ("dependencies", "dev-dependencies", "build-dependencies"):
+        dependencies = record.get(table_name)
+        if isinstance(dependencies, dict):
+            tables.append((table_name, dependencies))
+    targets = record.get("target")
+    if isinstance(targets, dict):
+        for target_cfg, target_table in targets.items():
+            if not isinstance(target_table, dict):
+                continue
+            for table_name in ("dependencies", "dev-dependencies", "build-dependencies"):
+                dependencies = target_table.get(table_name)
+                if isinstance(dependencies, dict):
+                    tables.append((f"target.{target_cfg}.{table_name}", dependencies))
+    return tables
 
 
 def release_version(root: Path = ROOT) -> str:
@@ -108,10 +130,7 @@ def release_version(root: Path = ROOT) -> str:
                 raise ValueError(f"public crate {package_name} must include the canonical LICENSE")
         if package_name in PUBLIC_CRATES and package.get("publish") is False:
             raise ValueError(f"public crate {package_name} is marked publish=false")
-        for table_name in ("dependencies", "dev-dependencies", "build-dependencies"):
-            dependencies = record.get(table_name, {})
-            if not isinstance(dependencies, dict):
-                continue
+        for table_name, dependencies in _iter_dependency_tables(record):
             for dependency_name, specification in dependencies.items():
                 if not _is_internal_dependency(dependency_name):
                     continue

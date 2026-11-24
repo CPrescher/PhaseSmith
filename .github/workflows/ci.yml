@@ -60,6 +60,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test -p phasesmith-persistence --all-features --locked
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - run: python -m pip install ruff
+      - run: ruff check .
+      - run: ruff format --check .
+
   docs:
     runs-on: ubuntu-latest
     steps:
@@ -133,11 +144,6 @@ jobs:
           cargo test -p phasesmith-workflows --all-features -- --ignored
           cargo test -p phasesmith-persistence --all-features \
             numpy_reads_and_rewrites_native_archives_when_configured -- --ignored
-      - name: Lint and format check
-        if: matrix.python-version == '3.13'
-        run: |
-          ruff check .
-          ruff format --check .
       - name: Release profile smoke benchmark
         if: matrix.python-version == '3.13'
         run: python benchmarks/profile.py --require-release --warmups 1 --repetitions 3

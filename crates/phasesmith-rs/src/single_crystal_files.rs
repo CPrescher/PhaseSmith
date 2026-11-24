@@ -41,8 +41,8 @@ fn read_bounded_bytes(path: &Path, max_bytes: usize) -> Result<Vec<u8>> {
 }
 
 fn format_cif_quoted(value: &str) -> Result<String> {
-    if value.bytes().any(|b| b < 0x20 || b == 0x7f) {
-        return Err("CIF string contains control or newline characters".into());
+    if value.bytes().any(|b| !(0x20..=0x7e).contains(&b)) {
+        return Err("CIF string must contain printable ASCII characters only".into());
     }
     if !value.contains('\'') {
         Ok(format!("'{value}'"))
@@ -51,6 +51,17 @@ fn format_cif_quoted(value: &str) -> Result<String> {
     } else {
         Err("CIF string contains both single and double quotes".into())
     }
+}
+
+fn is_valid_cif_atom_symbol(symbol: &str) -> bool {
+    !symbol.is_empty()
+        && !matches!(
+            symbol.as_bytes()[0],
+            b'_' | b'#' | b'$' | b';' | b'[' | b']'
+        )
+        && symbol
+            .bytes()
+            .all(|b| b.is_ascii_graphic() && b != b'\'' && b != b'"')
 }
 struct Source(CachedReader);
 impl sc::FrameSource for Source {
@@ -143,6 +154,7 @@ pub type StageCallback<'a> = dyn FnMut(&str, f64) -> Result<()> + 'a;
 struct Save<'a> {
     on_stage: Option<&'a mut StageCallback<'a>>,
     hard_process_deadline: bool,
+    cli_output: bool,
     root: PathBuf,
     timings: Vec<(String, f64)>,
     shape: [usize; 2],
@@ -269,7 +281,7 @@ impl sc::Observer for Save<'_> {
     }
 
     fn stage(&mut self, name: &str, seconds: f64) -> sc::Result<()> {
-        if self.hard_process_deadline {
+        if self.cli_output {
             eprintln!("{name}: {seconds:.6} s");
         }
         self.timings.push((name.into(), seconds));
@@ -670,7 +682,8 @@ fn matrix(a: sc::M3, b: sc::M3) -> sc::M3 {
     std::array::from_fn(|i| std::array::from_fn(|j| (0..3).map(|k| a[i][k] * b[k][j]).sum()))
 }
 fn poni(path: &Path, pixel1: f64, pixel2: f64, axis: sc::V3) -> Result<Geometry> {
-    let text = String::from_utf8(read_bounded_bytes(path, MAX_PONI_BYTES)?)?;
+    let text = String::from_utf8(read_bounded_bytes(path, MAX_PONI_BYTES)?)
+        .map_err(|e| format!("PONI file {} is not valid UTF-8: {e}", path.display()))?;
     let mut map = std::collections::BTreeMap::new();
     for line in text.lines().filter(|l| !l.trim_start().starts_with('#')) {
         if let Some((k, v)) = line.split_once(':') {
@@ -772,6 +785,7 @@ fn dispatch(args: &[String]) -> Result<()> {
         solution::Cancellation::default(),
         None,
         true,
+        true,
     )
     .map(|_| ())
 }
@@ -800,6 +814,7 @@ fn run_request<'a>(
     cancellation: solution::Cancellation,
     on_stage: Option<&'a mut StageCallback<'a>>,
     hard_process_deadline: bool,
+    cli_output: bool,
 ) -> Result<Value> {
     if cancellation.is_cancelled() {
         return Err("single-crystal workflow cancelled".into());
@@ -857,6 +872,7 @@ fn run_request<'a>(
     let mut save = Save {
         on_stage,
         hard_process_deadline,
+        cli_output,
         root: out.clone(),
         timings: vec![],
         shape: [shape[1], shape[2]],
@@ -887,7 +903,7 @@ fn run_request<'a>(
             )?;
             let summary = completion_summary(&result, &save);
             json_file(&out.join("workflow-result.json"), &summary)?;
-            if hard_process_deadline {
+            if cli_output {
                 println!("{summary}");
             }
             Ok(summary)
@@ -1601,11 +1617,7 @@ fn write_setting_cif(
         .zip(&refined.u_equiv)
         .enumerate()
     {
-        if symbol.is_empty()
-            || !symbol
-                .bytes()
-                .all(|b| b.is_ascii_graphic() && b != b'\'' && b != b'"')
-        {
+        if !is_valid_cif_atom_symbol(symbol) {
             return Err("invalid CIF atom symbol".into());
         }
         writeln!(
@@ -1729,6 +1741,7 @@ pub fn run_packet(
         cancellation,
         Some(on_stage),
         false,
+        false,
     )
 }
 
@@ -1781,6 +1794,7 @@ mod library_host_tests {
             hard_search_seconds: 75.,
             search_deadline: None,
             hard_process_deadline: false,
+            cli_output: false,
             on_stage: Some(&mut callback),
         };
         sc::Observer::stage(&mut save, "profile_fitting_scaling", 0.).unwrap();
@@ -1803,6 +1817,11 @@ mod library_host_tests {
         assert_eq!(format_cif_quoted("P b n m").unwrap(), "'P b n m'");
         assert_eq!(format_cif_quoted("P 2'").unwrap(), "\"P 2'\"");
         assert!(format_cif_quoted("bad\nline").is_err());
+        assert!(format_cif_quoted("non-ascii \u{00e9}").is_err());
         assert!(format_cif_quoted("both ' and \"").is_err());
+        assert!(is_valid_cif_atom_symbol("Si"));
+        assert!(!is_valid_cif_atom_symbol("_Si"));
+        assert!(!is_valid_cif_atom_symbol("#Si"));
+        assert!(!is_valid_cif_atom_symbol(";Si"));
     }
 }

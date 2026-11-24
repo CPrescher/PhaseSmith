@@ -6,12 +6,14 @@ development versions.
 
 ## Unreleased
 
-- Centralize Rust workspace dependencies in `[workspace.dependencies]`, replace
-  exact `=` external pins in published library crates with compatible semver
-  ranges, re-export `lattice_symmetry` and `measurement` on the `phasesmith`
-  facade, suppress implicit optional-dependency Cargo features, and quiet
-  library stdout/stderr side effects in `single_crystal_files` and
-  `phasesmith-workflows`.
+- Centralize Rust workspace dependencies in `[workspace.dependencies]`, enable
+  Cargo's MSRV-aware `resolver = "3"`, relax exact `=` pins on non-provenance
+  external crates (`sha2`, `zip`, `rustfft`, `ndarray`, `hdf5-*`) while keeping
+  `moyo = "=0.15.0"` pinned to `SPACE_GROUP_DATABASE_PROVENANCE`, re-export
+  `lattice_symmetry` and `measurement` on the `phasesmith` facade, quiet library
+  stdout/stderr side effects in `single_crystal_files` and
+  `phasesmith-workflows`, and bound `single_crystal_files` PONI (1 MiB) and JSON
+  (64 MiB) host reads.
 - Move citrate benchmark scripts that import `phasesmith.validation` out of
   `oracle/scripts/` into `benchmarks/`, enforce oracle isolation across all
   `oracle/scripts/*.py`, align `CITATION.cff` with `scripts/release_version.py`,

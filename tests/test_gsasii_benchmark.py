@@ -538,12 +538,12 @@ def test_trirubidium_citrate_comparison_gates_expected_transfer_failure() -> Non
     "script",
     [
         "benchmarks/audit_citrate_source_reflections.py",
+        "benchmarks/benchmark_citrate_isotropic_broadening.py",
+        "benchmarks/benchmark_citrate_stephens.py",
         "benchmarks/compare_gsasii.py",
         "benchmarks/compare_gsasii_iucr_silicon_standard.py",
         "benchmarks/compare_gsasii_iucr_sodium_citrate_silicon.py",
         "benchmarks/compare_gsasii_iucr_tripotassium_citrate_silicon.py",
-        "benchmarks/benchmark_citrate_isotropic_broadening.py",
-        "benchmarks/benchmark_citrate_stephens.py",
         "benchmarks/compare_gsasii_iucr_trirubidium_citrate_silicon.py",
         "benchmarks/compare_gsasii_nist_srm660c.py",
         "benchmarks/compare_gsasii_pbso4.py",
@@ -582,9 +582,34 @@ def test_benchmark_help_does_not_require_gsasii(script: str) -> None:
 
 
 def test_external_worker_does_not_import_rietveld() -> None:
-    oracle_scripts = sorted((REPOSITORY_ROOT / "oracle/scripts").glob("*.py"))
-    assert oracle_scripts, "expected oracle/scripts/*.py files"
+    import ast
+
+    oracle_scripts = sorted((REPOSITORY_ROOT / "oracle/scripts").rglob("*.py"))
+    assert oracle_scripts, "expected oracle/scripts/**/*.py files"
     for script_path in oracle_scripts:
-        source = script_path.read_text(encoding="utf-8")
-        assert "import phasesmith" not in source, f"{script_path} must not import phasesmith"
-        assert "from phasesmith" not in source, f"{script_path} must not import phasesmith"
+        tree = ast.parse(script_path.read_text(encoding="utf-8"), filename=str(script_path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    name = alias.name
+                    assert name != "phasesmith" and not name.startswith("phasesmith."), (
+                        f"{script_path} must not import phasesmith"
+                    )
+            elif isinstance(node, ast.ImportFrom):
+                module_name = node.module or ""
+                assert module_name != "phasesmith" and not module_name.startswith("phasesmith."), (
+                    f"{script_path} must not import from phasesmith"
+                )
+            elif isinstance(node, ast.Call):
+                func = node.func
+                if (
+                    isinstance(func, ast.Attribute)
+                    and func.attr == "import_module"
+                    and node.args
+                    and isinstance(node.args[0], ast.Constant)
+                    and isinstance(node.args[0].value, str)
+                ):
+                    target = node.args[0].value
+                    assert target != "phasesmith" and not target.startswith("phasesmith."), (
+                        f"{script_path} must not dynamically import phasesmith"
+                    )

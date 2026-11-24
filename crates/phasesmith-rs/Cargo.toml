@@ -38,6 +38,8 @@ spots = ["dep:phasesmith-single-crystal", "phasesmith-single-crystal?/spots"]
 solution = ["dep:phasesmith-single-crystal", "phasesmith-single-crystal?/solution"]
 row-search = ["dep:phasesmith-single-crystal", "phasesmith-single-crystal?/row-search"]
 grains = ["dep:phasesmith-single-crystal", "phasesmith-single-crystal?/grains"]
+# Preserved 0.9.x compatibility alias for the implicit optional-dependency feature.
+phasesmith-single-crystal = ["dep:phasesmith-single-crystal"]
 
 [dev-dependencies]
 serde_json = { workspace = true }
