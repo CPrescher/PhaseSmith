@@ -500,10 +500,6 @@ pub(super) fn search_pass(
                 .saturating_duration_since(Instant::now())
                 .as_secs_f64(),
         );
-        eprintln!(
-            "space-group search {count}/{}: {} [{}]",
-            policy.maximum_candidates, hypothesis.symbol, hypothesis.hall
-        );
         let (attempt, result) = attempt_model(
             observations,
             &options,
