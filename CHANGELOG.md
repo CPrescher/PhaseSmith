@@ -6,6 +6,20 @@ development versions.
 
 ## Unreleased
 
+- Isolate all remaining detached PyO3 numerical bindings from concurrent Python
+  buffer mutations by copying NumPy inputs into owned Rust snapshots before
+  releasing the GIL.
+- Harden core, crystallographic, engine, and single-crystal numerical
+  boundaries against integer overflows (`determinant_i32`, anisotropic HKL
+  transforms, metric RREF), small-`tail_log` TOF normalization cancellation,
+  subnormal/underflow `NaN`/`+inf` outputs, `row_search` and `physical_fields`
+  panics, and unbounded pre-validation allocations.
+- Make Python `save_bundle` overwrites and native `write_numeric_npz` writes
+  atomic/rollback-safe, switch `phasesmith-io` file readers from `metadata`
+  pre-checks to bounded `.take(...)` reads, cap upfront ZIP buffer allocation
+  in `phasesmith-persistence`, and enforce streaming size limits on Python ZIP
+  reads.
+
 ## 0.9.0
 
 - Calculate ordered batches of monochromatic X-ray powder sticks with

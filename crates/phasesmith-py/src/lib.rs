@@ -9,14 +9,14 @@ use std::sync::Arc;
 use npy::ndarray::Array2;
 use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1};
 use phasesmith_core::{
-    Accumulation, ConstantWavelengthInstrument, CwContributionArrays, CwContributionsView, CwError,
-    CwProfileParameters, CwReflectionBatchView, FcjGeometry, FcjProfile, GridView,
-    OwnedCwContributionArrays, OwnedCwContributions, PeakBatchView, SupportPolicy,
-    TOF_GLOBAL_PARAMETER_NAMES, TchPeakBatchView, TchShape, TchWidths, TofError, TofInstrument,
-    TofProfile, TofProfileParameters, WavelengthComponentsView, accumulate_batch,
-    accumulate_cw_batch, accumulate_cw_components_batch, accumulate_cw_fcj_batch,
-    accumulate_cw_fcj_components_batch, accumulate_tch_batch, accumulate_tof_batch_with_context,
-    accumulate_values_batch, smooth_bruckner as native_smooth_bruckner, symmetric_pseudo_voigt,
+    Accumulation, ConstantWavelengthInstrument, CwContributionsView, CwError, CwProfileParameters,
+    CwReflectionBatchView, FcjGeometry, FcjProfile, GridView, OwnedCwContributionArrays,
+    OwnedCwContributions, PeakBatchView, SupportPolicy, TOF_GLOBAL_PARAMETER_NAMES,
+    TchPeakBatchView, TchShape, TchWidths, TofError, TofInstrument, TofProfile,
+    TofProfileParameters, WavelengthComponentsView, accumulate_batch, accumulate_cw_batch,
+    accumulate_cw_components_batch, accumulate_cw_fcj_batch, accumulate_cw_fcj_components_batch,
+    accumulate_tch_batch, accumulate_tof_batch_with_context, accumulate_values_batch,
+    smooth_bruckner as native_smooth_bruckner, symmetric_pseudo_voigt,
 };
 use phasesmith_engine::crystallography::{
     CellError, IntegratedIntensityCorrectionModel, NEUTRON_TABLE_PROVENANCE, P1BatchView,
@@ -369,9 +369,9 @@ impl NativePreparedXrayScattering {
         py: Python<'py>,
         s_inverse_angstrom: PyReadonlyArray1<'py, f64>,
     ) -> PyResult<ScatteringArrays<'py>> {
-        let values = contiguous_slice(&s_inverse_angstrom, "s_inverse_angstrom")?;
+        let values = owned_f64_vec(&s_inverse_angstrom, "s_inverse_angstrom")?;
         let result = py
-            .detach(|| self.model.evaluate(values))
+            .detach(|| self.model.evaluate(&values))
             .map_err(|error| PyValueError::new_err(error.to_string()))?;
         scattering_to_numpy(py, result)
     }
@@ -407,9 +407,9 @@ impl NativePreparedNeutronScattering {
         py: Python<'py>,
         s_inverse_angstrom: PyReadonlyArray1<'py, f64>,
     ) -> PyResult<ScatteringArrays<'py>> {
-        let values = contiguous_slice(&s_inverse_angstrom, "s_inverse_angstrom")?;
+        let values = owned_f64_vec(&s_inverse_angstrom, "s_inverse_angstrom")?;
         let result = py
-            .detach(|| self.model.evaluate(values))
+            .detach(|| self.model.evaluate(&values))
             .map_err(|error| PyValueError::new_err(error.to_string()))?;
         scattering_to_numpy(py, result)
     }
@@ -547,35 +547,19 @@ impl NativePreparedReflectionGenerator {
         let multiplicity = multiplicity_rows(&multiplicity)?;
         let xyz = xyz_rows(&fractional_xyz_flat)?;
         let tensors = tensor_rows(&u_aniso_cif_angstrom2_flat)?;
+        let occupancy = owned_f64_vec(&occupancy, "occupancy")?;
+        let u_iso_angstrom2 = owned_f64_vec(&u_iso_angstrom2, "u_iso_angstrom2")?;
+        let anisotropic_mask = owned_bool_vec(&anisotropic_mask, "anisotropic_mask")?;
+        let scattering_real = owned_f64_vec(&scattering_real, "scattering_real")?;
+        let scattering_imag = owned_f64_vec(&scattering_imag, "scattering_imag")?;
+        let d_scattering_real_d_s = owned_f64_vec(&d_scattering_real_d_s, "d_scattering_real_d_s")?;
+        let d_scattering_imag_d_s = owned_f64_vec(&d_scattering_imag_d_s, "d_scattering_imag_d_s")?;
+        let correction = owned_f64_vec(&correction, "correction")?;
+        let d_correction_d_q_squared =
+            owned_f64_vec(&d_correction_d_q_squared, "d_correction_d_q_squared")?;
         let cell = crystallographic_cell(
             a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
         );
-        let batch = StructureFactorBatchView {
-            hkl: &hkl,
-            multiplicity: &multiplicity,
-            fractional_xyz: &xyz,
-            occupancy: contiguous_slice(&occupancy, "occupancy")?,
-            u_iso_angstrom2: contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?,
-            anisotropic_mask: bool_slice(&anisotropic_mask, "anisotropic_mask")?,
-            u_aniso_cif_angstrom2: &tensors,
-            scattering_real: contiguous_slice(&scattering_real, "scattering_real")?,
-            scattering_imag: contiguous_slice(&scattering_imag, "scattering_imag")?,
-            d_scattering_real_d_s: contiguous_slice(
-                &d_scattering_real_d_s,
-                "d_scattering_real_d_s",
-            )?,
-            d_scattering_imag_d_s: contiguous_slice(
-                &d_scattering_imag_d_s,
-                "d_scattering_imag_d_s",
-            )?,
-            correction: contiguous_slice(&correction, "correction")?,
-            d_correction_d_q_squared: contiguous_slice(
-                &d_correction_d_q_squared,
-                "d_correction_d_q_squared",
-            )?,
-            scale,
-            coordinate_tolerance,
-        };
         let execution_context = if execution.policy.worker_count(hkl.len()) == 1 {
             ExecutionContext::serial()
         } else {
@@ -583,7 +567,28 @@ impl NativePreparedReflectionGenerator {
         };
         let result = py
             .detach(|| {
-                let calculate = if powder_average { phasesmith_engine::crystallography::calculate_powder_structure_factor_values_with_context } else { calculate_structure_factor_values_with_context };
+                let batch = StructureFactorBatchView {
+                    hkl: &hkl,
+                    multiplicity: &multiplicity,
+                    fractional_xyz: &xyz,
+                    occupancy: &occupancy,
+                    u_iso_angstrom2: &u_iso_angstrom2,
+                    anisotropic_mask: &anisotropic_mask,
+                    u_aniso_cif_angstrom2: &tensors,
+                    scattering_real: &scattering_real,
+                    scattering_imag: &scattering_imag,
+                    d_scattering_real_d_s: &d_scattering_real_d_s,
+                    d_scattering_imag_d_s: &d_scattering_imag_d_s,
+                    correction: &correction,
+                    d_correction_d_q_squared: &d_correction_d_q_squared,
+                    scale,
+                    coordinate_tolerance,
+                };
+                let calculate = if powder_average {
+                    phasesmith_engine::crystallography::calculate_powder_structure_factor_values_with_context
+                } else {
+                    calculate_structure_factor_values_with_context
+                };
                 calculate(
                     cell,
                     self.generator.space_group(),
@@ -626,40 +631,48 @@ impl NativePreparedReflectionGenerator {
         let multiplicity = multiplicity_rows(&multiplicity)?;
         let xyz = xyz_rows(&fractional_xyz_flat)?;
         let tensors = tensor_rows(&u_aniso_cif_angstrom2_flat)?;
+        let occupancy = owned_f64_vec(&occupancy, "occupancy")?;
+        let u_iso_angstrom2 = owned_f64_vec(&u_iso_angstrom2, "u_iso_angstrom2")?;
+        let anisotropic_mask = owned_bool_vec(&anisotropic_mask, "anisotropic_mask")?;
+        let scattering_real = owned_f64_vec(&scattering_real, "scattering_real")?;
+        let scattering_imag = owned_f64_vec(&scattering_imag, "scattering_imag")?;
+        let d_scattering_real_d_s = owned_f64_vec(&d_scattering_real_d_s, "d_scattering_real_d_s")?;
+        let d_scattering_imag_d_s = owned_f64_vec(&d_scattering_imag_d_s, "d_scattering_imag_d_s")?;
+        let correction = owned_f64_vec(&correction, "correction")?;
+        let d_correction_d_q_squared =
+            owned_f64_vec(&d_correction_d_q_squared, "d_correction_d_q_squared")?;
         let cell = crystallographic_cell(
             a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
         );
-        let batch = StructureFactorBatchView {
-            hkl: &hkl,
-            multiplicity: &multiplicity,
-            fractional_xyz: &xyz,
-            occupancy: contiguous_slice(&occupancy, "occupancy")?,
-            u_iso_angstrom2: contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?,
-            anisotropic_mask: bool_slice(&anisotropic_mask, "anisotropic_mask")?,
-            u_aniso_cif_angstrom2: &tensors,
-            scattering_real: contiguous_slice(&scattering_real, "scattering_real")?,
-            scattering_imag: contiguous_slice(&scattering_imag, "scattering_imag")?,
-            d_scattering_real_d_s: contiguous_slice(
-                &d_scattering_real_d_s,
-                "d_scattering_real_d_s",
-            )?,
-            d_scattering_imag_d_s: contiguous_slice(
-                &d_scattering_imag_d_s,
-                "d_scattering_imag_d_s",
-            )?,
-            correction: contiguous_slice(&correction, "correction")?,
-            d_correction_d_q_squared: contiguous_slice(
-                &d_correction_d_q_squared,
-                "d_correction_d_q_squared",
-            )?,
-            scale,
-            coordinate_tolerance,
-        };
         let result = py
             .detach(|| {
+                let batch = StructureFactorBatchView {
+                    hkl: &hkl,
+                    multiplicity: &multiplicity,
+                    fractional_xyz: &xyz,
+                    occupancy: &occupancy,
+                    u_iso_angstrom2: &u_iso_angstrom2,
+                    anisotropic_mask: &anisotropic_mask,
+                    u_aniso_cif_angstrom2: &tensors,
+                    scattering_real: &scattering_real,
+                    scattering_imag: &scattering_imag,
+                    d_scattering_real_d_s: &d_scattering_real_d_s,
+                    d_scattering_imag_d_s: &d_scattering_imag_d_s,
+                    correction: &correction,
+                    d_correction_d_q_squared: &d_correction_d_q_squared,
+                    scale,
+                    coordinate_tolerance,
+                };
                 if powder_average {
-                    phasesmith_engine::crystallography::calculate_powder_structure_factor_dense_with_context(cell, self.generator.space_group(), batch, &ExecutionContext::serial())
-                } else { calculate_structure_factor_dense(cell, self.generator.space_group(), batch) }
+                    phasesmith_engine::crystallography::calculate_powder_structure_factor_dense_with_context(
+                        cell,
+                        self.generator.space_group(),
+                        batch,
+                        &ExecutionContext::serial(),
+                    )
+                } else {
+                    calculate_structure_factor_dense(cell, self.generator.space_group(), batch)
+                }
             })
             .map_err(|error| PyValueError::new_err(error.to_string()))?;
         structure_factor_dense_to_numpy(py, result)
@@ -933,53 +946,50 @@ struct NativeStructuralPhase {
 
 impl NativeStructuralPhase {
     #[allow(clippy::too_many_arguments)]
-    fn contribution_view<'a>(
+    fn owned_contributions(
         reflection_count: usize,
         parameter_count: usize,
-        gaussian_variance_deg2: &'a PyReadonlyArray1<'_, f64>,
-        lorentzian_fwhm_deg: &'a PyReadonlyArray1<'_, f64>,
-        intensity_multiplier: &'a PyReadonlyArray1<'_, f64>,
-        d_gaussian_variance_d_position: &'a PyReadonlyArray1<'_, f64>,
-        d_lorentzian_fwhm_d_position: &'a PyReadonlyArray1<'_, f64>,
-        d_intensity_multiplier_d_position: &'a PyReadonlyArray1<'_, f64>,
-        d_gaussian_variance_d_parameters: &'a PyReadonlyArray1<'_, f64>,
-        d_lorentzian_fwhm_d_parameters: &'a PyReadonlyArray1<'_, f64>,
-        d_intensity_multiplier_d_parameters: &'a PyReadonlyArray1<'_, f64>,
-    ) -> PyResult<CwContributionsView<'a>> {
-        CwContributionsView::new(
+        gaussian_variance_deg2: &PyReadonlyArray1<'_, f64>,
+        lorentzian_fwhm_deg: &PyReadonlyArray1<'_, f64>,
+        intensity_multiplier: &PyReadonlyArray1<'_, f64>,
+        d_gaussian_variance_d_position: &PyReadonlyArray1<'_, f64>,
+        d_lorentzian_fwhm_d_position: &PyReadonlyArray1<'_, f64>,
+        d_intensity_multiplier_d_position: &PyReadonlyArray1<'_, f64>,
+        d_gaussian_variance_d_parameters: &PyReadonlyArray1<'_, f64>,
+        d_lorentzian_fwhm_d_parameters: &PyReadonlyArray1<'_, f64>,
+        d_intensity_multiplier_d_parameters: &PyReadonlyArray1<'_, f64>,
+    ) -> PyResult<OwnedCwContributions> {
+        OwnedCwContributions::new(
             reflection_count,
             parameter_count,
-            CwContributionArrays {
-                gaussian_variance_deg2: contiguous_slice(
+            OwnedCwContributionArrays {
+                gaussian_variance_deg2: owned_f64_vec(
                     gaussian_variance_deg2,
                     "gaussian_variance_deg2",
                 )?,
-                lorentzian_fwhm_deg: contiguous_slice(lorentzian_fwhm_deg, "lorentzian_fwhm_deg")?,
-                intensity_multiplier: contiguous_slice(
-                    intensity_multiplier,
-                    "intensity_multiplier",
-                )?,
-                d_gaussian_variance_d_position: contiguous_slice(
+                lorentzian_fwhm_deg: owned_f64_vec(lorentzian_fwhm_deg, "lorentzian_fwhm_deg")?,
+                intensity_multiplier: owned_f64_vec(intensity_multiplier, "intensity_multiplier")?,
+                d_gaussian_variance_d_position: owned_f64_vec(
                     d_gaussian_variance_d_position,
                     "d_gaussian_variance_d_position",
                 )?,
-                d_lorentzian_fwhm_d_position: contiguous_slice(
+                d_lorentzian_fwhm_d_position: owned_f64_vec(
                     d_lorentzian_fwhm_d_position,
                     "d_lorentzian_fwhm_d_position",
                 )?,
-                d_intensity_multiplier_d_position: contiguous_slice(
+                d_intensity_multiplier_d_position: owned_f64_vec(
                     d_intensity_multiplier_d_position,
                     "d_intensity_multiplier_d_position",
                 )?,
-                d_gaussian_variance_d_parameters: contiguous_slice(
+                d_gaussian_variance_d_parameters: owned_f64_vec(
                     d_gaussian_variance_d_parameters,
                     "d_gaussian_variance_d_parameters",
                 )?,
-                d_lorentzian_fwhm_d_parameters: contiguous_slice(
+                d_lorentzian_fwhm_d_parameters: owned_f64_vec(
                     d_lorentzian_fwhm_d_parameters,
                     "d_lorentzian_fwhm_d_parameters",
                 )?,
-                d_intensity_multiplier_d_parameters: contiguous_slice(
+                d_intensity_multiplier_d_parameters: owned_f64_vec(
                     d_intensity_multiplier_d_parameters,
                     "d_intensity_multiplier_d_parameters",
                 )?,
@@ -1105,8 +1115,8 @@ impl NativeStructuralPhase {
         parameter_count: usize,
         support_fwhm: f64,
     ) -> PyResult<StructuralPatternArrays<'py>> {
-        let x_deg_values = contiguous_slice(&x_deg, "x_deg")?;
-        let contributions = Self::contribution_view(
+        let x_deg_values = owned_f64_vec(&x_deg, "x_deg")?;
+        let contributions = Self::owned_contributions(
             self.phase.reflection_count(),
             parameter_count,
             &gaussian_variance_deg2,
@@ -1127,25 +1137,28 @@ impl NativeStructuralPhase {
             goniometer_radius_mm,
         )?;
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
-        let input = PreparedStructuralPatternInputView {
-            x_deg: x_deg_values,
-            instrument: cw_instrument(
-                wavelength_angstrom,
-                u_deg2,
-                v_deg2,
-                w_deg2,
-                x_width_deg,
-                y_width_deg,
-            ),
-            position_correction: correction,
-            axial_geometry: axial,
-            contributions,
-            support: SupportPolicy::FwhmMultiple(support_fwhm),
-            profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
-            calculate_axial_derivatives: true,
-        };
+        let instrument = cw_instrument(
+            wavelength_angstrom,
+            u_deg2,
+            v_deg2,
+            w_deg2,
+            x_width_deg,
+            y_width_deg,
+        );
         let result = py
-            .detach(|| self.phase.calculate(&input))
+            .detach(|| {
+                let input = PreparedStructuralPatternInputView {
+                    x_deg: &x_deg_values,
+                    instrument,
+                    position_correction: correction,
+                    axial_geometry: axial,
+                    contributions: contributions.as_view(),
+                    support: SupportPolicy::FwhmMultiple(support_fwhm),
+                    profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+                    calculate_axial_derivatives: true,
+                };
+                self.phase.calculate(&input)
+            })
             .map_err(|error| PyValueError::new_err(error.to_string()))?;
         structural_pattern_to_numpy(py, result)
     }
@@ -1180,8 +1193,8 @@ impl NativeStructuralPhase {
         parameter_count: usize,
         support_fwhm: f64,
     ) -> PyResult<StructuralPatternDenseArrays<'py>> {
-        let x_deg_values = contiguous_slice(&x_deg, "x_deg")?;
-        let contributions = Self::contribution_view(
+        let x_deg_values = owned_f64_vec(&x_deg, "x_deg")?;
+        let contributions = Self::owned_contributions(
             self.phase.reflection_count(),
             parameter_count,
             &gaussian_variance_deg2,
@@ -1202,25 +1215,28 @@ impl NativeStructuralPhase {
             goniometer_radius_mm,
         )?;
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
-        let input = PreparedStructuralPatternInputView {
-            x_deg: x_deg_values,
-            instrument: cw_instrument(
-                wavelength_angstrom,
-                u_deg2,
-                v_deg2,
-                w_deg2,
-                x_width_deg,
-                y_width_deg,
-            ),
-            position_correction: correction,
-            axial_geometry: axial,
-            contributions,
-            support: SupportPolicy::FwhmMultiple(support_fwhm),
-            profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
-            calculate_axial_derivatives: true,
-        };
+        let instrument = cw_instrument(
+            wavelength_angstrom,
+            u_deg2,
+            v_deg2,
+            w_deg2,
+            x_width_deg,
+            y_width_deg,
+        );
         let result = py
-            .detach(|| self.phase.linearize(&input))
+            .detach(|| {
+                let input = PreparedStructuralPatternInputView {
+                    x_deg: &x_deg_values,
+                    instrument,
+                    position_correction: correction,
+                    axial_geometry: axial,
+                    contributions: contributions.as_view(),
+                    support: SupportPolicy::FwhmMultiple(support_fwhm),
+                    profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+                    calculate_axial_derivatives: true,
+                };
+                self.phase.linearize(&input)
+            })
             .map_err(|error| PyValueError::new_err(error.to_string()))?;
         structural_pattern_dense_to_numpy(py, result)
     }
@@ -1256,9 +1272,9 @@ impl NativeStructuralPhase {
         parameter_count: usize,
         support_fwhm: f64,
     ) -> PyResult<StructuralPatternJvpArrays<'py>> {
-        let tangent = contiguous_slice(&tangent, "tangent")?;
-        let x_deg_values = contiguous_slice(&x_deg, "x_deg")?;
-        let contributions = Self::contribution_view(
+        let tangent = owned_f64_vec(&tangent, "tangent")?;
+        let x_deg_values = owned_f64_vec(&x_deg, "x_deg")?;
+        let contributions = Self::owned_contributions(
             self.phase.reflection_count(),
             parameter_count,
             &gaussian_variance_deg2,
@@ -1279,25 +1295,28 @@ impl NativeStructuralPhase {
             goniometer_radius_mm,
         )?;
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
-        let input = PreparedStructuralPatternInputView {
-            x_deg: x_deg_values,
-            instrument: cw_instrument(
-                wavelength_angstrom,
-                u_deg2,
-                v_deg2,
-                w_deg2,
-                x_width_deg,
-                y_width_deg,
-            ),
-            position_correction: correction,
-            axial_geometry: axial,
-            contributions,
-            support: SupportPolicy::FwhmMultiple(support_fwhm),
-            profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
-            calculate_axial_derivatives: true,
-        };
+        let instrument = cw_instrument(
+            wavelength_angstrom,
+            u_deg2,
+            v_deg2,
+            w_deg2,
+            x_width_deg,
+            y_width_deg,
+        );
         let result = py
-            .detach(|| self.phase.jvp(&input, tangent))
+            .detach(|| {
+                let input = PreparedStructuralPatternInputView {
+                    x_deg: &x_deg_values,
+                    instrument,
+                    position_correction: correction,
+                    axial_geometry: axial,
+                    contributions: contributions.as_view(),
+                    support: SupportPolicy::FwhmMultiple(support_fwhm),
+                    profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+                    calculate_axial_derivatives: true,
+                };
+                self.phase.jvp(&input, &tangent)
+            })
             .map_err(|error| PyValueError::new_err(error.to_string()))?;
         structural_pattern_jvp_to_numpy(py, result)
     }
@@ -1333,9 +1352,9 @@ impl NativeStructuralPhase {
         parameter_count: usize,
         support_fwhm: f64,
     ) -> PyResult<StructuralPatternVjpArrays<'py>> {
-        let sample_weights = contiguous_slice(&sample_weights, "sample_weights")?;
-        let x_deg_values = contiguous_slice(&x_deg, "x_deg")?;
-        let contributions = Self::contribution_view(
+        let sample_weights = owned_f64_vec(&sample_weights, "sample_weights")?;
+        let x_deg_values = owned_f64_vec(&x_deg, "x_deg")?;
+        let contributions = Self::owned_contributions(
             self.phase.reflection_count(),
             parameter_count,
             &gaussian_variance_deg2,
@@ -1356,25 +1375,28 @@ impl NativeStructuralPhase {
             goniometer_radius_mm,
         )?;
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
-        let input = PreparedStructuralPatternInputView {
-            x_deg: x_deg_values,
-            instrument: cw_instrument(
-                wavelength_angstrom,
-                u_deg2,
-                v_deg2,
-                w_deg2,
-                x_width_deg,
-                y_width_deg,
-            ),
-            position_correction: correction,
-            axial_geometry: axial,
-            contributions,
-            support: SupportPolicy::FwhmMultiple(support_fwhm),
-            profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
-            calculate_axial_derivatives: true,
-        };
+        let instrument = cw_instrument(
+            wavelength_angstrom,
+            u_deg2,
+            v_deg2,
+            w_deg2,
+            x_width_deg,
+            y_width_deg,
+        );
         let result = py
-            .detach(|| self.phase.vjp(&input, sample_weights))
+            .detach(|| {
+                let input = PreparedStructuralPatternInputView {
+                    x_deg: &x_deg_values,
+                    instrument,
+                    position_correction: correction,
+                    axial_geometry: axial,
+                    contributions: contributions.as_view(),
+                    support: SupportPolicy::FwhmMultiple(support_fwhm),
+                    profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+                    calculate_axial_derivatives: true,
+                };
+                self.phase.vjp(&input, &sample_weights)
+            })
             .map_err(|error| PyValueError::new_err(error.to_string()))?;
         structural_pattern_vjp_to_numpy(py, result)
     }
@@ -1556,7 +1578,7 @@ impl NativeStructuralSpectrum {
         y_width_deg: f64,
         support_fwhm: f64,
     ) -> PyResult<StructuralPatternArrays<'py>> {
-        let x = contiguous_slice(&x_deg, "x_deg")?;
+        let x = owned_f64_vec(&x_deg, "x_deg")?;
         let correction = position_correction(
             zero_shift_deg,
             sample_displacement_mm,
@@ -1567,7 +1589,7 @@ impl NativeStructuralSpectrum {
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let result = py.detach(|| {
             self.with_input(
-                x,
+                &x,
                 cw_instrument(
                     wavelength_angstrom,
                     u_deg2,
@@ -1605,7 +1627,7 @@ impl NativeStructuralSpectrum {
         y_width_deg: f64,
         support_fwhm: f64,
     ) -> PyResult<StructuralPatternDenseArrays<'py>> {
-        let x = contiguous_slice(&x_deg, "x_deg")?;
+        let x = owned_f64_vec(&x_deg, "x_deg")?;
         let correction = position_correction(
             zero_shift_deg,
             sample_displacement_mm,
@@ -1616,7 +1638,7 @@ impl NativeStructuralSpectrum {
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let result = py.detach(|| {
             self.with_input(
-                x,
+                &x,
                 cw_instrument(
                     wavelength_angstrom,
                     u_deg2,
@@ -1655,8 +1677,8 @@ impl NativeStructuralSpectrum {
         y_width_deg: f64,
         support_fwhm: f64,
     ) -> PyResult<StructuralPatternJvpArrays<'py>> {
-        let tangent = contiguous_slice(&tangent, "tangent")?;
-        let x = contiguous_slice(&x_deg, "x_deg")?;
+        let tangent = owned_f64_vec(&tangent, "tangent")?;
+        let x = owned_f64_vec(&x_deg, "x_deg")?;
         let correction = position_correction(
             zero_shift_deg,
             sample_displacement_mm,
@@ -1667,7 +1689,7 @@ impl NativeStructuralSpectrum {
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let result = py.detach(|| {
             self.with_input(
-                x,
+                &x,
                 cw_instrument(
                     wavelength_angstrom,
                     u_deg2,
@@ -1679,7 +1701,7 @@ impl NativeStructuralSpectrum {
                 correction,
                 axial,
                 support_fwhm,
-                |spectrum, input| spectrum.jvp(input, tangent),
+                |spectrum, input| spectrum.jvp(input, &tangent),
             )
         })?;
         structural_pattern_jvp_to_numpy(py, result)
@@ -1706,8 +1728,8 @@ impl NativeStructuralSpectrum {
         y_width_deg: f64,
         support_fwhm: f64,
     ) -> PyResult<StructuralPatternVjpArrays<'py>> {
-        let sample_weights = contiguous_slice(&sample_weights, "sample_weights")?;
-        let x = contiguous_slice(&x_deg, "x_deg")?;
+        let sample_weights = owned_f64_vec(&sample_weights, "sample_weights")?;
+        let x = owned_f64_vec(&x_deg, "x_deg")?;
         let correction = position_correction(
             zero_shift_deg,
             sample_displacement_mm,
@@ -1718,7 +1740,7 @@ impl NativeStructuralSpectrum {
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let result = py.detach(|| {
             self.with_input(
-                x,
+                &x,
                 cw_instrument(
                     wavelength_angstrom,
                     u_deg2,
@@ -1730,7 +1752,7 @@ impl NativeStructuralSpectrum {
                 correction,
                 axial,
                 support_fwhm,
-                |spectrum, input| spectrum.vjp(input, sample_weights),
+                |spectrum, input| spectrum.vjp(input, &sample_weights),
             )
         })?;
         structural_pattern_vjp_to_numpy(py, result)
@@ -1938,7 +1960,7 @@ impl NativeStructuralMultiphase {
         y_width_deg: f64,
         support_fwhm: f64,
     ) -> PyResult<(Bound<'py, PyArray1<f64>>, Vec<StructuralPatternArrays<'py>>)> {
-        let x = contiguous_slice(&x_deg, "x_deg")?;
+        let x = owned_f64_vec(&x_deg, "x_deg")?;
         let correction = position_correction(
             zero_shift_deg,
             sample_displacement_mm,
@@ -1949,7 +1971,7 @@ impl NativeStructuralMultiphase {
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let result = py.detach(|| {
             self.with_inputs(
-                x,
+                &x,
                 cw_instrument(
                     wavelength_angstrom,
                     u_deg2,
@@ -1987,7 +2009,7 @@ impl NativeStructuralMultiphase {
         y_width_deg: f64,
         support_fwhm: f64,
     ) -> PyResult<Vec<StructuralPatternDenseArrays<'py>>> {
-        let x = contiguous_slice(&x_deg, "x_deg")?;
+        let x = owned_f64_vec(&x_deg, "x_deg")?;
         let correction = position_correction(
             zero_shift_deg,
             sample_displacement_mm,
@@ -1998,7 +2020,7 @@ impl NativeStructuralMultiphase {
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let results = py.detach(|| {
             self.with_inputs(
-                x,
+                &x,
                 cw_instrument(
                     wavelength_angstrom,
                     u_deg2,
@@ -2040,7 +2062,7 @@ impl NativeStructuralMultiphase {
         y_width_deg: f64,
         support_fwhm: f64,
     ) -> PyResult<Vec<StructuralPatternJvpArrays<'py>>> {
-        let tangent = contiguous_slice(&tangent, "tangent")?;
+        let tangent = owned_f64_vec(&tangent, "tangent")?;
         let counts = self.prepared.structural_parameter_counts();
         let expected = counts.iter().sum::<usize>();
         if tangent.len() != expected {
@@ -2057,7 +2079,7 @@ impl NativeStructuralMultiphase {
                 selected
             })
             .collect::<Vec<_>>();
-        let x = contiguous_slice(&x_deg, "x_deg")?;
+        let x = owned_f64_vec(&x_deg, "x_deg")?;
         let correction = position_correction(
             zero_shift_deg,
             sample_displacement_mm,
@@ -2068,7 +2090,7 @@ impl NativeStructuralMultiphase {
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let results = py.detach(|| {
             self.with_inputs(
-                x,
+                &x,
                 cw_instrument(
                     wavelength_angstrom,
                     u_deg2,
@@ -2110,8 +2132,8 @@ impl NativeStructuralMultiphase {
         y_width_deg: f64,
         support_fwhm: f64,
     ) -> PyResult<Vec<StructuralPatternVjpArrays<'py>>> {
-        let weights = contiguous_slice(&sample_weights, "sample_weights")?;
-        let x = contiguous_slice(&x_deg, "x_deg")?;
+        let weights = owned_f64_vec(&sample_weights, "sample_weights")?;
+        let x = owned_f64_vec(&x_deg, "x_deg")?;
         let correction = position_correction(
             zero_shift_deg,
             sample_displacement_mm,
@@ -2122,7 +2144,7 @@ impl NativeStructuralMultiphase {
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let results = py.detach(|| {
             self.with_inputs(
-                x,
+                &x,
                 cw_instrument(
                     wavelength_angstrom,
                     u_deg2,
@@ -2134,7 +2156,7 @@ impl NativeStructuralMultiphase {
                 correction,
                 axial,
                 support_fwhm,
-                |prepared, inputs| prepared.vjp(inputs, weights),
+                |prepared, inputs| prepared.vjp(inputs, &weights),
             )
         })?;
         results
@@ -2231,24 +2253,26 @@ fn p1_structure_factors_dense<'py>(
 ) -> PyResult<P1DenseArrays<'py>> {
     let hkl = hkl_rows(&hkl_flat)?;
     let xyz = xyz_rows(&fractional_xyz_flat)?;
-    let occupancy = contiguous_slice(&occupancy, "occupancy")?;
-    let u_iso = contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?;
-    let scattering_real = contiguous_slice(&scattering_real_flat, "scattering_real")?;
-    let scattering_imag = contiguous_slice(&scattering_imag_flat, "scattering_imag")?;
+    let occupancy = owned_f64_vec(&occupancy, "occupancy")?;
+    let u_iso = owned_f64_vec(&u_iso_angstrom2, "u_iso_angstrom2")?;
+    let scattering_real = owned_f64_vec(&scattering_real_flat, "scattering_real")?;
+    let scattering_imag = owned_f64_vec(&scattering_imag_flat, "scattering_imag")?;
     let cell = crystallographic_cell(
         a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
     );
-    let batch = P1BatchView {
-        hkl: &hkl,
-        fractional_xyz: &xyz,
-        occupancy,
-        u_iso_angstrom2: u_iso,
-        scattering_real,
-        scattering_imag,
-        scale,
-    };
     let result = py
-        .detach(|| calculate_p1_dense(cell, batch))
+        .detach(move || {
+            let batch = P1BatchView {
+                hkl: &hkl,
+                fractional_xyz: &xyz,
+                occupancy: &occupancy,
+                u_iso_angstrom2: &u_iso,
+                scattering_real: &scattering_real,
+                scattering_imag: &scattering_imag,
+                scale,
+            };
+            calculate_p1_dense(cell, batch)
+        })
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
     let reflection_count = result.values.intensity.len();
     let parameter_count = result.layout.parameter_count();
@@ -2284,25 +2308,27 @@ fn p1_structure_factors_jvp<'py>(
 ) -> PyResult<P1JvpArrays<'py>> {
     let hkl = hkl_rows(&hkl_flat)?;
     let xyz = xyz_rows(&fractional_xyz_flat)?;
-    let occupancy = contiguous_slice(&occupancy, "occupancy")?;
-    let u_iso = contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?;
-    let scattering_real = contiguous_slice(&scattering_real_flat, "scattering_real")?;
-    let scattering_imag = contiguous_slice(&scattering_imag_flat, "scattering_imag")?;
-    let tangent = contiguous_slice(&tangent, "tangent")?;
+    let occupancy = owned_f64_vec(&occupancy, "occupancy")?;
+    let u_iso = owned_f64_vec(&u_iso_angstrom2, "u_iso_angstrom2")?;
+    let scattering_real = owned_f64_vec(&scattering_real_flat, "scattering_real")?;
+    let scattering_imag = owned_f64_vec(&scattering_imag_flat, "scattering_imag")?;
+    let tangent = owned_f64_vec(&tangent, "tangent")?;
     let cell = crystallographic_cell(
         a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
     );
-    let batch = P1BatchView {
-        hkl: &hkl,
-        fractional_xyz: &xyz,
-        occupancy,
-        u_iso_angstrom2: u_iso,
-        scattering_real,
-        scattering_imag,
-        scale,
-    };
     let result = py
-        .detach(|| calculate_p1_jvp(cell, batch, tangent))
+        .detach(move || {
+            let batch = P1BatchView {
+                hkl: &hkl,
+                fractional_xyz: &xyz,
+                occupancy: &occupancy,
+                u_iso_angstrom2: &u_iso,
+                scattering_real: &scattering_real,
+                scattering_imag: &scattering_imag,
+                scale,
+            };
+            calculate_p1_jvp(cell, batch, &tangent)
+        })
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
     Ok((
         result.values.f_real.into_pyarray(py),
@@ -2336,25 +2362,27 @@ fn p1_structure_factors_vjp<'py>(
 ) -> PyResult<P1VjpArrays<'py>> {
     let hkl = hkl_rows(&hkl_flat)?;
     let xyz = xyz_rows(&fractional_xyz_flat)?;
-    let occupancy = contiguous_slice(&occupancy, "occupancy")?;
-    let u_iso = contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?;
-    let scattering_real = contiguous_slice(&scattering_real_flat, "scattering_real")?;
-    let scattering_imag = contiguous_slice(&scattering_imag_flat, "scattering_imag")?;
-    let weights = contiguous_slice(&weights, "weights")?;
+    let occupancy = owned_f64_vec(&occupancy, "occupancy")?;
+    let u_iso = owned_f64_vec(&u_iso_angstrom2, "u_iso_angstrom2")?;
+    let scattering_real = owned_f64_vec(&scattering_real_flat, "scattering_real")?;
+    let scattering_imag = owned_f64_vec(&scattering_imag_flat, "scattering_imag")?;
+    let weights = owned_f64_vec(&weights, "weights")?;
     let cell = crystallographic_cell(
         a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
     );
-    let batch = P1BatchView {
-        hkl: &hkl,
-        fractional_xyz: &xyz,
-        occupancy,
-        u_iso_angstrom2: u_iso,
-        scattering_real,
-        scattering_imag,
-        scale,
-    };
     let result = py
-        .detach(|| calculate_p1_intensity_vjp(cell, batch, weights))
+        .detach(move || {
+            let batch = P1BatchView {
+                hkl: &hkl,
+                fractional_xyz: &xyz,
+                occupancy: &occupancy,
+                u_iso_angstrom2: &u_iso,
+                scattering_real: &scattering_real,
+                scattering_imag: &scattering_imag,
+                scale,
+            };
+            calculate_p1_intensity_vjp(cell, batch, &weights)
+        })
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
     Ok((
         result.values.f_real.into_pyarray(py),
@@ -2380,21 +2408,19 @@ fn profile<'py>(
             "eta must be finite and within [0, 1]",
         ));
     }
-    let delta = delta
-        .as_slice()
-        .map_err(|_| PyValueError::new_err("delta must be a contiguous one-dimensional array"))?;
+    let delta = owned_f64_vec(&delta, "delta")?;
     if delta.iter().any(|value| !value.is_finite()) {
         return Err(PyValueError::new_err(
             "delta must contain only finite values",
         ));
     }
 
-    let (value, d_delta, d_fwhm, d_eta) = py.detach(|| {
+    let (value, d_delta, d_fwhm, d_eta) = py.detach(move || {
         let mut value = Vec::with_capacity(delta.len());
         let mut d_delta = Vec::with_capacity(delta.len());
         let mut d_fwhm = Vec::with_capacity(delta.len());
         let mut d_eta = Vec::with_capacity(delta.len());
-        for coordinate in delta.iter().copied() {
+        for coordinate in delta {
             let point = symmetric_pseudo_voigt(coordinate, fwhm, eta);
             value.push(point.value);
             d_delta.push(point.d_delta);
@@ -2437,7 +2463,7 @@ fn profile_tch<'py>(
     gaussian_fwhm: f64,
     lorentzian_fwhm: f64,
 ) -> PyResult<ProfileArrays<'py>> {
-    let delta = contiguous_slice(&delta, "delta")?;
+    let delta = owned_f64_vec(&delta, "delta")?;
     if delta.iter().any(|value| !value.is_finite()) {
         return Err(PyValueError::new_err(
             "delta must contain only finite values",
@@ -2449,12 +2475,12 @@ fn profile_tch<'py>(
     };
     let shape = TchShape::from_component_fwhm(widths)
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let (value, d_delta, d_gaussian, d_lorentzian) = py.detach(|| {
+    let (value, d_delta, d_gaussian, d_lorentzian) = py.detach(move || {
         let mut value = Vec::with_capacity(delta.len());
         let mut d_delta = Vec::with_capacity(delta.len());
         let mut d_gaussian = Vec::with_capacity(delta.len());
         let mut d_lorentzian = Vec::with_capacity(delta.len());
-        for coordinate in delta.iter().copied() {
+        for coordinate in delta {
             let point = shape.evaluate(coordinate);
             value.push(point.value);
             d_delta.push(point.d_delta);
@@ -2484,7 +2510,7 @@ fn profile_fcj<'py>(
     detector_over_radius: f64,
     fast_fcj: bool,
 ) -> PyResult<FcjProfileArrays<'py>> {
-    let x_deg = contiguous_slice(&x_deg, "x_deg")?;
+    let x_deg = owned_f64_vec(&x_deg, "x_deg")?;
     if x_deg.iter().any(|value| !value.is_finite()) {
         return Err(PyValueError::new_err(
             "x_deg must contain only finite values",
@@ -2503,31 +2529,32 @@ fn profile_fcj<'py>(
         fast_fcj,
     )
     .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let (value, d_position, d_gaussian, d_lorentzian, d_sample, d_detector) = py.detach(|| {
-        let mut value = Vec::with_capacity(x_deg.len());
-        let mut d_position = Vec::with_capacity(x_deg.len());
-        let mut d_gaussian = Vec::with_capacity(x_deg.len());
-        let mut d_lorentzian = Vec::with_capacity(x_deg.len());
-        let mut d_sample = Vec::with_capacity(x_deg.len());
-        let mut d_detector = Vec::with_capacity(x_deg.len());
-        for coordinate in x_deg.iter().copied() {
-            let point = profile.evaluate(coordinate);
-            value.push(point.value);
-            d_position.push(point.d_position);
-            d_gaussian.push(point.d_gaussian_fwhm);
-            d_lorentzian.push(point.d_lorentzian_fwhm);
-            d_sample.push(point.d_sample_over_radius);
-            d_detector.push(point.d_detector_over_radius);
-        }
-        (
-            value,
-            d_position,
-            d_gaussian,
-            d_lorentzian,
-            d_sample,
-            d_detector,
-        )
-    });
+    let (value, d_position, d_gaussian, d_lorentzian, d_sample, d_detector) =
+        py.detach(move || {
+            let mut value = Vec::with_capacity(x_deg.len());
+            let mut d_position = Vec::with_capacity(x_deg.len());
+            let mut d_gaussian = Vec::with_capacity(x_deg.len());
+            let mut d_lorentzian = Vec::with_capacity(x_deg.len());
+            let mut d_sample = Vec::with_capacity(x_deg.len());
+            let mut d_detector = Vec::with_capacity(x_deg.len());
+            for coordinate in x_deg {
+                let point = profile.evaluate(coordinate);
+                value.push(point.value);
+                d_position.push(point.d_position);
+                d_gaussian.push(point.d_gaussian_fwhm);
+                d_lorentzian.push(point.d_lorentzian_fwhm);
+                d_sample.push(point.d_sample_over_radius);
+                d_detector.push(point.d_detector_over_radius);
+            }
+            (
+                value,
+                d_position,
+                d_gaussian,
+                d_lorentzian,
+                d_sample,
+                d_detector,
+            )
+        });
     Ok((
         value.into_pyarray(py),
         d_position.into_pyarray(py),
@@ -2551,7 +2578,7 @@ fn profile_tof<'py>(
     lorentzian_fwhm_us: f64,
     tail_log: f64,
 ) -> PyResult<TofProfileArrays<'py>> {
-    let x_us = contiguous_slice(&x_us, "x_us")?;
+    let x_us = owned_f64_vec(&x_us, "x_us")?;
     if x_us.iter().any(|value| !value.is_finite()) || !position_us.is_finite() {
         return Err(PyValueError::new_err(
             "TOF coordinates and position must be finite",
@@ -2567,14 +2594,14 @@ fn profile_tof<'py>(
         tail_log,
     )
     .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let (value, d_position, d_alpha, d_beta, d_gaussian, d_lorentzian) = py.detach(|| {
+    let (value, d_position, d_alpha, d_beta, d_gaussian, d_lorentzian) = py.detach(move || {
         let mut value = Vec::with_capacity(x_us.len());
         let mut d_position = Vec::with_capacity(x_us.len());
         let mut d_alpha = Vec::with_capacity(x_us.len());
         let mut d_beta = Vec::with_capacity(x_us.len());
         let mut d_gaussian = Vec::with_capacity(x_us.len());
         let mut d_lorentzian = Vec::with_capacity(x_us.len());
-        for coordinate in x_us.iter().copied() {
+        for coordinate in x_us {
             let point = profile.evaluate(coordinate - position_us);
             value.push(point.value);
             d_position.push(point.d_position);
@@ -2606,17 +2633,18 @@ fn accumulate<'py>(
     etas: PyReadonlyArray1<'py, f64>,
     support_fwhm: f64,
 ) -> PyResult<AccumulationArrays<'py>> {
-    let x = contiguous_slice(&x, "x")?;
-    let positions = contiguous_slice(&positions, "positions")?;
-    let intensities = contiguous_slice(&intensities, "intensities")?;
-    let fwhms = contiguous_slice(&fwhms, "fwhms")?;
-    let etas = contiguous_slice(&etas, "etas")?;
+    let x = owned_f64_vec(&x, "x")?;
+    let positions = owned_f64_vec(&positions, "positions")?;
+    let intensities = owned_f64_vec(&intensities, "intensities")?;
+    let fwhms = owned_f64_vec(&fwhms, "fwhms")?;
+    let etas = owned_f64_vec(&etas, "etas")?;
 
-    let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let peaks = PeakBatchView::new(positions, intensities, fwhms, etas)
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
     let accumulation = py
-        .detach(|| accumulate_batch(grid, peaks, SupportPolicy::FwhmMultiple(support_fwhm)))
+        .detach(move || {
+            let grid = GridView::new(&x)?;
+            let peaks = PeakBatchView::new(&positions, &intensities, &fwhms, &etas)?;
+            accumulate_batch(grid, peaks, SupportPolicy::FwhmMultiple(support_fwhm))
+        })
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
     accumulation_to_numpy(py, accumulation)
 }
@@ -2629,9 +2657,9 @@ fn smooth_bruckner<'py>(
     smooth_points: usize,
     iterations: usize,
 ) -> PyResult<Bound<'py, PyArray1<f64>>> {
-    let y = contiguous_slice(&y, "y")?;
+    let y = owned_f64_vec(&y, "y")?;
     let background = py
-        .detach(|| native_smooth_bruckner(y, smooth_points, iterations))
+        .detach(move || native_smooth_bruckner(&y, smooth_points, iterations))
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
     Ok(background.into_pyarray(py))
 }
@@ -2647,17 +2675,21 @@ fn accumulate_tch<'py>(
     lorentzian_fwhms: PyReadonlyArray1<'py, f64>,
     support_fwhm: f64,
 ) -> PyResult<AccumulationArrays<'py>> {
-    let x = contiguous_slice(&x, "x")?;
-    let positions = contiguous_slice(&positions, "positions")?;
-    let intensities = contiguous_slice(&intensities, "intensities")?;
-    let gaussian_fwhms = contiguous_slice(&gaussian_fwhms, "gaussian_fwhms")?;
-    let lorentzian_fwhms = contiguous_slice(&lorentzian_fwhms, "lorentzian_fwhms")?;
-    let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let peaks = TchPeakBatchView::new(positions, intensities, gaussian_fwhms, lorentzian_fwhms)
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let x = owned_f64_vec(&x, "x")?;
+    let positions = owned_f64_vec(&positions, "positions")?;
+    let intensities = owned_f64_vec(&intensities, "intensities")?;
+    let gaussian_fwhms = owned_f64_vec(&gaussian_fwhms, "gaussian_fwhms")?;
+    let lorentzian_fwhms = owned_f64_vec(&lorentzian_fwhms, "lorentzian_fwhms")?;
     let accumulation = py
-        .detach(|| accumulate_tch_batch(grid, peaks, SupportPolicy::FwhmMultiple(support_fwhm)))
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        .detach(move || -> Result<Accumulation, String> {
+            let grid = GridView::new(&x).map_err(|error| error.to_string())?;
+            let peaks =
+                TchPeakBatchView::new(&positions, &intensities, &gaussian_fwhms, &lorentzian_fwhms)
+                    .map_err(|error| error.to_string())?;
+            accumulate_tch_batch(grid, peaks, SupportPolicy::FwhmMultiple(support_fwhm))
+                .map_err(|error| error.to_string())
+        })
+        .map_err(PyValueError::new_err)?;
     accumulation_to_numpy(py, accumulation)
 }
 
@@ -2784,7 +2816,8 @@ fn cw_profile_parameters<'py>(
     x_deg: f64,
     y_deg: f64,
 ) -> PyResult<CwProfileArrays<'py>> {
-    let two_theta_deg = contiguous_slice(&two_theta_deg, "two_theta_deg")?;
+    let two_theta_deg = owned_f64_vec(&two_theta_deg, "two_theta_deg")?;
+    let count = two_theta_deg.len();
     let instrument = cw_instrument(
         reference_wavelength_angstrom,
         u_deg2,
@@ -2797,7 +2830,7 @@ fn cw_profile_parameters<'py>(
         .validate()
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
     let (variance, gaussian, lorentzian, total, eta, d_gaussian, d_lorentzian, d_position) = py
-        .detach(|| {
+        .detach(move || {
             let mut variance = Vec::with_capacity(two_theta_deg.len());
             let mut gaussian = Vec::with_capacity(two_theta_deg.len());
             let mut lorentzian = Vec::with_capacity(two_theta_deg.len());
@@ -2806,7 +2839,7 @@ fn cw_profile_parameters<'py>(
             let mut d_gaussian = Vec::with_capacity(two_theta_deg.len() * 5);
             let mut d_lorentzian = Vec::with_capacity(two_theta_deg.len() * 5);
             let mut d_position = Vec::with_capacity(two_theta_deg.len() * 2);
-            for position in two_theta_deg.iter().copied() {
+            for position in two_theta_deg {
                 let profile = CwProfileParameters::from_instrument(position, instrument)?;
                 variance.push(profile.gaussian_variance_deg2);
                 gaussian.push(profile.gaussian_fwhm_deg);
@@ -2830,7 +2863,6 @@ fn cw_profile_parameters<'py>(
             ))
         })
         .map_err(|error: CwError| PyValueError::new_err(error.to_string()))?;
-    let count = two_theta_deg.len();
     Ok((
         variance.into_pyarray(py),
         gaussian.into_pyarray(py),
@@ -2871,7 +2903,7 @@ fn tof_profile_parameters<'py>(
     y_us_per_angstrom2: f64,
     z_us: f64,
 ) -> PyResult<TofParameterArrays<'py>> {
-    let d_spacing = contiguous_slice(&d_spacing_angstrom, "d_spacing_angstrom")?;
+    let d_spacing = owned_f64_vec(&d_spacing_angstrom, "d_spacing_angstrom")?;
     let instrument = tof_instrument(
         zero_us,
         difc_us_per_angstrom,
@@ -2890,7 +2922,7 @@ fn tof_profile_parameters<'py>(
         z_us,
     );
     let (position, alpha, beta, variance, gaussian, lorentzian, total, eta) = py
-        .detach(|| {
+        .detach(move || {
             let mut position = Vec::with_capacity(d_spacing.len());
             let mut alpha = Vec::with_capacity(d_spacing.len());
             let mut beta = Vec::with_capacity(d_spacing.len());
@@ -2899,7 +2931,7 @@ fn tof_profile_parameters<'py>(
             let mut lorentzian = Vec::with_capacity(d_spacing.len());
             let mut total = Vec::with_capacity(d_spacing.len());
             let mut eta = Vec::with_capacity(d_spacing.len());
-            for d in d_spacing.iter().copied() {
+            for d in d_spacing {
                 let parameters = TofProfileParameters::from_instrument(d, instrument)?;
                 position.push(parameters.position_us);
                 alpha.push(parameters.alpha_per_us);
@@ -2954,10 +2986,9 @@ fn accumulate_tof<'py>(
     tail_log: f64,
     execution: PyRef<'_, NativeExecutionPolicy>,
 ) -> PyResult<AccumulationArrays<'py>> {
-    let x = contiguous_slice(&x_us, "x_us")?;
-    let d_spacing = contiguous_slice(&d_spacing_angstrom, "d_spacing_angstrom")?;
-    let intensities = contiguous_slice(&integrated_intensities, "integrated_intensities")?;
-    let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let x = owned_f64_vec(&x_us, "x_us")?;
+    let d_spacing = owned_f64_vec(&d_spacing_angstrom, "d_spacing_angstrom")?;
+    let intensities = owned_f64_vec(&integrated_intensities, "integrated_intensities")?;
     let instrument = tof_instrument(
         zero_us,
         difc_us_per_angstrom,
@@ -2977,18 +3008,20 @@ fn accumulate_tof<'py>(
     );
     let execution_context = execution.policy.context().clone();
     let accumulation = py
-        .detach(|| {
+        .detach(move || -> Result<Accumulation, String> {
+            let grid = GridView::new(&x).map_err(|error| error.to_string())?;
             accumulate_tof_batch_with_context(
                 grid,
-                d_spacing,
-                intensities,
+                &d_spacing,
+                &intensities,
                 instrument,
                 support_fwhm,
                 tail_log,
                 &execution_context,
             )
+            .map_err(|error| error.to_string())
         })
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        .map_err(PyValueError::new_err)?;
     accumulation_to_numpy(py, accumulation)
 }
 
@@ -3008,17 +3041,20 @@ fn accumulate_cw<'py>(
     y_deg: f64,
     support_fwhm: f64,
 ) -> PyResult<AccumulationArrays<'py>> {
-    let x = contiguous_slice(&x, "x")?;
-    let two_theta_deg = contiguous_slice(&two_theta_deg, "two_theta_deg")?;
-    let intensities = contiguous_slice(&intensities, "intensities")?;
-    let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let reflections = CwReflectionBatchView::new(two_theta_deg, intensities)
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let x = owned_f64_vec(&x, "x")?;
+    let two_theta_deg = owned_f64_vec(&two_theta_deg, "two_theta_deg")?;
+    let intensities = owned_f64_vec(&intensities, "intensities")?;
     let instrument = cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg);
     let support = SupportPolicy::FwhmMultiple(support_fwhm);
     let accumulation = py
-        .detach(|| accumulate_cw_batch(grid, reflections, instrument, support))
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        .detach(move || -> Result<Accumulation, String> {
+            let grid = GridView::new(&x).map_err(|error| error.to_string())?;
+            let reflections = CwReflectionBatchView::new(&two_theta_deg, &intensities)
+                .map_err(|error| error.to_string())?;
+            accumulate_cw_batch(grid, reflections, instrument, support)
+                .map_err(|error| error.to_string())
+        })
+        .map_err(PyValueError::new_err)?;
     accumulation_to_numpy(py, accumulation)
 }
 
@@ -3052,54 +3088,22 @@ fn accumulate_cw_contributions<'py>(
     fast_fcj: bool,
     tail_area_tolerance: Option<f64>,
 ) -> PyResult<AccumulationArrays<'py>> {
-    let x = contiguous_slice(&x, "x")?;
-    let two_theta_deg = contiguous_slice(&two_theta_deg, "two_theta_deg")?;
-    let base_intensities = contiguous_slice(&base_intensities, "base_intensities")?;
-    let gaussian_variance_deg2 =
-        contiguous_slice(&gaussian_variance_deg2, "gaussian_variance_deg2")?;
-    let lorentzian_fwhm_deg = contiguous_slice(&lorentzian_fwhm_deg, "lorentzian_fwhm_deg")?;
-    let intensity_multiplier = contiguous_slice(&intensity_multiplier, "intensity_multiplier")?;
-    let d_gaussian_variance_d_position = contiguous_slice(
-        &d_gaussian_variance_d_position,
-        "d_gaussian_variance_d_position",
-    )?;
-    let d_lorentzian_fwhm_d_position = contiguous_slice(
-        &d_lorentzian_fwhm_d_position,
-        "d_lorentzian_fwhm_d_position",
-    )?;
-    let d_intensity_multiplier_d_position = contiguous_slice(
-        &d_intensity_multiplier_d_position,
-        "d_intensity_multiplier_d_position",
-    )?;
-    let d_gaussian_variance_d_parameters = contiguous_slice(
-        &d_gaussian_variance_d_parameters,
-        "d_gaussian_variance_d_parameters",
-    )?;
-    let d_lorentzian_fwhm_d_parameters = contiguous_slice(
-        &d_lorentzian_fwhm_d_parameters,
-        "d_lorentzian_fwhm_d_parameters",
-    )?;
-    let d_intensity_multiplier_d_parameters = contiguous_slice(
-        &d_intensity_multiplier_d_parameters,
-        "d_intensity_multiplier_d_parameters",
-    )?;
-    let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let contributions = CwContributionsView::new(
+    let x = owned_f64_vec(&x, "x")?;
+    let two_theta_deg = owned_f64_vec(&two_theta_deg, "two_theta_deg")?;
+    let base_intensities = owned_f64_vec(&base_intensities, "base_intensities")?;
+    let contributions = NativeStructuralPhase::owned_contributions(
         two_theta_deg.len(),
         parameter_count,
-        CwContributionArrays {
-            gaussian_variance_deg2,
-            lorentzian_fwhm_deg,
-            intensity_multiplier,
-            d_gaussian_variance_d_position,
-            d_lorentzian_fwhm_d_position,
-            d_intensity_multiplier_d_position,
-            d_gaussian_variance_d_parameters,
-            d_lorentzian_fwhm_d_parameters,
-            d_intensity_multiplier_d_parameters,
-        },
-    )
-    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        &gaussian_variance_deg2,
+        &lorentzian_fwhm_deg,
+        &intensity_multiplier,
+        &d_gaussian_variance_d_position,
+        &d_lorentzian_fwhm_d_position,
+        &d_intensity_multiplier_d_position,
+        &d_gaussian_variance_d_parameters,
+        &d_lorentzian_fwhm_d_parameters,
+        &d_intensity_multiplier_d_parameters,
+    )?;
     let instrument = cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg);
     let support = SupportPolicy::FwhmMultiple(support_fwhm);
     let geometry = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
@@ -3108,21 +3112,23 @@ fn accumulate_cw_contributions<'py>(
         tail_area_tolerance,
     };
     let accumulation = py
-        .detach(|| {
+        .detach(move || -> Result<Accumulation, String> {
+            let grid = GridView::new(&x).map_err(|error| error.to_string())?;
             phasesmith_core::cw_contributions::accumulate_cw_contributions_with_accuracy(
                 grid,
-                two_theta_deg,
-                base_intensities,
+                &two_theta_deg,
+                &base_intensities,
                 instrument,
-                contributions,
+                contributions.as_view(),
                 geometry,
                 support,
                 accuracy,
                 true,
                 &phasesmith_execution::ExecutionContext::serial(),
             )
+            .map_err(|error| error.to_string())
         })
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        .map_err(PyValueError::new_err)?;
     accumulation_to_numpy(py, accumulation)
 }
 
@@ -3144,12 +3150,9 @@ fn accumulate_cw_fcj<'py>(
     detector_over_radius: f64,
     support_fwhm: f64,
 ) -> PyResult<AccumulationArrays<'py>> {
-    let x = contiguous_slice(&x, "x")?;
-    let two_theta_deg = contiguous_slice(&two_theta_deg, "two_theta_deg")?;
-    let intensities = contiguous_slice(&intensities, "intensities")?;
-    let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let reflections = CwReflectionBatchView::new(two_theta_deg, intensities)
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let x = owned_f64_vec(&x, "x")?;
+    let two_theta_deg = owned_f64_vec(&two_theta_deg, "two_theta_deg")?;
+    let intensities = owned_f64_vec(&intensities, "intensities")?;
     let instrument = cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg);
     let geometry = FcjGeometry {
         sample_over_radius,
@@ -3157,8 +3160,14 @@ fn accumulate_cw_fcj<'py>(
     };
     let support = SupportPolicy::FwhmMultiple(support_fwhm);
     let accumulation = py
-        .detach(|| accumulate_cw_fcj_batch(grid, reflections, instrument, geometry, support))
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        .detach(move || -> Result<Accumulation, String> {
+            let grid = GridView::new(&x).map_err(|error| error.to_string())?;
+            let reflections = CwReflectionBatchView::new(&two_theta_deg, &intensities)
+                .map_err(|error| error.to_string())?;
+            accumulate_cw_fcj_batch(grid, reflections, instrument, geometry, support)
+                .map_err(|error| error.to_string())
+        })
+        .map_err(PyValueError::new_err)?;
     accumulation_to_numpy(py, accumulation)
 }
 
@@ -3183,20 +3192,14 @@ fn accumulate_cw_components<'py>(
     detector_over_radius: f64,
     support_fwhm: f64,
 ) -> PyResult<AccumulationArrays<'py>> {
-    let x = contiguous_slice(&x, "x")?;
-    let two_theta_deg = contiguous_slice(&two_theta_deg, "two_theta_deg")?;
-    let intensities = contiguous_slice(&intensities, "intensities")?;
-    let wavelengths_angstrom = contiguous_slice(&wavelengths_angstrom, "wavelengths_angstrom")?;
-    let relative_component_intensities = contiguous_slice(
+    let x = owned_f64_vec(&x, "x")?;
+    let two_theta_deg = owned_f64_vec(&two_theta_deg, "two_theta_deg")?;
+    let intensities = owned_f64_vec(&intensities, "intensities")?;
+    let wavelengths_angstrom = owned_f64_vec(&wavelengths_angstrom, "wavelengths_angstrom")?;
+    let relative_component_intensities = owned_f64_vec(
         &relative_component_intensities,
         "relative_component_intensities",
     )?;
-    let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let reflections = CwReflectionBatchView::new(two_theta_deg, intensities)
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let components =
-        WavelengthComponentsView::new(wavelengths_angstrom, relative_component_intensities)
-            .map_err(|error| PyValueError::new_err(error.to_string()))?;
     let instrument = cw_instrument(
         reference_wavelength_angstrom,
         u_deg2,
@@ -3211,7 +3214,15 @@ fn accumulate_cw_components<'py>(
         detector_over_radius,
     };
     let accumulation = py
-        .detach(|| {
+        .detach(move || -> Result<Accumulation, String> {
+            let grid = GridView::new(&x).map_err(|error| error.to_string())?;
+            let reflections = CwReflectionBatchView::new(&two_theta_deg, &intensities)
+                .map_err(|error| error.to_string())?;
+            let components = WavelengthComponentsView::new(
+                &wavelengths_angstrom,
+                &relative_component_intensities,
+            )
+            .map_err(|error| error.to_string())?;
             if use_fcj {
                 accumulate_cw_fcj_components_batch(
                     grid,
@@ -3224,8 +3235,9 @@ fn accumulate_cw_components<'py>(
             } else {
                 accumulate_cw_components_batch(grid, reflections, instrument, components, support)
             }
+            .map_err(|error| error.to_string())
         })
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        .map_err(PyValueError::new_err)?;
     accumulation_to_numpy(py, accumulation)
 }
 
@@ -3351,16 +3363,17 @@ fn accumulate_values<'py>(
     etas: PyReadonlyArray1<'py, f64>,
     support_fwhm: f64,
 ) -> PyResult<Bound<'py, PyArray1<f64>>> {
-    let x = contiguous_slice(&x, "x")?;
-    let positions = contiguous_slice(&positions, "positions")?;
-    let intensities = contiguous_slice(&intensities, "intensities")?;
-    let fwhms = contiguous_slice(&fwhms, "fwhms")?;
-    let etas = contiguous_slice(&etas, "etas")?;
-    let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let peaks = PeakBatchView::new(positions, intensities, fwhms, etas)
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let x = owned_f64_vec(&x, "x")?;
+    let positions = owned_f64_vec(&positions, "positions")?;
+    let intensities = owned_f64_vec(&intensities, "intensities")?;
+    let fwhms = owned_f64_vec(&fwhms, "fwhms")?;
+    let etas = owned_f64_vec(&etas, "etas")?;
     let y = py
-        .detach(|| accumulate_values_batch(grid, peaks, SupportPolicy::FwhmMultiple(support_fwhm)))
+        .detach(move || {
+            let grid = GridView::new(&x)?;
+            let peaks = PeakBatchView::new(&positions, &intensities, &fwhms, &etas)?;
+            accumulate_values_batch(grid, peaks, SupportPolicy::FwhmMultiple(support_fwhm))
+        })
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
     Ok(y.into_pyarray(py))
 }
@@ -3373,6 +3386,14 @@ fn indices_to_i64(indices: Vec<usize>, name: &str) -> PyResult<Vec<i64>> {
                 .map_err(|_| PyValueError::new_err(format!("{name} exceed NumPy int64 range")))
         })
         .collect()
+}
+
+fn owned_f64_vec(array: &PyReadonlyArray1<'_, f64>, name: &str) -> PyResult<Vec<f64>> {
+    Ok(contiguous_slice(array, name)?.to_vec())
+}
+
+fn owned_bool_vec(array: &PyReadonlyArray1<'_, bool>, name: &str) -> PyResult<Vec<bool>> {
+    Ok(bool_slice(array, name)?.to_vec())
 }
 
 fn contiguous_slice<'array>(
@@ -3743,9 +3764,9 @@ fn integrated_intensity_correction<'py>(
     two_theta_deg: Option<f64>,
 ) -> PyResult<CorrectionArrays<'py>> {
     let selected = parse_correction_model(model, wavelength_angstrom, polarization, two_theta_deg)?;
-    let q_squared = contiguous_slice(&q_squared_inverse_angstrom2, "q_squared_inverse_angstrom2")?;
+    let q_squared = owned_f64_vec(&q_squared_inverse_angstrom2, "q_squared_inverse_angstrom2")?;
     let result = py
-        .detach(|| selected.evaluate(q_squared))
+        .detach(move || selected.evaluate(&q_squared))
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
     Ok((
         result.values.into_pyarray(py),

@@ -273,3 +273,36 @@ def test_support_to_dense_rejects_inconsistent_sample_count() -> None:
     result = phasesmith.accumulate([0.0, 1.0], [1.0], [1.0], [1.0], [0.5])
     with pytest.raises(ValueError, match="outside"):
         result.derivatives.local.to_dense(1)
+
+
+def test_detached_bindings_are_isolated_from_concurrent_numpy_mutation() -> None:
+    import threading
+
+    x = np.linspace(10.0, 90.0, 4096)
+    positions = np.linspace(15.0, 85.0, 32)
+    intensities = np.full(32, 100.0)
+    fwhms = np.full(32, 0.15)
+    etas = np.full(32, 0.4)
+    stop = threading.Event()
+    errors: list[BaseException] = []
+
+    def mutator() -> None:
+        toggle = False
+        while not stop.is_set():
+            intensities[:] = 100.0 if toggle else 200.0
+            toggle = not toggle
+
+    worker = threading.Thread(target=mutator, daemon=True)
+    worker.start()
+    try:
+        for _ in range(30):
+            res = phasesmith.accumulate(x, positions, intensities, fwhms, etas, support_fwhm=20.0)
+            assert np.all(np.isfinite(res.y))
+            prof = phasesmith.profile(x - 50.0, 0.2, 0.4)
+            assert np.all(np.isfinite(prof.value))
+    except BaseException as exc:  # pragma: no cover
+        errors.append(exc)
+    finally:
+        stop.set()
+        worker.join(timeout=2.0)
+    assert not errors
