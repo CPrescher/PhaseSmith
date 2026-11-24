@@ -46,6 +46,19 @@ def validate_api_snapshot(root: Path, version: str) -> None:
         raise ValueError("public API snapshot version does not match the release version")
 
 
+def _citation_version(root: Path) -> str:
+    citation_path = root / "CITATION.cff"
+    text = citation_path.read_text(encoding="utf-8")
+    match = re.search(r"^version:\s*[\"']?([^\"'\s]+)[\"']?\s*$", text, re.MULTILINE)
+    if match is None:
+        raise ValueError(f"CITATION.cff has no version field: {citation_path}")
+    return match.group(1)
+
+
+def _is_internal_dependency(name: str) -> bool:
+    return name == "phasesmith" or name.startswith("phasesmith-")
+
+
 def release_version(root: Path = ROOT) -> str:
     """Return the validated release version or raise ``ValueError``."""
 
@@ -54,6 +67,7 @@ def release_version(root: Path = ROOT) -> str:
     versions = {
         "Cargo workspace": cargo["workspace"]["package"]["version"],
         "Python project": pyproject["project"]["version"],
+        "CITATION.cff": _citation_version(root),
     }
     unique = set(versions.values())
     if len(unique) != 1:
@@ -62,10 +76,20 @@ def release_version(root: Path = ROOT) -> str:
     version = str(unique.pop())
     if SEMVER.fullmatch(version) is None:
         raise ValueError(f"release version is not SemVer: {version}")
-    changelog = (root / "CHANGELOG.md").read_text()
+    changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
     if re.search(rf"^## {re.escape(version)}$", changelog, re.MULTILINE) is None:
         raise ValueError(f"CHANGELOG.md has no '## {version}' release section")
     validate_api_snapshot(root, version)
+    workspace_deps = cargo.get("workspace", {}).get("dependencies", {})
+    if isinstance(workspace_deps, dict):
+        for dependency_name, specification in workspace_deps.items():
+            if not _is_internal_dependency(dependency_name):
+                continue
+            if not isinstance(specification, dict) or specification.get("version") != version:
+                raise ValueError(
+                    f"Cargo.toml workspace.dependencies.{dependency_name} "
+                    f"must specify version={version}"
+                )
     manifests = [root / "Cargo.toml", *sorted((root / "crates").glob("*/Cargo.toml"))]
     package_names = set()
     for manifest in manifests:
@@ -89,9 +113,21 @@ def release_version(root: Path = ROOT) -> str:
             if not isinstance(dependencies, dict):
                 continue
             for dependency_name, specification in dependencies.items():
-                if not dependency_name.startswith("phasesmith-"):
+                if not _is_internal_dependency(dependency_name):
                     continue
-                if not isinstance(specification, dict) or specification.get("version") != version:
+                if isinstance(specification, dict) and specification.get("workspace") is True:
+                    ws_spec = (
+                        workspace_deps.get(dependency_name)
+                        if isinstance(workspace_deps, dict)
+                        else None
+                    )
+                    if not isinstance(ws_spec, dict) or ws_spec.get("version") != version:
+                        relative = manifest.relative_to(root)
+                        raise ValueError(
+                            f"{relative} {table_name}.{dependency_name} "
+                            "inherits missing or mismatched workspace version"
+                        )
+                elif not isinstance(specification, dict) or specification.get("version") != version:
                     relative = manifest.relative_to(root)
                     raise ValueError(
                         f"{relative} {table_name}.{dependency_name} must specify version={version}"

@@ -68,3 +68,30 @@ def test_api_snapshot_release_metadata_is_versioned(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="version does not match"):
         module.validate_api_snapshot(tmp_path, "1.2.3")
+
+
+def test_published_crates_avoid_exact_equality_external_pins() -> None:
+    module = _release_module()
+    root_cargo = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))
+    workspace_deps = root_cargo.get("workspace", {}).get("dependencies", {})
+    assert isinstance(workspace_deps, dict)
+    for name, spec in workspace_deps.items():
+        version = spec if isinstance(spec, str) else spec.get("version", "")
+        assert not str(version).startswith("="), (
+            f"workspace.dependencies.{name} uses exact pin {version!r}"
+        )
+    for manifest in sorted((ROOT / "crates").glob("*/Cargo.toml")):
+        record = tomllib.loads(manifest.read_text(encoding="utf-8"))
+        package = record.get("package", {})
+        if package.get("name") not in module.PUBLIC_CRATES:
+            continue
+        for table_name in ("dependencies", "dev-dependencies", "build-dependencies"):
+            deps = record.get(table_name, {})
+            if not isinstance(deps, dict):
+                continue
+            for dep_name, spec in deps.items():
+                version = spec if isinstance(spec, str) else spec.get("version", "")
+                relative = manifest.relative_to(ROOT)
+                assert not str(version).startswith("="), (
+                    f"{relative} {table_name}.{dep_name} uses exact pin {version!r}"
+                )

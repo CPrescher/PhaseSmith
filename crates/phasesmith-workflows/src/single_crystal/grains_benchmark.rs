@@ -183,7 +183,7 @@ impl Bits for Indexed {
 fn fixture(path: &Path) -> (Options, Vec<V3>) {
     let bytes = fs::read(path).unwrap();
     let (words, remainder) = bytes.as_chunks::<8>();
-    assert_eq!(remainder, []);
+    assert_eq!(remainder, [0_u8; 0]);
     let mut chunks = words.iter();
     let mut number = || f64::from_le_bytes(*chunks.next().unwrap());
     let vectors: [[f64; 3]; 5] = std::array::from_fn(|_| std::array::from_fn(|_| number()));

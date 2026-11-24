@@ -11,21 +11,27 @@ repository.workspace = true
 readme.workspace = true
 
 [dependencies]
-phasesmith-single-crystal = { version = "0.9.0", path = "../phasesmith-single-crystal", default-features = false, optional = true }
-sha2 = { version = "0.10", optional = true }
-nalgebra = "0.35"
-phasesmith-core = { version = "0.9.0", path = "../phasesmith-core" }
-phasesmith-crystallography = { version = "0.9.0", path = "../phasesmith-crystallography" }
-phasesmith-engine = { version = "0.9.0", path = "../phasesmith-engine" }
-phasesmith-execution = { version = "0.9.0", path = "../phasesmith-execution" }
-phasesmith-model = { version = "0.9.0", path = "../phasesmith-model" }
+phasesmith-single-crystal = { workspace = true, optional = true }
+sha2 = { workspace = true, optional = true }
+nalgebra = { workspace = true }
+phasesmith-core = { workspace = true }
+phasesmith-crystallography = { workspace = true }
+phasesmith-engine = { workspace = true }
+phasesmith-execution = { workspace = true }
+phasesmith-model = { workspace = true }
 
 [features]
-single-crystal = ["phasesmith-single-crystal/spots", "phasesmith-single-crystal/solution", "phasesmith-single-crystal/grains", "dep:sha2"]
+single-crystal = [
+    "dep:phasesmith-single-crystal",
+    "phasesmith-single-crystal?/spots",
+    "phasesmith-single-crystal?/solution",
+    "phasesmith-single-crystal?/grains",
+    "dep:sha2",
+]
 
 [dev-dependencies]
-criterion = "0.7"
-phasesmith-io = { version = "0.9.0", path = "../phasesmith-io" }
+criterion = { workspace = true }
+phasesmith-io = { workspace = true }
 
 [[bench]]
 name = "backgrounds"
