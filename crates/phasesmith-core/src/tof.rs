@@ -1736,14 +1736,23 @@ mod tests {
             );
         }
 
-        // Extreme d where inverse_d5 overflows to +inf while beta1 == 0.0 must not yield NaN.
-        let extreme = TofProfileParameters::from_instrument(1e-70, instrument);
-        if let Ok(params) = extreme {
-            assert!(params.d_beta_d_d.is_finite());
-            assert!(params.d_position_d_d.is_finite());
-            assert!(params.d_alpha_d_d.is_finite());
-            assert!(params.d_gaussian_fwhm_d_d.is_finite());
-            assert!(params.d_lorentzian_fwhm_d_d.is_finite());
-        }
+        // Extreme d where inverse_d5 overflows to +inf while beta1 == 0.0 must yield 0.0, not NaN.
+        let params = TofProfileParameters::from_instrument(1e-70, instrument)
+            .expect("zero beta1 with overflowing inverse_d5 must keep finite derivatives");
+        assert_eq!(params.d_beta_d_d, 0.0);
+        assert!(params.d_position_d_d.is_finite());
+        assert!(params.d_alpha_d_d.is_finite());
+        assert!(params.d_gaussian_fwhm_d_d.is_finite());
+        assert!(params.d_lorentzian_fwhm_d_d.is_finite());
+
+        // Nonzero beta1 whose derivative overflows inverse_d5 must be rejected instead of returning inf.
+        let overflowing_beta1 = TofInstrument {
+            beta1_angstrom4_per_us: 1e-300,
+            ..instrument
+        };
+        assert_eq!(
+            TofProfileParameters::from_instrument(1e-70, overflowing_beta1),
+            Err(TofError::InvalidDSpacing)
+        );
     }
 }

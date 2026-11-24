@@ -3003,8 +3003,16 @@ def _write_json(path: Path, record: object, *, overwrite: bool) -> None:
                         "refusing to overwrite output",
                         path=str(path),
                     ) from exists_error
-                with os.fdopen(exclusive_fd, "w", encoding="utf-8") as stream:
-                    stream.write(encoded)
+                stream = None
+                try:
+                    stream = os.fdopen(exclusive_fd, "w", encoding="utf-8")
+                    with stream:
+                        stream.write(encoded)
+                except BaseException:
+                    if stream is None:
+                        os.close(exclusive_fd)
+                    path.unlink(missing_ok=True)
+                    raise
             temporary.unlink()
     except BaseException:
         temporary.unlink(missing_ok=True)

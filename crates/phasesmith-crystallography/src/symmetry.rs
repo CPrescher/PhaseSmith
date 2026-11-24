@@ -1429,16 +1429,57 @@ mod tests {
         assert_eq!(wrapped[1], 0.0);
         assert_eq!(wrapped[2], 0.25);
 
-        // Large valid shear involution (det = +1, R^2 = I) must return an error, never panic.
+        // Large valid shear involutions (det = +1, R^2 = I) must construct cleanly with exact
+        // i128 intermediate arithmetic, while overflowing RREF/nullspace/fraction operations must
+        // return ArithmeticOverflow rather than panicking.
         let shear = SymmetryOperation::new(
-            [[1, 1_000_000_000, 999_999_937], [0, -1, 0], [0, 0, -1]],
+            [[1, i32::MIN, i32::MIN], [0, -1, 0], [0, 0, -1]],
             [Rational::zero(); 3],
         )
-        .expect("shear involution is unimodular");
-        let result = SpaceGroup::new(vec![SymmetryOperation::identity(), shear]);
+        .expect("extreme shear involution is unimodular");
+        assert_eq!(
+            SpaceGroup::new(vec![SymmetryOperation::identity(), shear])
+                .expect("shear involution group constructs with exact i128 intermediates")
+                .operations()
+                .len(),
+            2
+        );
+
+        assert_eq!(
+            integer_nullspace(&[
+                [
+                    1_000_000_000_000_000_003,
+                    1_000_000_000_000_000_009,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    1_000_000_000_000_000_013,
+                    1_000_000_000_000_000_021,
+                    0,
+                    0,
+                    0
+                ],
+            ]),
+            Err(SymmetryError::ArithmeticOverflow)
+        );
+
+        let mut min_equation = [i64::MIN, 0, 0, 0, 0, 0];
+        assert_eq!(
+            normalize_integer_equation(&mut min_equation),
+            Err(SymmetryError::ArithmeticOverflow)
+        );
         assert!(matches!(
-            result,
-            Ok(_) | Err(SymmetryError::ArithmeticOverflow)
+            Fraction::new(i128::MIN, -1),
+            Err(SymmetryError::ArithmeticOverflow)
+        ));
+        let large = Fraction::new(i128::MAX / 2, 1).expect("large fraction");
+        assert!(matches!(
+            large.multiply(large),
+            Err(SymmetryError::ArithmeticOverflow)
         ));
     }
 }

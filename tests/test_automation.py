@@ -673,3 +673,46 @@ def test_write_json_exclusive_fallback_when_hard_links_unsupported(
     with pytest.raises(automation.AutomationError) as error:
         automation._write_json(target, {"ok": False}, overwrite=False)
     assert error.value.code == "output.exists"
+
+    # If writing to the exclusively created fallback file fails, clean up the partial file so a
+    # subsequent retry succeeds instead of failing with output.exists.
+    failing_target = tmp_path / "retryable.json"
+    real_open = os.open
+    real_fdopen = os.fdopen
+    captured_exclusive_fd: list[int] = []
+
+    def tracking_open(path: object, flags: int, mode: int = 0o777) -> int:
+        fd = real_open(path, flags, mode)
+        if Path(str(path)) == failing_target:
+            captured_exclusive_fd.append(fd)
+        return fd
+
+    class _FailingStream:
+        def __init__(self, wrapped: object) -> None:
+            self._wrapped = wrapped
+
+        def __enter__(self) -> _FailingStream:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            self._wrapped.close()  # type: ignore[attr-defined]
+
+        def write(self, _text: str) -> int:
+            raise OSError("simulated disk full during fallback write")
+
+    def failing_fdopen(fd: int, *args: object, **kwargs: object) -> object:
+        stream = real_fdopen(fd, *args, **kwargs)
+        if fd in captured_exclusive_fd:
+            return _FailingStream(stream)
+        return stream
+
+    monkeypatch.setattr(os, "open", tracking_open)
+    monkeypatch.setattr(os, "fdopen", failing_fdopen)
+    with pytest.raises(OSError, match="simulated disk full"):
+        automation._write_json(failing_target, {"ok": True}, overwrite=False)
+    assert len(captured_exclusive_fd) == 1
+    assert not failing_target.exists()
+    monkeypatch.undo()
+    monkeypatch.setattr(os, "link", unsupported_link)
+    automation._write_json(failing_target, {"ok": True}, overwrite=False)
+    assert json.loads(failing_target.read_text(encoding="utf-8")) == {"ok": True}

@@ -898,3 +898,170 @@ def test_save_bundle_overwrite_rolls_back_on_interrupted_replace(
     assert restored.experiment == original
     assert not (destination / f".{persistence.MANIFEST_NAME}.bak").exists()
     assert not (destination / f".{persistence.ARCHIVE_NAME}.bak").exists()
+
+
+def test_save_bundle_overwrite_preserves_existing_on_early_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original = phasesmith.ConstantWavelengthExperiment.neutron(instrument())
+    bundle = persistence.PersistenceBundle(experiment=original)
+    destination = persistence.save_bundle(
+        tmp_path / "early-failure-bundle",
+        bundle,
+    )
+
+    # JSON serialization failure inside the staging block must leave the existing bundle untouched.
+    def failing_dumps(*_args: object, **_kwargs: object) -> str:
+        raise ValueError("simulated non-finite JSON failure")
+
+    monkeypatch.setattr(json, "dumps", failing_dumps)
+    with pytest.raises(ValueError, match="simulated non-finite JSON failure"):
+        persistence.save_bundle(
+            destination,
+            bundle,
+            overwrite=True,
+        )
+    monkeypatch.undo()
+    assert persistence.load_bundle(destination).experiment == original
+
+    # Archive write failure also leaves the existing bundle untouched.
+    def failing_savez(*_args: object, **_kwargs: object) -> None:
+        raise OSError("simulated disk full during savez")
+
+    monkeypatch.setattr(np, "savez_compressed", failing_savez)
+    with pytest.raises(OSError, match="simulated disk full"):
+        persistence.save_bundle(
+            destination,
+            bundle,
+            overwrite=True,
+        )
+    monkeypatch.undo()
+    assert persistence.load_bundle(destination).experiment == original
+
+
+def test_save_bundle_overwrite_preserves_existing_on_first_backup_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import os
+
+    original = phasesmith.ConstantWavelengthExperiment.neutron(instrument())
+    updated = phasesmith.ConstantWavelengthExperiment(
+        phasesmith.MonochromaticRadiation.neutron(instrument().wavelength_angstrom),
+        instrument(),
+        zero_shift_deg=0.25,
+    )
+    destination = persistence.save_bundle(
+        tmp_path / "backup-failure-bundle",
+        persistence.PersistenceBundle(experiment=original),
+    )
+
+    manifest_backup = destination / f".{persistence.MANIFEST_NAME}.bak"
+    real_replace = os.replace
+
+    def failing_backup_replace(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
+        if Path(dst) == manifest_backup:
+            raise OSError("simulated failure moving manifest to backup")
+        real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", failing_backup_replace)
+    with pytest.raises(OSError, match="simulated failure moving manifest"):
+        persistence.save_bundle(
+            destination,
+            persistence.PersistenceBundle(experiment=updated),
+            overwrite=True,
+        )
+    monkeypatch.undo()
+    assert persistence.load_bundle(destination).experiment == original
+
+
+def test_save_bundle_overwrite_keeps_committed_bundle_if_backup_unlink_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original = phasesmith.ConstantWavelengthExperiment.neutron(instrument())
+    updated = phasesmith.ConstantWavelengthExperiment(
+        phasesmith.MonochromaticRadiation.neutron(instrument().wavelength_angstrom),
+        instrument(),
+        zero_shift_deg=0.5,
+    )
+    destination = persistence.save_bundle(
+        tmp_path / "unlink-failure-bundle",
+        persistence.PersistenceBundle(experiment=original),
+    )
+
+    real_unlink = Path.unlink
+
+    def failing_bak_unlink(self: Path, missing_ok: bool = False) -> None:
+        if self.name.endswith(".bak"):
+            raise PermissionError("simulated AV lock on backup file")
+        real_unlink(self, missing_ok=missing_ok)
+
+    monkeypatch.setattr(Path, "unlink", failing_bak_unlink)
+    persistence.save_bundle(
+        destination,
+        persistence.PersistenceBundle(experiment=updated),
+        overwrite=True,
+    )
+    monkeypatch.undo()
+    assert persistence.load_bundle(destination).experiment == updated
+    assert not (destination / f".{persistence.MANIFEST_NAME}.bak").exists()
+    assert not (destination / f".{persistence.ARCHIVE_NAME}.bak").exists()
+
+
+def test_load_bundle_recovers_interrupted_save_backups(tmp_path: Path) -> None:
+    import os
+
+    original = phasesmith.ConstantWavelengthExperiment.neutron(instrument())
+    updated = phasesmith.ConstantWavelengthExperiment(
+        phasesmith.MonochromaticRadiation.neutron(instrument().wavelength_angstrom),
+        instrument(),
+        zero_shift_deg=0.75,
+    )
+    destination = persistence.save_bundle(
+        tmp_path / "crash-recovery-bundle",
+        persistence.PersistenceBundle(experiment=original),
+    )
+    # Simulate a crash after moving both files to .bak and installing only a corrupt archive.
+    os.replace(
+        destination / persistence.MANIFEST_NAME,
+        destination / f".{persistence.MANIFEST_NAME}.bak",
+    )
+    os.replace(
+        destination / persistence.ARCHIVE_NAME,
+        destination / f".{persistence.ARCHIVE_NAME}.bak",
+    )
+    (destination / persistence.ARCHIVE_NAME).write_bytes(b"uncommitted-new-archive")
+
+    restored = persistence.load_bundle(destination)
+    assert restored.experiment == original
+    assert not (destination / f".{persistence.MANIFEST_NAME}.bak").exists()
+    assert not (destination / f".{persistence.ARCHIVE_NAME}.bak").exists()
+
+    # Simulate a crash after both new files were committed, leaving stale backups behind.
+    persistence.save_bundle(
+        destination,
+        persistence.PersistenceBundle(experiment=updated),
+        overwrite=True,
+    )
+    (destination / f".{persistence.MANIFEST_NAME}.bak").write_text("stale", encoding="utf-8")
+    (destination / f".{persistence.ARCHIVE_NAME}.bak").write_bytes(b"stale")
+    restored_updated = persistence.load_bundle(destination)
+    assert restored_updated.experiment == updated
+    assert not (destination / f".{persistence.MANIFEST_NAME}.bak").exists()
+    assert not (destination / f".{persistence.ARCHIVE_NAME}.bak").exists()
+
+
+def test_save_bundle_new_directory_matches_default_mkdir_permissions(tmp_path: Path) -> None:
+    import os
+    import stat
+
+    if os.name == "nt":
+        return
+    reference_dir = tmp_path / "reference-dir"
+    reference_dir.mkdir()
+    bundle_dir = persistence.save_bundle(
+        tmp_path / "new-permissions-bundle",
+        persistence.PersistenceBundle(
+            experiment=phasesmith.ConstantWavelengthExperiment.neutron(instrument())
+        ),
+    )
+    assert stat.S_IMODE(bundle_dir.stat().st_mode) == stat.S_IMODE(reference_dir.stat().st_mode)

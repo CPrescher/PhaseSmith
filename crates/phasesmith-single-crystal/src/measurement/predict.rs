@@ -204,8 +204,8 @@ pub fn predict(
     let mut out = Vec::new();
     for (index, lattice) in lattices.iter().enumerate() {
         for c in crossings(lattice, geometry, shape, options.d_min, hint)? {
-            let k_lo = ((lo - c.xyz[2]) / 360.).floor() as i64 - 1;
-            let k_hi = ((hi - c.xyz[2]) / 360.).ceil() as i64 + 1;
+            let k_lo = (((lo - c.xyz[2]) / 360.).floor() as i64).saturating_sub(1);
+            let k_hi = (((hi - c.xyz[2]) / 360.).ceil() as i64).saturating_add(1);
             for k in k_lo..=k_hi {
                 let omega = c.xyz[2] + 360. * k as f64;
                 if omega < lo || omega >= hi {

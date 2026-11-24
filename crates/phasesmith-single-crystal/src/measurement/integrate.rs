@@ -551,7 +551,7 @@ pub fn measure(
                     .ok_or_else(|| invalid("reflection-frame pair count overflow"))?;
                 if pairs > options.max_pairs {
                     return Err(invalid(format!(
-                        "{pairs} reflection-frame pairs exceed MeasureOptions::max_pairs ({}); \
+                        "more than {} reflection-frame pairs (exceeds MeasureOptions::max_pairs); \
                          raise it (up to 20000000), or use a coarser resolution limit or narrower \
                          rocking width",
                         options.max_pairs
@@ -563,7 +563,7 @@ pub fn measure(
                         .ok_or_else(|| invalid("profile sample count overflow"))?;
                     if sample_count > options.max_samples {
                         return Err(invalid(format!(
-                            "{sample_count} profile samples exceed MeasureOptions::max_samples ({})",
+                            "more than {} profile samples (exceeds MeasureOptions::max_samples)",
                             options.max_samples
                         )));
                     }

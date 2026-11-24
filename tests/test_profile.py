@@ -283,6 +283,12 @@ def test_detached_bindings_are_isolated_from_concurrent_numpy_mutation() -> None
     intensities = np.full(32, 100.0)
     fwhms = np.full(32, 0.15)
     etas = np.full(32, 0.4)
+    expected_100 = phasesmith.accumulate(
+        x, positions, np.full(32, 100.0), fwhms, etas, support_fwhm=20.0
+    ).y
+    expected_200 = phasesmith.accumulate(
+        x, positions, np.full(32, 200.0), fwhms, etas, support_fwhm=20.0
+    ).y
     stop = threading.Event()
     errors: list[BaseException] = []
 
@@ -297,7 +303,7 @@ def test_detached_bindings_are_isolated_from_concurrent_numpy_mutation() -> None
     try:
         for _ in range(30):
             res = phasesmith.accumulate(x, positions, intensities, fwhms, etas, support_fwhm=20.0)
-            assert np.all(np.isfinite(res.y))
+            assert np.array_equal(res.y, expected_100) or np.array_equal(res.y, expected_200)
             prof = phasesmith.profile(x - 50.0, 0.2, 0.4)
             assert np.all(np.isfinite(prof.value))
     except BaseException as exc:  # pragma: no cover
