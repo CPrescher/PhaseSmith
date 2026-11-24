@@ -405,3 +405,23 @@ def test_batch_boundary_validation() -> None:
         phasesmith.accumulate_tof([1.0, 1.0], [1.5], [1.0], instrument())
     with pytest.raises(ValueError, match="tail_log"):
         phasesmith.profile_tof([0.0], 0.0, 1.0, 1.0, 1.0, 0.0, tail_log=0.0)
+    with pytest.raises(ValueError, match="tail_log"):
+        phasesmith.accumulate_tof([1.0, 2.0], [], [], instrument(), tail_log=0.0)
+
+
+@pytest.mark.parametrize("tail_log", [1e-10, 1e-20])
+def test_tiny_tail_log_supported_tof_matches_python_reference(tail_log: float) -> None:
+    x = np.linspace(8450.0, 8650.0, 41)
+    d = np.array([1.7])
+    intensities = np.array([10.0])
+    model = instrument()
+    native = phasesmith.accumulate_tof(
+        x, d, intensities, model, support_fwhm=20.0, tail_log=tail_log
+    )
+    expected_y = reference.accumulate_tof(
+        x, d, intensities, model, support_fwhm=20.0, tail_log=tail_log
+    )
+    assert np.all(np.isfinite(native.y))
+    assert np.all(np.isfinite(native.derivatives.local.values))
+    assert np.all(np.isfinite(native.derivatives.global_jacobian))
+    np.testing.assert_allclose(native.y, expected_y, rtol=1e-10, atol=1e-12)

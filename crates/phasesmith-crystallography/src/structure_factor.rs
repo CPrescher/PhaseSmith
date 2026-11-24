@@ -330,9 +330,9 @@ pub fn calculate_structure_factor_selected_with_context(
         .ok_or(StructureFactorBatchError::AllocationOverflow)?;
     let mut result = StructureFactorDenseResult {
         values: empty_values(reflection_count),
-        d_f_real: vec![0.0; element_count],
-        d_f_imag: vec![0.0; element_count],
-        d_intensity: vec![0.0; element_count],
+        d_f_real: zeroed_f64_vec(element_count)?,
+        d_f_imag: zeroed_f64_vec(element_count)?,
+        d_intensity: zeroed_f64_vec(element_count)?,
         layout: validated.layout,
     };
     let chunks = reflection_chunks(reflection_count);
@@ -349,28 +349,34 @@ pub fn calculate_structure_factor_selected_with_context(
         }
         return Ok(result);
     }
-    let partials = execution.map_ordered(chunks.len(), 2, |chunk| {
-        let range = chunks[chunk].clone();
-        let local_count = range.len();
-        let mut partial = StructureFactorDenseResult {
-            values: empty_values(local_count),
-            d_f_real: vec![0.0; parameter_count * local_count],
-            d_f_imag: vec![0.0; parameter_count * local_count],
-            d_intensity: vec![0.0; parameter_count * local_count],
-            layout: validated.layout,
-        };
-        for (local, reflection) in range.enumerate() {
-            evaluate_dense_reflection(
-                &validated,
-                reflection,
-                local,
-                local_count,
-                &mut partial,
-                selected,
-            );
-        }
-        partial
-    });
+    let partials = execution
+        .map_ordered(chunks.len(), 2, |chunk| {
+            let range = chunks[chunk].clone();
+            let local_count = range.len();
+            let local_elements = parameter_count
+                .checked_mul(local_count)
+                .ok_or(StructureFactorBatchError::AllocationOverflow)?;
+            let mut partial = StructureFactorDenseResult {
+                values: empty_values(local_count),
+                d_f_real: zeroed_f64_vec(local_elements)?,
+                d_f_imag: zeroed_f64_vec(local_elements)?,
+                d_intensity: zeroed_f64_vec(local_elements)?,
+                layout: validated.layout,
+            };
+            for (local, reflection) in range.enumerate() {
+                evaluate_dense_reflection(
+                    &validated,
+                    reflection,
+                    local,
+                    local_count,
+                    &mut partial,
+                    selected,
+                );
+            }
+            Ok::<_, StructureFactorBatchError>(partial)
+        })
+        .into_iter()
+        .collect::<Result<Vec<_>, _>>()?;
     for (range, partial) in chunks.into_iter().zip(partials) {
         copy_dense_chunk(&mut result, &partial, range);
     }
@@ -1321,9 +1327,9 @@ fn anisotropic_displacement(
     }
     for (parameter, derivative) in derivatives.iter_mut().enumerate() {
         let d_vector = [
-            f64::from(transformed_hkl[0]) * validated.d_reciprocal_axis_lengths[0][parameter],
-            f64::from(transformed_hkl[1]) * validated.d_reciprocal_axis_lengths[1][parameter],
-            f64::from(transformed_hkl[2]) * validated.d_reciprocal_axis_lengths[2][parameter],
+            transformed_hkl[0] * validated.d_reciprocal_axis_lengths[0][parameter],
+            transformed_hkl[1] * validated.d_reciprocal_axis_lengths[1][parameter],
+            transformed_hkl[2] * validated.d_reciprocal_axis_lengths[2][parameter],
         ];
         let d_quadratic = 2.0
             * d_vector
@@ -1355,19 +1361,34 @@ fn transformed_reciprocal_vector(
     validated: &ValidatedStructure<'_>,
     hkl: [i32; 3],
     rotation: [[i32; 3]; 3],
-) -> ([i32; 3], [f64; 3]) {
+) -> ([f64; 3], [f64; 3]) {
     let transformed_hkl = [0, 1, 2].map(|component| {
         (0..3)
-            .map(|row| hkl[row] * rotation[row][component])
-            .sum::<i32>()
+            .map(|row| f64::from(hkl[row]) * f64::from(rotation[row][component]))
+            .sum::<f64>()
     });
     let reciprocal = validated.reciprocal_axis_lengths;
     let vector = [
-        f64::from(transformed_hkl[0]) * reciprocal[0],
-        f64::from(transformed_hkl[1]) * reciprocal[1],
-        f64::from(transformed_hkl[2]) * reciprocal[2],
+        transformed_hkl[0] * reciprocal[0],
+        transformed_hkl[1] * reciprocal[1],
+        transformed_hkl[2] * reciprocal[2],
     ];
     (transformed_hkl, vector)
+}
+
+fn zeroed_f64_vec(count: usize) -> Result<Vec<f64>, StructureFactorBatchError> {
+    let byte_len = count
+        .checked_mul(std::mem::size_of::<f64>())
+        .ok_or(StructureFactorBatchError::AllocationOverflow)?;
+    if byte_len > isize::MAX as usize {
+        return Err(StructureFactorBatchError::AllocationOverflow);
+    }
+    let mut values = Vec::new();
+    values
+        .try_reserve_exact(count)
+        .map_err(|_| StructureFactorBatchError::AllocationOverflow)?;
+    values.resize(count, 0.0);
+    Ok(values)
 }
 
 fn symmetric_tensor_vector(tensor: [f64; 6], vector: [f64; 3]) -> [f64; 3] {
@@ -2039,5 +2060,21 @@ mod tests {
             calculate_structure_factor_intensity_vjp(cubic_cell(4.0), &p1(), base, &[]),
             Err(StructureFactorBatchError::WeightLengthMismatch)
         );
+
+        // Extreme HKL under inversion and anisotropic ADP must not overflow i32.
+        let inversion =
+            SymmetryOperation::new([[-1, 0, 0], [0, -1, 0], [0, 0, -1]], [Rational::zero(); 3])
+                .expect("inversion");
+        let p_bar_1 = SpaceGroup::new(vec![SymmetryOperation::identity(), inversion]).expect("P-1");
+        let extreme_hkl = [[i32::MIN, 0, 0]];
+        let extreme_batch = StructureFactorBatchView {
+            hkl: &extreme_hkl,
+            anisotropic_mask: &[true],
+            u_aniso_cif_angstrom2: &[[0.01, 0.01, 0.01, 0.0, 0.0, 0.0]],
+            ..base
+        };
+        let values = calculate_structure_factor_values(cubic_cell(4.0), &p_bar_1, extreme_batch)
+            .expect("extreme HKL anisotropic calculation must not panic");
+        assert!(values.intensity[0].is_finite());
     }
 }

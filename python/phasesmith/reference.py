@@ -535,7 +535,9 @@ def profile_tof(
     d_left_fraction_d_beta = alpha / denominator**2
     if base_radius_us is not None:
         output = [np.zeros_like(x) for _ in range(6)]
-        normalization = 1.0 - np.exp(-tail_log)
+        normalization = float(-np.expm1(-tail_log))
+        if not np.isfinite(normalization) or normalization <= 0.0:
+            raise ValueError("tail_log must produce a positive finite normalization")
         shape = tch_shape_from_fwhm(gaussian_fwhm_us, lorentzian_fwhm_us)
         support_multiple = base_radius_us / shape.total_fwhm
         d_radius = np.array(

@@ -132,8 +132,13 @@ impl IntegratedIntensityCorrectionModel {
                 let mut values = Vec::with_capacity(q_squared_inverse_angstrom2.len());
                 let mut derivatives = Vec::with_capacity(q_squared_inverse_angstrom2.len());
                 for &q_squared in q_squared_inverse_angstrom2 {
-                    values.push(sin_theta / q_squared.powi(2));
-                    derivatives.push(-2.0 * sin_theta / q_squared.powi(3));
+                    let value = sin_theta / q_squared.powi(2);
+                    let derivative = -2.0 * sin_theta / q_squared.powi(3);
+                    if !value.is_finite() || !derivative.is_finite() {
+                        return Err(IntegratedIntensityCorrectionError::InvalidQSquared);
+                    }
+                    values.push(value);
+                    derivatives.push(derivative);
                 }
                 Ok(IntegratedIntensityCorrection {
                     values,
@@ -191,7 +196,7 @@ fn bragg_brentano_lp(
 ) -> Result<(f64, f64, f64), IntegratedIntensityCorrectionError> {
     let root_q = q_squared.sqrt();
     let sin_theta = 0.5 * wavelength * root_q;
-    if !(0.0..1.0).contains(&sin_theta) {
+    if !sin_theta.is_finite() || sin_theta <= 0.0 || sin_theta >= 1.0 {
         return Err(IntegratedIntensityCorrectionError::ReflectionOutsideAngularDomain);
     }
     let theta = sin_theta.asin();
@@ -205,11 +210,12 @@ fn bragg_brentano_lp(
         + 0.5 * theta.tan();
     let d_two_theta_d_q_squared = wavelength / (2.0 * root_q * cos_theta);
     let d_two_theta_d_wavelength = root_q / cos_theta;
-    Ok((
-        value,
-        value * d_log_d_two_theta * d_two_theta_d_q_squared,
-        value * d_log_d_two_theta * d_two_theta_d_wavelength,
-    ))
+    let d_q_squared = value * d_log_d_two_theta * d_two_theta_d_q_squared;
+    let d_wavelength = value * d_log_d_two_theta * d_two_theta_d_wavelength;
+    if !value.is_finite() || !d_q_squared.is_finite() || !d_wavelength.is_finite() {
+        return Err(IntegratedIntensityCorrectionError::ReflectionOutsideAngularDomain);
+    }
+    Ok((value, d_q_squared, d_wavelength))
 }
 
 #[cfg(test)]
@@ -413,5 +419,19 @@ mod tests {
                 Err(IntegratedIntensityCorrectionError::InvalidTwoTheta)
             );
         }
+        assert_eq!(
+            IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz {
+                two_theta_deg: 90.0
+            }
+            .evaluate(&[1e-150]),
+            Err(IntegratedIntensityCorrectionError::InvalidQSquared)
+        );
+        assert_eq!(
+            IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp {
+                wavelength_angstrom: 1e-200,
+            }
+            .evaluate(&[1e-300]),
+            Err(IntegratedIntensityCorrectionError::ReflectionOutsideAngularDomain)
+        );
     }
 }

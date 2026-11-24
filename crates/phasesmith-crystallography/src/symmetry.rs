@@ -186,11 +186,12 @@ impl SymmetryOperation {
     pub fn apply_fractional(self, xyz: [f64; 3]) -> [f64; 3] {
         let mut result = [0.0; 3];
         for (row, value) in result.iter_mut().enumerate() {
-            *value = (self.translation[row].as_f64()
+            let wrapped = (self.translation[row].as_f64()
                 + (0..3)
                     .map(|column| f64::from(self.rotation[row][column]) * xyz[column])
                     .sum::<f64>())
             .rem_euclid(1.0);
+            *value = if wrapped >= 1.0 { 0.0 } else { wrapped };
         }
         result
     }
@@ -678,8 +679,8 @@ fn lexicographic_f64(left: &[f64; 3], right: &[f64; 3]) -> std::cmp::Ordering {
         .then_with(|| left[2].total_cmp(&right[2]))
 }
 
-fn determinant_i32(matrix: [[i32; 3]; 3]) -> i64 {
-    let matrix = matrix.map(|row| row.map(i64::from));
+fn determinant_i32(matrix: [[i32; 3]; 3]) -> i128 {
+    let matrix = matrix.map(|row| row.map(i128::from));
     matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1])
         - matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0])
         + matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0])
@@ -859,7 +860,7 @@ fn derive_metric_constraints(
                 equation[variable] = i64::try_from(transformed - original)
                     .map_err(|_| SymmetryError::ArithmeticOverflow)?;
             }
-            normalize_integer_equation(&mut equation);
+            normalize_integer_equation(&mut equation)?;
             if equation != [0; 6] {
                 equations.insert(equation);
             }
@@ -875,30 +876,34 @@ fn derive_metric_constraints(
     })
 }
 
-fn normalize_integer_equation(equation: &mut [i64; 6]) {
-    let divisor = equation.iter().copied().fold(0_i64, gcd_i64_allow_zero);
+fn normalize_integer_equation(equation: &mut [i64; 6]) -> Result<(), SymmetryError> {
+    let divisor = equation
+        .iter()
+        .copied()
+        .fold(0_u64, |acc, value| gcd_u64(acc, value.unsigned_abs()));
     if divisor > 1 {
+        let divisor_i64 = i64::try_from(divisor).map_err(|_| SymmetryError::ArithmeticOverflow)?;
         for value in equation.iter_mut() {
-            *value /= divisor;
+            *value /= divisor_i64;
         }
     }
     if let Some(first) = equation.iter().find(|value| **value != 0)
         && *first < 0
     {
         for value in equation.iter_mut() {
-            *value = -*value;
+            *value = value
+                .checked_neg()
+                .ok_or(SymmetryError::ArithmeticOverflow)?;
         }
     }
+    Ok(())
 }
 
-fn gcd_i64_allow_zero(left: i64, right: i64) -> i64 {
-    if left == 0 {
-        return right.abs();
+fn gcd_u64(mut left: u64, mut right: u64) -> u64 {
+    while right != 0 {
+        (left, right) = (right, left % right);
     }
-    if right == 0 {
-        return left.abs();
-    }
-    gcd_i64(left, right)
+    left
 }
 
 #[derive(Clone, Copy)]
@@ -908,57 +913,101 @@ struct Fraction {
 }
 
 impl Fraction {
-    fn new(numerator: i128, denominator: i128) -> Self {
-        let sign = if denominator < 0 { -1 } else { 1 };
-        let numerator = numerator * sign;
-        let denominator = denominator * sign;
-        let divisor = gcd_i128(numerator, denominator);
-        Self {
+    fn new(numerator: i128, denominator: i128) -> Result<Self, SymmetryError> {
+        if denominator == 0 {
+            return Err(SymmetryError::ZeroDenominator);
+        }
+        let (numerator, denominator) = if denominator < 0 {
+            (
+                numerator
+                    .checked_neg()
+                    .ok_or(SymmetryError::ArithmeticOverflow)?,
+                denominator
+                    .checked_neg()
+                    .ok_or(SymmetryError::ArithmeticOverflow)?,
+            )
+        } else {
+            (numerator, denominator)
+        };
+        let divisor = gcd_u128(numerator.unsigned_abs(), denominator.unsigned_abs()).max(1);
+        let divisor = i128::try_from(divisor).map_err(|_| SymmetryError::ArithmeticOverflow)?;
+        Ok(Self {
             numerator: numerator / divisor,
             denominator: denominator / divisor,
-        }
+        })
     }
 
     const fn is_zero(self) -> bool {
         self.numerator == 0
     }
 
-    fn divide(self, right: Self) -> Self {
-        Self::new(
-            self.numerator * right.denominator,
-            self.denominator * right.numerator,
-        )
+    fn divide(self, right: Self) -> Result<Self, SymmetryError> {
+        let numerator = self
+            .numerator
+            .checked_mul(right.denominator)
+            .ok_or(SymmetryError::ArithmeticOverflow)?;
+        let denominator = self
+            .denominator
+            .checked_mul(right.numerator)
+            .ok_or(SymmetryError::ArithmeticOverflow)?;
+        Self::new(numerator, denominator)
     }
 
-    fn subtract(self, right: Self) -> Self {
-        Self::new(
-            self.numerator * right.denominator - right.numerator * self.denominator,
-            self.denominator * right.denominator,
-        )
+    fn subtract(self, right: Self) -> Result<Self, SymmetryError> {
+        let lhs = self
+            .numerator
+            .checked_mul(right.denominator)
+            .ok_or(SymmetryError::ArithmeticOverflow)?;
+        let rhs = right
+            .numerator
+            .checked_mul(self.denominator)
+            .ok_or(SymmetryError::ArithmeticOverflow)?;
+        let numerator = lhs
+            .checked_sub(rhs)
+            .ok_or(SymmetryError::ArithmeticOverflow)?;
+        let denominator = self
+            .denominator
+            .checked_mul(right.denominator)
+            .ok_or(SymmetryError::ArithmeticOverflow)?;
+        Self::new(numerator, denominator)
     }
 
-    fn multiply(self, right: Self) -> Self {
-        Self::new(
-            self.numerator * right.numerator,
-            self.denominator * right.denominator,
-        )
+    fn multiply(self, right: Self) -> Result<Self, SymmetryError> {
+        let numerator = self
+            .numerator
+            .checked_mul(right.numerator)
+            .ok_or(SymmetryError::ArithmeticOverflow)?;
+        let denominator = self
+            .denominator
+            .checked_mul(right.denominator)
+            .ok_or(SymmetryError::ArithmeticOverflow)?;
+        Self::new(numerator, denominator)
     }
 }
 
-fn gcd_i128(left: i128, right: i128) -> i128 {
-    let mut a = left.abs();
-    let mut b = right.abs();
-    while b != 0 {
-        (a, b) = (b, a % b);
+fn gcd_u128(mut left: u128, mut right: u128) -> u128 {
+    while right != 0 {
+        (left, right) = (right, left % right);
     }
-    a.max(1)
+    left
 }
 
-fn rational_rref(equations: &[[i64; 6]]) -> (Vec<[Fraction; 6]>, Vec<usize>) {
+fn rational_rref(
+    equations: &[[i64; 6]],
+) -> Result<(Vec<[Fraction; 6]>, Vec<usize>), SymmetryError> {
     let mut matrix = equations
         .iter()
-        .map(|row| row.map(|value| Fraction::new(i128::from(value), 1)))
-        .collect::<Vec<_>>();
+        .map(|row| {
+            let mut out = [Fraction {
+                numerator: 0,
+                denominator: 1,
+            }; 6];
+            for (slot, &value) in out.iter_mut().zip(row) {
+                *slot = Fraction::new(i128::from(value), 1)?;
+            }
+            Ok(out)
+        })
+        .collect::<Result<Vec<_>, SymmetryError>>()?;
     let mut pivot_row = 0;
     let mut pivot_columns = Vec::new();
     for column in 0..6 {
@@ -971,7 +1020,7 @@ fn rational_rref(equations: &[[i64; 6]]) -> (Vec<[Fraction; 6]>, Vec<usize>) {
         matrix.swap(pivot_row, pivot_row + relative);
         let pivot = matrix[pivot_row][column];
         for value in &mut matrix[pivot_row][column..] {
-            *value = value.divide(pivot);
+            *value = value.divide(pivot)?;
         }
         for row in 0..matrix.len() {
             if row == pivot_row || matrix[row][column].is_zero() {
@@ -980,7 +1029,7 @@ fn rational_rref(equations: &[[i64; 6]]) -> (Vec<[Fraction; 6]>, Vec<usize>) {
             let factor = matrix[row][column];
             let pivot_values = matrix[pivot_row];
             for (inner, value) in matrix[row].iter_mut().enumerate().skip(column) {
-                *value = value.subtract(factor.multiply(pivot_values[inner]));
+                *value = value.subtract(factor.multiply(pivot_values[inner])?)?;
             }
         }
         pivot_columns.push(column);
@@ -989,23 +1038,30 @@ fn rational_rref(equations: &[[i64; 6]]) -> (Vec<[Fraction; 6]>, Vec<usize>) {
             break;
         }
     }
-    (matrix, pivot_columns)
+    Ok((matrix, pivot_columns))
 }
 
 fn integer_nullspace(equations: &[[i64; 6]]) -> Result<Vec<[i64; 6]>, SymmetryError> {
-    let (matrix, pivot_columns) = rational_rref(equations);
+    let (matrix, pivot_columns) = rational_rref(equations)?;
     let free_columns = (0..6)
         .filter(|column| !pivot_columns.contains(column))
         .collect::<Vec<_>>();
     let mut basis = Vec::with_capacity(free_columns.len());
     for free_column in free_columns {
-        let mut vector = [Fraction::new(0, 1); 6];
-        vector[free_column] = Fraction::new(1, 1);
+        let mut vector = [Fraction {
+            numerator: 0,
+            denominator: 1,
+        }; 6];
+        vector[free_column] = Fraction {
+            numerator: 1,
+            denominator: 1,
+        };
         for (row, pivot_column) in pivot_columns.iter().copied().enumerate() {
-            vector[pivot_column] = Fraction::new(
-                -matrix[row][free_column].numerator,
-                matrix[row][free_column].denominator,
-            );
+            let negated = matrix[row][free_column]
+                .numerator
+                .checked_neg()
+                .ok_or(SymmetryError::ArithmeticOverflow)?;
+            vector[pivot_column] = Fraction::new(negated, matrix[row][free_column].denominator)?;
         }
         let common_denominator = vector.iter().try_fold(1_i128, |common, value| {
             lcm_i128(common, value.denominator).ok_or(SymmetryError::ArithmeticOverflow)
@@ -1019,7 +1075,7 @@ fn integer_nullspace(equations: &[[i64; 6]]) -> Result<Vec<[i64; 6]>, SymmetryEr
             integer_vector[index] =
                 i64::try_from(scaled).map_err(|_| SymmetryError::ArithmeticOverflow)?;
         }
-        normalize_integer_equation(&mut integer_vector);
+        normalize_integer_equation(&mut integer_vector)?;
         if integer_vector[free_column] < 0 {
             for value in &mut integer_vector {
                 *value = value
@@ -1033,7 +1089,9 @@ fn integer_nullspace(equations: &[[i64; 6]]) -> Result<Vec<[i64; 6]>, SymmetryEr
 }
 
 fn lcm_i128(left: i128, right: i128) -> Option<i128> {
-    (left / gcd_i128(left, right)).checked_mul(right)
+    let divisor =
+        i128::try_from(gcd_u128(left.unsigned_abs(), right.unsigned_abs()).max(1)).ok()?;
+    (left / divisor).checked_mul(right)
 }
 
 fn classify_crystal_system(
@@ -1346,5 +1404,41 @@ mod tests {
         }
         let hexagonal = SpaceGroup::new(operations).expect("negative-six group");
         assert_eq!(hexagonal.crystal_system(), CrystalSystem::Hexagonal);
+    }
+
+    #[test]
+    fn determinant_overflow_wrapping_and_metric_rref_overflow_are_handled_safely() {
+        assert_eq!(
+            SymmetryOperation::new(
+                [[1_000_000, 0, 0], [0, 1_000_000, 0], [0, 0, 1_000_000]],
+                [Rational::zero(); 3],
+            ),
+            Err(SymmetryError::NonUnimodularRotation)
+        );
+        // Determinant is 16 * (2^30)^2 + 1 = 2^64 + 1, which wraps to +1 in i64 arithmetic.
+        assert_eq!(
+            SymmetryOperation::new(
+                [[16, 1, 0], [0, 1_073_741_824, 1], [1, 0, 1_073_741_824],],
+                [Rational::zero(); 3],
+            ),
+            Err(SymmetryError::NonUnimodularRotation)
+        );
+
+        let wrapped = SymmetryOperation::identity().apply_fractional([-1e-17, -1e-18, 0.25]);
+        assert_eq!(wrapped[0], 0.0);
+        assert_eq!(wrapped[1], 0.0);
+        assert_eq!(wrapped[2], 0.25);
+
+        // Large valid shear involution (det = +1, R^2 = I) must return an error, never panic.
+        let shear = SymmetryOperation::new(
+            [[1, 1_000_000_000, 999_999_937], [0, -1, 0], [0, 0, -1]],
+            [Rational::zero(); 3],
+        )
+        .expect("shear involution is unimodular");
+        let result = SpaceGroup::new(vec![SymmetryOperation::identity(), shear]);
+        assert!(matches!(
+            result,
+            Ok(_) | Err(SymmetryError::ArithmeticOverflow)
+        ));
     }
 }

@@ -226,7 +226,7 @@ impl PreparedXrayScattering {
             s_inverse_angstrom.len(),
             self.site_count(),
             ScatteringAmplitudeUnit::Electrons,
-        );
+        )?;
         let mut unique_values = vec![(0.0, 0.0); self.unique_species_count()];
         for (reflection, &s) in s_inverse_angstrom.iter().enumerate() {
             for (index, row) in self.unique_rows.iter().enumerate() {
@@ -311,7 +311,7 @@ impl PreparedNeutronScattering {
             s_inverse_angstrom.len(),
             self.site_count(),
             ScatteringAmplitudeUnit::Femtometres,
-        );
+        )?;
         for reflection in 0..s_inverse_angstrom.len() {
             let start = reflection * self.site_count();
             for (site, &unique) in self.site_to_unique.iter().enumerate() {
@@ -388,9 +388,25 @@ fn xray_value_and_derivative(row: &XrayTableRow, s: f64) -> (f64, f64) {
 }
 
 fn output_count(reflection_count: usize, site_count: usize) -> Result<usize, ScatteringError> {
-    reflection_count
+    let count = reflection_count
         .checked_mul(site_count)
-        .ok_or(ScatteringError::AllocationOverflow)
+        .ok_or(ScatteringError::AllocationOverflow)?;
+    let byte_len = count
+        .checked_mul(std::mem::size_of::<f64>())
+        .ok_or(ScatteringError::AllocationOverflow)?;
+    if byte_len > isize::MAX as usize {
+        return Err(ScatteringError::AllocationOverflow);
+    }
+    Ok(count)
+}
+
+fn zeroed_f64_vec(count: usize) -> Result<Vec<f64>, ScatteringError> {
+    let mut values = Vec::new();
+    values
+        .try_reserve_exact(count)
+        .map_err(|_| ScatteringError::AllocationOverflow)?;
+    values.resize(count, 0.0);
+    Ok(values)
 }
 
 fn empty_batch(
@@ -398,16 +414,16 @@ fn empty_batch(
     reflection_count: usize,
     site_count: usize,
     unit: ScatteringAmplitudeUnit,
-) -> ScatteringBatch {
-    ScatteringBatch {
-        real: vec![0.0; output_count],
-        imag: vec![0.0; output_count],
-        d_real_d_s: vec![0.0; output_count],
-        d_imag_d_s: vec![0.0; output_count],
+) -> Result<ScatteringBatch, ScatteringError> {
+    Ok(ScatteringBatch {
+        real: zeroed_f64_vec(output_count)?,
+        imag: zeroed_f64_vec(output_count)?,
+        d_real_d_s: zeroed_f64_vec(output_count)?,
+        d_imag_d_s: zeroed_f64_vec(output_count)?,
         reflection_count,
         site_count,
         unit,
-    }
+    })
 }
 
 #[cfg(test)]

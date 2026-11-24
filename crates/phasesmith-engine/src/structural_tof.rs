@@ -270,7 +270,16 @@ pub fn calculate_structural_tof_pattern_dense_with_context(
         &structural.values.intensity,
         execution,
     )?;
-    let mut d_y = vec![0.0; element_count];
+    let byte_len = element_count
+        .checked_mul(std::mem::size_of::<f64>())
+        .ok_or(StructuralTofError::AllocationOverflow)?;
+    if byte_len > isize::MAX as usize {
+        return Err(StructuralTofError::AllocationOverflow);
+    }
+    let mut d_y = Vec::new();
+    d_y.try_reserve_exact(element_count)
+        .map_err(|_| StructuralTofError::AllocationOverflow)?;
+    d_y.resize(element_count, 0.0);
     let reflection_count = input.hkl.len();
     let local = &accumulation.derivatives.local;
     for reflection in 0..reflection_count {

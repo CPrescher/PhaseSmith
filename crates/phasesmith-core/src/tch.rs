@@ -153,13 +153,28 @@ impl TchShape {
         let d_ratio_d_gaussian = -ratio * d_total_fwhm_d_gaussian_fwhm / total_fwhm;
         let d_ratio_d_lorentzian = (1.0 - ratio * d_total_fwhm_d_lorentzian_fwhm) / total_fwhm;
 
+        let d_eta_d_gaussian_fwhm = d_eta_d_ratio * d_ratio_d_gaussian;
+        let d_eta_d_lorentzian_fwhm = d_eta_d_ratio * d_ratio_d_lorentzian;
+        if ![
+            eta,
+            d_total_fwhm_d_gaussian_fwhm,
+            d_total_fwhm_d_lorentzian_fwhm,
+            d_eta_d_gaussian_fwhm,
+            d_eta_d_lorentzian_fwhm,
+        ]
+        .into_iter()
+        .all(f64::is_finite)
+        {
+            return Err(TchError::NonFiniteTransform);
+        }
+
         Ok(Self {
             total_fwhm,
             eta,
             d_total_fwhm_d_gaussian_fwhm,
             d_total_fwhm_d_lorentzian_fwhm,
-            d_eta_d_gaussian_fwhm: d_eta_d_ratio * d_ratio_d_gaussian,
-            d_eta_d_lorentzian_fwhm: d_eta_d_ratio * d_ratio_d_lorentzian,
+            d_eta_d_gaussian_fwhm,
+            d_eta_d_lorentzian_fwhm,
         })
     }
 
@@ -486,6 +501,13 @@ mod tests {
             TchShape::from_component_fwhm(TchWidths {
                 gaussian_fwhm: f64::MAX,
                 lorentzian_fwhm: f64::MAX,
+            }),
+            Err(TchError::NonFiniteTransform)
+        );
+        assert_eq!(
+            TchShape::from_component_fwhm(TchWidths {
+                gaussian_fwhm: 1e-315,
+                lorentzian_fwhm: 0.0,
             }),
             Err(TchError::NonFiniteTransform)
         );

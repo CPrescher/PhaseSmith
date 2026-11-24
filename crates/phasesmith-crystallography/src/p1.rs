@@ -217,15 +217,30 @@ pub fn calculate_p1_dense(
         .ok_or(P1BatchError::AllocationOverflow)?;
     let mut result = P1DenseResult {
         values: empty_values(reflection_count),
-        d_f_real: vec![0.0; element_count],
-        d_f_imag: vec![0.0; element_count],
-        d_intensity: vec![0.0; element_count],
+        d_f_real: zeroed_f64_vec(element_count)?,
+        d_f_imag: zeroed_f64_vec(element_count)?,
+        d_intensity: zeroed_f64_vec(element_count)?,
         layout: validated.layout,
     };
     for reflection in 0..reflection_count {
         calculate_dense_reflection(&validated, reflection, &mut result);
     }
     Ok(result)
+}
+
+fn zeroed_f64_vec(count: usize) -> Result<Vec<f64>, P1BatchError> {
+    let byte_len = count
+        .checked_mul(std::mem::size_of::<f64>())
+        .ok_or(P1BatchError::AllocationOverflow)?;
+    if byte_len > isize::MAX as usize {
+        return Err(P1BatchError::AllocationOverflow);
+    }
+    let mut values = Vec::new();
+    values
+        .try_reserve_exact(count)
+        .map_err(|_| P1BatchError::AllocationOverflow)?;
+    values.resize(count, 0.0);
+    Ok(values)
 }
 
 /// Calculate values and one forward directional derivative without building a
