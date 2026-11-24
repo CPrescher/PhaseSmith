@@ -16,7 +16,7 @@ checks pass, qualifying the repaired Pawley/FCJ integration for develop.
 
 A verified complete Git bundle and SHA-256-verified copies of all 72 original
 working files are retained outside the repository at
-`/Users/clemens/PhaseSmith-preservation/20260921-consolidation/`.
+`<EXTERNAL_ARCHIVE_ROOT>/20260921-consolidation/`.
 Both original checkouts were converted to clean preservation branches only
 after verifying their complete index trees matched the remote snapshots;
 original file contents were unchanged by that operation.

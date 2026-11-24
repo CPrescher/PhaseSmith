@@ -202,7 +202,7 @@ v40 diagnostic packet template, native binary, null-rotation JSON and installed
 SHELXT path. Run and grade take the newly created external output directory.
 The frozen protocol records source, input and executable hashes and every case.
 Source CIFs/HKLs, complete predictions, logs and raw grading products remain at
-`/Users/clemens/ChatGPT/PhaseSmith/cross-structure-effort-0.8-20261101/`.
+`<EXTERNAL_OUTPUT_ROOT>/cross-structure-effort-0.8-20261101/`.
 They are not runtime dependencies or repository additions.
 
 The compact, versioned records are

@@ -217,7 +217,7 @@ Large inputs, all trials, standalone binaries, profiles, mode controls, distribu
 and full verification logs remain external:
 
 ```text
-/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101
+<EXTERNAL_OUTPUT_ROOT>/fast-space-group-search-0.8-20261101
 ```
 
 The source distribution was rebuilt from its extracted directory with a fresh

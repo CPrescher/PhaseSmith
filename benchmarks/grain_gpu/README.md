@@ -135,7 +135,7 @@ Results and the final validation receipt are recorded in `summary.json`.
 Full per-call timing, exact result fingerprints, compact input snapshots, logs,
 and the isolated environment are under:
 
-`/Users/clemens/Codex/2026-11-12/phasesmith-grain-gpu/`
+`<EXTERNAL_RUN_ROOT>/phasesmith-grain-gpu/`
 
 The host is an Apple M4 Pro with 14 CPU cores, 20 GPU cores and 48 GB memory.
 Measurements use alternating pairs on a shared host; unrelated activity was

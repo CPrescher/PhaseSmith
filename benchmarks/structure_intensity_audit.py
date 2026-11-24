@@ -3,8 +3,10 @@
 This is a fixed-model consistency audit, not an ab-initio structure solution.
 """
 
+import argparse
 import hashlib
 import json
+import os
 from dataclasses import replace
 from pathlib import Path
 
@@ -14,15 +16,16 @@ from phasesmith.io.cif import read_cif
 from phasesmith.scattering import XrayNonResonant
 
 
-def main():
+def main(reference_cif=None):
     baseline = Path("runs/learned-3d-profiles-20261025-final")
     output = Path("runs/profile-bias-investigation-20261025/structure-audit")
     output.mkdir(exist_ok=True)
-    source = Path(
-        "/Users/clemens/Dropbox/Science/_Archive/Fe7C3/X-ray diffraction/Final "
-        "plots and tables/Lattice parameter and Atom position table/cif-"
-        "files/fe7c3d_p01.cif"
-    )
+    source = reference_cif or os.environ.get("PHASESMITH_FE7C3_REFERENCE_CIF")
+    if not source:
+        raise ValueError(
+            "pass --reference-cif or set PHASESMITH_FE7C3_REFERENCE_CIF to fe7c3d_p01.cif"
+        )
+    source = Path(source)
     original = read_cif(source).structure
     a = dict(np.load(baseline / "native.npz"))
     correspondence = dict(np.load(baseline / "matched.npz"))
@@ -170,4 +173,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--reference-cif", type=Path, default=None)
+    main(p.parse_args().reference_cif)

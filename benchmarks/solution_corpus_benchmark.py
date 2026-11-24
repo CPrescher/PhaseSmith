@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
 from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
@@ -250,7 +252,7 @@ def main():
     r.add_argument(
         "--shelxt",
         type=Path,
-        default=Path("/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt"),
+        default=Path(os.environ.get("SHELXT") or shutil.which("shelxt") or "shelxt"),
     )
     w = commands.add_parser("worker")
     w.add_argument("--cached-repair-evaluation", action="store_true")

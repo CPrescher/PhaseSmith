@@ -13,9 +13,7 @@ from rows_compare import ROOT, large_cloud, synthetic
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--output", type=Path, default=Path("/Users/clemens/Codex/2026-11-12/phasesmith-row-gpu")
-    )
+    parser.add_argument("--output", type=Path, required=True)
     root = parser.parse_args().output
     root.mkdir(parents=True, exist_ok=True)
     cases = {"synthetic-2674": synthetic()}

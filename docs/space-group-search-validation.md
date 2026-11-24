@@ -207,7 +207,7 @@ all trials, native binaries, numeric evidence, full candidate records, independe
 grading and distributions remain under:
 
 ```text
-/Users/clemens/ChatGPT/PhaseSmith/space-group-discovery-0.8-20261101
+<EXTERNAL_OUTPUT_ROOT>/space-group-discovery-0.8-20261101
 ```
 
 Only rebuildable local build/documentation products are removed after checks;

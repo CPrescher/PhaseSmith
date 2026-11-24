@@ -114,13 +114,13 @@ class MetalRows:
         if not mx.metal.is_available():
             raise RuntimeError("Metal unavailable")
         if library is None:
-            library = Path(
-                os.environ.get(
-                    "PHASESMITH_ROW_GPU_LIBRARY",
-                    "/Users/clemens/Codex/2026-11-12/phasesmith-row-gpu/bridge/target/release/"
-                    "libphasesmith_row_gpu_experiment.dylib",
+            configured = os.environ.get("PHASESMITH_ROW_GPU_LIBRARY")
+            if not configured:
+                raise ValueError(
+                    "pass library or set PHASESMITH_ROW_GPU_LIBRARY to "
+                    "libphasesmith_row_gpu_experiment.dylib"
                 )
-            )
+            library = Path(configured)
         self.lib = ctypes.CDLL(str(library))
         self.lib.row_gpu_run.argtypes = [
             ctypes.POINTER(ctypes.c_double),

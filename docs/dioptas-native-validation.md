@@ -107,4 +107,4 @@ The [compact receipt](https://github.com/CPrescher/PhaseSmith/blob/main/validati
 pins source files, the application wheel, prediction barriers, grading, timings
 and reconstruction checks. Full source data, outputs, test logs, screenshots,
 exports and a ready-to-run Dioptas recipe are external under
-`/Users/clemens/ChatGPT/PhaseSmith/dioptas-native-integration-20261101/`.
+`<EXTERNAL_OUTPUT_ROOT>/dioptas-native-integration-20261101/`.

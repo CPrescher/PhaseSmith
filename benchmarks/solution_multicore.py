@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -182,7 +183,7 @@ def main():
     p.add_argument(
         "--shelxt",
         type=Path,
-        default=Path("/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt"),
+        default=Path(os.environ.get("SHELXT") or shutil.which("shelxt") or "shelxt"),
     )
     p.add_argument("--seconds", type=float, default=15.0)
     p.add_argument("--lock-revision", type=int, default=34)

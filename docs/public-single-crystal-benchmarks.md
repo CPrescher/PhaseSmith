@@ -346,8 +346,8 @@ Working evidence and acquisition probes remain locally under
 PhaseSmith directory did not exist on this machine; the research note creates it
 at the explicitly requested path.
 
-The active checkout is `/Users/clemens/Programming/PhaseSmith`, confirmed from
-its current brief and Fe7C3 work. `/Users/clemens/Documents/PhaseSmith` is a
+The active checkout is `<PHASESMITH_CHECKOUT>`, confirmed from
+its current brief and Fe7C3 work. `<LEGACY_CHECKOUT>` is a
 different, older checkout whose Git HEAD could not be read. Existing edits in
 both checkouts were preserved. This task adds documentation/evidence only;
 no numerical implementation, benchmark result, commit, push or release is implied.

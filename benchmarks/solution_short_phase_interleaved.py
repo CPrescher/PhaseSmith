@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -25,7 +27,7 @@ def main():
     parser.add_argument(
         "--shelxt",
         type=Path,
-        default=Path("/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt"),
+        default=Path(os.environ.get("SHELXT") or shutil.which("shelxt") or "shelxt"),
     )
     args = parser.parse_args()
     if args.output.exists() or not 5 <= args.seconds <= 120:

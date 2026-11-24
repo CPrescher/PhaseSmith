@@ -145,7 +145,7 @@ serial/process parity, derivative and support-boundary checks are included.
 Saved baseline, source/native hashes, profiles, per-pair timings, exact result
 fingerprints and validation logs:
 
-`/Users/clemens/Codex/2026-11-12/phasesmith-grain-cpu-speed/`
+`<EXTERNAL_RUN_ROOT>/phasesmith-grain-cpu-speed/`
 
 The baseline directory contains the task-start `single_crystal` Python sources.
 The owning files were clean at task start on commit
@@ -310,7 +310,7 @@ The frozen production coordinator was verified against its task-start Git
 source. Both final executables use the identical test-only harness and independent
 Cargo target directories. Final source hashes, executable hashes, input manifest,
 binary outputs, individual clocks, profiles and check logs are retained under
-`/Users/clemens/Codex/2026-11-12/phasesmith-native-grain-cpu/`.
+`<EXTERNAL_RUN_ROOT>/phasesmith-native-grain-cpu/`.
 The table comes from `batched/summary.json`; the earlier single-process results
 are in the root `summary.json`, and the rejected trial is in `selection-trial/`.
 

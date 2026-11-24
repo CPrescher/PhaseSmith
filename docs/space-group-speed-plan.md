@@ -66,7 +66,7 @@ representation; existing phase-quality derivatives and Fourier kernels retain
 their independent reference/finite-difference coverage.
 
 Large arrays, source files, binaries and trials stay outside Git under
-`/Users/clemens/ChatGPT/PhaseSmith/fast-space-group-search-0.8-20261101`.
+`<EXTERNAL_OUTPUT_ROOT>/fast-space-group-search-0.8-20261101`.
 
 ## v37: exact absence assessment execution
 

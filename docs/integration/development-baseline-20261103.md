@@ -3,7 +3,7 @@
 ## Branch to continue from
 
 `develop` is the combined 0.8 development candidate. The normal checkout is
-`/Users/clemens/Programming/PhaseSmith`. `main` retains the 0.7 release baseline;
+`<PHASESMITH_CHECKOUT>`. `main` retains the 0.7 release baseline;
 updating develop does not tag or publish a release.
 
 The implementation baseline is reconciliation merge `eebeb17`, whose parents are

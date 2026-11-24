@@ -217,7 +217,7 @@ position grading remains a separately labelled diagnostic, with the primary
 element-labelled distance/count criteria unchanged.
 
 Full data and numerical products stay outside Git under
-`/Users/clemens/ChatGPT/PhaseSmith/matched-prior-symmetry-0.8-20261101/`.
+`<EXTERNAL_OUTPUT_ROOT>/matched-prior-symmetry-0.8-20261101/`.
 
 ## Additional regression controls and checks
 
