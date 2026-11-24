@@ -249,10 +249,11 @@ def main():
     r.add_argument("--split", choices=["development", "holdout"], default="development")
     r.add_argument("--open-holdout", action="store_true")
     r.add_argument("--seconds", type=float, default=30)
+    shelxt_default = os.environ.get("SHELXT") or shutil.which("shelxt")
     r.add_argument(
         "--shelxt",
         type=Path,
-        default=Path(os.environ.get("SHELXT") or shutil.which("shelxt") or "shelxt"),
+        default=Path(shelxt_default) if shelxt_default else None,
     )
     w = commands.add_parser("worker")
     w.add_argument("--cached-repair-evaluation", action="store_true")
@@ -332,6 +333,8 @@ def main():
 
         worker(args)
     else:
+        if args.shelxt is None:
+            parser.error("pass --shelxt, set SHELXT, or put shelxt on PATH")
         if args.split == "holdout" and not args.open_holdout:
             parser.error("holdout stays sealed; --open-holdout explicitly records its opening")
         if not 5 <= args.seconds <= 120:

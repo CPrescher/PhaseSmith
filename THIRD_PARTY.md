@@ -89,8 +89,10 @@ record. The built-in constant model rejects energy-dependent rows.
 - Purpose: native JSON+NPZ project persistence and lossless numeric NPZ archives.
 - Locked releases: `zip 9.5.1` (MIT), `flate2 1.1.9` (`MIT OR Apache-2.0`),
   `sha2 0.10.9` (`MIT OR Apache-2.0`); PhaseSmith uses the MIT option.
-- Runtime status: required native dependencies of `phasesmith-persistence` (and
-  `sha2` in `phasesmith-single-crystal` / `phasesmith-workflows` / `phasesmith`).
+- Runtime status: required native dependencies of `phasesmith-persistence`
+  (`sha2` is also used by `phasesmith-single-crystal`, `phasesmith-workflows`,
+  `phasesmith` under `hdf5`, `phasesmith-validation`, and `phasesmith-hdf5`
+  dev-dependencies).
 - Notices: retained in `THIRD_PARTY_NOTICES.md`.
 
 ## RustFFT

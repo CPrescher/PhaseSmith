@@ -24,12 +24,15 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--seconds", type=float, default=15.0)
     parser.add_argument("--lock-revision", type=int, default=32)
+    shelxt_default = os.environ.get("SHELXT") or shutil.which("shelxt")
     parser.add_argument(
         "--shelxt",
         type=Path,
-        default=Path(os.environ.get("SHELXT") or shutil.which("shelxt") or "shelxt"),
+        default=Path(shelxt_default) if shelxt_default else None,
     )
     args = parser.parse_args()
+    if args.shelxt is None:
+        parser.error("pass --shelxt, set SHELXT, or put shelxt on PATH")
     if args.output.exists() or not 5 <= args.seconds <= 120:
         parser.error("a new directory and seconds in [5,120] are required")
     args.output.mkdir(parents=True)

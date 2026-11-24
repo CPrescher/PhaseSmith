@@ -179,6 +179,6 @@ cell derivatives.
 
 The release benchmark uses a prepared eight-operation C-centred orthorhombic
 group, a `9.1 x 11.2 x 13.4` ångström cell, and `d = 0.5..14` ångströms. It
-generates 3,174 allowed families per iteration. Benchmark numbers are recorded
-in `IMPLEMENTATION_PLAN.md`; they are development-machine observations, not an
-API guarantee.
+generates 3,174 allowed families per iteration. Historical benchmark numbers are
+recorded in `docs/archive/implementation-plan-2026-11.md`; they are
+development-machine observations, not an API guarantee.

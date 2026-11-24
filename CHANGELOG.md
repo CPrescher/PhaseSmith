@@ -8,9 +8,10 @@ development versions.
 
 - Update `THIRD_PARTY_NOTICES.md` and `THIRD_PARTY.md` to match locked crate
   versions (`zip 9.5.1`, `flate2 1.1.9`) and current module paths, refresh 0.9
-  documentation and `mkdocs.yml` navigation, archive `IMPLEMENTATION_PLAN.md`,
-  remove two committed crash tracebacks, and replace hardcoded developer home
-  paths in benchmark scripts and active docs with portable env-var/CLI inputs.
+  documentation and `mkdocs.yml` navigation, bump `pyproject.toml` development
+  status to `4 - Beta`, archive `IMPLEMENTATION_PLAN.md`, remove two committed
+  crash tracebacks, and replace hardcoded developer home paths in benchmark
+  scripts and active docs with portable env-var/CLI inputs.
 - Centralize Rust workspace dependencies in `[workspace.dependencies]`, enable
   Cargo's MSRV-aware `resolver = "3"`, relax exact `=` pins on non-provenance
   external crates (`sha2`, `zip`, `rustfft`, `ndarray`, `hdf5-*`) while keeping
