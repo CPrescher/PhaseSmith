@@ -103,8 +103,9 @@ or serialized implementation details public.
 
 The first machine-readable snapshot was checked in as
 `api/python-public-api-v0.4.1.json`. The cleanup baseline is
-`api/python-public-api-v0.6.0.json`, the reconciled 0.7 record is `api/python-public-api-v0.7.0.json`, and the current
-0.8 record is `api/python-public-api-v0.8.0.json`. The 0.8 record includes
+`api/python-public-api-v0.6.0.json`, followed by `api/python-public-api-v0.7.0.json`,
+`api/python-public-api-v0.8.0.json`, and the current 0.9 record
+`api/python-public-api-v0.9.0.json`. The 0.8+ records include
 explicit single-crystal submodules. Each record contains names in `__all__`, their
 domain/adapter/validation tier,
 implementation target, and callable signature when introspection supports one.

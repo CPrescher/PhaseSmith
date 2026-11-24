@@ -147,11 +147,12 @@ atom count; use `estimate_solution_memory` before a large search.
 
 ```toml
 [dependencies]
-phasesmith = "0.8"
+phasesmith = "0.9"
 ```
 
-The facade defaults to `single-crystal`, which includes `spots`, `solution` and
-`row-search`. Use `default-features = false` for a minimal powder build, or select
+The facade defaults to `single-crystal`, which includes `spots`, `solution`,
+`row-search`, and `grains` (including `lattice_symmetry` and `measurement`).
+Use `default-features = false` for a minimal powder build, or select
 those capabilities individually. Pre-release experimental Cargo feature names are removed in 0.8; use the
 capability names above. HDF5 stays optional for
 Rust: add `features = ["hdf5"]` for original detector files. It is included in

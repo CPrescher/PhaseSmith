@@ -5,7 +5,7 @@ notice covers compatible behavior derived from separately licensed software.
 
 ## Published DAFi algorithm
 
-The experimental **Row search (DAFi-based)** method independently implements
+The **Row search (DAFi-based)** method independently implements
 equidistant-row grouping described by Andrey Aslandukov, Matvii Aslandukov,
 Natalia Dubrovinskaia and Leonid Dubrovinsky, “Domain Auto Finder (DAFi)
 program: the analysis of single-crystal X-ray diffraction data from
@@ -57,7 +57,7 @@ SOFTWARE.
 
 ## Native persistence dependencies
 
-The native JSON+NPZ persistence codec uses `zip` 5.1.1 (MIT), `flate2` 1.1
+The native JSON+NPZ persistence codec uses `zip` 9.5.1 (MIT), `flate2` 1.1.9
 (`MIT OR Apache-2.0`), and `sha2` 0.10.9 (`MIT OR Apache-2.0`). PhaseSmith uses
 the MIT option for the dual-licensed crates.
 
@@ -117,9 +117,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## RustFFT 6.4.1 (experimental structure solution)
+## RustFFT 6.4.1 (structure search and detector FFTs)
 
-The `phasesmith-single-crystal::solution` module uses RustFFT 6.4.1, licensed under
+The `phasesmith-single-crystal` (`solution` and `spots`) modules use RustFFT 6.4.1, licensed under
 `MIT OR Apache-2.0`; PhaseSmith uses the MIT option. Its FFT implementation
 is a dependency, separate from the independently implemented crystallographic
 phasing equations. Upstream: https://github.com/ejmahler/RustFFT
@@ -146,8 +146,9 @@ SOFTWARE.
 
 ## Dioptas frame validity and seat-shadow estimator
 
-`phasesmith.experimental.frame_validity` adapts the mask representation and
-original-count illumination-ratio estimator from Dioptas
+`phasesmith.single_crystal.frame_validity` (and the native
+`phasesmith_single_crystal::spots::frame_validity` kernel) adapts the mask
+representation and original-count illumination-ratio estimator from Dioptas
 `dioptas/model/frame_validity.py`, revision
 `651c27f98108fb19f60db9a8cb227755b2f9d6a2`. Application readers, display transforms,
 resource settings and UI/cache dependencies are not included. The source is

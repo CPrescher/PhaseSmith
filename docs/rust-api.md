@@ -14,7 +14,7 @@ an explicit compatible range in `Cargo.toml`:
 
 ```toml
 [dependencies]
-phasesmith = "0.8"
+phasesmith = "0.9"
 ```
 
 ## Facade modules
@@ -29,9 +29,13 @@ phasesmith = "0.8"
 | `phasesmith::model` | `phasesmith-model` | Application-neutral project and pattern records. |
 | `phasesmith::workflows` | `phasesmith-workflows` | Le Bail, Pawley, Rietveld, quantitative, validation and single-crystal workflows. |
 | `phasesmith::spots` | `phasesmith-single-crystal` | Single-crystal detection, geometry, integration and profile kernels. |
+| `phasesmith::grains` | `phasesmith-single-crystal` | Position-only multi-grain lattice discovery and frozen-pool validation. |
+| `phasesmith::lattice_symmetry` | `phasesmith-single-crystal` | Bravais-lattice search and symmetry-constrained cell refinement. |
+| `phasesmith::measurement` | `phasesmith-single-crystal` | Reflection prediction and intensity measurement for refined lattices. |
 | `phasesmith::row_search` | `phasesmith-single-crystal` | Equidistant reciprocal-row grouping for lattice discovery. |
 | `phasesmith::solution` | `phasesmith-single-crystal` | Structure search and candidate assessment from corrected intensities. |
 | `phasesmith::hdf5` (optional) | `phasesmith-hdf5` | Native HDF5 detector-frame input. |
+| `phasesmith::single_crystal_files` (optional) | `phasesmith` (`single-crystal` + `hdf5`) | Native HDF5 file workflow and versioned output host adapter. |
 | `phasesmith::persistence` | `phasesmith-persistence` | Native JSON+NPZ project persistence and reports. |
 
 Single-crystal kernels are enabled by default. The
