@@ -6,6 +6,16 @@ development versions.
 
 ## Unreleased
 
+- Centralize Rust workspace dependencies in `[workspace.dependencies]`, replace
+  exact `=` external pins in published library crates with compatible semver
+  ranges, re-export `lattice_symmetry` and `measurement` on the `phasesmith`
+  facade, suppress implicit optional-dependency Cargo features, and quiet
+  library stdout/stderr side effects in `single_crystal_files` and
+  `phasesmith-workflows`.
+- Move citrate benchmark scripts that import `phasesmith.validation` out of
+  `oracle/scripts/` into `benchmarks/`, enforce oracle isolation across all
+  `oracle/scripts/*.py`, align `CITATION.cff` with `scripts/release_version.py`,
+  and tighten CI `--locked`, feature-matrix, and `cmake` setup.
 - Isolate all remaining detached PyO3 numerical bindings from concurrent Python
   buffer mutations by copying NumPy inputs into owned Rust snapshots before
   releasing the GIL.

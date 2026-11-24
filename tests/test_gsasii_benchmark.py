@@ -542,6 +542,8 @@ def test_trirubidium_citrate_comparison_gates_expected_transfer_failure() -> Non
         "benchmarks/compare_gsasii_iucr_silicon_standard.py",
         "benchmarks/compare_gsasii_iucr_sodium_citrate_silicon.py",
         "benchmarks/compare_gsasii_iucr_tripotassium_citrate_silicon.py",
+        "benchmarks/benchmark_citrate_isotropic_broadening.py",
+        "benchmarks/benchmark_citrate_stephens.py",
         "benchmarks/compare_gsasii_iucr_trirubidium_citrate_silicon.py",
         "benchmarks/compare_gsasii_nist_srm660c.py",
         "benchmarks/compare_gsasii_pbso4.py",
@@ -580,21 +582,9 @@ def test_benchmark_help_does_not_require_gsasii(script: str) -> None:
 
 
 def test_external_worker_does_not_import_rietveld() -> None:
-    for relative_path in (
-        "oracle/scripts/benchmark_cw_profile.py",
-        "oracle/scripts/benchmark_citrate_axial_profile.py",
-        "oracle/scripts/benchmark_citrate_low_angle_forensics.py",
-        "oracle/scripts/benchmark_citrate_residual_forensics.py",
-        "oracle/scripts/benchmark_iucr_silicon_standard.py",
-        "oracle/scripts/benchmark_iucr_sodium_citrate_silicon.py",
-        "oracle/scripts/benchmark_nist_srm660c.py",
-        "oracle/scripts/benchmark_pbso4.py",
-        "oracle/scripts/benchmark_powgen_tof.py",
-        "oracle/scripts/benchmark_qarr.py",
-        "oracle/scripts/benchmark_rowles_qpa.py",
-        "oracle/scripts/benchmark_real_lebail.py",
-        "oracle/scripts/benchmark_structural_pattern.py",
-        "oracle/scripts/calibrate_rowles_fpa.py",
-    ):
-        source = (REPOSITORY_ROOT / relative_path).read_text()
-        assert "import phasesmith" not in source
+    oracle_scripts = sorted((REPOSITORY_ROOT / "oracle/scripts").glob("*.py"))
+    assert oracle_scripts, "expected oracle/scripts/*.py files"
+    for script_path in oracle_scripts:
+        source = script_path.read_text(encoding="utf-8")
+        assert "import phasesmith" not in source, f"{script_path} must not import phasesmith"
+        assert "from phasesmith" not in source, f"{script_path} must not import phasesmith"

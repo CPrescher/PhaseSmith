@@ -355,7 +355,7 @@ in the same pass; GSAS-II remains only the pinned black-box oracle.
 The reviewed record is
 `validation/results/2026-08-13-citrate-isotropic-broadening-ablation.json`.
 The intentionally slow external campaign can be repeated with
-`oracle/scripts/benchmark_citrate_isotropic_broadening.py`; it is not part of
+`benchmarks/benchmark_citrate_isotropic_broadening.py`; it is not part of
 the ordinary test suite.
 
 The orthorhombic Stephens convention is now separately pinned. A Pnma oracle
@@ -390,7 +390,7 @@ implementation and GSAS-II convention are verified, but Stephens broadening is
 not the missing mechanism that closes these citrate targets under the fixed
 nuisance model. The reviewed record is
 `validation/results/2026-08-13-citrate-stephens-ablation.json`; rerun it with
-`oracle/scripts/benchmark_citrate_stephens.py`.
+`benchmarks/benchmark_citrate_stephens.py`.
 
 ### Rubidium legacy-profile residual forensics
 

@@ -6,6 +6,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: single-crystal-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   native-and-python:
     strategy:
@@ -19,11 +22,11 @@ jobs:
         with:
           python-version: '3.13'
       - uses: dtolnay/rust-toolchain@stable
+      - run: python -m pip install maturin numpy pytest scipy 'cmake>=3.26' gemmi==0.7.5
       - run: cargo test -p phasesmith-single-crystal --all-features -p phasesmith-hdf5 --locked
       - run: cargo test -p phasesmith-workflows --features single-crystal --locked
       - run: cargo test -p phasesmith --example single_crystal_workflow --features hdf5 --locked
       - run: cargo build -p phasesmith --example single_crystal_workflow --features hdf5 --locked
-      - run: python -m pip install maturin numpy pytest scipy 'cmake>=3.26' gemmi==0.7.5
       - run: maturin build --release --locked --out dist-single-crystal
       - shell: bash
         run: python -m pip install dist-single-crystal/*.whl
