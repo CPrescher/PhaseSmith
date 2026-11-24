@@ -14,7 +14,7 @@ members = [
   "crates/phasesmith-validation",
   "crates/phasesmith-workflows",
 ]
-resolver = "2"
+resolver = "3"
 
 [workspace.package]
 version = "0.9.0"
@@ -33,3 +33,35 @@ missing_docs = "warn"
 [workspace.lints.clippy]
 all = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
+
+[workspace.dependencies]
+phasesmith = { version = "0.9.0", path = "crates/phasesmith-rs", default-features = false }
+phasesmith-core = { version = "0.9.0", path = "crates/phasesmith-core" }
+phasesmith-crystallography = { version = "0.9.0", path = "crates/phasesmith-crystallography" }
+phasesmith-engine = { version = "0.9.0", path = "crates/phasesmith-engine" }
+phasesmith-execution = { version = "0.9.0", path = "crates/phasesmith-execution" }
+phasesmith-hdf5 = { version = "0.9.0", path = "crates/phasesmith-hdf5" }
+phasesmith-io = { version = "0.9.0", path = "crates/phasesmith-io" }
+phasesmith-model = { version = "0.9.0", path = "crates/phasesmith-model" }
+phasesmith-persistence = { version = "0.9.0", path = "crates/phasesmith-persistence" }
+phasesmith-single-crystal = { version = "0.9.0", path = "crates/phasesmith-single-crystal", default-features = false }
+phasesmith-validation = { version = "0.9.0", path = "crates/phasesmith-validation" }
+phasesmith-workflows = { version = "0.9.0", path = "crates/phasesmith-workflows" }
+
+criterion = "0.7"
+flate2 = { version = "1.1", default-features = false, features = ["rust_backend"] }
+hdf5 = { package = "hdf5-metno", version = "0.15.1", features = ["static", "zlib", "lzf"] }
+hdf5-bitshuffle = "1.0.0"
+libz-sys = { version = "1.1", features = ["static"] }
+# Intentionally pinned: SPACE_GROUP_DATABASE_PROVENANCE records exact Moyo 0.15.0 Hall tables.
+moyo = "=0.15.0"
+nalgebra = "0.35"
+ndarray = { version = "0.17.2", default-features = false, features = ["std"] }
+npy = { package = "numpy", version = "0.27" }
+pyo3 = { version = "0.27", features = ["extension-module", "abi3-py311"] }
+rayon = "1.11"
+rustfft = "6.4.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10.9"
+zip = { version = "9.5.1", default-features = false, features = ["deflate-flate2"] }

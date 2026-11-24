@@ -11,7 +11,7 @@ repository.workspace = true
 readme.workspace = true
 
 [dependencies]
-rayon = "1.11"
+rayon = { workspace = true }
 
 [lints]
 workspace = true

@@ -20,6 +20,49 @@ use std::{
 };
 /// File-host validation, I/O or workflow result.
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+const MAX_HOST_TEXT_BYTES: usize = 64 * 1024 * 1024;
+const MAX_PONI_BYTES: usize = 1024 * 1024;
+
+fn read_bounded_bytes(path: &Path, max_bytes: usize) -> Result<Vec<u8>> {
+    use std::io::Read as _;
+    let file = fs::File::open(path)?;
+    let max_u64 = u64::try_from(max_bytes).unwrap_or(u64::MAX);
+    let mut bytes = Vec::new();
+    file.take(max_u64.saturating_add(1))
+        .read_to_end(&mut bytes)?;
+    if bytes.len() > max_bytes {
+        return Err(format!(
+            "input file exceeds {max_bytes}-byte limit: {}",
+            path.display()
+        )
+        .into());
+    }
+    Ok(bytes)
+}
+
+fn format_cif_quoted(value: &str) -> Result<String> {
+    if value.bytes().any(|b| !(0x20..=0x7e).contains(&b)) {
+        return Err("CIF string must contain printable ASCII characters only".into());
+    }
+    if !value.contains('\'') {
+        Ok(format!("'{value}'"))
+    } else if !value.contains('"') {
+        Ok(format!("\"{value}\""))
+    } else {
+        Err("CIF string contains both single and double quotes".into())
+    }
+}
+
+fn is_valid_cif_atom_symbol(symbol: &str) -> bool {
+    !symbol.is_empty()
+        && !matches!(
+            symbol.as_bytes()[0],
+            b'_' | b'#' | b'$' | b';' | b'[' | b']'
+        )
+        && symbol
+            .bytes()
+            .all(|b| b.is_ascii_graphic() && b != b'\'' && b != b'"')
+}
 struct Source(CachedReader);
 impl sc::FrameSource for Source {
     fn shape(&self) -> [usize; 3] {
@@ -111,6 +154,7 @@ pub type StageCallback<'a> = dyn FnMut(&str, f64) -> Result<()> + 'a;
 struct Save<'a> {
     on_stage: Option<&'a mut StageCallback<'a>>,
     hard_process_deadline: bool,
+    cli_output: bool,
     root: PathBuf,
     timings: Vec<(String, f64)>,
     shape: [usize; 2],
@@ -237,7 +281,9 @@ impl sc::Observer for Save<'_> {
     }
 
     fn stage(&mut self, name: &str, seconds: f64) -> sc::Result<()> {
-        eprintln!("{name}: {seconds:.6} s");
+        if self.cli_output {
+            eprintln!("{name}: {seconds:.6} s");
+        }
         self.timings.push((name.into(), seconds));
         self.json(
             &format!("timing-{name}.json"),
@@ -636,7 +682,8 @@ fn matrix(a: sc::M3, b: sc::M3) -> sc::M3 {
     std::array::from_fn(|i| std::array::from_fn(|j| (0..3).map(|k| a[i][k] * b[k][j]).sum()))
 }
 fn poni(path: &Path, pixel1: f64, pixel2: f64, axis: sc::V3) -> Result<Geometry> {
-    let text = fs::read_to_string(path)?;
+    let text = String::from_utf8(read_bounded_bytes(path, MAX_PONI_BYTES)?)
+        .map_err(|e| format!("PONI file {} is not valid UTF-8: {e}", path.display()))?;
     let mut map = std::collections::BTreeMap::new();
     for line in text.lines().filter(|l| !l.trim_start().starts_with('#')) {
         if let Some((k, v)) = line.split_once(':') {
@@ -709,7 +756,10 @@ fn interpolate_packet(args: &[String]) -> Result<()> {
     if args.len() != 4 {
         return Err("usage: --interpolate-phase-density INPUT.json NEW_OUTPUT.json".into());
     }
-    let packet: Value = serde_json::from_slice(&fs::read(&args[2])?)?;
+    let packet: Value = serde_json::from_slice(&read_bounded_bytes(
+        Path::new(&args[2]),
+        MAX_HOST_TEXT_BYTES,
+    )?)?;
     let shape: [usize; 3] = serde_json::from_value(packet["shape"].clone())?;
     let target: [usize; 3] = serde_json::from_value(packet["target"].clone())?;
     let density: Vec<f64> = serde_json::from_value(packet["density"].clone())?;
@@ -735,6 +785,7 @@ fn dispatch(args: &[String]) -> Result<()> {
         solution::Cancellation::default(),
         None,
         true,
+        true,
     )
     .map(|_| ())
 }
@@ -749,11 +800,21 @@ fn validate_acquisition_range(acquisition: &sc::Acquisition, total_frames: usize
     Ok(())
 }
 
+fn acquisition_angles(acquisition: &sc::Acquisition) -> Vec<[f64; 2]> {
+    (acquisition.first..=acquisition.last)
+        .map(|i| {
+            let low = acquisition.omega_zero + i as f64 * acquisition.omega_step;
+            [low, low + acquisition.exposure]
+        })
+        .collect()
+}
+
 fn run_request<'a>(
     request: Request,
     cancellation: solution::Cancellation,
     on_stage: Option<&'a mut StageCallback<'a>>,
     hard_process_deadline: bool,
+    cli_output: bool,
 ) -> Result<Value> {
     if cancellation.is_cancelled() {
         return Err("single-crystal workflow cancelled".into());
@@ -764,8 +825,11 @@ fn run_request<'a>(
         out,
         diagnostic,
         registered,
+        verify_before_run,
     } = request;
-    verify_registered(&registered)?;
+    if verify_before_run {
+        verify_registered(&registered)?;
+    }
     if out.exists() {
         return Err("output directory must be new".into());
     }
@@ -808,6 +872,7 @@ fn run_request<'a>(
     let mut save = Save {
         on_stage,
         hard_process_deadline,
+        cli_output,
         root: out.clone(),
         timings: vec![],
         shape: [shape[1], shape[2]],
@@ -817,13 +882,7 @@ fn run_request<'a>(
         aperture: vec![],
         hard_search_seconds: number(&protocol["search"], "hard_seconds")?,
         search_deadline: None,
-        angles: (options.acquisition.first..=options.acquisition.last)
-            .map(|i| {
-                let a = &options.acquisition;
-                let low = a.omega_zero + i as f64 * a.omega_step;
-                [low, low + a.exposure]
-            })
-            .collect(),
+        angles: acquisition_angles(&options.acquisition),
     };
     let started = Instant::now();
     if let Some(path) = diagnostic {
@@ -844,7 +903,9 @@ fn run_request<'a>(
             )?;
             let summary = completion_summary(&result, &save);
             json_file(&out.join("workflow-result.json"), &summary)?;
-            println!("{summary}");
+            if cli_output {
+                println!("{summary}");
+            }
             Ok(summary)
         }
         Err(e) => {
@@ -1091,6 +1152,7 @@ struct Request {
     out: PathBuf,
     diagnostic: Option<PathBuf>,
     registered: Vec<(PathBuf, String)>,
+    verify_before_run: bool,
 }
 fn request(args: &[String]) -> Result<Request> {
     if args.get(1).is_some_and(|a| a == "--mgsio3") {
@@ -1099,7 +1161,10 @@ fn request(args: &[String]) -> Result<Request> {
         }
         let source: Value =
             serde_json::from_str(include_str!("../examples/data/mgsio3-source.json"))?;
-        let mut protocol: Value = serde_json::from_slice(&fs::read(&args[3])?)?;
+        let mut protocol: Value = serde_json::from_slice(&read_bounded_bytes(
+            Path::new(&args[3]),
+            MAX_HOST_TEXT_BYTES,
+        )?)?;
         if let Some(mode) = args.get(6) {
             if !protocol["space_group_search"]["effort"].is_object() {
                 return Err(
@@ -1144,17 +1209,25 @@ fn request(args: &[String]) -> Result<Request> {
             out: PathBuf::from(&args[4]),
             diagnostic: None,
             registered,
+            verify_before_run: true,
         });
     }
     if !(4..=5).contains(&args.len()) {
         return Err("use --help for the native input and output arguments".into());
     }
     Ok(Request {
-        packet: serde_json::from_slice(&fs::read(&args[1])?)?,
-        rotations: serde_json::from_slice(&fs::read(&args[2])?)?,
+        packet: serde_json::from_slice(&read_bounded_bytes(
+            Path::new(&args[1]),
+            MAX_HOST_TEXT_BYTES,
+        )?)?,
+        rotations: serde_json::from_slice(&read_bounded_bytes(
+            Path::new(&args[2]),
+            MAX_HOST_TEXT_BYTES,
+        )?)?,
         out: PathBuf::from(&args[3]),
         diagnostic: args.get(4).map(PathBuf::from),
         registered: vec![],
+        verify_before_run: false,
     })
 }
 fn verify_registered(files: &[(PathBuf, String)]) -> Result<()> {
@@ -1180,7 +1253,8 @@ fn verify_registered(files: &[(PathBuf, String)]) -> Result<()> {
 
 fn run_diagnostic(path: &Path, options: &sc::Options, save: &mut Save) -> Result<()> {
     let started = Instant::now();
-    let rows: Vec<([i32; 3], [f64; 2])> = serde_json::from_slice(&fs::read(path)?)?;
+    let rows: Vec<([i32; 3], [f64; 2])> =
+        serde_json::from_slice(&read_bounded_bytes(path, MAX_HOST_TEXT_BYTES)?)?;
     let observations: Vec<_> = rows
         .into_iter()
         .map(|(h, v)| solution::Observation {
@@ -1305,7 +1379,10 @@ fn assess_packet(args: &[String]) -> Result<()> {
     if args.len() != 4 {
         return Err("usage: --assess-symmetry INPUT.json NEW_OUTPUT.json".into());
     }
-    let packet: Value = serde_json::from_slice(&fs::read(&args[2])?)?;
+    let packet: Value = serde_json::from_slice(&read_bounded_bytes(
+        Path::new(&args[2]),
+        MAX_HOST_TEXT_BYTES,
+    )?)?;
     let c: [f64; 6] = serde_json::from_value(packet["cell"].clone())?;
     let cell = UnitCell {
         a_angstrom: c[0],
@@ -1527,17 +1604,11 @@ fn write_setting_cif(
         .refinement
         .as_ref()
         .ok_or("selected space-group model lacks a constrained setting")?;
+    let hm_quoted = format_cif_quoted(group["symbol"].as_str().ok_or("missing group symbol")?)?;
+    let hall_quoted = format_cif_quoted(group["hall"].as_str().ok_or("missing Hall setting")?)?;
     let mut text = format!(
-        "data_phasesmith_ranked_setting\n# Ranked structure-search hypothesis; uniqueness and converged refinement are not established.\n_cell_length_a {}\n_cell_length_b {}\n_cell_length_c {}\n_cell_angle_alpha {}\n_cell_angle_beta {}\n_cell_angle_gamma {}\n_space_group_IT_number {}\n_space_group_name_H-M_alt '{}'\n_space_group_name_Hall '{}'\nloop_\n_atom_site_label\n_atom_site_type_symbol\n_atom_site_fract_x\n_atom_site_fract_y\n_atom_site_fract_z\n_atom_site_U_iso_or_equiv\n",
-        cell[0],
-        cell[1],
-        cell[2],
-        cell[3],
-        cell[4],
-        cell[5],
-        group["number"],
-        group["symbol"].as_str().ok_or("missing group symbol")?,
-        group["hall"].as_str().ok_or("missing Hall setting")?
+        "data_phasesmith_ranked_setting\n# Ranked structure-search hypothesis; uniqueness and converged refinement are not established.\n_cell_length_a {}\n_cell_length_b {}\n_cell_length_c {}\n_cell_angle_alpha {}\n_cell_angle_beta {}\n_cell_angle_gamma {}\n_space_group_IT_number {}\n_space_group_name_H-M_alt {hm_quoted}\n_space_group_name_Hall {hall_quoted}\nloop_\n_atom_site_label\n_atom_site_type_symbol\n_atom_site_fract_x\n_atom_site_fract_y\n_atom_site_fract_z\n_atom_site_U_iso_or_equiv\n",
+        cell[0], cell[1], cell[2], cell[3], cell[4], cell[5], group["number"],
     );
     for (i, ((symbol, xyz), u)) in refined
         .species
@@ -1546,6 +1617,9 @@ fn write_setting_cif(
         .zip(&refined.u_equiv)
         .enumerate()
     {
+        if !is_valid_cif_atom_symbol(symbol) {
+            return Err("invalid CIF atom symbol".into());
+        }
         writeln!(
             &mut text,
             "{symbol}{} {symbol} {:.15} {:.15} {:.15} {:.15}",
@@ -1662,9 +1736,11 @@ pub fn run_packet(
             out,
             diagnostic: None,
             registered,
+            verify_before_run: false,
         },
         cancellation,
         Some(on_stage),
+        false,
         false,
     )
 }
@@ -1718,6 +1794,7 @@ mod library_host_tests {
             hard_search_seconds: 75.,
             search_deadline: None,
             hard_process_deadline: false,
+            cli_output: false,
             on_stage: Some(&mut callback),
         };
         sc::Observer::stage(&mut save, "profile_fitting_scaling", 0.).unwrap();
@@ -1725,5 +1802,26 @@ mod library_host_tests {
         drop(save);
         assert!(seen);
         fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn host_helpers_bound_reads_and_quote_cif_strings_safely() {
+        let root =
+            std::env::temp_dir().join(format!("phasesmith-host-helpers-{}", std::process::id()));
+        let _ = fs::create_dir(&root);
+        let file = root.join("sample.txt");
+        fs::write(&file, b"0123456789").unwrap();
+        assert_eq!(read_bounded_bytes(&file, 10).unwrap(), b"0123456789");
+        assert!(read_bounded_bytes(&file, 9).is_err());
+        fs::remove_dir_all(root).unwrap();
+
+        assert_eq!(format_cif_quoted("P b n m").unwrap(), "'P b n m'");
+        assert_eq!(format_cif_quoted("P 2'").unwrap(), "\"P 2'\"");
+        assert!(format_cif_quoted("bad\nline").is_err());
+        assert!(format_cif_quoted("non-ascii \u{00e9}").is_err());
+        assert!(format_cif_quoted("both ' and \"").is_err());
+        assert!(is_valid_cif_atom_symbol("Si"));
+        assert!(!is_valid_cif_atom_symbol("_Si"));
+        assert!(!is_valid_cif_atom_symbol("#Si"));
+        assert!(!is_valid_cif_atom_symbol(";Si"));
     }
 }

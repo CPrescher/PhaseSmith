@@ -14,10 +14,10 @@ readme.workspace = true
 bench = false
 
 [dependencies]
-phasesmith-execution = { version = "0.9.0", path = "../phasesmith-execution" }
+phasesmith-execution = { workspace = true }
 
 [dev-dependencies]
-criterion = "0.7"
+criterion = { workspace = true }
 
 [[bench]]
 name = "structure_factor"

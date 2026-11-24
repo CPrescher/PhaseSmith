@@ -203,7 +203,6 @@ pub(super) fn measure(
         }
     }
     let all_count = hkl.len();
-    eprintln!("native integrate {target_count} target / {all_count} all crossings");
     let widths: Vec<_> = centres
         .iter()
         .map(|c| (0.9 / profile_geometry([c[0], c[1]], g).2.abs() + 0.5).min(4.5))

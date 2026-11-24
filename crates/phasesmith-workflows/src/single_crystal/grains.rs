@@ -255,7 +255,6 @@ fn discover_and_validate(
         &search::Method::Fft,
         &mut |_, _| o.checkpoint().map_err(|e| SpotError(e.0)),
     )?;
-    eprintln!("native grain discovery: {} lattices", models.len());
     Ok(search::validate(
         q,
         training,

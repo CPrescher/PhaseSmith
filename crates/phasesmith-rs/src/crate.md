@@ -30,6 +30,7 @@ single-crystal structure refinement is outside the current scope.
 | Save native projects and write stable reports | [`persistence`] |
 | Bound worker threads for application integration | [`execution`] |
 | Analyze single-crystal detector data | `spots` (default capability) |
+| Discover multi-grain lattices, Bravais symmetry, and integrate reflections | `grains`, `lattice_symmetry`, `measurement` (default capability) |
 | Group equidistant reciprocal rows | `row_search` (default capability) |
 | Search structures from corrected intensities | `solution` (default capability) |
 
@@ -127,7 +128,8 @@ minor releases. Commit `Cargo.lock` in applications and consult the versioned
 
 
 Single-crystal capabilities are enabled by default. `default-features = false`
-retains a minimal facade; `spots`, `solution`, `row-search` can be selected
-individually. `hdf5` is optional and builds bundled detector-frame input.
-The pre-0.8 experimental feature names remain aliases. Candidate polishing is
-internal to search; there is no standalone single-crystal refinement workflow.
+retains a minimal facade; `spots`, `solution`, `row-search`, and `grains` can be
+selected individually. `hdf5` is optional and builds bundled detector-frame
+input, and `single-crystal-files` enables both `single-crystal` and `hdf5`.
+Candidate polishing is internal to search; there is no standalone single-crystal
+refinement workflow.
