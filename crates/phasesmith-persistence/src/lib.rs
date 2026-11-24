@@ -493,6 +493,7 @@ fn save_project_parts(
             message: "project destination has no parent directory".to_owned(),
         })?;
     fs::create_dir_all(parent)?;
+    let existed_before = destination.exists();
     let temporary = create_temporary_directory(parent, &destination)?;
     let write_result: Result<(), PersistenceError> = (|| {
         write_synced_file(&temporary.join(PROJECT_ARRAYS_NAME), &encoded_archive)?;
@@ -526,7 +527,15 @@ fn save_project_parts(
         Ok(())
     })();
     if write_result.is_err() && destination.is_dir() {
-        let _ = recover_interrupted_save(&destination);
+        if options.overwrite {
+            let _ = recover_interrupted_save(&destination);
+        } else {
+            let _ = remove_if_exists(&destination.join(PROJECT_MANIFEST_NAME));
+            let _ = remove_if_exists(&destination.join(PROJECT_ARRAYS_NAME));
+            if !existed_before {
+                let _ = fs::remove_dir(&destination);
+            }
+        }
     }
     let _ = fs::remove_dir_all(&temporary);
     write_result?;
@@ -910,9 +919,34 @@ fn recover_interrupted_save(directory: &Path) -> Result<(), PersistenceError> {
         return Ok(());
     }
     if manifest.exists() && arrays.exists() {
-        remove_if_exists(&manifest_backup)?;
-        remove_if_exists(&arrays_backup)?;
-        sync_directory(directory)?;
+        for backup in [&manifest_backup, &arrays_backup] {
+            if let Err(error) = remove_if_exists(backup)
+                && !matches!(
+                    error,
+                    PersistenceError::Io(ref io_error)
+                        if matches!(
+                            io_error.kind(),
+                            std::io::ErrorKind::PermissionDenied
+                                | std::io::ErrorKind::ReadOnlyFilesystem
+                        )
+                )
+            {
+                return Err(error);
+            }
+        }
+        if let Err(error) = sync_directory(directory)
+            && !matches!(
+                error,
+                PersistenceError::Io(ref io_error)
+                    if matches!(
+                        io_error.kind(),
+                        std::io::ErrorKind::PermissionDenied
+                            | std::io::ErrorKind::ReadOnlyFilesystem
+                    )
+            )
+        {
+            return Err(error);
+        }
         return Ok(());
     }
     for (current, backup) in [(&arrays, &arrays_backup), (&manifest, &manifest_backup)] {

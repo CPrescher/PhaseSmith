@@ -223,8 +223,16 @@ impl CellGeometry {
             return Err(CellError::ZeroReflection);
         }
         let d_spacing = q_squared.sqrt().recip();
+        if !d_spacing.is_finite() {
+            return Err(CellError::DegenerateCell);
+        }
         let factor = -0.5 * d_spacing.powi(3);
-        Ok((d_spacing, q_derivatives.map(|value| factor * value)))
+        let derivatives =
+            q_derivatives.map(|value| if value == 0.0 { 0.0 } else { factor * value });
+        if !derivatives.iter().all(|value| value.is_finite()) {
+            return Err(CellError::DegenerateCell);
+        }
+        Ok((d_spacing, derivatives))
     }
 
     /// Return volume derivatives in direct-cell parameter order.
@@ -304,7 +312,10 @@ fn inverse(matrix: Matrix3) -> Option<Matrix3> {
         return None;
     }
     let inverse_det = det.recip();
-    Some([
+    if !inverse_det.is_finite() {
+        return None;
+    }
+    let inverted = [
         [
             (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) * inverse_det,
             (matrix[0][2] * matrix[2][1] - matrix[0][1] * matrix[2][2]) * inverse_det,
@@ -320,7 +331,12 @@ fn inverse(matrix: Matrix3) -> Option<Matrix3> {
             (matrix[0][1] * matrix[2][0] - matrix[0][0] * matrix[2][1]) * inverse_det,
             (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]) * inverse_det,
         ],
-    ])
+    ];
+    if inverted.iter().flatten().all(|value| value.is_finite()) {
+        Some(inverted)
+    } else {
+        None
+    }
 }
 
 fn transpose(matrix: Matrix3) -> Matrix3 {
@@ -454,5 +470,15 @@ mod tests {
             geometry.d_spacing_and_derivatives([0, 0, 0]),
             Err(CellError::ZeroReflection)
         );
+        // Tiny cell whose determinant is subnormal so det.recip() overflows to +inf.
+        let tiny_cubic = UnitCell {
+            a_angstrom: 1e-53,
+            b_angstrom: 1e-53,
+            c_angstrom: 1e-53,
+            alpha_deg: 90.0,
+            beta_deg: 90.0,
+            gamma_deg: 90.0,
+        };
+        assert_eq!(tiny_cubic.geometry(), Err(CellError::DegenerateCell));
     }
 }

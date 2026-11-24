@@ -74,7 +74,7 @@ pub fn calculate_monochromatic_reflection_geometry(
         }
         let root_q = q_value.sqrt();
         let sin_theta = 0.5 * instrument.wavelength_angstrom * root_q;
-        if !(0.0..1.0).contains(&sin_theta) {
+        if !sin_theta.is_finite() || sin_theta <= 0.0 || sin_theta >= 1.0 {
             return Err(StructuralPatternError::ReflectionOutsideAngularDomain);
         }
         d_spacing_angstrom.push(root_q.recip());
@@ -922,7 +922,7 @@ fn prepare_cached(
         }
         let root_q = q_value.sqrt();
         let sin_theta = 0.5 * input.instrument.wavelength_angstrom * root_q;
-        if !(0.0..1.0).contains(&sin_theta) {
+        if !sin_theta.is_finite() || sin_theta <= 0.0 || sin_theta >= 1.0 {
             return Err(StructuralPatternError::ReflectionOutsideAngularDomain);
         }
         let theta = sin_theta.asin();
@@ -1022,32 +1022,38 @@ fn append_instrument_derivatives(
         + usize::from(prepared.d_two_theta_d_sample_displacement.is_some())
         + usize::from(prepared.d_two_theta_d_displace_x.is_some())
         + usize::from(prepared.d_two_theta_d_displace_y.is_some());
+    let overflow =
+        || StructuralPatternError::Contributions(CwContributionsError::AllocationOverflow);
     let global = accumulation
         .derivatives
         .global
         .as_mut()
-        .expect("CW contribution accumulation always has global derivatives");
+        .ok_or_else(overflow)?;
+    let extra_values = extra_count.checked_mul(sample_count).ok_or_else(overflow)?;
     let old_values = std::mem::take(&mut global.values);
+    let combined_len = old_values
+        .len()
+        .checked_add(extra_values)
+        .ok_or_else(overflow)?;
     let mut combined = Vec::new();
-    combined
-        .try_reserve(old_values.len() + extra_count * sample_count)
-        .map_err(|_| {
-            StructuralPatternError::Contributions(CwContributionsError::AllocationOverflow)
-        })?;
-    let mut wavelength = vec![0.0; sample_count];
-    let mut zero_shift = vec![0.0; sample_count];
+    combined.try_reserve(combined_len).map_err(|_| overflow())?;
+    let mut wavelength = zeroed_values(sample_count)?;
+    let mut zero_shift = zeroed_values(sample_count)?;
     let mut sample_displacement = prepared
         .d_two_theta_d_sample_displacement
         .as_ref()
-        .map(|_| vec![0.0; sample_count]);
+        .map(|_| zeroed_values(sample_count))
+        .transpose()?;
     let mut displace_x = prepared
         .d_two_theta_d_displace_x
         .as_ref()
-        .map(|_| vec![0.0; sample_count]);
+        .map(|_| zeroed_values(sample_count))
+        .transpose()?;
     let mut displace_y = prepared
         .d_two_theta_d_displace_y
         .as_ref()
-        .map(|_| vec![0.0; sample_count]);
+        .map(|_| zeroed_values(sample_count))
+        .transpose()?;
     let local = &accumulation.derivatives.local;
     for reflection in 0..local.peak_count() {
         #[allow(clippy::cast_precision_loss)]

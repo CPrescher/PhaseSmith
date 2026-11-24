@@ -179,7 +179,7 @@ fn prepare_component(
     let base_theta = base_position_deg * DEGREE_HALF_ANGLE_TO_RADIAN;
     let wavelength_ratio = components.wavelength(component) / instrument.wavelength_angstrom;
     let component_sine = wavelength_ratio * base_theta.sin();
-    if !component_sine.is_finite() || !(0.0..1.0).contains(&component_sine) {
+    if !component_sine.is_finite() || component_sine <= 0.0 || component_sine >= 1.0 {
         return Err(CwComponentsBatchError::InvalidComponentPosition {
             reflection,
             component,

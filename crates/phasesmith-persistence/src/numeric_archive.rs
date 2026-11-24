@@ -16,6 +16,8 @@ pub struct NumericArray<'a> {
     pub bytes: &'a [u8],
 }
 
+static TEMP_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
 fn invalid(message: &str) -> PersistenceError {
     PersistenceError::InvalidArray {
         message: message.into(),
@@ -100,7 +102,34 @@ pub fn write_numeric_npz(
         }
         headers.push(header(array)?);
     }
-    let file = OpenOptions::new().write(true).create_new(true).open(path)?;
+    if path.exists() {
+        return Err(PersistenceError::Io(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "destination numeric archive already exists",
+        )));
+    }
+    let parent = path
+        .parent()
+        .filter(|dir| !dir.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("archive.npz");
+    let temp_path = loop {
+        let id = TEMP_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let candidate = parent.join(format!(".{file_name}.tmp-{}-{id}", std::process::id()));
+        match OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&candidate)
+        {
+            Ok(file) => break (candidate, file),
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(error) => return Err(PersistenceError::Io(error)),
+        }
+    };
+    let (temp_path, file) = temp_path;
     let result = (|| {
         let mut archive = ZipWriter::new(file);
         let options = SimpleFileOptions::default()
@@ -122,14 +151,73 @@ pub fn write_numeric_npz(
             archive.write_all(&header)?;
             archive.write_all(array.bytes)?;
         }
-        archive.finish().map_err(|e| invalid(&e.to_string()))?;
-        Ok(())
+        let file = archive.finish().map_err(|e| invalid(&e.to_string()))?;
+        file.sync_all()?;
+        drop(file);
+        publish_exclusive(&temp_path, path, |src, dst| std::fs::hard_link(src, dst))
     })();
     if result.is_err() {
-        let _ = std::fs::remove_file(path);
+        let _ = std::fs::remove_file(&temp_path);
     }
     result
 }
+
+fn publish_exclusive(
+    temp_path: &Path,
+    destination: &Path,
+    link: impl FnOnce(&Path, &Path) -> std::io::Result<()>,
+) -> Result<(), PersistenceError> {
+    match link(temp_path, destination) {
+        Ok(()) => {
+            let _ = std::fs::remove_file(temp_path);
+            sync_parent_dir_best_effort(destination);
+            Ok(())
+        }
+        Err(error)
+            if matches!(
+                error.kind(),
+                std::io::ErrorKind::Unsupported | std::io::ErrorKind::PermissionDenied
+            ) =>
+        {
+            // Filesystems without hard links (e.g. FAT/exFAT/CIFS returning EPERM or ENOTSUP):
+            // create the destination exclusively so a concurrent creator can never be overwritten,
+            // then stream and sync the staged archive bytes.
+            let mut target = OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(destination)?;
+            let copy_result = (|| -> std::io::Result<()> {
+                let mut staged = std::fs::File::open(temp_path)?;
+                std::io::copy(&mut staged, &mut target)?;
+                target.sync_all()?;
+                Ok(())
+            })();
+            drop(target);
+            if let Err(copy_error) = copy_result {
+                let _ = std::fs::remove_file(destination);
+                return Err(PersistenceError::Io(copy_error));
+            }
+            let _ = std::fs::remove_file(temp_path);
+            sync_parent_dir_best_effort(destination);
+            Ok(())
+        }
+        Err(error) => Err(PersistenceError::Io(error)),
+    }
+}
+
+#[cfg(not(windows))]
+fn sync_parent_dir_best_effort(path: &Path) {
+    let parent = path
+        .parent()
+        .filter(|dir| !dir.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    if let Ok(dir) = std::fs::File::open(parent) {
+        let _ = dir.sync_all();
+    }
+}
+
+#[cfg(windows)]
+fn sync_parent_dir_best_effort(_path: &Path) {}
 
 #[cfg(test)]
 mod tests {
@@ -184,6 +272,45 @@ mod tests {
         };
         assert!(write_numeric_npz(&path, &[bad], 1).is_err());
         assert!(!path.exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn publish_exclusive_fallback_handles_unsupported_and_permission_denied_without_overwrite() {
+        static NEXT: AtomicUsize = AtomicUsize::new(0);
+        let root = std::env::temp_dir().join(format!(
+            "phasesmith-numeric-fallback-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        std::fs::create_dir(&root).unwrap();
+
+        for (name, kind) in [
+            ("unsupported.npz", std::io::ErrorKind::Unsupported),
+            ("eperm.npz", std::io::ErrorKind::PermissionDenied),
+        ] {
+            let staged = root.join(format!(".{name}.tmp"));
+            let dest = root.join(name);
+            std::fs::write(&staged, b"staged-payload").unwrap();
+            publish_exclusive(&staged, &dest, |_, _| Err(std::io::Error::from(kind))).unwrap();
+            assert_eq!(std::fs::read(&dest).unwrap(), b"staged-payload");
+            assert!(!staged.exists());
+
+            // Must refuse to overwrite an existing destination even on fallback path.
+            let staged_second = root.join(format!(".{name}.tmp2"));
+            std::fs::write(&staged_second, b"new-payload").unwrap();
+            let err = publish_exclusive(&staged_second, &dest, |_, _| {
+                Err(std::io::Error::from(kind))
+            })
+            .unwrap_err();
+            assert!(matches!(
+                err,
+                PersistenceError::Io(ref io_error)
+                    if io_error.kind() == std::io::ErrorKind::AlreadyExists
+            ));
+            assert_eq!(std::fs::read(&dest).unwrap(), b"staged-payload");
+            std::fs::remove_file(&staged_second).unwrap();
+        }
         std::fs::remove_dir_all(root).unwrap();
     }
 }

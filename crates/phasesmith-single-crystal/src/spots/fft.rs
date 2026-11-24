@@ -499,9 +499,8 @@ impl Engine {
     /// Arrays and normalisation measures are validated by the Python boundary.
     /// Each model keeps ordered point arithmetic; models run independently.
     /// # Errors
-    /// Rejects a nonpositive/nonfinite Gaussian normalisation at an eligible point.
-    /// # Panics
-    /// Panics if chart, enabled or measure counts differ from the point count.
+    /// Rejects mismatched slice lengths or a nonpositive/nonfinite Gaussian
+    /// normalisation at an eligible point.
     #[allow(clippy::too_many_arguments)]
     pub fn physical_fields(
         &self,
@@ -512,9 +511,11 @@ impl Engine {
         measure: &[f64],
         parameters: [f64; 5],
     ) -> Result<Vec<PhysicalField>, crate::spots::SpotError> {
-        assert_eq!(q.len(), charts.len());
-        assert_eq!(q.len(), enabled.len());
-        assert_eq!(q.len(), measure.len());
+        if q.len() != charts.len() || q.len() != enabled.len() || q.len() != measure.len() {
+            return Err(crate::spots::SpotError(
+                "physical_fields requires charts, enabled and measure lengths to match q".into(),
+            ));
+        }
         let [tolerance, xy_scale, omega_scale, xy_gate, omega_gate] = parameters;
         self.pool.install(|| {
             models
@@ -1396,5 +1397,23 @@ mod tests {
         let (h, d) = indexed(p, a, recip);
         assert_eq!(h, [2., -1., 1.]);
         assert!(d < 1e-14);
+    }
+
+    #[test]
+    fn physical_fields_rejects_mismatched_lengths_without_panicking() {
+        let e = Engine::new(2).unwrap();
+        let a = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]];
+        let q = [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]];
+        let Err(err) = e.physical_fields(
+            &q,
+            &[(a, a, 1.0)],
+            &[a],
+            &[true, true],
+            &[1.0, 1.0],
+            [0.1, 1.0, 1.0, 1.0, 1.0],
+        ) else {
+            panic!("expected mismatched slice lengths error");
+        };
+        assert!(err.0.contains("lengths to match"));
     }
 }

@@ -1561,3 +1561,47 @@ fn caller_facing_details_from_the_first_dioptas_integration() {
         | MODEL;
     assert_eq!(named, bits);
 }
+
+#[test]
+fn measurement_boundary_validations_reject_nonfinite_and_oversized_inputs() {
+    let pol = Polarization::unpolarized();
+    assert!(polarization_factor([0.0, 0.0, 1.0], [0.0, 0.0, 0.0], &pol).is_err());
+    assert!(polarization_factor([0.0, 0.0, 1.0], [f64::NAN, 0.0, 1.0], &pol).is_err());
+    assert!(polarization_factor([f64::NAN, 0.0, 1.0], [0.0, 0.0, 1.0], &pol).is_err());
+
+    let ops = crate::lattice_symmetry::LatticeSystem::Triclinic.holohedry();
+    let bad_d = [Observation {
+        hkl: [1, 0, 0],
+        d: f64::INFINITY,
+        intensity: 10.0,
+        sigma: 1.0,
+    }];
+    assert!(merging_statistics(&bad_d, &ops, &MergingOptions::default()).is_err());
+
+    let ok_obs = [Observation {
+        hkl: [1, 0, 0],
+        d: 2.0 * (1.0 - 5e-10),
+        intensity: 10.0,
+        sigma: 1.0,
+    }];
+    let bad_bins = MergingOptions {
+        signal_bins: vec![f64::NAN, 3.0],
+        ..MergingOptions::default()
+    };
+    assert!(merging_statistics(&ok_obs, &ops, &bad_bins).is_err());
+
+    // Observation inside the d_min tolerance band must not invert shell bounds.
+    let tol_opts = MergingOptions {
+        d_min: Some(2.0),
+        shells: 4,
+        ..MergingOptions::default()
+    };
+    let stats = merging_statistics(&ok_obs, &ops, &tol_opts).expect("tolerance band stats");
+    for shell in &stats.shells {
+        assert!(shell.limits[0].is_finite() && shell.limits[1].is_finite());
+        assert!(shell.limits[0] >= shell.limits[1] - 1e-12);
+    }
+
+    // Excessive scan span must be rejected by Scan::check.
+    assert!(Scan::new(0.0, 1.0e9, 0.1, 10).is_err());
+}

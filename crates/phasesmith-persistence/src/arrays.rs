@@ -221,7 +221,7 @@ pub(crate) fn read_npz(
             usize::try_from(member.size()).map_err(|_| PersistenceError::LimitExceeded {
                 message: "archive member does not fit memory limits".to_owned(),
             })?;
-        let mut value = Vec::with_capacity(capacity);
+        let mut value = Vec::with_capacity(capacity.min(1024 * 1024));
         let read_limit = member.size().saturating_add(1);
         member.by_ref().take(read_limit).read_to_end(&mut value)?;
         if value.len() != capacity {

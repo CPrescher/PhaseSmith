@@ -520,7 +520,8 @@ impl TofProfileParameters {
         ]);
         let mut d_lorentzian_fwhm_d_instrument = [0.0; TOF_GLOBAL_PARAMETER_COUNT];
         d_lorentzian_fwhm_d_instrument[12..15].copy_from_slice(&[d, d2, 1.0]);
-        Ok(Self {
+        let scaled_term = |coeff: f64, factor: f64| if coeff == 0.0 { 0.0 } else { coeff * factor };
+        let parameters = Self {
             position_us,
             alpha_per_us,
             beta_per_us,
@@ -529,20 +530,41 @@ impl TofProfileParameters {
             lorentzian_fwhm_us,
             tch,
             d_position_d_d: instrument.difc_us_per_angstrom
-                + 2.0 * instrument.difa_us_per_angstrom2 * d
-                - instrument.difb_us_angstrom * inverse_d2,
+                + scaled_term(2.0 * instrument.difa_us_per_angstrom2, d)
+                - scaled_term(instrument.difb_us_angstrom, inverse_d2),
             d_alpha_d_d: -instrument.alpha_coefficient * inverse_d2,
-            d_beta_d_d: -4.0 * instrument.beta1_angstrom4_per_us * inverse_d5
-                - 2.0 * instrument.betaq_angstrom2_per_us * inverse_d3,
+            d_beta_d_d: scaled_term(-4.0 * instrument.beta1_angstrom4_per_us, inverse_d5)
+                - scaled_term(2.0 * instrument.betaq_angstrom2_per_us, inverse_d3),
             d_gaussian_fwhm_d_d: d_gaussian_d_variance * d_variance_d_d,
             d_lorentzian_fwhm_d_d: instrument.x_us_per_angstrom
-                + 2.0 * instrument.y_us_per_angstrom2 * d,
+                + scaled_term(2.0 * instrument.y_us_per_angstrom2, d),
             d_position_d_instrument,
             d_alpha_d_instrument,
             d_beta_d_instrument,
             d_gaussian_fwhm_d_instrument,
             d_lorentzian_fwhm_d_instrument,
-        })
+        };
+        if !parameters.derivatives_are_finite() {
+            return Err(TofError::InvalidDSpacing);
+        }
+        Ok(parameters)
+    }
+
+    fn derivatives_are_finite(&self) -> bool {
+        [
+            self.d_position_d_d,
+            self.d_alpha_d_d,
+            self.d_beta_d_d,
+            self.d_gaussian_fwhm_d_d,
+            self.d_lorentzian_fwhm_d_d,
+        ]
+        .into_iter()
+        .chain(self.d_position_d_instrument)
+        .chain(self.d_alpha_d_instrument)
+        .chain(self.d_beta_d_instrument)
+        .chain(self.d_gaussian_fwhm_d_instrument)
+        .chain(self.d_lorentzian_fwhm_d_instrument)
+        .all(f64::is_finite)
     }
 }
 
@@ -601,6 +623,7 @@ pub struct TofProfile {
 #[derive(Debug)]
 struct TofQuadrature {
     tail_log: f64,
+    supported_normalization: f64,
     nodes: [f64; TOF_QUADRATURE_COUNT],
     weights: [f64; TOF_QUADRATURE_COUNT],
 }
@@ -609,6 +632,10 @@ impl TofQuadrature {
     fn new(tail_log: f64) -> Result<Self, TofError> {
         if !tail_log.is_finite() || tail_log <= 0.0 {
             return Err(TofError::InvalidTailLog);
+        }
+        let supported_normalization = -(-tail_log).exp_m1();
+        if !supported_normalization.is_finite() || supported_normalization <= 0.0 {
+            return Err(TofError::InvalidQuadrature);
         }
         let mut nodes = [0.0; TOF_QUADRATURE_COUNT];
         let mut weights = [0.0; TOF_QUADRATURE_COUNT];
@@ -634,6 +661,7 @@ impl TofQuadrature {
         }
         Ok(Self {
             tail_log,
+            supported_normalization,
             nodes,
             weights,
         })
@@ -747,8 +775,7 @@ impl TofProfile {
         let right_fraction = self.alpha / sum;
         let d_left_d_alpha = -self.beta / (sum * sum);
         let d_left_d_beta = self.alpha / (sum * sum);
-        let tail_log = self.quadrature.tail_log;
-        let normalization = 1.0 - (-tail_log).exp();
+        let normalization = self.quadrature.supported_normalization;
         let support_multiple = base_radius / self.shape.total_fwhm;
         let mut d_radius = [0.0; SUPPORTED_VARIABLE_COUNT];
         d_radius[SUPPORTED_GAUSSIAN] = support_multiple * self.shape.d_total_fwhm_d_gaussian_fwhm;
@@ -1074,20 +1101,14 @@ pub fn accumulate_tof_batch_with_context(
         .try_reserve_exact(offset_count)
         .map_err(|_| TofError::AllocationOverflow)?;
     offsets.push(0usize);
-    let mut shared_quadrature = None;
+    let shared_quadrature = Arc::new(TofQuadrature::new(tail_log)?);
     for reflection in 0..count {
         if !intensities[reflection].is_finite() {
             return Err(TofError::NonFiniteIntensity { reflection });
         }
         let parameters = TofProfileParameters::from_instrument(d_spacings[reflection], instrument)?;
         TofProfile::validate_rates(parameters.alpha_per_us, parameters.beta_per_us)?;
-        let quadrature = if let Some(quadrature) = &shared_quadrature {
-            Arc::clone(quadrature)
-        } else {
-            let quadrature = Arc::new(TofQuadrature::new(tail_log)?);
-            shared_quadrature = Some(Arc::clone(&quadrature));
-            quadrature
-        };
+        let quadrature = Arc::clone(&shared_quadrature);
         let profile = TofProfile::from_validated_rates(
             parameters.alpha_per_us,
             parameters.beta_per_us,
@@ -1158,47 +1179,61 @@ pub fn accumulate_tof_batch_with_context(
             }
         }
     } else {
-        let blocks = execution.map_ordered(count, 16, |reflection| {
-            let item = &prepared[reflection];
-            let intensity = intensities[reflection];
-            let base_radius = support_fwhm * item.parameters.tch.total_fwhm;
-            let begin = offsets[reflection];
-            let end = offsets[reflection + 1];
-            let support_count = end - begin;
-            let mut block = TofReflectionBlock {
-                start: starts[reflection],
-                y: vec![0.0; support_count],
-                local: vec![0.0; support_count * LOCAL_PARAMETER_COUNT],
-                global: vec![0.0; support_count * TOF_GLOBAL_PARAMETER_COUNT],
-            };
-            for support_index in 0..support_count {
-                let sample = block.start + support_index;
-                let point = item
-                    .profile
-                    .evaluate_with_radius(x[sample] - item.parameters.position_us, base_radius);
-                block.y[support_index] = intensity * point.value;
-                block.local[support_index * LOCAL_PARAMETER_COUNT] = point.value;
-                block.local[support_index * LOCAL_PARAMETER_COUNT + 1] = intensity
-                    * (point.d_position * item.parameters.d_position_d_d
-                        + point.d_alpha * item.parameters.d_alpha_d_d
-                        + point.d_beta * item.parameters.d_beta_d_d
-                        + point.d_gaussian_fwhm * item.parameters.d_gaussian_fwhm_d_d
-                        + point.d_lorentzian_fwhm * item.parameters.d_lorentzian_fwhm_d_d);
-                for parameter in 0..TOF_GLOBAL_PARAMETER_COUNT {
-                    let derivative = point.d_position
-                        * item.parameters.d_position_d_instrument[parameter]
-                        + point.d_alpha * item.parameters.d_alpha_d_instrument[parameter]
-                        + point.d_beta * item.parameters.d_beta_d_instrument[parameter]
-                        + point.d_gaussian_fwhm
-                            * item.parameters.d_gaussian_fwhm_d_instrument[parameter]
-                        + point.d_lorentzian_fwhm
-                            * item.parameters.d_lorentzian_fwhm_d_instrument[parameter];
-                    block.global[parameter * support_count + support_index] =
-                        intensity * derivative;
-                }
-            }
-            block
-        });
+        let blocks = execution
+            .map_ordered(
+                count,
+                16,
+                |reflection| -> Result<TofReflectionBlock, TofError> {
+                    let item = &prepared[reflection];
+                    let intensity = intensities[reflection];
+                    let base_radius = support_fwhm * item.parameters.tch.total_fwhm;
+                    let begin = offsets[reflection];
+                    let end = offsets[reflection + 1];
+                    let support_count = end - begin;
+                    let local_len = support_count
+                        .checked_mul(LOCAL_PARAMETER_COUNT)
+                        .ok_or(TofError::AllocationOverflow)?;
+                    let global_len = support_count
+                        .checked_mul(TOF_GLOBAL_PARAMETER_COUNT)
+                        .ok_or(TofError::AllocationOverflow)?;
+                    let mut block = TofReflectionBlock {
+                        start: starts[reflection],
+                        y: zeroed_f64_vec(support_count)?,
+                        local: zeroed_f64_vec(local_len)?,
+                        global: zeroed_f64_vec(global_len)?,
+                    };
+                    for support_index in 0..support_count {
+                        let sample = block.start + support_index;
+                        let point = item.profile.evaluate_with_radius(
+                            x[sample] - item.parameters.position_us,
+                            base_radius,
+                        );
+                        block.y[support_index] = intensity * point.value;
+                        block.local[support_index * LOCAL_PARAMETER_COUNT] = point.value;
+                        block.local[support_index * LOCAL_PARAMETER_COUNT + 1] = intensity
+                            * (point.d_position * item.parameters.d_position_d_d
+                                + point.d_alpha * item.parameters.d_alpha_d_d
+                                + point.d_beta * item.parameters.d_beta_d_d
+                                + point.d_gaussian_fwhm * item.parameters.d_gaussian_fwhm_d_d
+                                + point.d_lorentzian_fwhm * item.parameters.d_lorentzian_fwhm_d_d);
+                        for parameter in 0..TOF_GLOBAL_PARAMETER_COUNT {
+                            let derivative = point.d_position
+                                * item.parameters.d_position_d_instrument[parameter]
+                                + point.d_alpha * item.parameters.d_alpha_d_instrument[parameter]
+                                + point.d_beta * item.parameters.d_beta_d_instrument[parameter]
+                                + point.d_gaussian_fwhm
+                                    * item.parameters.d_gaussian_fwhm_d_instrument[parameter]
+                                + point.d_lorentzian_fwhm
+                                    * item.parameters.d_lorentzian_fwhm_d_instrument[parameter];
+                            block.global[parameter * support_count + support_index] =
+                                intensity * derivative;
+                        }
+                    }
+                    Ok(block)
+                },
+            )
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()?;
         for (reflection, block) in blocks.into_iter().enumerate() {
             let begin = offsets[reflection];
             let support_count = block.y.len();
@@ -1653,6 +1688,71 @@ mod tests {
                 ))
             .abs()
                 < 2.0e-9
+        );
+    }
+
+    #[test]
+    fn supported_tof_handles_tiny_tail_log_and_validates_empty_batches() {
+        let profile = TofProfile::new(
+            0.08,
+            0.05,
+            TchWidths {
+                gaussian_fwhm: 12.0,
+                lorentzian_fwhm: 4.0,
+            },
+            1e-20,
+        )
+        .expect("tiny positive tail_log must be supported");
+        let point = profile.evaluate_with_radius(1.25, 240.0);
+        assert!(point.value.is_finite() && point.value > 0.0);
+        assert!(point.d_position.is_finite());
+        assert!(point.d_alpha.is_finite());
+        assert!(point.d_beta.is_finite());
+        assert!(point.d_gaussian_fwhm.is_finite());
+        assert!(point.d_lorentzian_fwhm.is_finite());
+
+        let grid = GridView::new(&[10_000.0, 10_010.0, 10_020.0]).expect("grid");
+        let instrument = TofInstrument {
+            zero_us: 0.0,
+            difc_us_per_angstrom: 10_000.0,
+            difa_us_per_angstrom2: 0.0,
+            difb_us_angstrom: 0.0,
+            alpha_coefficient: 0.1,
+            beta0_per_us: 0.04,
+            beta1_angstrom4_per_us: 0.0,
+            betaq_angstrom2_per_us: 0.0,
+            sigma0_us2: 10.0,
+            sigma1_us2_per_angstrom2: 0.0,
+            sigma2_us2_per_angstrom4: 0.0,
+            sigmaq_us2_per_angstrom: 0.0,
+            x_us_per_angstrom: 0.0,
+            y_us_per_angstrom2: 0.0,
+            z_us: 0.0,
+        };
+        for invalid in [0.0, -1.0, f64::NAN, f64::INFINITY] {
+            assert_eq!(
+                accumulate_tof_batch(grid, &[], &[], instrument, 20.0, invalid,).unwrap_err(),
+                TofError::InvalidTailLog
+            );
+        }
+
+        // Extreme d where inverse_d5 overflows to +inf while beta1 == 0.0 must yield 0.0, not NaN.
+        let params = TofProfileParameters::from_instrument(1e-70, instrument)
+            .expect("zero beta1 with overflowing inverse_d5 must keep finite derivatives");
+        assert_eq!(params.d_beta_d_d, 0.0);
+        assert!(params.d_position_d_d.is_finite());
+        assert!(params.d_alpha_d_d.is_finite());
+        assert!(params.d_gaussian_fwhm_d_d.is_finite());
+        assert!(params.d_lorentzian_fwhm_d_d.is_finite());
+
+        // Nonzero beta1 whose derivative overflows inverse_d5 must be rejected instead of returning inf.
+        let overflowing_beta1 = TofInstrument {
+            beta1_angstrom4_per_us: 1e-300,
+            ..instrument
+        };
+        assert_eq!(
+            TofProfileParameters::from_instrument(1e-70, overflowing_beta1),
+            Err(TofError::InvalidDSpacing)
         );
     }
 }

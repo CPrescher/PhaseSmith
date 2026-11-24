@@ -17,13 +17,19 @@ fn residual_diagnostics(
     included: PyReadonlyArray1<'_, bool>,
     region_count: usize,
 ) -> PyResult<Report> {
-    let x = x.as_slice()?;
-    let residual = residual.as_slice()?;
-    let weighted = weighted.as_slice()?;
-    let included = included.as_slice()?;
+    let x = x.as_slice()?.to_vec();
+    let residual = residual.as_slice()?.to_vec();
+    let weighted = weighted.as_slice()?.to_vec();
+    let included = included.as_slice()?.to_vec();
     let r = py
-        .detach(|| {
-            phasesmith_workflows::diagnose_residuals(x, residual, weighted, included, region_count)
+        .detach(move || {
+            phasesmith_workflows::diagnose_residuals(
+                &x,
+                &residual,
+                &weighted,
+                &included,
+                region_count,
+            )
         })
         .map_err(PyValueError::new_err)?;
     Ok((

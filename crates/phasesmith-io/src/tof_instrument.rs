@@ -6,7 +6,6 @@
 
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use phasesmith_core::{
@@ -165,16 +164,15 @@ pub fn read_gsas_tof_instrument_file(
 ) -> Result<GsasTofInstrumentData, GsasTofInstrumentIoError> {
     validate_request(bank, limits)?;
     let path = path.as_ref();
-    let size = fs::metadata(path)
-        .map_err(GsasTofInstrumentIoError::Io)?
-        .len();
-    if size > u64::try_from(limits.max_bytes).unwrap_or(u64::MAX) {
-        return Err(GsasTofInstrumentIoError::ByteLimitExceeded {
-            actual: size,
-            maximum: limits.max_bytes,
-        });
-    }
-    let text = fs::read_to_string(path).map_err(GsasTofInstrumentIoError::Io)?;
+    let text = match crate::read_bounded_utf8(path, limits.max_bytes) {
+        Ok(text) => text,
+        Err(crate::BoundedReadError::Io(error)) => {
+            return Err(GsasTofInstrumentIoError::Io(error));
+        }
+        Err(crate::BoundedReadError::ByteLimitExceeded { actual, maximum }) => {
+            return Err(GsasTofInstrumentIoError::ByteLimitExceeded { actual, maximum });
+        }
+    };
     parse_inner(&text, bank, limits, Some(path.to_owned()))
 }
 

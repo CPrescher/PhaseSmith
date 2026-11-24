@@ -94,6 +94,39 @@ mod powder;
 mod space_groups;
 mod tof_instrument;
 
+pub(crate) enum BoundedReadError {
+    Io(std::io::Error),
+    ByteLimitExceeded { actual: u64, maximum: usize },
+}
+
+pub(crate) fn read_bounded_utf8(
+    path: &std::path::Path,
+    max_bytes: usize,
+) -> Result<String, BoundedReadError> {
+    use std::io::Read as _;
+
+    let file = std::fs::File::open(path).map_err(BoundedReadError::Io)?;
+    let max_u64 = u64::try_from(max_bytes).unwrap_or(u64::MAX);
+    let mut bytes = Vec::new();
+    file.take(max_u64.saturating_add(1))
+        .read_to_end(&mut bytes)
+        .map_err(BoundedReadError::Io)?;
+    if bytes.len() > max_bytes {
+        let actual = std::fs::metadata(path)
+            .ok()
+            .map(|meta| meta.len())
+            .filter(|&len| len > max_u64)
+            .unwrap_or_else(|| u64::try_from(bytes.len()).unwrap_or(u64::MAX));
+        return Err(BoundedReadError::ByteLimitExceeded {
+            actual,
+            maximum: max_bytes,
+        });
+    }
+    String::from_utf8(bytes).map_err(|error| {
+        BoundedReadError::Io(std::io::Error::new(std::io::ErrorKind::InvalidData, error))
+    })
+}
+
 pub use cif::{
     CifAnisotropicDisplacement, CifAtomSite, CifDiagnostic, CifDiagnosticSeverity, CifIoError,
     CifReadLimits, CifReadResult, CifStructure, CifStructureSource, DisplacementConvention,
@@ -114,3 +147,40 @@ pub use tof_instrument::{
     GsasTofInstrumentData, GsasTofInstrumentIoError, GsasTofInstrumentReadLimits,
     parse_gsas_tof_instrument_text, read_gsas_tof_instrument_file,
 };
+
+#[cfg(test)]
+mod tests {
+    use super::{BoundedReadError, read_bounded_utf8};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    #[test]
+    fn read_bounded_utf8_enforces_exact_byte_limit_and_utf8() {
+        static NEXT: AtomicUsize = AtomicUsize::new(0);
+        let root = std::env::temp_dir().join(format!(
+            "phasesmith-io-bounded-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        std::fs::create_dir(&root).unwrap();
+
+        let exact = root.join("exact.txt");
+        std::fs::write(&exact, b"hello").unwrap();
+        assert_eq!(read_bounded_utf8(&exact, 5).ok().as_deref(), Some("hello"));
+        assert!(matches!(
+            read_bounded_utf8(&exact, 4),
+            Err(BoundedReadError::ByteLimitExceeded {
+                actual: 5,
+                maximum: 4
+            })
+        ));
+
+        let non_utf8 = root.join("invalid.bin");
+        std::fs::write(&non_utf8, [0xff_u8, 0xfe]).unwrap();
+        assert!(matches!(
+            read_bounded_utf8(&non_utf8, 16),
+            Err(BoundedReadError::Io(ref err)) if err.kind() == std::io::ErrorKind::InvalidData
+        ));
+
+        std::fs::remove_dir_all(root).unwrap();
+    }
+}

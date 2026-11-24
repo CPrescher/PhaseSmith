@@ -97,9 +97,14 @@ def read_nist_srm660c_specimen(
     member = _MEMBER_TEMPLATE.format(specimen=specimen)
     with zipfile.ZipFile(Path(dataset_directory) / _ARCHIVE) as archive:
         information = archive.getinfo(member)
-        if information.file_size > 2 * 1024 * 1024:
+        limit = 2 * 1024 * 1024
+        if information.file_size > limit:
             raise ValueError("NIST pdCIF exceeds the 2 MiB specimen limit")
-        text = archive.read(information).decode("utf-8")
+        with archive.open(information) as stream:
+            payload = stream.read(limit + 1)
+        if len(payload) > limit:
+            raise ValueError("NIST pdCIF exceeds the 2 MiB specimen limit")
+        text = payload.decode("utf-8")
     measured, calculated = _profile_arrays(text)
     displacement = _number_after_tag(text, "_pd_spec_vertical_displacement_mm")
     return text, measured[0], measured[1], measured[2], calculated[1], displacement

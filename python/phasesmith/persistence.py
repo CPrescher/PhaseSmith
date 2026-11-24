@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import contextlib
+import errno
 import hashlib
 import json
 import os
+import shutil
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -1545,6 +1548,29 @@ def _result_from_record(
     )
 
 
+def _recover_interrupted_save(directory: Path) -> None:
+    manifest = directory / MANIFEST_NAME
+    archive = directory / ARCHIVE_NAME
+    manifest_backup = directory / f".{MANIFEST_NAME}.bak"
+    archive_backup = directory / f".{ARCHIVE_NAME}.bak"
+    has_manifest_backup = manifest_backup.exists()
+    has_archive_backup = archive_backup.exists()
+    if not has_manifest_backup and not has_archive_backup:
+        return
+    if manifest.exists() and archive.exists():
+        for backup in (manifest_backup, archive_backup):
+            try:
+                backup.unlink(missing_ok=True)
+            except OSError as error:
+                if error.errno not in {errno.EACCES, errno.EPERM, errno.EROFS}:
+                    raise
+        return
+    if has_manifest_backup:
+        os.replace(manifest_backup, manifest)
+    if has_archive_backup:
+        os.replace(archive_backup, archive)
+
+
 def save_bundle(
     path: str | Path,
     bundle: PersistenceBundle,
@@ -1622,6 +1648,15 @@ def save_bundle(
     }
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=f".{destination.name}-", dir=destination.parent))
+    manifest_backup_path = destination / f".{MANIFEST_NAME}.bak"
+    archive_backup_path = destination / f".{ARCHIVE_NAME}.bak"
+    existed_before = destination.exists()
+    created_destination = False
+    backed_up_manifest = False
+    backed_up_archive = False
+    installed_archive = False
+    installed_manifest = False
+    committed = False
     try:
         archive_path = temporary / ARCHIVE_NAME
         np.savez_compressed(archive_path, **writer.arrays)
@@ -1635,17 +1670,54 @@ def save_bundle(
             json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n",
             encoding="utf-8",
         )
-        destination.mkdir(parents=True, exist_ok=True)
-        os.replace(temporary / ARCHIVE_NAME, destination / ARCHIVE_NAME)
-        os.replace(temporary / MANIFEST_NAME, destination / MANIFEST_NAME)
-        temporary.rmdir()
-    except Exception:
-        for name in (ARCHIVE_NAME, MANIFEST_NAME):
-            candidate = temporary / name
-            if candidate.exists():
-                candidate.unlink()
-        temporary.rmdir()
+        if not existed_before:
+            try:
+                destination.mkdir(parents=True, exist_ok=False)
+                created_destination = True
+            except FileExistsError:
+                if not overwrite:
+                    raise
+                existed_before = True
+                _recover_interrupted_save(destination)
+        else:
+            destination.mkdir(parents=True, exist_ok=True)
+            _recover_interrupted_save(destination)
+        existing_manifest = destination / MANIFEST_NAME
+        existing_archive = destination / ARCHIVE_NAME
+        if existed_before:
+            if existing_manifest.exists():
+                os.replace(existing_manifest, manifest_backup_path)
+                backed_up_manifest = True
+            if existing_archive.exists():
+                os.replace(existing_archive, archive_backup_path)
+                backed_up_archive = True
+        os.replace(temporary / ARCHIVE_NAME, existing_archive)
+        installed_archive = True
+        os.replace(temporary / MANIFEST_NAME, existing_manifest)
+        installed_manifest = True
+        committed = True
+    except BaseException:
+        if not committed:
+            if installed_manifest:
+                (destination / MANIFEST_NAME).unlink(missing_ok=True)
+            if installed_archive:
+                (destination / ARCHIVE_NAME).unlink(missing_ok=True)
+            if backed_up_archive and archive_backup_path.exists():
+                os.replace(archive_backup_path, destination / ARCHIVE_NAME)
+            if backed_up_manifest and manifest_backup_path.exists():
+                os.replace(manifest_backup_path, destination / MANIFEST_NAME)
+            if created_destination:
+                with contextlib.suppress(OSError):
+                    destination.rmdir()
+        shutil.rmtree(temporary, ignore_errors=True)
         raise
+    if backed_up_manifest:
+        with contextlib.suppress(OSError):
+            manifest_backup_path.unlink(missing_ok=True)
+    if backed_up_archive:
+        with contextlib.suppress(OSError):
+            archive_backup_path.unlink(missing_ok=True)
+    shutil.rmtree(temporary, ignore_errors=True)
     return destination
 
 
@@ -1658,6 +1730,7 @@ def load_bundle(
 
     source = Path(path).resolve()
     try:
+        _recover_interrupted_save(source)
         manifest = json.loads((source / MANIFEST_NAME).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise PersistenceError(f"cannot read persistence manifest: {error}") from error
