@@ -233,13 +233,14 @@ pub fn merging_statistics(
     if observations.is_empty()
         || options.shells == 0
         || options.shells > 100
+        || options.signal_bins.iter().any(|v| !v.is_finite())
         || options.signal_bins.windows(2).any(|w| w[0] >= w[1])
         || observations.iter().any(|o| {
             !o.intensity.is_finite()
                 || o.sigma.is_nan()
                 || o.sigma <= 0.
                 || !o.sigma.is_finite()
-                || o.d.is_nan()
+                || !o.d.is_finite()
                 || o.d <= 0.
         })
     {
@@ -274,7 +275,8 @@ pub fn merging_statistics(
         .iter()
         .map(|o| o.d)
         .chain(all_possible.iter().flatten().map(|p| p.1))
-        .fold(0., f64::max);
+        .fold(0., f64::max)
+        .max(d_min);
     let merged = merge(&observations, operations);
     let mut members: BTreeMap<[i64; 3], Vec<f64>> = BTreeMap::new();
     for o in &observations {

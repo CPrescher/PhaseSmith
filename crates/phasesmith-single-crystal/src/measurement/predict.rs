@@ -201,11 +201,12 @@ pub fn predict(
     geometry.convert(&[])?;
     let [lo, hi] = scan.range();
     let hint = f64::midpoint(lo, hi);
-    let turns = ((hi - lo) / 360.).ceil() as i64 + 1;
     let mut out = Vec::new();
     for (index, lattice) in lattices.iter().enumerate() {
         for c in crossings(lattice, geometry, shape, options.d_min, hint)? {
-            for k in -turns..=turns {
+            let k_lo = ((lo - c.xyz[2]) / 360.).floor() as i64 - 1;
+            let k_hi = ((hi - c.xyz[2]) / 360.).ceil() as i64 + 1;
+            for k in k_lo..=k_hi {
                 let omega = c.xyz[2] + 360. * k as f64;
                 if omega < lo || omega >= hi {
                     continue;

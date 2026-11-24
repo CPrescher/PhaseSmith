@@ -187,8 +187,23 @@ pub fn direction_key(v: Point, eps: f64) -> Option<usize> {
     Some((k * side + a) * side + b)
 }
 pub fn decode(key: usize, eps: f64) -> Point {
-    let side = (2. * ROOT / eps).floor() as usize + 1;
-    let k = key / (side * side);
+    if !eps.is_finite() || eps <= 0.0 {
+        return [0.; 3];
+    }
+    let ratio = (2. * ROOT / eps).floor();
+    if !ratio.is_finite() || ratio < 0.0 || ratio >= (usize::MAX as f64) {
+        return [0.; 3];
+    }
+    let Some(side) = (ratio as usize).checked_add(1) else {
+        return [0.; 3];
+    };
+    let Some(area) = side.checked_mul(side) else {
+        return [0.; 3];
+    };
+    let k = key / area;
+    if k >= 3 {
+        return [0.; 3];
+    }
     let a = (key / side) % side;
     let b = key % side;
     let ij = others(k);
@@ -205,15 +220,35 @@ fn expired(start: Instant, o: &Options, cancel: &AtomicBool) -> bool {
 }
 /// Exact closed interval sweep; different integer multiples of one point count once.
 pub fn interval_support(ds: &[f64], o: &Options) -> usize {
-    let mut events = Vec::with_capacity(2 * o.kmax * ds.len());
+    if ds.is_empty()
+        || o.kmax == 0
+        || !o.relative_epsilon.is_finite()
+        || o.relative_epsilon <= 0.0
+        || o.relative_epsilon >= 1.0
+    {
+        return 0;
+    }
+    let capacity = ds
+        .len()
+        .checked_mul(o.kmax)
+        .and_then(|v| v.checked_mul(2))
+        .unwrap_or(0);
+    let mut events = Vec::with_capacity(capacity);
     for (id, &d) in ds.iter().enumerate() {
+        if !d.is_finite() || d <= 0.0 {
+            continue;
+        }
         for k in 1..=o.kmax {
-            events.push((d / (k as f64 + o.relative_epsilon), 0u8, id));
-            events.push((d / (k as f64 - o.relative_epsilon), 1u8, id));
+            let low = d / (k as f64 + o.relative_epsilon);
+            let high = d / (k as f64 - o.relative_epsilon);
+            if low.is_finite() && high.is_finite() && low <= high {
+                events.push((low, 0u8, id));
+                events.push((high, 1u8, id));
+            }
         }
     }
     events.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)).then(a.2.cmp(&b.2)));
-    let mut counts = vec![0u16; ds.len()];
+    let mut counts = vec![0usize; ds.len()];
     let (mut active, mut best) = (0, 0);
     for (_, kind, id) in events {
         if kind == 0 {
@@ -222,7 +257,7 @@ pub fn interval_support(ds: &[f64], o: &Options) -> usize {
             }
             counts[id] += 1;
             best = best.max(active);
-        } else {
+        } else if counts[id] > 0 {
             counts[id] -= 1;
             if counts[id] == 0 {
                 active -= 1;
@@ -377,7 +412,13 @@ fn modal_gap(gaps: &mut [f64], eps: f64, relative: bool) -> Option<f64> {
 }
 /// Circular phase window with a distinct integer-site constraint.
 pub fn phase_subset_generic(row: &[(f64, usize)], d: f64, eps: f64) -> Vec<usize> {
-    if row.is_empty() || d <= 1e-12 {
+    if row.is_empty()
+        || !d.is_finite()
+        || d <= 1e-12
+        || !eps.is_finite()
+        || eps < 0.0
+        || row.iter().any(|&(t, _)| !t.is_finite())
+    {
         return vec![];
     }
     let mut phase: Vec<_> = row
@@ -395,12 +436,13 @@ pub fn phase_subset_generic(row: &[(f64, usize)], d: f64, eps: f64) -> Vec<usize
     let mut sites = HashMap::<i64, usize>::new();
     for r in 0..2 * n {
         *sites.entry(twice[r].1).or_default() += 1;
-        while twice[r].0 - twice[l].0 > d * eps || r - l + 1 > n {
+        while l < r && (twice[r].0 - twice[l].0 > d * eps || r - l + 1 > n) {
             let site = twice[l].1;
-            let count = sites.get_mut(&site).unwrap();
-            *count -= 1;
-            if *count == 0 {
-                sites.remove(&site);
+            if let Some(count) = sites.get_mut(&site) {
+                *count -= 1;
+                if *count == 0 {
+                    sites.remove(&site);
+                }
             }
             l += 1;
         }
@@ -439,7 +481,13 @@ fn phase_subset_into<const HALF: usize, const FULL: usize>(
 ) {
     out.clear();
     let n = row.len();
-    if n == 0 || d <= 1e-12 {
+    if n == 0
+        || !d.is_finite()
+        || d <= 1e-12
+        || !eps.is_finite()
+        || eps < 0.0
+        || row.iter().any(|&(t, _)| !t.is_finite())
+    {
         return;
     }
     if n > 16 {
@@ -471,14 +519,12 @@ fn phase_subset_into<const HALF: usize, const FULL: usize>(
             distinct += 1;
         }
         sites[ix].1 += 1;
-        while phase[r].0 - phase[l].0 > d * eps || r - l + 1 > n {
-            let ix = sites[..ns]
-                .iter()
-                .position(|&(s, _)| s == phase[l].1)
-                .unwrap();
-            sites[ix].1 -= 1;
-            if sites[ix].1 == 0 {
-                distinct -= 1;
+        while l < r && (phase[r].0 - phase[l].0 > d * eps || r - l + 1 > n) {
+            if let Some(ix) = sites[..ns].iter().position(|&(s, _)| s == phase[l].1) {
+                sites[ix].1 -= 1;
+                if sites[ix].1 == 0 {
+                    distinct -= 1;
+                }
             }
             l += 1;
         }
@@ -2592,5 +2638,27 @@ mod admission_tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn invalid_public_parameters_do_not_panic() {
+        assert_eq!(decode(0, 0.0), [0.0; 3]);
+        assert_eq!(decode(0, -0.5), [0.0; 3]);
+        assert_eq!(decode(0, f64::NAN), [0.0; 3]);
+        assert_eq!(decode(usize::MAX, 0.1), [0.0; 3]);
+
+        let row = [(0.1, 0), (1.1, 1), (2.1, 2)];
+        assert!(phase_subset(&row, 1.0, -0.1).is_empty());
+        assert!(phase_subset_generic(&row, 1.0, -0.1).is_empty());
+        assert!(phase_subset(&row, 1.0, f64::NAN).is_empty());
+        assert!(phase_subset(&row, f64::NAN, 0.1).is_empty());
+        assert!(phase_subset(&[(f64::NAN, 0)], 1.0, 0.1).is_empty());
+
+        let mut bad_opts = Options::default();
+        bad_opts.relative_epsilon = 1.5;
+        assert_eq!(interval_support(&[1.0, 2.0], &bad_opts), 0);
+        bad_opts.relative_epsilon = 0.05;
+        bad_opts.kmax = 0;
+        assert_eq!(interval_support(&[1.0, 2.0], &bad_opts), 0);
     }
 }

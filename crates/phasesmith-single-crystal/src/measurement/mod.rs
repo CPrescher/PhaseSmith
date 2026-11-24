@@ -216,6 +216,12 @@ impl Scan {
         {
             return Err(invalid("invalid rotation scan"));
         }
+        let [lo, hi] = self.range();
+        let span = hi - lo;
+        if !lo.is_finite() || !hi.is_finite() || !span.is_finite() || span <= 0. || span > 360_000.
+        {
+            return Err(invalid("invalid rotation scan"));
+        }
         Ok(())
     }
     /// Exposure interval of a frame, degrees.

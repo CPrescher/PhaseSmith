@@ -261,7 +261,9 @@ impl sc::Observer for Save<'_> {
         Ok(())
     }
     fn masks(&mut self, p: &frame_input::Plan, scales: &[f64]) -> sc::Result<()> {
-        let a = &p.blocks[0];
+        let Some(a) = p.blocks.first() else {
+            return Err(sc::Error("frame validity plan has no block entries".into()));
+        };
         self.archive(
             "frame-validity.npz",
             &[
@@ -736,6 +738,17 @@ fn dispatch(args: &[String]) -> Result<()> {
     )
     .map(|_| ())
 }
+fn validate_acquisition_range(acquisition: &sc::Acquisition, total_frames: usize) -> Result<()> {
+    if acquisition.first > acquisition.last || acquisition.last >= total_frames {
+        return Err(format!(
+            "acquisition frame range {}..={} is outside 0..{total_frames}",
+            acquisition.first, acquisition.last
+        )
+        .into());
+    }
+    Ok(())
+}
+
 fn run_request<'a>(
     request: Request,
     cancellation: solution::Cancellation,
@@ -787,6 +800,7 @@ fn run_request<'a>(
     )?;
     let cell: [f64; 6] = serde_json::from_value(packet["priors"]["cell_angstrom_degrees"].clone())?;
     let mut options = decode_options(&packet, rotations, geometry)?;
+    validate_acquisition_range(&options.acquisition, shape[0])?;
     options.cancellation = cancellation;
     fs::create_dir(&out)?;
     json_file(&out.join("input.json"), &packet)?;

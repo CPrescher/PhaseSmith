@@ -532,6 +532,7 @@ pub fn measure(
         return Err(invalid("invalid reflections or reflection budget exceeded"));
     }
     let margin = options.profile.as_ref().map_or(0, |p| p.margin_frames);
+    let keep_samples = options.profile.is_some();
     let mut boxes = Vec::with_capacity(n);
     let mut windows = Vec::with_capacity(n);
     let mut active: Vec<Vec<usize>> = vec![Vec::new(); scan.frames];
@@ -542,27 +543,34 @@ pub fn measure(
         boxes.push((b, pixel));
         let (w, cut) = extended(r, margin, scan);
         windows.push((w, cut));
+        let box_pixels = (b.x1 - b.x0) * (b.y1 - b.y0);
         for (f, list) in active.iter_mut().enumerate().take(w[1] + 1).skip(w[0]) {
             if !scan.is_excluded(f) {
+                pairs = pairs
+                    .checked_add(1)
+                    .ok_or_else(|| invalid("reflection-frame pair count overflow"))?;
+                if pairs > options.max_pairs {
+                    return Err(invalid(format!(
+                        "{pairs} reflection-frame pairs exceed MeasureOptions::max_pairs ({}); \
+                         raise it (up to 20000000), or use a coarser resolution limit or narrower \
+                         rocking width",
+                        options.max_pairs
+                    )));
+                }
+                if keep_samples {
+                    sample_count = sample_count
+                        .checked_add(box_pixels)
+                        .ok_or_else(|| invalid("profile sample count overflow"))?;
+                    if sample_count > options.max_samples {
+                        return Err(invalid(format!(
+                            "{sample_count} profile samples exceed MeasureOptions::max_samples ({})",
+                            options.max_samples
+                        )));
+                    }
+                }
                 list.push(i);
-                pairs += 1;
-                sample_count += (b.x1 - b.x0) * (b.y1 - b.y0);
             }
         }
-    }
-    if pairs > options.max_pairs {
-        return Err(invalid(format!(
-            "{pairs} reflection-frame pairs exceed MeasureOptions::max_pairs ({}); raise it \
-             (up to 20000000), or use a coarser resolution limit or narrower rocking width",
-            options.max_pairs
-        )));
-    }
-    let keep_samples = options.profile.is_some();
-    if keep_samples && sample_count > options.max_samples {
-        return Err(invalid(format!(
-            "{sample_count} profile samples exceed MeasureOptions::max_samples ({})",
-            options.max_samples
-        )));
     }
     let wanted: Vec<usize> = (0..scan.frames)
         .filter(|&f| !active[f].is_empty())

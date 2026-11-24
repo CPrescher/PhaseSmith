@@ -88,6 +88,7 @@ impl Polarization {
     pub(super) fn axes(&self, beam: V3) -> Result<(V3, V3)> {
         let e = unit(self.electric_vector);
         if !(0.0..=1.0).contains(&self.fraction)
+            || beam.iter().any(|v| !v.is_finite())
             || e.iter().any(|v| !v.is_finite())
             || dot(e, beam).abs() > 1e-8
         {
@@ -104,6 +105,9 @@ impl Polarization {
 /// # Errors
 /// An invalid polarisation (see [`Polarization`]) or beam.
 pub fn polarization_factor(ray: V3, beam: V3, polarization: &Polarization) -> Result<f64> {
+    if ray.iter().any(|v| !v.is_finite()) {
+        return Err(invalid("diffracted ray must be finite"));
+    }
     let beam = unit(beam);
     let (e, orth) = polarization.axes(beam)?;
     let f = polarization.fraction;
