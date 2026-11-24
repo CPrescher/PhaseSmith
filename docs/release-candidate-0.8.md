@@ -99,7 +99,7 @@ in their owning stage and nested timings are not added again.
 The small machine-readable receipt is
 [single-crystal promotion record](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/single-crystal-promotion-0.8-macos.json).
 Artifacts, complete equivalence reports and logs are external under
-`/Users/clemens/ChatGPT/PhaseSmith/single-crystal-release-0.8-20261031`.
+`<EXTERNAL_OUTPUT_ROOT>/single-crystal-release-0.8-20261031`.
 
 ## Storage cleanup
 

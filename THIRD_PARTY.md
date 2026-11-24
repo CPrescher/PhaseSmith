@@ -83,3 +83,57 @@ Scientific attribution and conventions are recorded in
 
 The upstream file's own literature ledger is preserved as the data provenance
 record. The built-in constant model rejects energy-dependent rows.
+
+## Native persistence dependencies (`zip`, `flate2`, `sha2`)
+
+- Purpose: native JSON+NPZ project persistence and lossless numeric NPZ archives.
+- Locked releases: `zip 9.5.1` (MIT), `flate2 1.1.9` (`MIT OR Apache-2.0`),
+  `sha2 0.10.9` (`MIT OR Apache-2.0`); PhaseSmith uses the MIT option.
+- Runtime status: required native dependencies of `phasesmith-persistence`
+  (`sha2` is also used by `phasesmith-single-crystal`, `phasesmith-workflows`,
+  `phasesmith` under `hdf5`, `phasesmith-validation`, and `phasesmith-hdf5`
+  dev-dependencies).
+- Notices: retained in `THIRD_PARTY_NOTICES.md`.
+
+## RustFFT
+
+- Purpose: FFT backend for `phasesmith-single-crystal` (`spots` and `solution`).
+- Locked release: `rustfft 6.4.1`.
+- Upstream: <https://github.com/ejmahler/RustFFT>
+- License: MIT OR Apache-2.0; PhaseSmith uses the MIT option.
+- Notices: retained in `THIRD_PARTY_NOTICES.md`.
+
+## Published DAFi algorithm
+
+- Purpose: independent equidistant-row grouping method in
+  `phasesmith-single-crystal::row_search` and `phasesmith.single_crystal.row_search`.
+- Reference: Aslandukov et al., *J. Appl. Cryst.* **55** (2022), 1383–1391,
+  DOI `10.1107/S1600576722008081` (CC BY 4.0).
+- Vendoring/modification: no upstream DAFi source or executable is included or required.
+
+## Dioptas frame validity and seat-shadow estimator
+
+- Purpose: mask representation and illumination-ratio estimator adapted in
+  `phasesmith.single_crystal.frame_validity` and
+  `phasesmith_single_crystal::spots::frame_validity`.
+- Pinned commit: `651c27f98108fb19f60db9a8cb227755b2f9d6a2`.
+- License: MIT; complete upstream notice retained in `THIRD_PARTY_NOTICES.md`.
+
+## Optional bundled HDF5 input (`hdf5-metno`, Bitshuffle/LZ4, LZF, zlib)
+
+- Purpose: optional native detector-frame HDF5 reader (`phasesmith-hdf5`, enabled
+  by the `hdf5` feature and included in default Python wheels).
+- Locked releases: `hdf5-metno 0.15.1`, `hdf5-metno-sys 0.12.5`,
+  `hdf5-metno-src 0.10.4`, `hdf5-bitshuffle 1.0.0`, `lzf-sys 0.1.1`,
+  `libz-sys 1.1.31`.
+- Licenses: Rust bindings are MIT/Apache-2.0 or MIT; bundled native C notices
+  (HDF5/LZ4 BSD, Bitshuffle MIT, LZF BSD option, zlib) live in `licenses/hdf5/`
+  and wheel/sdist metadata.
+
+## Vendored `dcstep` helper (`lbfgsb-rs-pure`)
+
+- Purpose: safeguarded cubic/quadratic line-search interpolation helper inside
+  `phasesmith-single-crystal::spots`.
+- Pinned release: `lbfgsb-rs-pure 0.1.2` (`licenses/optimizers/provenance.json`).
+- License: BSD-3-Clause; notice retained in `licenses/optimizers/lbfgsb-rs-pure.txt`
+  and `THIRD_PARTY_NOTICES.md`.

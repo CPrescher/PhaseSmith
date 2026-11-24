@@ -17,7 +17,7 @@ floating-point operations, strict comparisons, masks and thresholds, without a
 lint suppression.
 
 The minimal correction is applied to
-`/Users/clemens/Programming/PhaseSmith/crates/phasesmith-spots/src/lib.rs` and
+`<PHASESMITH_CHECKOUT>/crates/phasesmith-spots/src/lib.rs` and
 recorded in the committed `threshold-clippy-fix.patch`. The surrounding unfinished
 optimization is not committed or replaced by this task. Every other captured
 tracked/untracked file in that checkout is preserved byte for byte; its branch,

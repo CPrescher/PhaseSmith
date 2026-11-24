@@ -44,7 +44,7 @@ and strict all-target/all-feature Clippy. These are historical baseline checks,
 not a new test run by this audit. See
 [integration validation](integration/structure-search-merge.md).
 
-The active `/Users/clemens/Programming/PhaseSmith` checkout still contains
+The active `<PHASESMITH_CHECKOUT>` checkout still contains
 uncommitted detector/prediction changes and research reports. These remain
 outside the reviewed baseline. Do not silently include them in a promotion or
 replace that checkout. The older Documents checkout has an invalid Git HEAD;

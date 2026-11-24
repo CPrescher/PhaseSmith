@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
 from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
@@ -247,10 +249,11 @@ def main():
     r.add_argument("--split", choices=["development", "holdout"], default="development")
     r.add_argument("--open-holdout", action="store_true")
     r.add_argument("--seconds", type=float, default=30)
+    shelxt_default = os.environ.get("SHELXT") or shutil.which("shelxt")
     r.add_argument(
         "--shelxt",
         type=Path,
-        default=Path("/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt"),
+        default=Path(shelxt_default) if shelxt_default else None,
     )
     w = commands.add_parser("worker")
     w.add_argument("--cached-repair-evaluation", action="store_true")

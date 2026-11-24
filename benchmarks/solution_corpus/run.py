@@ -288,6 +288,10 @@ def collect_jobs(args):
     cases = [c for c in manifest["cases"] if c["split"] == args.split]
     if not cases:
         raise ValueError("selected split is empty")
+    if args.shelxt is None or not args.shelxt.is_file():
+        raise FileNotFoundError(
+            "SHELXT executable not found; pass --shelxt, set SHELXT, or put shelxt on PATH"
+        )
     if sha(args.shelxt) != SHELXT_SHA:
         raise ValueError("external executable differs from pinned user-provided SHELXT 2018/2")
     previous = None

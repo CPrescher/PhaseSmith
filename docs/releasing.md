@@ -37,15 +37,18 @@ PyPI trusted publishing uses owner `CPrescher`, repository `PhaseSmith`, workflo
 Rust trusted publishing cannot create a new crate name. Its first version must
 be uploaded by an authenticated owner before that crate's trusted publisher can
 be configured ([Rust project documentation](https://blog.rust-lang.org/2025/07/11/crates-io-development-update-2025-07/)).
-The 0.8 workspace has two new names: `phasesmith-single-crystal` and
-`phasesmith-hdf5`. Three formerly separate, unpublished development crates have
-been consolidated; see [migration](migration-0.8.md).
+The 0.8 consolidation introduced `phasesmith-single-crystal` and
+`phasesmith-hdf5` (replacing three formerly unpublished development crates; see
+[migration](migration-0.8.md)), which are now published alongside the other nine
+public crates.
 
-The existing registry variable does not prove publisher coverage for these new
-names. Before tagging 0.8, use this reviewed bootstrap sequence:
+Whenever a future release adds new public crate names, the existing registry
+variable does not prove publisher coverage for those new names. Before tagging
+such a release, use this reviewed bootstrap sequence:
 
 1. Finish every check below on the exact release commit. Review all eleven
-   `.crate` payloads and notices. Verify ownership and that 0.8.0 is unpublished.
+   `.crate` payloads and notices. Verify ownership and that the target version
+   is unpublished.
 2. Temporarily set `CRATES_IO_TRUSTED_PUBLISHING=false` to prevent a tag workflow
    from duplicating the owner-authenticated Rust publication.
 3. With an owner credential, first run the nonpublishing command:
@@ -56,9 +59,9 @@ names. Before tagging 0.8, use this reviewed bootstrap sequence:
    ```
 
 4. Only after final publication approval, run the same command without
-   `--dry-run`. This publishes the entire dependency-ordered 0.8 workspace,
+   `--dry-run`. This publishes the entire dependency-ordered workspace,
    including dependencies needed by the new crate. Do not publish just the new
-   crate against unavailable 0.8 dependencies. If interrupted, inspect registry
+   crate against unavailable workspace dependencies. If interrupted, inspect registry
    state (`python scripts/published_crates.py --version <version>`) and
    explicitly exclude already-published packages before resuming.
 5. Configure the same trusted publisher on all eleven public crates. Tag the

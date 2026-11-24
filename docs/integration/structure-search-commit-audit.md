@@ -18,7 +18,7 @@ it does not imply that any branch has been published.
 
 ## Integration with the other development work
 
-The other active checkout is `/Users/clemens/Programming/PhaseSmith`, on
+The other active checkout is `<PHASESMITH_CHECKOUT>`, on
 `codex/experimental-spots`. At capture its committed head was `910bc22` and it
 had additional staged/unstaged/untracked development work. The branch and
 working files were not changed by this audit.
@@ -93,9 +93,9 @@ to the captured snapshot, not to arbitrary subsequent edits; the six shared-file
 preconditions were rechecked separately. Final integration should use committed
 versions of that unfinished work and rerun the relevant checks.
 
-The old `/Users/clemens/Documents/PhaseSmith` directory reports an invalid Git
+The old `<LEGACY_CHECKOUT>` directory reports an invalid Git
 HEAD. It was not repaired or used as the source of commits. The valid structure
-and integration checkouts are under `/Users/clemens/Programming/`.
+and integration checkouts are under `<WORKSPACE_ROOT>/`.
 
 Hashes, exact parents, tested snapshot provenance, preserved source files and
 check logs are summarized in `structure-search-commit-audit.json`. Raw audit

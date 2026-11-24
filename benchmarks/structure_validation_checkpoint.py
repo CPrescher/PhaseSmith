@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import os
 from dataclasses import replace
 from pathlib import Path
 
@@ -13,12 +14,13 @@ from phasesmith.scattering import XrayNonResonant
 from scipy.optimize import least_squares
 
 
-def main(root, dials):
-    source = Path(
-        "/Users/clemens/Dropbox/Science/_Archive/Fe7C3/X-ray diffraction/"
-        "Final plots and tables/Lattice parameter and Atom position table/"
-        "cif-files/fe7c3d_p01.cif"
-    )
+def main(root, dials, reference_cif=None):
+    source = reference_cif or os.environ.get("PHASESMITH_FE7C3_REFERENCE_CIF")
+    if not source:
+        raise ValueError(
+            "pass --reference-cif or set PHASESMITH_FE7C3_REFERENCE_CIF to fe7c3d_p01.cif"
+        )
+    source = Path(source)
     reference = read_cif(source).structure
     protocol = json.loads((root / "protocol.json").read_text())
     basis = np.array(protocol["common_crystal_basis"])
@@ -150,5 +152,6 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("case", type=Path)
     p.add_argument("--dials", type=Path, required=True)
+    p.add_argument("--reference-cif", type=Path, default=None)
     a = p.parse_args()
-    main(a.case, a.dials)
+    main(a.case, a.dials, a.reference_cif)

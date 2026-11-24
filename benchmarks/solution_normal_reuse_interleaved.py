@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -22,10 +24,11 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--seconds", type=float, default=15.0)
     parser.add_argument("--lock-revision", type=int, default=29)
+    shelxt_default = os.environ.get("SHELXT") or shutil.which("shelxt")
     parser.add_argument(
         "--shelxt",
         type=Path,
-        default=Path("/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt"),
+        default=Path(shelxt_default) if shelxt_default else None,
     )
     args = parser.parse_args()
     if args.output.exists() or not 5 <= args.seconds <= 120:
@@ -37,7 +40,7 @@ def main():
             manifest=args.manifest.resolve(),
             output=(args.output / mode).resolve(),
             seconds=args.seconds,
-            shelxt=args.shelxt.resolve(),
+            shelxt=args.shelxt.resolve() if args.shelxt is not None else None,
             split="development",
             resume=False,
             lock_revision=args.lock_revision,

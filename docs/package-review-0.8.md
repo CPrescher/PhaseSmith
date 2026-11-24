@@ -188,6 +188,6 @@ speedup claim. Input and all large products remain outside the repository.
 The machine-readable receipt is `validation/results/package-review-0.8.json`.
 Full logs, link graphs, tested distributions and the strict replay comparison
 are retained outside the repository under
-`/Users/clemens/ChatGPT/PhaseSmith/package-review-0.8-20261031`.
+`<EXTERNAL_OUTPUT_ROOT>/package-review-0.8-20261031`.
 Dioptas migration commit: `31d79408`. No remote CI run, publication, tag or push
 is implied by these local checks.

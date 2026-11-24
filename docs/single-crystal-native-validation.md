@@ -43,7 +43,7 @@ All eight source files (470,052,794 bytes), intermediate arrays, trial results,
 diagnostic searches, executable and distributions remain outside Git at:
 
 ```text
-/Users/clemens/ChatGPT/PhaseSmith/native-coordinator-0.8-20261031
+<EXTERNAL_OUTPUT_ROOT>/native-coordinator-0.8-20261031
 ```
 
 The machine-readable receipt is

@@ -198,7 +198,7 @@ masks, ordered failure and mutation isolation. Source-bound cache tests cover
 file changes, tiny-budget streaming and external-link rejection. All numerical
 reference equations and oracle fixtures remain unchanged: hashing/lossless cache
 and execution changes are outside those equations. All raw files, full products,
-wheels and logs remain external under `/Users/clemens/ChatGPT/PhaseSmith`.
+wheels and logs remain external under `<EXTERNAL_OUTPUT_ROOT>`.
 
 Final validation passes **515 Rust tests** (34 opt-in tests ignored) and
 **3,267 Python tests** (11 external-data skips; 34 slow tests deselected by the

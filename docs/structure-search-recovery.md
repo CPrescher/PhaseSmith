@@ -292,7 +292,7 @@ selection regression is excluded from the report.
 
 Complete data, source snapshots, executables, models, barriers and logs stay
 outside Git at
-`/Users/clemens/ChatGPT/PhaseSmith/three-step-search-recovery-0.8-20261101/`.
+`<EXTERNAL_OUTPUT_ROOT>/three-step-search-recovery-0.8-20261101/`.
 After source reconstruction and retained-artifact hash checks, the two regenerable
 Rust target directories were removed: 11,117,424,640 allocated bytes (10.35 GiB).
 Physical free-space gain was not measured. All original data, numerical evidence,

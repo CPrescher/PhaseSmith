@@ -94,6 +94,7 @@ nav:
       - Rotation positions: experimental-rotation-positions.md
       - Reciprocal indexing: experimental-reciprocal-indexing.md
       - Lattice and grain discovery: experimental-grain-search.md
+      - Grain CPU speed benchmark: grain-cpu-speed.md
       - Row search: experimental-row-search.md
       - Cell comparison: experimental-cell-comparison.md
       - Lattice symmetry and constrained cells: lattice-symmetry.md
@@ -156,10 +157,8 @@ nav:
       - Single-crystal API proposal: single-crystal-api-proposal.md
       - Structure-search memory budget: solution-memory-budget.md
       - Enstatite external-data workflow: enstatite-workflow.md
-      - Enstatite raw-frame workflow: enstatite-raw-workflow.md
       - MgSiO3 reduction diagnosis: enstatite-reduction-diagnosis.md
       - Shared frame-mask proposal: single-crystal-mask-proposal.md
-      - Shared frame validity: single-crystal-frame-validity.md
       - CW Pawley refinement: pawley.md
       - TOF Pawley refinement: tof-pawley.md
       - Pawley validation: pawley-validation.md
@@ -186,3 +185,4 @@ not_in_nav: |
 # Preserve historical status in Git without indexing it as current guidance.
 exclude_docs: |
   archive/project-brief-before-package-review-2026-10-31.md
+  archive/implementation-plan-2026-11.md

@@ -172,7 +172,7 @@ python benchmarks/grain_gpu/audit_row_projections.py --output /absolute/row-arti
 Full timings, input snapshots, all result fingerprints,
 projection audit, known-orientation controls, bridge source/provenance and logs:
 
-`/Users/clemens/Codex/2026-11-12/phasesmith-row-gpu/`
+`<EXTERNAL_RUN_ROOT>/phasesmith-row-gpu/`
 
 Validation passed: 23 dedicated GPU checks, 24 isolated bridge tests, 577 workspace
 Rust tests, and 3,444 Python tests (28 skipped, 34 deselected), plus workspace

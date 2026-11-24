@@ -75,7 +75,7 @@ models are saved before reference grading. Every failure remains in the report.
 
 Raw inputs, source snapshots, binaries, complete predictions, profiles and logs
 stay outside Git under
-`/Users/clemens/ChatGPT/PhaseSmith/candidate-fitting-speed-0.8-20261101/`.
+`<EXTERNAL_OUTPUT_ROOT>/candidate-fitting-speed-0.8-20261101/`.
 ## Measured results
 
 **Candidate fitting improves, while complete search time is effectively unchanged.**
@@ -310,4 +310,4 @@ The compact [diagnostic receipt](https://github.com/CPrescher/PhaseSmith/blob/ma
 retains every run, count comparison, geometric error, failed attempt and source
 identity. Full inputs, executable, predictions, barrier, runner and grader stay
 outside Git at
-`/Users/clemens/ChatGPT/PhaseSmith/hard-case-diagnostics-0.8-20261101/`.
+`<EXTERNAL_OUTPUT_ROOT>/hard-case-diagnostics-0.8-20261101/`.

@@ -3,9 +3,11 @@
 Start with the task guides in the navigation for supported workflows. These
 pages retain equations, implementation decisions, failed trials, validation and
 historical integration evidence. Their recorded status applies to their stated
-revision; the [package review](package-review-0.8.md) and [0.8 release review](release-candidate-0.8.md)
-describe the current release state. The former long project brief is preserved
-in the repository archive, outside the documentation search index.
+revision; see `CHANGELOG.md` for current 0.9 release notes alongside the
+historical [0.8 package review](package-review-0.8.md) and
+[0.8 release review](release-candidate-0.8.md). The former long project brief
+and early implementation plan are preserved in the repository archive, outside
+the documentation search index.
 
 ## Future work backlog
 
