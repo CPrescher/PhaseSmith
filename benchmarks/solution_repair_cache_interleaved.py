@@ -34,8 +34,6 @@ def main():
         default=Path(shelxt_default) if shelxt_default else None,
     )
     args = parser.parse_args()
-    if args.shelxt is None:
-        parser.error("pass --shelxt, set SHELXT, or put shelxt on PATH")
     if args.output.exists() or not 5 <= args.seconds <= 120:
         parser.error("a new directory and seconds in [5,120] are required")
     args.output.mkdir(parents=True)
@@ -45,7 +43,7 @@ def main():
             manifest=args.manifest.resolve(),
             output=(args.output / mode).resolve(),
             seconds=args.seconds,
-            shelxt=args.shelxt.resolve(),
+            shelxt=args.shelxt.resolve() if args.shelxt is not None else None,
             split="development",
             resume=False,
             lock_revision=args.lock_revision,

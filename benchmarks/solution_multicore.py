@@ -62,7 +62,7 @@ def controls(args, n):
             manifest=args.manifest.resolve(),
             output=(args.output / f"latency-w{n}").resolve(),
             seconds=args.seconds,
-            shelxt=args.shelxt.resolve(),
+            shelxt=args.shelxt.resolve() if args.shelxt is not None else None,
             split="development",
             resume=False,
             lock_revision=args.lock_revision,
@@ -189,8 +189,6 @@ def main():
     p.add_argument("--seconds", type=float, default=15.0)
     p.add_argument("--lock-revision", type=int, default=34)
     args = p.parse_args()
-    if args.shelxt is None:
-        p.error("pass --shelxt, set SHELXT, or put shelxt on PATH")
     args.output = args.output.resolve()
     if args.output.exists() or not 5 <= args.seconds <= 120:
         p.error("new output directory and seconds in [5,120] required")

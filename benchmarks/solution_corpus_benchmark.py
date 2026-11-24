@@ -333,8 +333,6 @@ def main():
 
         worker(args)
     else:
-        if args.shelxt is None:
-            parser.error("pass --shelxt, set SHELXT, or put shelxt on PATH")
         if args.split == "holdout" and not args.open_holdout:
             parser.error("holdout stays sealed; --open-holdout explicitly records its opening")
         if not 5 <= args.seconds <= 120:
