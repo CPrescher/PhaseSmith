@@ -150,3 +150,71 @@ def test_worker_error_identifies_structure_and_next_batch_succeeds(backend):
         ps.calculate_powder_sticks_batch([a, bad], SCAN, workers=2, backend=backend)
     assert any("unknown-species" in note for note in caught.value.__notes__)
     assert len(ps.calculate_powder_sticks_batch([a, a], SCAN, workers=2, backend=backend)) == 2
+
+
+@pytest.mark.parametrize(("backend", "workers"), [("threads", 1), ("threads", 2), ("processes", 2)])
+def test_powder_sticks_arrays_are_read_only_and_processes_ignore_unpicklable_metadata(
+    backend, workers
+):
+    a = replace(model("meta-a"), metadata={"unpicklable": lambda x: x})
+    b = replace(model("meta-b"), metadata={"unpicklable": object()})
+    result = ps.calculate_powder_sticks_batch([a, b], SCAN, workers=workers, backend=backend)
+    assert [r.structure_id for r in result] == ["meta-a", "meta-b"]
+    for item in result:
+        assert not item.two_theta_deg.flags.writeable
+        assert not item.integrated_intensity.flags.writeable
+
+
+def test_batch_reuses_prepared_reflection_generator_for_shared_space_groups(monkeypatch):
+    import phasesmith.powder_sticks as sticks
+
+    calls = 0
+    real_ctor = sticks.PreparedReflectionGenerator
+
+    def counting_ctor(group):
+        nonlocal calls
+        calls += 1
+        return real_ctor(group)
+
+    monkeypatch.setattr(sticks, "PreparedReflectionGenerator", counting_ctor)
+    a = model("one")
+    b = replace(a, structure_id="two")
+    c = replace(a, structure_id="three")
+    result = ps.calculate_powder_sticks_batch([a, b, c], SCAN, workers=1)
+    assert len(result) == 3
+    assert calls == 1
+
+    calls = 0
+    threaded = ps.calculate_powder_sticks_batch([a, b, c, a, b, c], SCAN, workers=2)
+    assert len(threaded) == 6
+    assert 1 <= calls <= 2
+
+
+def test_process_backend_multi_item_chunks_preserve_order_and_mid_chunk_errors():
+    base = model("m0")
+    models = [
+        replace(
+            base,
+            structure_id=f"m{i}",
+            sites=(replace(base.sites[0], occupancy=0.25 + 0.03 * i),),
+        )
+        for i in range(19)
+    ]
+    serial = ps.calculate_powder_sticks_batch(models, SCAN, workers=1)
+    chunked = ps.calculate_powder_sticks_batch(models, SCAN, workers=2, backend="processes")
+    assert [r.structure_id for r in chunked] == [r.structure_id for r in serial]
+    for got, want in zip(chunked, serial, strict=True):
+        np.testing.assert_array_equal(got.two_theta_deg, want.two_theta_deg)
+        np.testing.assert_array_equal(got.integrated_intensity, want.integrated_intensity)
+        assert not got.two_theta_deg.flags.writeable
+        assert not got.integrated_intensity.flags.writeable
+
+    broken = list(models)
+    broken[11] = replace(
+        broken[11],
+        structure_id="mid-chunk-bad",
+        sites=(replace(base.sites[0], type_symbol="Xx", element_symbol="Xx"),),
+    )
+    with pytest.raises((ValueError, KeyError)) as caught:
+        ps.calculate_powder_sticks_batch(broken, SCAN, workers=2, backend="processes")
+    assert any("mid-chunk-bad" in note for note in caught.value.__notes__)

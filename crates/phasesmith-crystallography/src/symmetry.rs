@@ -446,8 +446,8 @@ impl SpaceGroup {
         merge_friedel: bool,
     ) -> Result<Vec<[i32; 3]>, SymmetryError> {
         let mut orbit = BTreeSet::new();
-        for operation in &self.operations {
-            let transformed = operation.reciprocal_index(hkl)?;
+        for &rotation in &self.rotations {
+            let transformed = reciprocal_index(rotation, hkl)?;
             orbit.insert(transformed);
             if merge_friedel {
                 orbit.insert(negate_hkl(transformed)?);

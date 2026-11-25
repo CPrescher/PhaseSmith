@@ -431,6 +431,7 @@ impl NativePreparedReflectionGenerator {
 impl NativePreparedReflectionGenerator {
     #[new]
     fn new(
+        py: Python<'_>,
         rotations_flat: PyReadonlyArray1<'_, i64>,
         translation_numerators_flat: PyReadonlyArray1<'_, i64>,
         translation_denominators_flat: PyReadonlyArray1<'_, i64>,
@@ -442,11 +443,13 @@ impl NativePreparedReflectionGenerator {
             &translation_numerators_flat,
             &translation_denominators_flat,
         )?;
-        let space_group = SpaceGroup::new(operations)
-            .map_err(|error| PyValueError::new_err(error.to_string()))?;
-        let generator =
-            PreparedReflectionGenerator::new(space_group, merge_friedel, max_candidates)
-                .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        let generator = py
+            .detach(move || {
+                let space_group = SpaceGroup::new(operations).map_err(|error| error.to_string())?;
+                PreparedReflectionGenerator::new(space_group, merge_friedel, max_candidates)
+                    .map_err(|error| error.to_string())
+            })
+            .map_err(PyValueError::new_err)?;
         Ok(Self { generator })
     }
 

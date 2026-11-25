@@ -301,6 +301,39 @@ struct PreparationKey {
     correction: IntegratedIntensityCorrectionModel,
 }
 
+impl PreparationKey {
+    fn from_input(cell: UnitCell, input: &StructuralPatternInputView<'_>) -> Self {
+        Self {
+            cell,
+            hkl: input.hkl.to_vec(),
+            species: input
+                .scattering_species
+                .iter()
+                .map(|s| (*s).to_owned())
+                .collect(),
+            real: input.scattering_real_offset.to_vec(),
+            imag: input.scattering_imag_offset.to_vec(),
+            scattering: input.scattering_model,
+            correction: input.correction_model,
+        }
+    }
+
+    fn matches(&self, cell: UnitCell, input: &StructuralPatternInputView<'_>) -> bool {
+        self.cell == cell
+            && self.scattering == input.scattering_model
+            && self.correction == input.correction_model
+            && self.hkl.as_slice() == input.hkl
+            && self.real.as_slice() == input.scattering_real_offset
+            && self.imag.as_slice() == input.scattering_imag_offset
+            && self.species.len() == input.scattering_species.len()
+            && self
+                .species
+                .iter()
+                .zip(input.scattering_species)
+                .all(|(left, right)| left.as_str() == *right)
+    }
+}
+
 struct PreparedTables {
     geometry: Vec<(f64, [f64; CELL_PARAMETER_COUNT])>,
     scattering: ScatteringBatch,
@@ -308,8 +341,7 @@ struct PreparedTables {
 }
 
 struct PreparedNumerics {
-    scattering: ScatteringBatch,
-    correction: IntegratedIntensityCorrection,
+    tables: Arc<PreparedTables>,
     d_spacing: Vec<f64>,
     two_theta_deg: Vec<f64>,
     d_two_theta_d_cell: Vec<[f64; CELL_PARAMETER_COUNT]>,
@@ -389,26 +421,13 @@ fn prepared_tables(
     input: &StructuralPatternInputView<'_>,
     cache: Option<&StructuralPreparationCache>,
 ) -> Result<Arc<PreparedTables>, StructuralPatternError> {
-    let key = PreparationKey {
-        cell,
-        hkl: input.hkl.to_vec(),
-        species: input
-            .scattering_species
-            .iter()
-            .map(|s| (*s).to_owned())
-            .collect(),
-        real: input.scattering_real_offset.to_vec(),
-        imag: input.scattering_imag_offset.to_vec(),
-        scattering: input.scattering_model,
-        correction: input.correction_model,
-    };
     if let Some(cache) = cache
         && let Some((_, tables)) = cache
             .entries
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .iter()
-            .find(|(candidate, _)| candidate == &key)
+            .find(|(candidate, _)| candidate.matches(cell, input))
     {
         return Ok(Arc::clone(tables));
     }
@@ -447,10 +466,14 @@ fn prepared_tables(
         correction,
     });
     if let Some(cache) = cache {
+        let key = PreparationKey::from_input(cell, input);
         let mut entries = cache
             .entries
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if let Some((_, existing)) = entries.iter().find(|(candidate, _)| candidate == &key) {
+            return Ok(Arc::clone(existing));
+        }
         if entries.len() == 32 {
             entries.remove(0);
         }
@@ -519,12 +542,12 @@ impl PreparedNumerics {
             u_iso_angstrom2: input.u_iso_angstrom2,
             anisotropic_mask: input.anisotropic_mask,
             u_aniso_cif_angstrom2: input.u_aniso_cif_angstrom2,
-            scattering_real: &self.scattering.real,
-            scattering_imag: &self.scattering.imag,
-            d_scattering_real_d_s: &self.scattering.d_real_d_s,
-            d_scattering_imag_d_s: &self.scattering.d_imag_d_s,
-            correction: &self.correction.values,
-            d_correction_d_q_squared: &self.correction.d_values_d_q_squared,
+            scattering_real: &self.tables.scattering.real,
+            scattering_imag: &self.tables.scattering.imag,
+            d_scattering_real_d_s: &self.tables.scattering.d_real_d_s,
+            d_scattering_imag_d_s: &self.tables.scattering.d_imag_d_s,
+            correction: &self.tables.correction.values,
+            d_correction_d_q_squared: &self.tables.correction.d_values_d_q_squared,
             scale: input.scale,
             coordinate_tolerance: input.coordinate_tolerance,
         }
@@ -957,8 +980,7 @@ fn prepare_cached(
         }
     }
     Ok(PreparedNumerics {
-        scattering: tables.scattering.clone(),
-        correction: tables.correction.clone(),
+        tables,
         d_spacing,
         two_theta_deg,
         d_two_theta_d_cell,
@@ -1061,7 +1083,7 @@ fn append_instrument_derivatives(
         let d_intensity_d_wavelength = input.scale
             * multiplicity
             * structure_factors.f_squared[reflection]
-            * prepared.correction.d_values_d_wavelength[reflection];
+            * prepared.tables.correction.d_values_d_wavelength[reflection];
         let begin = local.offsets[reflection];
         let end = local.offsets[reflection + 1];
         for active in begin..end {
