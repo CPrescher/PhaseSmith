@@ -7,7 +7,7 @@ import os
 import threading
 from collections.abc import Iterable
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from functools import partial
 from typing import Any, Literal
 
@@ -116,7 +116,11 @@ def _calculate(
 
 
 def _compact_record(structure: CrystalStructure) -> dict[str, Any]:
-    return structure_to_record(replace(structure, source=None, diagnostics=(), metadata={}))
+    record = structure_to_record(structure)
+    record["source"] = None
+    record["diagnostics"] = []
+    record["metadata"] = {}
+    return record
 
 
 def _calculate_record_chunk(

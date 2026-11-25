@@ -183,3 +183,38 @@ def test_batch_reuses_prepared_reflection_generator_for_shared_space_groups(monk
     result = ps.calculate_powder_sticks_batch([a, b, c], SCAN, workers=1)
     assert len(result) == 3
     assert calls == 1
+
+    calls = 0
+    threaded = ps.calculate_powder_sticks_batch([a, b, c, a, b, c], SCAN, workers=2)
+    assert len(threaded) == 6
+    assert 1 <= calls <= 2
+
+
+def test_process_backend_multi_item_chunks_preserve_order_and_mid_chunk_errors():
+    base = model("m0")
+    models = [
+        replace(
+            base,
+            structure_id=f"m{i}",
+            sites=(replace(base.sites[0], occupancy=0.25 + 0.03 * i),),
+        )
+        for i in range(19)
+    ]
+    serial = ps.calculate_powder_sticks_batch(models, SCAN, workers=1)
+    chunked = ps.calculate_powder_sticks_batch(models, SCAN, workers=2, backend="processes")
+    assert [r.structure_id for r in chunked] == [r.structure_id for r in serial]
+    for got, want in zip(chunked, serial, strict=True):
+        np.testing.assert_array_equal(got.two_theta_deg, want.two_theta_deg)
+        np.testing.assert_array_equal(got.integrated_intensity, want.integrated_intensity)
+        assert not got.two_theta_deg.flags.writeable
+        assert not got.integrated_intensity.flags.writeable
+
+    broken = list(models)
+    broken[11] = replace(
+        broken[11],
+        structure_id="mid-chunk-bad",
+        sites=(replace(base.sites[0], type_symbol="Xx", element_symbol="Xx"),),
+    )
+    with pytest.raises((ValueError, KeyError)) as caught:
+        ps.calculate_powder_sticks_batch(broken, SCAN, workers=2, backend="processes")
+    assert any("mid-chunk-bad" in note for note in caught.value.__notes__)

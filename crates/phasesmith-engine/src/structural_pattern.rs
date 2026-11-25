@@ -466,20 +466,18 @@ fn prepared_tables(
         correction,
     });
     if let Some(cache) = cache {
+        let key = PreparationKey::from_input(cell, input);
         let mut entries = cache
             .entries
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        if let Some((_, existing)) = entries
-            .iter()
-            .find(|(candidate, _)| candidate.matches(cell, input))
-        {
+        if let Some((_, existing)) = entries.iter().find(|(candidate, _)| candidate == &key) {
             return Ok(Arc::clone(existing));
         }
         if entries.len() == 32 {
             entries.remove(0);
         }
-        entries.push((PreparationKey::from_input(cell, input), Arc::clone(&tables)));
+        entries.push((key, Arc::clone(&tables)));
     }
     Ok(tables)
 }

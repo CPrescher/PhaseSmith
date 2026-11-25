@@ -17,7 +17,7 @@ for path, pattern in zip(paths, patterns, strict=True):
     print(path.name, pattern.structure_id, len(pattern.two_theta_deg))
 ```
 
-The returned tuple follows input order, including repeated structures. Each `PowderSticks` contains the structure ID and two one-dimensional NumPy arrays of equal length, `two_theta_deg` and `integrated_intensity`. An empty batch yields an empty tuple. A scan with no reflection families yields two empty arrays for that structure. A cell without atom sites raises an error.
+The returned tuple follows input order, including repeated structures. Each `PowderSticks` contains the structure ID and two read-only one-dimensional NumPy arrays of equal length, `two_theta_deg` and `integrated_intensity`. An empty batch yields an empty tuple. A scan with no reflection families yields two empty arrays for that structure. A cell without atom sites raises an error.
 
 ## What the sticks represent
 

@@ -345,40 +345,15 @@ impl PreparedReflectionGenerator {
                     {
                         continue;
                     }
-                    if prefilter
-                        && !self
-                            .space_group
-                            .is_canonical_index(hkl, self.merge_friedel)?
-                    {
-                        continue;
-                    }
-                    let absent = match &self.extinctions {
-                        Some(test) => test.is_absent(hkl)?,
-                        None => self.space_group.is_systematically_absent(hkl)?,
-                    };
-                    if absent {
-                        continue;
-                    }
-                    let (d_spacing, derivatives) = geometry.d_spacing_and_derivatives(hkl)?;
-                    let reciprocal_length = reciprocal_squared.sqrt();
-                    if !range.contains(reciprocal_length, d_spacing) {
-                        continue;
-                    }
-                    let family = self
-                        .space_group
-                        .reflection_family(hkl, self.merge_friedel)?;
-                    if family.canonical_hkl != hkl {
-                        continue;
-                    }
-                    reflections.push(GeneratedReflection {
-                        reflection_id: family.reflection_id,
+                    if let Some(reflection) = self.evaluate_candidate(
                         hkl,
-                        conventional_hkl: family.conventional_hkl,
-                        multiplicity: family.multiplicity,
-                        d_spacing_angstrom: d_spacing,
-                        reciprocal_length_inverse_angstrom: reciprocal_length,
-                        d_spacing_derivatives: derivatives,
-                    });
+                        reciprocal_squared,
+                        &geometry,
+                        range,
+                        prefilter,
+                    )? {
+                        reflections.push(reflection);
+                    }
                 }
             }
         }
@@ -388,6 +363,67 @@ impl PreparedReflectionGenerator {
                 .then_with(|| left.hkl.cmp(&right.hkl))
         });
         Ok(reflections)
+    }
+
+    fn evaluate_candidate(
+        &self,
+        hkl: [i32; 3],
+        reciprocal_squared: f64,
+        geometry: &crate::cell::CellGeometry,
+        range: ReflectionRange,
+        prefilter: bool,
+    ) -> Result<Option<GeneratedReflection>, ReflectionGenerationError> {
+        let family = if prefilter {
+            if !self
+                .space_group
+                .is_canonical_index(hkl, self.merge_friedel)?
+            {
+                return Ok(None);
+            }
+            None
+        } else {
+            // Without prefilter, check the full orbit first so early exits
+            // never hide an unrepresentable transformed index or Friedel mate.
+            let evaluated = self
+                .space_group
+                .reflection_family(hkl, self.merge_friedel)?;
+            if evaluated.canonical_hkl != hkl {
+                return Ok(None);
+            }
+            Some(evaluated)
+        };
+        let absent = match &self.extinctions {
+            Some(test) => test.is_absent(hkl)?,
+            None => self.space_group.is_systematically_absent(hkl)?,
+        };
+        if absent {
+            return Ok(None);
+        }
+        let (d_spacing, derivatives) = geometry.d_spacing_and_derivatives(hkl)?;
+        let reciprocal_length = reciprocal_squared.sqrt();
+        if !range.contains(reciprocal_length, d_spacing) {
+            return Ok(None);
+        }
+        let family = if let Some(evaluated) = family {
+            evaluated
+        } else {
+            let evaluated = self
+                .space_group
+                .reflection_family(hkl, self.merge_friedel)?;
+            if evaluated.canonical_hkl != hkl {
+                return Ok(None);
+            }
+            evaluated
+        };
+        Ok(Some(GeneratedReflection {
+            reflection_id: family.reflection_id,
+            hkl,
+            conventional_hkl: family.conventional_hkl,
+            multiplicity: family.multiplicity,
+            d_spacing_angstrom: d_spacing,
+            reciprocal_length_inverse_angstrom: reciprocal_length,
+            d_spacing_derivatives: derivatives,
+        }))
     }
 }
 
