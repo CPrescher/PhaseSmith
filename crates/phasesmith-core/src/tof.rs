@@ -1234,18 +1234,25 @@ pub fn accumulate_tof_batch_with_context(
             )
             .into_iter()
             .collect::<Result<Vec<_>, _>>()?;
+        let sample_count = x.len();
         for (reflection, block) in blocks.into_iter().enumerate() {
             let begin = offsets[reflection];
             let support_count = block.y.len();
+            let start = block.start;
             let local_begin = begin * LOCAL_PARAMETER_COUNT;
             let local_end = local_begin + block.local.len();
             local[local_begin..local_end].copy_from_slice(&block.local);
-            for support_index in 0..support_count {
-                let sample = block.start + support_index;
-                y[sample] += block.y[support_index];
-                for parameter in 0..TOF_GLOBAL_PARAMETER_COUNT {
-                    global[parameter * x.len() + sample] +=
-                        block.global[parameter * support_count + support_index];
+            for (dst, &src) in y[start..start + support_count].iter_mut().zip(&block.y) {
+                *dst += src;
+            }
+            for parameter in 0..TOF_GLOBAL_PARAMETER_COUNT {
+                let dst_offset = parameter * sample_count + start;
+                let src_offset = parameter * support_count;
+                for (dst, &src) in global[dst_offset..dst_offset + support_count]
+                    .iter_mut()
+                    .zip(&block.global[src_offset..src_offset + support_count])
+                {
+                    *dst += src;
                 }
             }
         }

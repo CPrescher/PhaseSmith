@@ -285,18 +285,23 @@ pub fn calculate_structural_tof_pattern_dense_with_context(
     for reflection in 0..reflection_count {
         let begin = local.offsets[reflection];
         let end = local.offsets[reflection + 1];
-        for active in begin..end {
-            let sample = local.starts[reflection] + active - begin;
-            let local_base = 2 * active;
-            for parameter in 0..parameter_count {
-                let d_spacing = if parameter < CELL_PARAMETER_COUNT {
-                    prepared.d_spacing_d_cell[reflection][parameter]
-                } else {
-                    0.0
-                };
-                d_y[parameter * sample_count + sample] += local.values[local_base]
-                    * structural.d_intensity[parameter * reflection_count + reflection]
-                    + local.values[local_base + 1] * d_spacing;
+        let support_count = end - begin;
+        let start = local.starts[reflection];
+        let (local_pairs, _) = local.values[2 * begin..2 * end].as_chunks::<2>();
+        for parameter in 0..parameter_count {
+            let d_intensity = structural.d_intensity[parameter * reflection_count + reflection];
+            let d_spacing = if parameter < CELL_PARAMETER_COUNT {
+                prepared.d_spacing_d_cell[reflection][parameter]
+            } else {
+                0.0
+            };
+            let row_offset = parameter * sample_count + start;
+            for (dst, &[d_local_intensity, d_local_d]) in d_y
+                [row_offset..row_offset + support_count]
+                .iter_mut()
+                .zip(local_pairs)
+            {
+                *dst += d_local_intensity * d_intensity + d_local_d * d_spacing;
             }
         }
     }

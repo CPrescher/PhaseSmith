@@ -989,19 +989,26 @@ fn accumulate_cw_contributions_impl<const AXIAL: bool>(
             }
             Ok(block)
         });
+        let sample_count = x.len();
         for (reflection, block) in blocks.into_iter().enumerate() {
             let block = block?;
             let begin = prepared.offsets[reflection];
             let support_count = block.y.len();
+            let start = block.start;
             let local_begin = begin * LOCAL_PARAMETER_COUNT;
             let local_end = local_begin + block.local.len();
             local_values[local_begin..local_end].copy_from_slice(&block.local);
-            for support_index in 0..support_count {
-                let sample = block.start + support_index;
-                y[sample] += block.y[support_index];
-                for parameter in 0..global_parameter_count {
-                    global_values[parameter * x.len() + sample] +=
-                        block.global[parameter * support_count + support_index];
+            for (dst, &src) in y[start..start + support_count].iter_mut().zip(&block.y) {
+                *dst += src;
+            }
+            for parameter in 0..global_parameter_count {
+                let dst_offset = parameter * sample_count + start;
+                let src_offset = parameter * support_count;
+                for (dst, &src) in global_values[dst_offset..dst_offset + support_count]
+                    .iter_mut()
+                    .zip(&block.global[src_offset..src_offset + support_count])
+                {
+                    *dst += src;
                 }
             }
         }

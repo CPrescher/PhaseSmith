@@ -352,12 +352,6 @@ impl PreparedReflectionGenerator {
                     {
                         continue;
                     }
-                    let family = self
-                        .space_group
-                        .reflection_family(hkl, self.merge_friedel)?;
-                    if family.canonical_hkl != hkl {
-                        continue;
-                    }
                     let absent = match &self.extinctions {
                         Some(test) => test.is_absent(hkl)?,
                         None => self.space_group.is_systematically_absent(hkl)?,
@@ -368,6 +362,12 @@ impl PreparedReflectionGenerator {
                     let (d_spacing, derivatives) = geometry.d_spacing_and_derivatives(hkl)?;
                     let reciprocal_length = reciprocal_squared.sqrt();
                     if !range.contains(reciprocal_length, d_spacing) {
+                        continue;
+                    }
+                    let family = self
+                        .space_group
+                        .reflection_family(hkl, self.merge_friedel)?;
+                    if family.canonical_hkl != hkl {
                         continue;
                     }
                     reflections.push(GeneratedReflection {
