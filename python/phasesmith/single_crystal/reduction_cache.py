@@ -12,6 +12,16 @@ import numpy as np
 
 __all__ = ["ReductionCache", "cache_key"]
 
+_HASH_CHUNK_BYTES = 1024 * 1024
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        while chunk := stream.read(_HASH_CHUNK_BYTES):
+            digest.update(chunk)
+    return digest.hexdigest()
+
 
 def cache_key(stage, configuration, arrays, *, implementation):
     """Hash exact typed content, configuration and all implementation identity."""
@@ -60,10 +70,10 @@ class ReductionCache:
         path, meta = entry / "arrays.npz", entry / "metadata.json"
         if not path.is_file() or not meta.is_file():
             raise ValueError("incomplete numerical cache entry")
-        record = json.loads(meta.read_text())
+        record = json.loads(meta.read_text(encoding="utf-8"))
         if record.get("schema") != self.schema or record.get("key") != key:
             raise ValueError("numerical cache schema/key mismatch")
-        if hashlib.sha256(path.read_bytes()).hexdigest() != record.get("sha256"):
+        if _sha256_file(path) != record.get("sha256"):
             raise ValueError("numerical cache checksum mismatch")
         with np.load(path, allow_pickle=False) as z:
             arrays = {name: z[name] for name in z.files}
@@ -98,11 +108,12 @@ class ReductionCache:
             record = dict(
                 schema=self.schema,
                 key=key,
-                sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+                sha256=_sha256_file(path),
                 arrays={k: [a.dtype.str, list(a.shape)] for k, a in arrays.items()},
             )
             (temporary / "metadata.json").write_text(
-                json.dumps(record, sort_keys=True, allow_nan=False)
+                json.dumps(record, sort_keys=True, allow_nan=False),
+                encoding="utf-8",
             )
             try:
                 os.rename(temporary, entry)

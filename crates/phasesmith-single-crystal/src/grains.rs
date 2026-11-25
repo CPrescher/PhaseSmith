@@ -1072,7 +1072,10 @@ fn cell(a: M3) -> [f64; 6] {
 /// reach for a 4 × 4.2 × 28 Å cell).
 #[must_use]
 pub fn misorientation(a: M3, b: M3) -> Option<f64> {
-    turn(a, b).or_else(|| turn(b, a))
+    match (turn(a, b), turn(b, a)) {
+        (Some(ab), Some(ba)) => Some(f64::midpoint(ab, ba)),
+        (ab, ba) => ab.or(ba),
+    }
 }
 fn turn(a: M3, b: M3) -> Option<f64> {
     let dual = inv_t(b).ok()?;
@@ -1324,6 +1327,7 @@ pub fn find(
     method: &Method,
     progress: &mut dyn FnMut(usize, usize) -> Result<()>,
 ) -> Result<Vec<Grain>> {
+    options.check()?;
     if training.len() != q.len() {
         return Err(SpotError("one training flag per position".into()));
     }

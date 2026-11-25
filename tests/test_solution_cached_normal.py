@@ -17,7 +17,8 @@ pytestmark = pytest.mark.skipif(
 @pytest.mark.parametrize("seed", range(4))
 @pytest.mark.parametrize("damping", [1e-8, 1e-3, 0.1, 10.0])
 @pytest.mark.parametrize("kind", ["random", "rank_deficient", "tiny_columns"])
-def test_cached_step_matches_independent_damped_equations(seed, damping, kind):
+@pytest.mark.parametrize("blocked", [False, True])
+def test_cached_step_matches_independent_damped_equations(seed, damping, kind, blocked):
     rng = np.random.default_rng(seed)
     j = rng.normal(size=(64, 259))
     j *= np.geomspace(0.01, 100, 64)[:, None]
@@ -28,7 +29,7 @@ def test_cached_step_matches_independent_damped_equations(seed, damping, kind):
         j[-1] = 0
         j[-2] *= 1e-12
     r = rng.normal(size=j.shape[1])
-    value = _core._iterative_normal_step(j.ravel(), r, damping, cached=True)
+    value = _core._iterative_normal_step(j.ravel(), r, damping, cached=True, blocked=blocked)
     expected = iterative_normal_reference(j, r, damping)
     normal, rhs, scale = preconditioned_normal_reference(j, r, damping)
     x = value["step"] / scale
@@ -42,17 +43,19 @@ def test_cached_step_matches_independent_damped_equations(seed, damping, kind):
 
 
 @pytest.mark.parametrize("n,m", [(8, 100), (40, 45)])
-def test_unsuitable_shapes_use_the_unchanged_matrix_free_step(n, m):
+@pytest.mark.parametrize("blocked", [False, True])
+def test_unsuitable_shapes_use_the_unchanged_matrix_free_step(n, m, blocked):
     rng = np.random.default_rng(29)
     j, r = rng.normal(size=(n, m)), rng.normal(size=m)
     old = _core._iterative_normal_step(j.ravel(), r, 0.1)
-    new = _core._iterative_normal_step(j.ravel(), r, 0.1, cached=True)
+    new = _core._iterative_normal_step(j.ravel(), r, 0.1, cached=True, blocked=blocked)
     np.testing.assert_array_equal(old["step"].view(np.uint64), new["step"].view(np.uint64))
     assert not new["used_cache"] and not new["fell_back"]
 
 
 @pytest.mark.parametrize("invalid", ["nan", "length", "zero", "negative"])
-def test_invalid_linear_systems_fail(invalid):
+@pytest.mark.parametrize("blocked", [False, True])
+def test_invalid_linear_systems_fail(invalid, blocked):
     j, r, damping = np.ones(64 * 140), np.ones(140), 0.1
     if invalid == "nan":
         j[0] = np.nan
@@ -63,17 +66,18 @@ def test_invalid_linear_systems_fail(invalid):
     else:
         damping = -1
     with pytest.raises(ValueError):
-        _core._iterative_normal_step(j, r, damping, cached=True)
+        _core._iterative_normal_step(j, r, damping, cached=True, blocked=blocked)
 
 
-def test_zero_rhs_and_repeated_cached_steps_are_deterministic():
+@pytest.mark.parametrize("blocked", [False, True])
+def test_zero_rhs_and_repeated_cached_steps_are_deterministic(blocked):
     rng = np.random.default_rng(911)
     j = rng.normal(size=(40, 203))
-    z = _core._iterative_normal_step(j.ravel(), np.zeros(203), 0.1, cached=True)
+    z = _core._iterative_normal_step(j.ravel(), np.zeros(203), 0.1, cached=True, blocked=blocked)
     assert z["iterations"] == 0 and np.all(z["step"] == 0)
     r = rng.normal(size=203)
-    a = _core._iterative_normal_step(j.ravel(), r, 0.1, cached=True)
-    b = _core._iterative_normal_step(j.ravel(), r, 0.1, cached=True)
+    a = _core._iterative_normal_step(j.ravel(), r, 0.1, cached=True, blocked=blocked)
+    b = _core._iterative_normal_step(j.ravel(), r, 0.1, cached=True, blocked=blocked)
     np.testing.assert_array_equal(a["step"].view(np.uint64), b["step"].view(np.uint64))
     assert a["iterations"] == b["iterations"]
 

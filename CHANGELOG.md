@@ -6,6 +6,18 @@ development versions.
 
 ## Unreleased
 
+- Improve Python typing and runtime robustness: add `TYPE_CHECKING` imports and
+  `__dir__` to `phasesmith.single_crystal`, type `phasesmith.io.hdf5` and
+  `phasesmith.io.numeric_archive`, stream SHA-256 hashing with explicit UTF-8
+  metadata I/O in `ReductionCache`, and propagate `OperationCancelled` /
+  `MemoryError` directly through `phasesmith.automation`.
+- Polish Rust core and single-crystal rough edges: clamp `ShapeEstimate.box_size`
+  to `5..=101` (matching `MeasureOptions::check`), validate `Options` before
+  sample counts in `grains::find`, symmetrize `grains::misorientation` and
+  `Candidate::better_than` cell-tie tolerance, re-export
+  `accumulate_cw_contributions_with_accuracy` at the `phasesmith-core` root,
+  skip scratch allocation in `smooth_bruckner` for zero-iteration/no-op calls,
+  implement `Debug` on `ExecutionContext`, and deduplicate blocked-normal tests.
 - Mark `PowderSticks.two_theta_deg` and `PowderSticks.integrated_intensity`
   arrays returned by `calculate_powder_sticks_batch` as read-only
   (`writeable = False`), matching other immutable PhaseSmith result arrays.

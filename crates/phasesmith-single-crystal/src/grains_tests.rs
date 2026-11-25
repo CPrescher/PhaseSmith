@@ -650,7 +650,7 @@ fn misorientation_is_symmetric_near_its_rounding_limit() {
         let (ab, ba) = (misorientation(a, b), misorientation(b, a));
         match (ab, ba) {
             (Some(x), Some(y)) => {
-                assert!((x - y).abs() < 1e-6, "{x} {y}");
+                assert_eq!(x.to_bits(), y.to_bits(), "{x} {y}");
                 some += 1;
             }
             (None, None) => none += 1,
@@ -658,4 +658,18 @@ fn misorientation_is_symmetric_near_its_rounding_limit() {
         }
     }
     assert!(some > 500 && none > 500, "{some} {none}");
+}
+
+#[test]
+fn find_validates_options_before_checking_sample_counts() {
+    let invalid = Options {
+        merge_angle: -1.0,
+        ..Options::default()
+    };
+    let error = find(&[], &[], &[], &invalid, &Method::Fft, &mut |_, _| Ok(())).unwrap_err();
+    assert!(
+        !error.0.contains("insufficient training"),
+        "expected option validation error first, got: {}",
+        error.0
+    );
 }

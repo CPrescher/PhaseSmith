@@ -1041,7 +1041,6 @@ struct TofReflectionBlock {
 ///
 /// Returns [`TofError`] for invalid grids, reflection arrays, coefficients,
 /// derived profiles, supports, or checked allocation failures.
-#[allow(clippy::too_many_lines)]
 pub fn accumulate_tof_batch(
     grid: GridView<'_>,
     d_spacings: &[f64],

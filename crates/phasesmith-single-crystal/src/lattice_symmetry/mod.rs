@@ -740,7 +740,11 @@ impl Candidate {
             sum.then(score)
         };
         for k in 0..6 {
-            order = order.then(by(self.cell[k], other.cell[k], 1e-9 * self.cell[k].abs()));
+            order = order.then(by(
+                self.cell[k],
+                other.cell[k],
+                1e-9 * self.cell[k].abs().max(other.cell[k].abs()),
+            ));
         }
         order.then(self.transform.cmp(&other.transform)) == Less
     }

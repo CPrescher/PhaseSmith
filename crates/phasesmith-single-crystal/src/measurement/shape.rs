@@ -22,7 +22,7 @@ pub struct ShapeEstimate {
     /// pixels (`None` when not estimated).
     pub spot_sigma: Option<[f64; 2]>,
     /// Suggested odd [`MeasureOptions::box_size`] holding ± 4 spot σ
-    /// (at least 5), when the spot size was estimated.
+    /// (5–101), when the spot size was estimated.
     pub box_size: Option<usize>,
     /// Reflections or tracks the rocking estimate rests on.
     pub reflections: usize,
@@ -201,7 +201,7 @@ pub fn estimate_shape_from_partials(m: &Measurement, scan: &Scan) -> Result<Shap
         ]
     });
     let box_size = spot_sigma.map(|s| {
-        let half = (4. * s[0].max(s[1])).ceil().max(2.) as usize;
+        let half = ((4. * s[0].max(s[1])).ceil().max(2.) as usize).clamp(2, 50);
         2 * half + 1
     });
     Ok(ShapeEstimate {
