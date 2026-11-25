@@ -41,6 +41,16 @@ pub struct ExecutionContext {
     pool: Option<Arc<ThreadPool>>,
 }
 
+impl std::fmt::Debug for ExecutionContext {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ExecutionContext")
+            .field("threads", &self.threads)
+            .field("pooled", &self.pool.is_some())
+            .finish()
+    }
+}
+
 impl ExecutionContext {
     /// Construct a context with an exact positive worker budget.
     ///
@@ -310,5 +320,17 @@ mod tests {
             ExecutionPolicy::new(Some(1), 0),
             Err(ExecutionPolicyError::InvalidMinimumParallelTasks)
         ));
+    }
+
+    #[test]
+    fn execution_context_implements_debug() {
+        let serial = format!("{:?}", ExecutionContext::serial());
+        assert!(serial.contains("ExecutionContext"), "{serial}");
+        assert!(serial.contains("threads: 1"), "{serial}");
+        assert!(serial.contains("pooled: false"), "{serial}");
+
+        let pooled = format!("{:?}", ExecutionContext::new(2).expect("pool"));
+        assert!(pooled.contains("threads: 2"), "{pooled}");
+        assert!(pooled.contains("pooled: true"), "{pooled}");
     }
 }

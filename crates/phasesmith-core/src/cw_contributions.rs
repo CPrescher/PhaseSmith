@@ -1532,4 +1532,27 @@ mod tests {
             })
         ));
     }
+
+    #[test]
+    fn accuracy_entrypoint_is_reexported_at_crate_root() {
+        let x = [29.8, 30.0, 30.2];
+        let grid = GridView::new(&x).expect("grid");
+        let positions = [30.0];
+        let intensities = [100.0];
+        let owned = OwnedCwContributions::neutral(1);
+        let via_root = crate::accumulate_cw_contributions_with_accuracy(
+            grid,
+            &positions,
+            &intensities,
+            instrument(),
+            owned.as_view(),
+            None,
+            SupportPolicy::FwhmMultiple(10.0),
+            ProfileAccuracy::default(),
+            false,
+            &ExecutionContext::serial(),
+        )
+        .expect("root re-export");
+        assert_eq!(via_root.y.len(), x.len());
+    }
 }

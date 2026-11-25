@@ -75,6 +75,11 @@ pub fn smooth_bruckner(
         .ok_or(BackgroundError::SizeOverflow)?;
     let window_len_u32 = u32::try_from(window_len).map_err(|_| BackgroundError::SizeOverflow)?;
 
+    let scan_end = y.len().saturating_sub(smooth_points.saturating_add(2));
+    if iterations == 0 || scan_end <= smooth_points {
+        return Ok(y.to_vec());
+    }
+
     let mut extended = Vec::new();
     extended
         .try_reserve_exact(extended_len)
@@ -84,7 +89,6 @@ pub fn smooth_bruckner(
     extended[smooth_points..smooth_points + y.len()].copy_from_slice(y);
     extended[smooth_points + y.len()..].fill(y[y.len() - 1]);
 
-    let scan_end = y.len().saturating_sub(smooth_points.saturating_add(2));
     let window_scale = f64::from(window_len_u32);
     for _ in 0..iterations {
         let mut window_sum = 0.0;
@@ -146,5 +150,18 @@ mod tests {
             smooth_bruckner(&[1.0, f64::NAN], 1, 1),
             Err(BackgroundError::NonFiniteSample { index: 1 })
         );
+    }
+
+    #[test]
+    fn zero_iterations_still_validates_overflow_without_allocating_scratch() {
+        let y = [1.0, 4.0, 2.0];
+        assert_eq!(
+            smooth_bruckner(&y, usize::MAX, 0),
+            Err(BackgroundError::SizeOverflow)
+        );
+        // Large valid smooth_points fits u32 window_len; zero iterations and
+        // oversized windows return early without allocating a multi-GB buffer.
+        assert_eq!(smooth_bruckner(&y, 500_000_000, 0), Ok(y.to_vec()));
+        assert_eq!(smooth_bruckner(&y, 500_000_000, 1), Ok(y.to_vec()));
     }
 }

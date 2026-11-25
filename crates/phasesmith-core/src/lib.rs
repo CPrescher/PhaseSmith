@@ -67,8 +67,8 @@ pub use cw_components::{
 pub use cw_contributions::{
     CwContributionArrays, CwContributionsError, CwContributionsView, OwnedCwContributionArrays,
     OwnedCwContributions, accumulate_cw_contributions_batch,
-    accumulate_cw_contributions_batch_with_context, accumulate_cw_fcj_contributions_batch,
-    accumulate_cw_fcj_contributions_batch_with_context,
+    accumulate_cw_contributions_batch_with_context, accumulate_cw_contributions_with_accuracy,
+    accumulate_cw_fcj_contributions_batch, accumulate_cw_fcj_contributions_batch_with_context,
     accumulate_cw_fixed_axial_contributions_with_context,
 };
 pub use cw_fcj::{CwFcjBatchError, accumulate_cw_fcj_batch};

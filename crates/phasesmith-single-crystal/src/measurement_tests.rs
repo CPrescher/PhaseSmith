@@ -1604,4 +1604,40 @@ fn measurement_boundary_validations_reject_nonfinite_and_oversized_inputs() {
 
     // Excessive scan span must be rejected by Scan::check.
     assert!(Scan::new(0.0, 1.0e9, 0.1, 10).is_err());
+
+    // Suggested box_size must never exceed MeasureOptions::check's upper bound (101, odd).
+    let (data, reflections, _) = synthetic_lattice(0.25);
+    let mut m = measure(
+        &|f| data.frame(f),
+        &geometry(),
+        &data.scan,
+        SHAPE,
+        &reflections,
+        &MeasureOptions::default(),
+        &NoMonitor,
+    )
+    .unwrap();
+    for reflection in &mut m.reflections {
+        for partial in &mut reflection.partials {
+            partial.spread = [25.0, 25.0];
+        }
+    }
+    let estimate = estimate_shape_from_partials(&m, &data.scan).unwrap();
+    assert_eq!(estimate.box_size, Some(101));
+    let accepted = MeasureOptions {
+        box_size: estimate.box_size.unwrap(),
+        ..MeasureOptions::default()
+    };
+    assert!(
+        measure(
+            &|f| data.frame(f),
+            &geometry(),
+            &data.scan,
+            SHAPE,
+            &reflections[..1],
+            &accepted,
+            &NoMonitor,
+        )
+        .is_ok()
+    );
 }
