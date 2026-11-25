@@ -23,6 +23,7 @@ from typing import Literal
 
 import numpy as np
 
+from .control import OperationCancelled
 from .io.cif import read_cif
 from .io.powder import PowderFormat, read_powder_data
 from .project import RietveldProject
@@ -1032,9 +1033,9 @@ def run_workflow(
     project.options = replace(project.options, limits=plan.spec.limits)
     try:
         workflow = project.refine_recipe(recipe, logger=logger)
+    except (AutomationError, OperationCancelled, MemoryError):
+        raise
     except Exception as error:
-        if isinstance(error, AutomationError):  # pragma: no cover - defensive
-            raise
         raise AutomationError(
             "workflow.execution_failed",
             "PhaseSmith could not execute the approved workflow",
@@ -1128,6 +1129,8 @@ def resume_workflow(
     project.options = replace(project.options, limits=plan.spec.limits)
     try:
         refinement_result = project.refine(logger=logger)
+    except (AutomationError, OperationCancelled, MemoryError):
+        raise
     except Exception as error:
         raise AutomationError(
             "resume.execution_failed",
@@ -2889,6 +2892,8 @@ def _read_json(path: Path, *, max_bytes: int = _MAX_JSON_BYTES) -> dict[str, obj
 def _load_project(path: Path) -> RietveldProject:
     try:
         return RietveldProject.load(path)
+    except (AutomationError, OperationCancelled, MemoryError):
+        raise
     except Exception as error:
         raise AutomationError(
             "project.load_failed",

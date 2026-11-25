@@ -152,3 +152,17 @@ assert LeBailInput.__name__ == "LeBailInput"
 assert RietveldInput.__name__ == "RietveldInput"
 """
     subprocess.run([sys.executable, "-c", script], cwd=ROOT, check=True)
+
+
+def test_single_crystal_dir_exposes_all_lazy_submodules() -> None:
+    script = """
+import sys
+import phasesmith.single_crystal as single_crystal
+
+names = dir(single_crystal)
+assert names == sorted(names)
+assert set(single_crystal.__all__).issubset(names)
+# Calling dir() must not eagerly import lazy submodules.
+assert "phasesmith.single_crystal.solution" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", script], cwd=ROOT, check=True)

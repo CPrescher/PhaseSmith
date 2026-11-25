@@ -1,11 +1,25 @@
 """Native lossless, pickle-free numeric NPZ writing with exclusive creation."""
 
+from __future__ import annotations
+
+from collections.abc import Mapping
+from os import PathLike
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from phasesmith import _core
 
+if TYPE_CHECKING:
+    from numpy.typing import ArrayLike
 
-def save_npz(path, arrays, *, compression_level=1):
+
+def save_npz(
+    path: str | PathLike[str],
+    arrays: Mapping[str, ArrayLike],
+    *,
+    compression_level: int = 1,
+) -> None:
     """Write exact C-order numeric bytes using the Rust NPZ writer.
 
     Level 0 is uncompressed; levels 1-9 select lossless DEFLATE effort. The

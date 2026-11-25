@@ -716,3 +716,61 @@ def test_write_json_exclusive_fallback_when_hard_links_unsupported(
     monkeypatch.setattr(os, "link", unsupported_link)
     automation._write_json(failing_target, {"ok": True}, overwrite=False)
     assert json.loads(failing_target.read_text(encoding="utf-8")) == {"ok": True}
+
+
+@pytest.mark.parametrize(
+    "exc_factory",
+    [
+        lambda: phasesmith.OperationCancelled("user cancelled"),
+        lambda: MemoryError("simulated oom"),
+    ],
+)
+def test_automation_propagates_cancellation_and_memory_errors(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    exc_factory,
+) -> None:
+    spec = _spec(tmp_path)
+    plan = automation.plan_workflow(spec)
+
+    def raise_in_load(_path: Path) -> object:
+        raise exc_factory()
+
+    expected_type = type(exc_factory())
+    monkeypatch.setattr(phasesmith.RietveldProject, "load", staticmethod(raise_in_load))
+    with pytest.raises(expected_type):
+        automation._load_project(spec.project_path)
+    monkeypatch.undo()
+
+    def raise_in_refine_recipe(_self: object, *_args: object, **_kwargs: object) -> object:
+        raise exc_factory()
+
+    monkeypatch.setattr(phasesmith.RietveldProject, "refine_recipe", raise_in_refine_recipe)
+    with pytest.raises(expected_type):
+        automation.run_workflow(plan, approval_plan_id=plan.plan_id)
+    monkeypatch.undo()
+
+    # Build a resumable checkpoint so resume_workflow reaches project.refine().
+    project = phasesmith.RietveldProject.load(spec.project_path)
+    project.options = replace(
+        project.options,
+        limits=RefinementLimits(max_iterations=1, max_evaluations=2),
+    )
+    project.refine()
+    resumable_dir = tmp_path / "resumable-project"
+    project.save(resumable_dir)
+    resume_spec = automation.WorkflowSpec(
+        "resume-cancel-test",
+        resumable_dir,
+        tmp_path / "resume-output",
+        RefinementLimits(50, 500, None, 20),
+    )
+    resume_plan = automation.plan_workflow(resume_spec)
+    assert resume_plan.can_resume
+
+    def raise_in_refine(_self: object, *_args: object, **_kwargs: object) -> object:
+        raise exc_factory()
+
+    monkeypatch.setattr(phasesmith.RietveldProject, "refine", raise_in_refine)
+    with pytest.raises(expected_type):
+        automation.resume_workflow(resume_plan, approval_plan_id=resume_plan.plan_id)
