@@ -1,82 +1,19 @@
-"""Blocked Gram formation checked against independent equations and complete fits."""
+"""Blocked Gram formation checked against independent equations and complete fits.
+
+Low-level ``_iterative_normal_step(..., blocked=True)`` and small-model
+invariance checks live alongside their non-blocked counterparts in
+``test_solution_cached_normal.py`` and ``test_solution_normal_reuse.py``.
+"""
 
 import numpy as np
 import pytest
 from phasesmith import _core
 from phasesmith.crystallography import UnitCell
-from phasesmith.single_crystal.reference.solution_origin_reference import (
-    iterative_normal_reference,
-    preconditioned_normal_reference,
-)
 from phasesmith.single_crystal.reference.solution_reference import symmetric_model_reference
 
 pytestmark = pytest.mark.skipif(
     not hasattr(_core, "_SharedOrbitPool"), reason="experimental-solution"
 )
-
-
-@pytest.mark.parametrize("seed", range(4))
-@pytest.mark.parametrize("damping", [1e-8, 1e-3, 0.1, 10.0])
-@pytest.mark.parametrize("kind", ["random", "rank_deficient", "tiny_columns"])
-def test_blocked_step_matches_independent_damped_equations(seed, damping, kind):
-    rng = np.random.default_rng(seed)
-    j = rng.normal(size=(64, 259))
-    j *= np.geomspace(0.01, 100, 64)[:, None]
-    if kind == "rank_deficient":
-        j[-1] = j[0]
-        j[-2] = 2 * j[1]
-    elif kind == "tiny_columns":
-        j[-1] = 0
-        j[-2] *= 1e-12
-    r = rng.normal(size=j.shape[1])
-    value = _core._iterative_normal_step(j.ravel(), r, damping, cached=True, blocked=True)
-    expected = iterative_normal_reference(j, r, damping)
-    normal, rhs, scale = preconditioned_normal_reference(j, r, damping)
-    x = value["step"] / scale
-    # Same scaled original-system bound as the matrix-free reference tests.
-    assert np.linalg.norm(normal @ x - rhs) <= 2e-8 * np.linalg.norm(rhs)
-    # Near singular modes are weakly identified; compare predicted data and cost.
-    np.testing.assert_allclose(j.T @ value["step"], j.T @ expected, rtol=5e-5, atol=2e-6)
-    assert 0 < value["iterations"] <= 128
-    if damping >= 1e-3 and kind == "random":
-        assert value["used_cache"]
-
-
-@pytest.mark.parametrize("n,m", [(8, 100), (40, 45)])
-def test_unsuitable_shapes_use_the_unchanged_matrix_free_step(n, m):
-    rng = np.random.default_rng(29)
-    j, r = rng.normal(size=(n, m)), rng.normal(size=m)
-    old = _core._iterative_normal_step(j.ravel(), r, 0.1)
-    new = _core._iterative_normal_step(j.ravel(), r, 0.1, cached=True, blocked=True)
-    np.testing.assert_array_equal(old["step"].view(np.uint64), new["step"].view(np.uint64))
-    assert not new["used_cache"] and not new["fell_back"]
-
-
-@pytest.mark.parametrize("invalid", ["nan", "length", "zero", "negative"])
-def test_invalid_linear_systems_fail(invalid):
-    j, r, damping = np.ones(64 * 140), np.ones(140), 0.1
-    if invalid == "nan":
-        j[0] = np.nan
-    elif invalid == "length":
-        j = j[:-1]
-    elif invalid == "zero":
-        damping = 0
-    else:
-        damping = -1
-    with pytest.raises(ValueError):
-        _core._iterative_normal_step(j, r, damping, cached=True, blocked=True)
-
-
-def test_zero_rhs_and_repeated_cached_steps_are_deterministic():
-    rng = np.random.default_rng(911)
-    j = rng.normal(size=(40, 203))
-    z = _core._iterative_normal_step(j.ravel(), np.zeros(203), 0.1, cached=True, blocked=True)
-    assert z["iterations"] == 0 and np.all(z["step"] == 0)
-    r = rng.normal(size=203)
-    a = _core._iterative_normal_step(j.ravel(), r, 0.1, cached=True, blocked=True)
-    b = _core._iterative_normal_step(j.ravel(), r, 0.1, cached=True, blocked=True)
-    np.testing.assert_array_equal(a["step"].view(np.uint64), b["step"].view(np.uint64))
-    assert a["iterations"] == b["iterations"]
 
 
 @pytest.mark.parametrize("symbol", ["P 1", "P -1", "P m"])
@@ -131,28 +68,6 @@ def test_rejected_damping_trials_reuse_but_accepted_models_invalidate(symbol, mo
     )
     assert new["normal_matrix_builds"] == again["normal_matrix_builds"]
     assert new["normal_matrix_reuses"] == again["normal_matrix_reuses"]
-
-
-@pytest.mark.parametrize("iterative,cached", [(False, False), (True, False), (True, True)])
-def test_small_or_disabled_cache_preserves_original_execution(iterative, cached):
-    from test_solution_symmetry_adp import CASES, model_case
-
-    symbol, cell, sites, _ = CASES[0]
-    model, *_ = model_case(symbol, cell, sites, mode="isotropic")
-    p = model.initial_parameters(0.015)
-    a = model.refine(p, 8, 60.0, None, iterative=iterative, cached_normal=cached)
-    b = model.refine(
-        p,
-        8,
-        60.0,
-        None,
-        iterative=iterative,
-        cached_normal=cached,
-        reuse_normal=True,
-        blocked_normal=True,
-    )
-    np.testing.assert_array_equal(a["parameters"].view(np.uint64), b["parameters"].view(np.uint64))
-    assert b["normal_matrix_builds"] == b["normal_matrix_reuses"] == 0
 
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])

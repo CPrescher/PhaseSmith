@@ -67,14 +67,24 @@ def test_rejected_damping_trials_reuse_but_accepted_models_invalidate(symbol, mo
 
 
 @pytest.mark.parametrize("iterative,cached", [(False, False), (True, False), (True, True)])
-def test_small_or_disabled_cache_preserves_original_execution(iterative, cached):
+@pytest.mark.parametrize("blocked_normal", [False, True])
+def test_small_or_disabled_cache_preserves_original_execution(iterative, cached, blocked_normal):
     from test_solution_symmetry_adp import CASES, model_case
 
     symbol, cell, sites, _ = CASES[0]
     model, *_ = model_case(symbol, cell, sites, mode="isotropic")
     p = model.initial_parameters(0.015)
     a = model.refine(p, 8, 60.0, None, iterative=iterative, cached_normal=cached)
-    b = model.refine(p, 8, 60.0, None, iterative=iterative, cached_normal=cached, reuse_normal=True)
+    b = model.refine(
+        p,
+        8,
+        60.0,
+        None,
+        iterative=iterative,
+        cached_normal=cached,
+        reuse_normal=True,
+        blocked_normal=blocked_normal,
+    )
     np.testing.assert_array_equal(a["parameters"].view(np.uint64), b["parameters"].view(np.uint64))
     assert b["normal_matrix_builds"] == b["normal_matrix_reuses"] == 0
 
