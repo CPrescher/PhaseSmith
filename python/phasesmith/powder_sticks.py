@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import multiprocessing
 import os
+import threading
 from collections.abc import Iterable
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import partial
 from typing import Any, Literal
 
@@ -18,7 +19,7 @@ from .execution import ExecutionPolicy
 from .intensity_corrections import BraggBrentanoUnpolarizedLp
 from .scattering import XrayNonResonant
 from .structure import CrystalStructure, structure_from_record, structure_to_record
-from .symmetry import CwTwoThetaRange, PreparedReflectionGenerator
+from .symmetry import CwTwoThetaRange, PreparedReflectionGenerator, SpaceGroup
 
 
 @dataclass(frozen=True, slots=True, eq=False)
@@ -55,14 +56,49 @@ def _merge_sticks(
     return x[starts], np.add.reduceat(intensities[order], starts)
 
 
-def _calculate(structure: CrystalStructure, scan: CwTwoThetaRange) -> PowderSticks:
+def _freeze_pair(
+    positions: NDArray[np.float64], intensity: NDArray[np.float64]
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    positions.flags.writeable = False
+    intensity.flags.writeable = False
+    return positions, intensity
+
+
+class _GeneratorCache:
+    """Thread-safe per-batch cache of prepared reflection generators."""
+
+    __slots__ = ("_generators", "_lock")
+
+    def __init__(self) -> None:
+        self._generators: dict[SpaceGroup, PreparedReflectionGenerator] = {}
+        self._lock = threading.Lock()
+
+    def get(self, space_group: SpaceGroup) -> PreparedReflectionGenerator:
+        with self._lock:
+            generator = self._generators.get(space_group)
+        if generator is not None:
+            return generator
+        created = PreparedReflectionGenerator(space_group)
+        with self._lock:
+            return self._generators.setdefault(space_group, created)
+
+
+def _calculate(
+    structure: CrystalStructure,
+    scan: CwTwoThetaRange,
+    generators: _GeneratorCache | None = None,
+) -> PowderSticks:
     try:
-        reflections = PreparedReflectionGenerator(structure.space_group).generate(
-            structure.cell, scan
+        generator = (
+            PreparedReflectionGenerator(structure.space_group)
+            if generators is None
+            else generators.get(structure.space_group)
         )
+        reflections = generator.generate(structure.cell, scan)
         d = reflections.d_spacing_angstrom
         if not d.size:
-            return PowderSticks(structure.structure_id, d.copy(), np.empty(0))
+            positions, intensity = _freeze_pair(d.copy(), np.empty(0, dtype=np.float64))
+            return PowderSticks(structure.structure_id, positions, intensity)
         values = calculate_structure_factor_values(
             structure,
             reflections.hkl,
@@ -72,15 +108,22 @@ def _calculate(structure: CrystalStructure, scan: CwTwoThetaRange) -> PowderStic
             execution=ExecutionPolicy(threads=1),
         )
         angles = 2 * np.rad2deg(np.arcsin(np.minimum(1.0, scan.wavelength_angstrom / (2 * d))))
-        positions, intensity = _merge_sticks(angles, values.integrated_intensity)
+        positions, intensity = _freeze_pair(*_merge_sticks(angles, values.integrated_intensity))
         return PowderSticks(structure.structure_id, positions, intensity)
     except (ValueError, TypeError, RuntimeError) as error:
         error.add_note(f"While calculating powder sticks for {structure.structure_id!r}")
         raise
 
 
-def _from_record(record: dict[str, Any], scan: CwTwoThetaRange) -> PowderSticks:
-    return _calculate(structure_from_record(record), scan)
+def _compact_record(structure: CrystalStructure) -> dict[str, Any]:
+    return structure_to_record(replace(structure, source=None, diagnostics=(), metadata={}))
+
+
+def _calculate_record_chunk(
+    records: tuple[dict[str, Any], ...], scan: CwTwoThetaRange
+) -> tuple[PowderSticks, ...]:
+    generators = _GeneratorCache()
+    return tuple(_calculate(structure_from_record(rec), scan, generators) for rec in records)
 
 
 def calculate_powder_sticks_batch(
@@ -122,13 +165,23 @@ def calculate_powder_sticks_batch(
         cpu_count = getattr(os, "process_cpu_count", os.cpu_count)() or 1
         workers = min(4, cpu_count)
     workers = min(workers, len(models))
-    calculate = partial(_calculate, scan=scan)
+    generators = _GeneratorCache()
+    calculate = partial(_calculate, scan=scan, generators=generators)
     if workers == 1:
         return tuple(map(calculate, models))
     if backend == "threads":
         with ThreadPoolExecutor(max_workers=workers) as pool:
             return tuple(pool.map(calculate, models))
+    chunk_size = max(1, len(models) // (workers * 4))
+    records = tuple(map(_compact_record, models))
+    chunks = [records[i : i + chunk_size] for i in range(0, len(records), chunk_size)]
     with ProcessPoolExecutor(
         max_workers=workers, mp_context=multiprocessing.get_context("spawn")
     ) as pool:
-        return tuple(pool.map(partial(_from_record, scan=scan), map(structure_to_record, models)))
+        results: list[PowderSticks] = []
+        for chunk_result in pool.map(partial(_calculate_record_chunk, scan=scan), chunks):
+            for item in chunk_result:
+                item.two_theta_deg.flags.writeable = False
+                item.integrated_intensity.flags.writeable = False
+            results.extend(chunk_result)
+        return tuple(results)

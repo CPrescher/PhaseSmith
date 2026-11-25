@@ -6,6 +6,15 @@ development versions.
 
 ## Unreleased
 
+- Optimize hot numerical and Python batch paths while preserving exact bitwise
+  determinism: avoid eager key/table cloning in `StructuralPreparationCache` /
+  `PreparedNumerics`, flip parallel CW/TOF and dense structural-TOF Jacobian
+  reduction loops to unit-stride row order, iterate unique point-group rotations
+  in `SpaceGroup::reflection_orbit`, filter systematic absences and angular
+  ranges before reflection-family allocation in `PreparedReflectionGenerator`,
+  detach the GIL during `NativePreparedReflectionGenerator::new`, and cache
+  generators per space group / strip unused metadata / freeze output arrays in
+  `calculate_powder_sticks_batch`.
 - Update `THIRD_PARTY_NOTICES.md` and `THIRD_PARTY.md` to match locked crate
   versions (`zip 9.5.1`, `flate2 1.1.9`) and current module paths, refresh 0.9
   documentation and `mkdocs.yml` navigation, bump `pyproject.toml` development
